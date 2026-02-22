@@ -1,0 +1,16 @@
+# Large checkpoint files (track separately or use git-lfs)
+*.h5
+*.hdf5
+*.npy
+*.npz
+
+# But keep small analysis outputs
+!analysis/*.npy
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
