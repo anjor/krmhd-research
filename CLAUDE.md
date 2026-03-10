@@ -97,3 +97,4 @@ data = fetch_results(run_id)
 - Don't start Study N+1 before Study N validation is complete
 - Don't chase the helicity barrier — it's out of scope
 - Don't over-engineer infrastructure — simple scripts that work > elegant frameworks that don't
+- Don't generate synthetic data. Always run simulations.
