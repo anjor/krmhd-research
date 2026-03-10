@@ -1,0 +1,13 @@
+[project]
+name = "krmhd-research"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git",
+    "jax",
+    "numpy",
+    "matplotlib",
+    "pyyaml",
+    "h5py",
+    "modal",
+]

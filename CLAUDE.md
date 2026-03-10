@@ -1,5 +1,13 @@
 # CLAUDE.md — Instructions for AI-Assisted Research
 
+## Setup
+
+```bash
+uv sync
+```
+
+This installs all dependencies (GANDALF, JAX, NumPy, etc.) into a local `.venv/`. Use `uv run` to execute scripts, e.g. `uv run python scripts/run.py`.
+
 ## Project Context
 
 This repo orchestrates numerical experiments using the GANDALF KRMHD spectral solver. You are helping a plasma physicist run simulations, analyze data, and write papers. The physicist provides physics judgment; you handle implementation.
@@ -7,7 +15,7 @@ This repo orchestrates numerical experiments using the GANDALF KRMHD spectral so
 ## Critical Rules
 
 ### 1. GANDALF is read-only
-GANDALF is installed as a Python package (`import gandalf` or `from gandalf.krmhd import ...`). **Never modify GANDALF source code from this repo.** If GANDALF needs changes, file an issue on https://github.com/anjor/gandalf.
+GANDALF is installed as a Python package (`import krmhd` or `from krmhd import ...`). **Never modify GANDALF source code from this repo.** If GANDALF needs changes, file an issue on https://github.com/anjor/gandalf.
 
 ### 2. Physics validation before science
 Every simulation must pass these gates before extracting any scientific result:
@@ -52,21 +60,28 @@ Target: Journal of Plasma Physics
 ## GANDALF API Quick Reference
 
 ```python
-from gandalf.krmhd.config import SimulationConfig
-from gandalf.krmhd.simulation import run_simulation
-from gandalf.krmhd.diagnostics import (
+from krmhd.config import SimulationConfig
+from krmhd.timestepping import gandalf_step, compute_cfl_timestep
+from krmhd.diagnostics import (
+    EnergyHistory,            # Energy time series tracker
+    compute_energy,           # Dict with 'magnetic', 'kinetic', 'compressive', 'total'
     hermite_moment_energy,    # W(m) spectrum
     hermite_flux,             # Forward/backward Hermite flux
-    energy_spectrum,          # E(k_perp)
-    total_energy,             # Scalar energy
-    check_hermite_convergence # Recurrence check
+    energy_spectrum_perpendicular,  # E(k_perp)
 )
+from krmhd.forcing import force_alfven_modes_gandalf
+from krmhd.io import save_checkpoint, save_timeseries, load_timeseries
 
 # Load config from YAML
 config = SimulationConfig.from_yaml("configs/M032.yaml")
 
-# Run
-state, diagnostics = run_simulation(config)
+# Create grid and initial state
+grid = config.create_grid()
+state = config.create_initial_state(grid)
+
+# Time stepping (no single run_simulation — loop with gandalf_step)
+dt = compute_cfl_timestep(state, config.physics.v_A)
+state = gandalf_step(state, dt, config.physics.eta, config.physics.v_A)
 ```
 
 ## Directory Conventions
