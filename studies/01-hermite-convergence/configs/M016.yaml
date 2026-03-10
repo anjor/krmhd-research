@@ -1,0 +1,47 @@
+name: study01_M016
+description: "Study 1 production: Hermite convergence at M=16"
+
+grid:
+  Nx: 64
+  Ny: 64
+  Nz: 16
+  Lx: 6.283185307179586   # 2pi
+  Ly: 6.283185307179586
+  Lz: 6.283185307179586
+
+physics:
+  v_A: 1.0
+  eta: 0.01
+  nu: 0.01
+  beta_i: 1.0
+  Lambda: 1.0
+  hyper_r: 1
+  hyper_n: 1
+
+initial_condition:
+  type: random_spectrum
+  amplitude: 0.1
+  alpha: 1.667
+  k_min: 1.0
+  k_max: 10.0
+  k_wave: [0.0, 0.0, 1.0]
+  M: 16
+
+forcing:
+  enabled: true
+  amplitude: 0.3
+  k_min: 2.0
+  k_max: 5.0
+
+time_integration:
+  n_steps: 10000
+  cfl_safety: 0.3
+  save_interval: 100
+
+io:
+  output_dir: studies/01-hermite-convergence/data
+  save_spectra: true
+  save_energy_history: true
+  save_fields: false
+  save_final_state: true
+  overwrite: false
