@@ -635,7 +635,7 @@ wheels = [
 [[package]]
 name = "gandalf-krmhd"
 version = "0.3.0"
-source = { git = "https://github.com/anjor/gandalf.git#ee48d55c4f485747b4c4ff781cf3878710c23630" }
+source = { git = "https://github.com/anjor/gandalf.git#123006c4ece59158bc3ed9f7238b8b4249f7aac2" }
 dependencies = [
     { name = "h5py" },
     { name = "jax", version = "0.6.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
