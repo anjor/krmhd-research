@@ -1,0 +1,47 @@
+name: study02_nu3e-3
+description: "Study 2 collisionality scan: nu=3e-3, M=32"
+
+grid:
+  Nx: 64
+  Ny: 64
+  Nz: 16
+  Lx: 6.283185307179586   # 2pi
+  Ly: 6.283185307179586
+  Lz: 6.283185307179586
+
+physics:
+  v_A: 1.0
+  eta: 1.0
+  nu: 0.003
+  beta_i: 1.0
+  Lambda: 2.236
+  hyper_r: 2
+  hyper_n: 1
+
+initial_condition:
+  type: random_spectrum
+  amplitude: 0.1
+  alpha: 1.667
+  k_min: 1.0
+  k_max: 10.0
+  k_wave: [0.0, 0.0, 1.0]
+  M: 32
+
+forcing:
+  enabled: true
+  amplitude: 0.01
+  k_min: 2.0
+  k_max: 5.0
+
+time_integration:
+  n_steps: 15000
+  cfl_safety: 0.3
+  save_interval: 100
+
+io:
+  output_dir: data
+  save_spectra: true
+  save_energy_history: true
+  save_fields: false
+  save_final_state: true
+  overwrite: false
