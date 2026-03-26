@@ -14,7 +14,7 @@ physics:
   eta: 1.0
   nu: 0.03
   beta_i: 1.0
-  Lambda: 1.0
+  Lambda: 2.236
   hyper_r: 2
   hyper_n: 1
 
@@ -39,7 +39,7 @@ time_integration:
   save_interval: 100
 
 io:
-  output_dir: studies/02-collisionality-scan/data
+  output_dir: data
   save_spectra: true
   save_energy_history: true
   save_fields: false

@@ -36,7 +36,7 @@ from krmhd.diagnostics import (
     energy_spectrum_perpendicular,
     hermite_moment_energy,
 )
-from krmhd.forcing import force_alfven_modes_gandalf, force_hermite_moments
+from krmhd.forcing import force_alfven_modes_gandalf
 from krmhd.io import save_checkpoint, save_timeseries
 from krmhd.timestepping import compute_cfl_timestep, gandalf_step
 
@@ -82,6 +82,22 @@ def run_simulation(config: SimulationConfig) -> tuple:
     """
     grid = config.create_grid()
     state = config.create_initial_state(grid)
+
+    # Seed g with tiny perturbation to break the g=0 fixed point.
+    # With Lambda != 1, the natural coupling from z+/z- will amplify this
+    # into a physical Hermite cascade.
+    from krmhd.physics import initialize_hermite_moments, KRMHDState
+    g_seed = initialize_hermite_moments(
+        grid, config.initial_condition.M,
+        perturbation_amplitude=1e-6,
+        seed=137,
+    )
+    state = KRMHDState(
+        z_plus=state.z_plus, z_minus=state.z_minus,
+        B_parallel=state.B_parallel, g=g_seed,
+        M=state.M, beta_i=state.beta_i, v_th=state.v_th,
+        nu=state.nu, Lambda=state.Lambda, time=state.time, grid=state.grid,
+    )
 
     physics = config.physics
     ti = config.time_integration
@@ -130,20 +146,6 @@ def run_simulation(config: SimulationConfig) -> tuple:
             )
             total_injection += float(jnp.sum(inj_energy))
 
-        # Drive g_0 with small noise to seed the Hermite cascade.
-        # Without this, g stays at zero (g RHS is self-referential).
-        # Amplitude is 1% of Elsasser forcing to keep g as a small perturbation.
-        rng_key, subkey = jax.random.split(rng_key)
-        state, _ = force_hermite_moments(
-            state,
-            amplitude=forcing_cfg.amplitude * 0.1,
-            n_min=int(forcing_cfg.k_min),
-            n_max=int(forcing_cfg.k_max),
-            dt=dt,
-            key=subkey,
-            forced_moments=(0, 1),
-        )
-
         if step % ti.save_interval == 0:
             history.append(state)
             energy = compute_energy(state)
@@ -185,8 +187,10 @@ def main() -> None:
     wall_time = time.time() - wall_start
     print(f"\nSimulation complete in {wall_time:.1f}s")
 
-    # Save diagnostics
+    # Save diagnostics — resolve output_dir relative to study dir
     data_dir = Path(config.io.output_dir)
+    if not data_dir.is_absolute():
+        data_dir = STUDY_DIR / data_dir
     data_dir.mkdir(parents=True, exist_ok=True)
 
     ts_path = str(data_dir / f"{run_id}_timeseries.h5")
