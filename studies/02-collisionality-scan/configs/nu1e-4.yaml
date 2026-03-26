@@ -11,11 +11,11 @@ grid:
 
 physics:
   v_A: 1.0
-  eta: 0.01
+  eta: 1.0
   nu: 0.0001
   beta_i: 1.0
   Lambda: 1.0
-  hyper_r: 1
+  hyper_r: 2
   hyper_n: 1
 
 initial_condition:
@@ -29,7 +29,7 @@ initial_condition:
 
 forcing:
   enabled: true
-  amplitude: 0.3
+  amplitude: 0.01
   k_min: 2.0
   k_max: 5.0
 

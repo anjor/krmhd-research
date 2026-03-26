@@ -18,6 +18,10 @@ import time
 from pathlib import Path
 
 import jax
+
+# Enable persistent JIT compilation cache to avoid recompiling for each nu value
+jax.config.update("jax_compilation_cache_dir", "/tmp/jax_cache_krmhd")
+
 import jax.numpy as jnp
 import numpy as np
 
@@ -32,7 +36,7 @@ from krmhd.diagnostics import (
     energy_spectrum_perpendicular,
     hermite_moment_energy,
 )
-from krmhd.forcing import force_alfven_modes_gandalf
+from krmhd.forcing import force_alfven_modes_gandalf, force_hermite_moments
 from krmhd.io import save_checkpoint, save_timeseries
 from krmhd.timestepping import compute_cfl_timestep, gandalf_step
 
@@ -78,31 +82,6 @@ def run_simulation(config: SimulationConfig) -> tuple:
     """
     grid = config.create_grid()
     state = config.create_initial_state(grid)
-
-    # Seed Hermite moments with small perturbations so kinetic cascade develops.
-    # The g RHS depends on g itself ({Phi, g_m} terms), so g=0 stays at zero.
-    # Small noise lets nonlinear coupling between z+/z- and g amplify into
-    # a physical phase-space cascade.
-    from krmhd.physics import initialize_hermite_moments
-    g_seed = initialize_hermite_moments(
-        grid, config.initial_condition.M,
-        perturbation_amplitude=config.initial_condition.amplitude * 0.01,
-        seed=137,
-    )
-    from krmhd.physics import KRMHDState
-    state = KRMHDState(
-        z_plus=state.z_plus,
-        z_minus=state.z_minus,
-        B_parallel=state.B_parallel,
-        g=g_seed,
-        M=state.M,
-        beta_i=state.beta_i,
-        v_th=state.v_th,
-        nu=state.nu,
-        Lambda=state.Lambda,
-        time=state.time,
-        grid=state.grid,
-    )
 
     physics = config.physics
     ti = config.time_integration
@@ -150,6 +129,20 @@ def run_simulation(config: SimulationConfig) -> tuple:
                 key=subkey,
             )
             total_injection += float(jnp.sum(inj_energy))
+
+        # Drive g_0 with small noise to seed the Hermite cascade.
+        # Without this, g stays at zero (g RHS is self-referential).
+        # Amplitude is 1% of Elsasser forcing to keep g as a small perturbation.
+        rng_key, subkey = jax.random.split(rng_key)
+        state, _ = force_hermite_moments(
+            state,
+            amplitude=forcing_cfg.amplitude * 0.1,
+            n_min=int(forcing_cfg.k_min),
+            n_max=int(forcing_cfg.k_max),
+            dt=dt,
+            key=subkey,
+            forced_moments=(0, 1),
+        )
 
         if step % ti.save_interval == 0:
             history.append(state)
