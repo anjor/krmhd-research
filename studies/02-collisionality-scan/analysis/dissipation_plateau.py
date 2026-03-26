@@ -73,8 +73,27 @@ def compute_steady_state_dissipation(run: dict, frac: float = 0.5) -> dict:
     start = max(1, int(n * (1 - frac)))  # skip initial transient
     eps_ss = eps_hist[start:]
 
-    # Filter out inf/nan
-    valid = np.isfinite(eps_ss)
+    # Detect blowup: find the last index before eps_nu exceeds 100x
+    # the value at the 25% mark (baseline from early steady state).
+    eps_full = run["epsilon_nu_history"]
+    n_full = len(eps_full)
+    quarter = max(1, n_full // 4)
+    baseline = eps_full[quarter] if np.isfinite(eps_full[quarter]) and eps_full[quarter] > 0 else np.nan
+
+    if np.isfinite(baseline):
+        blowup_indices = np.where(
+            (eps_full > 100 * baseline) & np.isfinite(eps_full)
+        )[0]
+        blowup_idx = blowup_indices[0] if len(blowup_indices) > 0 else n_full
+    else:
+        blowup_idx = n_full
+
+    # Use stable window: second half of pre-blowup region
+    stable_end = blowup_idx
+    stable_start = max(1, stable_end // 2)
+    eps_ss = eps_full[stable_start:stable_end]
+
+    valid = np.isfinite(eps_ss) & (eps_ss > 0)
     if np.sum(valid) == 0:
         return {
             "nu": float(run["nu"]),
