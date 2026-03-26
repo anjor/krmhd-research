@@ -15,3 +15,5 @@
 | 02_nu1e-2_20260326_095359 | studies/02-collisionality-scan/configs/nu1e-2.yaml | Darwin arm64 (arm) | 842.3 | fail | energy_conservation:FAIL, energy_balance:FAIL, steady_state:ok, spectral_sanity:FAIL |
 | 02_nu1e-3_20260326_171838 | studies/02-collisionality-scan/configs/nu1e-3_dev.yaml | Darwin arm64 (arm) | 11.5 | fail | energy_conservation:FAIL, energy_balance:FAIL, steady_state:FAIL, spectral_sanity:ok |
 | 02_nu1e-3_20260326_172252 | studies/02-collisionality-scan/configs/nu1e-3_dev.yaml | Darwin arm64 (arm) | 6.4 | fail | energy_conservation:FAIL, energy_balance:FAIL, steady_state:FAIL, spectral_sanity:ok |
+| 02_nu1e-2_20260326_172505 | studies/02-collisionality-scan/configs/nu1e-2.yaml | Darwin arm64 (arm) | 2260.6 | fail | energy_conservation:FAIL, energy_balance:FAIL, steady_state:ok, spectral_sanity:FAIL |
+| 02_nu1e-2_20260326_192050 | studies/02-collisionality-scan/configs/nu1e-2.yaml | Darwin arm64 (arm) | 570.9 | fail | energy_conservation:FAIL, energy_balance:FAIL, steady_state:ok, spectral_sanity:FAIL |

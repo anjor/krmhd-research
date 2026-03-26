@@ -89,7 +89,7 @@ def run_simulation(config: SimulationConfig) -> tuple:
     from krmhd.physics import initialize_hermite_moments, KRMHDState
     g_seed = initialize_hermite_moments(
         grid, config.initial_condition.M,
-        perturbation_amplitude=1e-6,
+        perturbation_amplitude=1e-3,
         seed=137,
     )
     state = KRMHDState(
