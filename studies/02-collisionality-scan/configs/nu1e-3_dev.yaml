@@ -1,26 +1,26 @@
 name: study02_nu1e-3_dev
-description: "Study 2 dev config: nu=1e-3, tiny grid for smoke testing"
+description: "Study 2 dev config: benchmark params, tiny grid"
 
 grid:
-  Nx: 16
-  Ny: 16
-  Nz: 8
-  Lx: 6.283185307179586   # 2pi
-  Ly: 6.283185307179586
-  Lz: 6.283185307179586
+  Nx: 32
+  Ny: 32
+  Nz: 32
+  Lx: 1.0
+  Ly: 1.0
+  Lz: 1.0
 
 physics:
   v_A: 1.0
-  eta: 1.0
+  eta: 2.0
   nu: 0.001
   beta_i: 1.0
   Lambda: 2.236
   hyper_r: 2
-  hyper_n: 1
+  hyper_n: 2
 
 initial_condition:
   type: random_spectrum
-  amplitude: 0.1
+  amplitude: 0.05
   alpha: 1.667
   k_min: 1.0
   k_max: 5.0
@@ -30,11 +30,11 @@ initial_condition:
 forcing:
   enabled: true
   amplitude: 0.01
-  k_min: 2.0
-  k_max: 5.0
+  k_min: 1.0
+  k_max: 2.0
 
 time_integration:
-  n_steps: 500
+  n_steps: 1000
   cfl_safety: 0.3
   save_interval: 50
 
