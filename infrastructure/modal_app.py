@@ -66,7 +66,7 @@ def run_simulation_remote(config_yaml: str) -> dict:
         energy_spectrum_perpendicular,
         hermite_moment_energy,
     )
-    from krmhd.forcing import force_alfven_modes_gandalf
+    from krmhd.forcing import force_alfven_modes_gandalf, force_hermite_moments
     from krmhd.timestepping import compute_cfl_timestep, gandalf_step
     from krmhd.physics import initialize_hermite_moments, KRMHDState
 
@@ -156,6 +156,19 @@ def run_simulation_remote(config_yaml: str) -> dict:
                 key=subkey,
             )
             total_injection += float(jnp.sum(inj_energy))
+
+        # Force g_0 (density) and g_1 (momentum) to provide continuous
+        # energy source for the Hermite cascade (benchmark default).
+        rng_key, subkey = jax.random.split(rng_key)
+        state, _ = force_hermite_moments(
+            state,
+            amplitude=0.15,
+            n_min=int(forcing_cfg.k_min),
+            n_max=int(forcing_cfg.k_max),
+            dt=dt,
+            key=subkey,
+            forced_moments=(0, 1),
+        )
 
         if step % ti.save_interval == 0:
             history.append(state)

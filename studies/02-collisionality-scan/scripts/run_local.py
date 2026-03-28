@@ -36,7 +36,7 @@ from krmhd.diagnostics import (
     energy_spectrum_perpendicular,
     hermite_moment_energy,
 )
-from krmhd.forcing import force_alfven_modes_gandalf
+from krmhd.forcing import force_alfven_modes_gandalf, force_hermite_moments
 from krmhd.io import save_checkpoint, save_timeseries
 from krmhd.timestepping import compute_cfl_timestep, gandalf_step
 
@@ -145,6 +145,20 @@ def run_simulation(config: SimulationConfig) -> tuple:
                 key=subkey,
             )
             total_injection += float(jnp.sum(inj_energy))
+
+        # Continuously force g_0 (density) and g_1 (momentum) to provide
+        # a steady energy source for the Hermite cascade. Matches the
+        # GANDALF hermite_cascade_benchmark.py default.
+        rng_key, subkey = jax.random.split(rng_key)
+        state, _ = force_hermite_moments(
+            state,
+            amplitude=0.15,
+            n_min=int(forcing_cfg.k_min),
+            n_max=int(forcing_cfg.k_max),
+            dt=dt,
+            key=subkey,
+            forced_moments=(0, 1),
+        )
 
         if step % ti.save_interval == 0:
             history.append(state)
