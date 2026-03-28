@@ -19,7 +19,7 @@ krmhd_image = (
     .apt_install("git")
     .pip_install(
         "jax[cuda12]",
-        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git",
+        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.2",
         "numpy",
         "h5py",
         "pyyaml",
@@ -134,6 +134,16 @@ def run_simulation_remote(config_yaml: str) -> dict:
             state, dt, physics.eta, physics.v_A,
             nu=physics.nu, hyper_r=physics.hyper_r, hyper_n=physics.hyper_n,
         )
+        # Workaround: gandalf_step v0.4.2 RK4 returns time as JAX array,
+        # which fails Pydantic validation. Convert back to float.
+        if not isinstance(state.time, float):
+            state = KRMHDState(
+                z_plus=state.z_plus, z_minus=state.z_minus,
+                B_parallel=state.B_parallel, g=state.g,
+                M=state.M, beta_i=state.beta_i, v_th=state.v_th,
+                nu=state.nu, Lambda=state.Lambda,
+                time=float(state.time), grid=state.grid,
+            )
 
         if forcing_cfg.enabled:
             rng_key, subkey = jax.random.split(rng_key)
