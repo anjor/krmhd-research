@@ -634,8 +634,8 @@ wheels = [
 
 [[package]]
 name = "gandalf-krmhd"
-version = "0.4.2"
-source = { git = "https://github.com/anjor/gandalf.git#68ac6b500445c3b14e1356e36fb17fe7d15b6fff" }
+version = "0.4.3"
+source = { git = "https://github.com/anjor/gandalf.git?rev=v0.4.3#70c5d5208fab1b6be536145462efcf8f1772cae0" }
 dependencies = [
     { name = "h5py" },
     { name = "jax", version = "0.6.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -1017,7 +1017,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "gandalf-krmhd", git = "https://github.com/anjor/gandalf.git" },
+    { name = "gandalf-krmhd", git = "https://github.com/anjor/gandalf.git?rev=v0.4.3" },
     { name = "h5py" },
     { name = "jax" },
     { name = "matplotlib" },
