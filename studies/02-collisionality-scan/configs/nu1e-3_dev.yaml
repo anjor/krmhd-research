@@ -33,6 +33,10 @@ forcing:
   k_min: 1.0
   k_max: 2.0
 
+hermite_forcing:
+  amplitude: 0.005
+  forced_moments: [0, 1]
+
 time_integration:
   n_steps: 1000
   cfl_safety: 0.3
