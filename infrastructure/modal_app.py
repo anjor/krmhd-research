@@ -19,7 +19,7 @@ krmhd_image = (
     .apt_install("git")
     .pip_install(
         "jax[cuda12]",
-        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@8e3b51d",
+        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.3",
         "numpy",
         "h5py",
         "pyyaml",
