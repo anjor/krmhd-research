@@ -281,6 +281,60 @@ def plot_energy_balance(results: list[dict], runs: list[dict]) -> None:
     print("Saved: energy_balance_check.pdf/png")
 
 
+def plot_alfven_spectrum(runs: list[dict]) -> None:
+    """Figure 5: E(k_perp) for all runs — verify Alfvénic −5/3 cascade.
+
+    The Alfvénic spectrum should follow E(k⊥) ∝ k⊥^{−5/3} in the inertial range
+    (Kolmogorov-Kraichnan RMHD prediction). This is the primary check that the
+    Alfvénic cascade has developed before measuring collisional dissipation.
+    """
+    fig, ax = plt.subplots(figsize=(3.4, 2.8))
+
+    for i, run in enumerate(runs):
+        k = np.array(run["k_perp"])
+        E = np.array(run["E_kperp"])
+        mask = (E > 0) & (k > 0)
+        if mask.sum() < 2:
+            continue
+        nu = float(run["nu"])
+        color = COLORS[i % len(COLORS)]
+        ax.loglog(k[mask], E[mask], "-", color=color, lw=0.8,
+                  label=rf"$\nu={nu:.0e}$")
+
+    # Reference k^{-5/3} slope anchored at the forcing scale
+    k_ref = np.array([6.0, 100.0])
+    # Anchor at k=6 using energy from the first run (forcing scale)
+    if runs:
+        k_anchor = 6.0
+        E0_ref = float(runs[0]["E_kperp"][0]) * (k_anchor / float(runs[0]["k_perp"][0])) ** (5 / 3)
+        ax.loglog(k_ref, E0_ref * k_ref ** (-5 / 3), "k--", lw=1.0, label=r"$k_\perp^{-5/3}$")
+
+    ax.set_xlabel(r"$k_\perp$")
+    ax.set_ylabel(r"$E(k_\perp)$")
+    ax.set_title(r"Alfv\'{e}nic perpendicular spectrum")
+    ax.legend(loc="best", frameon=False, fontsize=6)
+
+    fig.tight_layout()
+    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    fig.savefig(FIGURES_DIR / "alfven_spectrum.pdf", dpi=300)
+    fig.savefig(FIGURES_DIR / "alfven_spectrum.png", dpi=150)
+    plt.close(fig)
+    print("Saved: alfven_spectrum.pdf/png")
+
+    # Also print slopes for each run
+    print("\nAlfvénic spectrum slopes (log-log fit, k in [10, k_max/3]):")
+    for run in runs:
+        k = np.array(run["k_perp"])
+        E = np.array(run["E_kperp"])
+        k_max = k[-1]
+        mask = (k >= 10) & (k <= k_max / 3) & (E > 0)
+        if mask.sum() < 3:
+            print(f"  nu={float(run['nu']):.1e}: insufficient data")
+            continue
+        slope, _ = np.polyfit(np.log(k[mask]), np.log(E[mask]), 1)
+        print(f"  nu={float(run['nu']):.1e}: slope = {slope:.2f}  (target: -5/3 = {-5/3:.2f})")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Study 02 dissipation analysis")
     parser.add_argument("--data-dir", type=str, default=str(STUDY_DIR / "data"))
@@ -314,6 +368,7 @@ def main() -> None:
     plot_hermite_spectra(runs)
     plot_dissipation_spectrum(runs)
     plot_energy_balance(results, runs)
+    plot_alfven_spectrum(runs)
 
     print("\nDone. Figures saved to:", FIGURES_DIR)
 

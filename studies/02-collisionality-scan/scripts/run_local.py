@@ -62,8 +62,21 @@ def resolve_config_path(config_arg: str) -> Path:
     raise FileNotFoundError(f"Config not found: {config_arg}")
 
 
-def run_simulation(config: SimulationConfig) -> tuple:
+def run_simulation(
+    config: SimulationConfig,
+    hermite_amplitude: float = 0.005,
+    hermite_moments: tuple[int, ...] = (0, 1),
+) -> tuple:
     """Run the KRMHD simulation loop with extended diagnostics.
+
+    Parameters
+    ----------
+    config : SimulationConfig
+        GANDALF simulation configuration.
+    hermite_amplitude : float
+        Forcing amplitude for Hermite moments g_m.
+    hermite_moments : tuple[int, ...]
+        Which Hermite moments to force (default: g_0 and g_1).
 
     Returns
     -------
@@ -146,18 +159,17 @@ def run_simulation(config: SimulationConfig) -> tuple:
             )
             total_injection += float(jnp.sum(inj_energy))
 
-        # Continuously force g_0 (density) and g_1 (momentum) to provide
-        # a steady energy source for the Hermite cascade. Matches the
-        # GANDALF hermite_cascade_benchmark.py default.
+        # Force g_0 (density) and g_1 (momentum) to provide continuous
+        # energy source for the Hermite cascade.
         rng_key, subkey = jax.random.split(rng_key)
         state, _ = force_hermite_moments(
             state,
-            amplitude=0.15,
+            amplitude=hermite_amplitude,
             n_min=int(forcing_cfg.k_min),
             n_max=int(forcing_cfg.k_max),
             dt=dt,
             key=subkey,
-            forced_moments=(0, 1),
+            forced_moments=hermite_moments,
         )
 
         if step % ti.save_interval == 0:
@@ -184,9 +196,16 @@ def main() -> None:
         print(f"Usage: {sys.argv[0]} <config.yaml>")
         sys.exit(1)
 
+    import yaml
+
     config_path = resolve_config_path(sys.argv[1])
     print(f"Loading config: {config_path}")
-    config = SimulationConfig.from_yaml(str(config_path))
+
+    cfg_dict = yaml.safe_load(config_path.read_text())
+    hermite_cfg = cfg_dict.pop('hermite_forcing', {})
+    config = SimulationConfig(**cfg_dict)
+    hermite_amplitude = hermite_cfg.get('amplitude', 0.005)
+    hermite_moments = tuple(hermite_cfg.get('forced_moments', [0, 1]))
 
     # Extract param label from config filename (e.g. nu1e-3_dev -> nu1e-3)
     param_label = config_path.stem.split("_")[0]
@@ -196,7 +215,7 @@ def main() -> None:
     # Run simulation
     wall_start = time.time()
     state, history, total_injection, W_m_history, epsilon_nu_history, save_times = (
-        run_simulation(config)
+        run_simulation(config, hermite_amplitude, hermite_moments)
     )
     wall_time = time.time() - wall_start
     print(f"\nSimulation complete in {wall_time:.1f}s")

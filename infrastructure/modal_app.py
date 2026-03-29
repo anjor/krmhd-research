@@ -29,8 +29,8 @@ krmhd_image = (
 
 @app.function(
     image=krmhd_image,
-    gpu="T4",
-    timeout=7200,  # 2 hours max
+    gpu="A100",
+    timeout=21600,  # 6 hours max for long steady-state runs
 )
 def run_simulation_remote(config_yaml: str) -> dict:
     """Run a KRMHD simulation on a cloud GPU.
@@ -70,8 +70,13 @@ def run_simulation_remote(config_yaml: str) -> dict:
     from krmhd.timestepping import compute_cfl_timestep, gandalf_step
     from krmhd.physics import initialize_hermite_moments, KRMHDState
 
-    # Parse config from YAML string
-    config = SimulationConfig(**yaml.safe_load(config_yaml))
+    # Parse config from YAML string, extracting hermite_forcing before
+    # passing to SimulationConfig (which doesn't know about this section).
+    cfg_dict = yaml.safe_load(config_yaml)
+    hermite_cfg = cfg_dict.pop('hermite_forcing', {})
+    config = SimulationConfig(**cfg_dict)
+    hermite_amplitude = hermite_cfg.get('amplitude', 0.005)
+    hermite_moments = tuple(hermite_cfg.get('forced_moments', [0, 1]))
 
     # Set up state
     grid = config.create_grid()
@@ -158,16 +163,16 @@ def run_simulation_remote(config_yaml: str) -> dict:
             total_injection += float(jnp.sum(inj_energy))
 
         # Force g_0 (density) and g_1 (momentum) to provide continuous
-        # energy source for the Hermite cascade (benchmark default).
+        # energy source for the Hermite cascade.
         rng_key, subkey = jax.random.split(rng_key)
         state, _ = force_hermite_moments(
             state,
-            amplitude=0.15,
+            amplitude=hermite_amplitude,
             n_min=int(forcing_cfg.k_min),
             n_max=int(forcing_cfg.k_max),
             dt=dt,
             key=subkey,
-            forced_moments=(0, 1),
+            forced_moments=hermite_moments,
         )
 
         if step % ti.save_interval == 0:
