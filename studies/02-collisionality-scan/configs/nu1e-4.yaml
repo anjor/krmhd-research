@@ -16,7 +16,7 @@ physics:
   beta_i: 1.0
   Lambda: 2.236
   hyper_r: 2
-  hyper_n: 2
+  hyper_n: 6
 
 initial_condition:
   type: random_spectrum
@@ -25,7 +25,7 @@ initial_condition:
   k_min: 1.0
   k_max: 10.0
   k_wave: [0.0, 0.0, 1.0]
-  M: 32
+  M: 128
 
 forcing:
   enabled: true
@@ -34,8 +34,8 @@ forcing:
   k_max: 2.0
 
 hermite_forcing:
-  amplitude: 0.005
-  forced_moments: [0, 1]
+  amplitude: 0.0035
+  forced_moments: [0]
 
 time_integration:
   n_steps: 200000
