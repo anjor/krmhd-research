@@ -10,8 +10,9 @@ STUDY_DIR = Path(__file__).resolve().parents[1]
 DEV_CONFIG = STUDY_DIR / "configs" / "nu1e-3_dev.yaml"
 
 NU_VALUES = [100.0, 10.0, 1.0, 0.5, 0.25, 0.1]
-N_STEPS = 5000
+N_STEPS = 3000
 SAVE_INTERVAL = 500
+M_OVERRIDE = 32  # Use small M for fast CPU iteration; stability threshold is similar
 
 
 def run_one(nu: float) -> None:
@@ -29,6 +30,7 @@ def run_one(nu: float) -> None:
     cfg_dict = yaml.safe_load(DEV_CONFIG.read_text())
     hermite_cfg = cfg_dict.pop("hermite_forcing", {})
     cfg_dict["physics"]["nu"] = nu
+    cfg_dict["initial_condition"]["M"] = M_OVERRIDE
     cfg_dict["time_integration"]["n_steps"] = N_STEPS
     cfg_dict["time_integration"]["save_interval"] = SAVE_INTERVAL
     config = SimulationConfig(**cfg_dict)
