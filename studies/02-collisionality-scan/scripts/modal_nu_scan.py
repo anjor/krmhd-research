@@ -39,11 +39,11 @@ BASE_CONFIG = {
     },
     "initial_condition": {
         "type": "random_spectrum", "amplitude": 0.05, "alpha": 1.667,
-        "k_min": 1.0, "k_max": 10.0, "k_wave": [0.0, 0.0, 1.0], "M": 32,
+        "k_min": 1.0, "k_max": 10.0, "k_wave": [0.0, 0.0, 1.0], "M": 32,  # M=32 stabilizes
     },
     "hermite_forcing": {"amplitude": 0.0035, "forced_moments": [0]},
     "forcing": {"enabled": True, "amplitude": 0.005, "k_min": 1.0, "k_max": 2.0},
-    "time_integration": {"n_steps": 20000, "cfl_safety": 0.3, "save_interval": 1000},
+    "time_integration": {"n_steps": 40000, "cfl_safety": 0.3, "save_interval": 2000},
     "io": {
         "output_dir": "data", "save_spectra": True,
         "save_energy_history": True, "save_fields": False,
@@ -51,8 +51,8 @@ BASE_CONFIG = {
     },
 }
 
-# Test these ν values
-NU_VALUES = [100.0, 50.0, 25.0, 10.0, 5.0, 1.0, 0.5, 0.25]
+# Test these ν values — wider range, extending to low ν
+NU_VALUES = [100.0, 10.0, 1.0, 0.25, 0.1, 0.01, 0.001, 0.0001]
 
 
 @app.function(image=krmhd_image, gpu="A100", timeout=7200)
@@ -168,14 +168,15 @@ def run_nu_test(nu: float) -> dict:
     verdict = "STABLE" if stable else "BLOWUP"
     print(f"\n  nu={nu:.1e}: {verdict} (growth={growth:.1f}x, wall={wall_time:.0f}s)")
 
+    # Return only plain Python types to avoid numpy deserialization issues
     return {
-        "nu": nu,
-        "eps_history": eps_history,
-        "time_history": time_history,
-        "etotal_history": etotal_history,
+        "nu": float(nu),
+        "eps_history": [float(e) for e in eps_history],
+        "time_history": [float(t) for t in time_history],
+        "etotal_history": [float(e) for e in etotal_history],
         "growth_factor": float(growth),
-        "stable": stable,
-        "wall_time": wall_time,
+        "stable": bool(stable),
+        "wall_time": float(wall_time),
     }
 
 
