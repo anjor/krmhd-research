@@ -36,11 +36,25 @@ from krmhd.diagnostics import (
     energy_spectrum_perpendicular,
     hermite_moment_energy,
 )
-from krmhd.forcing import force_alfven_modes_gandalf, force_hermite_moments
 from krmhd.io import save_checkpoint, save_timeseries
 from krmhd.timestepping import compute_cfl_timestep, gandalf_step
 
+from shared.alfven_forcing import (
+    AlfvenForcingOptions,
+    apply_alfven_forcing,
+    pop_alfven_forcing_options,
+)
 from shared.dissipation import compute_collisional_dissipation
+from shared.hermite_forcing import (
+    HermiteForcingOptions,
+    apply_hermite_forcing,
+    pop_hermite_forcing_options,
+)
+from shared.hermite_seed import (
+    HermiteSeedOptions,
+    apply_hermite_seed,
+    pop_hermite_seed_options,
+)
 from shared.run_utils import detect_hardware, generate_run_id, log_run
 from shared.validation import print_gate_results, run_all_gates
 
@@ -64,6 +78,9 @@ def resolve_config_path(config_arg: str) -> Path:
 
 def run_simulation(
     config: SimulationConfig,
+    alfven_forcing_options: AlfvenForcingOptions,
+    hermite_forcing_options: HermiteForcingOptions,
+    hermite_seed_options: HermiteSeedOptions,
     hermite_amplitude: float = 0.005,
     hermite_moments: tuple[int, ...] = (0, 1),
 ) -> tuple:
@@ -95,22 +112,7 @@ def run_simulation(
     """
     grid = config.create_grid()
     state = config.create_initial_state(grid)
-
-    # Seed g with tiny perturbation to break the g=0 fixed point.
-    # With Lambda != 1, the natural coupling from z+/z- will amplify this
-    # into a physical Hermite cascade.
-    from krmhd.physics import initialize_hermite_moments, KRMHDState
-    g_seed = initialize_hermite_moments(
-        grid, config.initial_condition.M,
-        perturbation_amplitude=1e-3,
-        seed=137,
-    )
-    state = KRMHDState(
-        z_plus=state.z_plus, z_minus=state.z_minus,
-        B_parallel=state.B_parallel, g=g_seed,
-        M=state.M, beta_i=state.beta_i, v_th=state.v_th,
-        nu=state.nu, Lambda=state.Lambda, time=state.time, grid=state.grid,
-    )
+    state = apply_hermite_seed(state, options=hermite_seed_options)
 
     physics = config.physics
     ti = config.time_integration
@@ -136,8 +138,12 @@ def run_simulation(
     )
     save_times.append(float(state.time))
 
-    print(f"Running {ti.n_steps} steps, M={M}, nu={physics.nu}, "
-          f"grid={config.grid.Nx}x{config.grid.Ny}x{config.grid.Nz}")
+    print(
+        f"Running {ti.n_steps} steps, M={M}, nu={physics.nu}, "
+        f"grid={config.grid.Nx}x{config.grid.Ny}x{config.grid.Nz}, "
+        f"seed_g={hermite_seed_options.enabled}, "
+        f"seed_amp={hermite_seed_options.amplitude}"
+    )
 
     for step in range(1, ti.n_steps + 1):
         dt = compute_cfl_timestep(state, physics.v_A, ti.cfl_safety)
@@ -149,28 +155,26 @@ def run_simulation(
 
         if forcing_cfg.enabled:
             rng_key, subkey = jax.random.split(rng_key)
-            state, inj_energy = force_alfven_modes_gandalf(
+            state, _ = apply_alfven_forcing(
                 state,
-                fampl=forcing_cfg.amplitude,
+                forcing_cfg=forcing_cfg,
+                dt=dt,
+                key=subkey,
+                options=alfven_forcing_options,
+            )
+
+        if hermite_amplitude > 0.0:
+            rng_key, subkey = jax.random.split(rng_key)
+            state, _ = apply_hermite_forcing(
+                state,
+                amplitude=hermite_amplitude,
                 n_min=int(forcing_cfg.k_min),
                 n_max=int(forcing_cfg.k_max),
                 dt=dt,
                 key=subkey,
+                forced_moments=hermite_moments,
+                options=hermite_forcing_options,
             )
-            total_injection += float(jnp.sum(inj_energy))
-
-        # Force g_0 (density) and g_1 (momentum) to provide continuous
-        # energy source for the Hermite cascade.
-        rng_key, subkey = jax.random.split(rng_key)
-        state, _ = force_hermite_moments(
-            state,
-            amplitude=hermite_amplitude,
-            n_min=int(forcing_cfg.k_min),
-            n_max=int(forcing_cfg.k_max),
-            dt=dt,
-            key=subkey,
-            forced_moments=hermite_moments,
-        )
 
         if step % ti.save_interval == 0:
             history.append(state)
@@ -202,7 +206,10 @@ def main() -> None:
     print(f"Loading config: {config_path}")
 
     cfg_dict = yaml.safe_load(config_path.read_text())
+    alfven_forcing_options = pop_alfven_forcing_options(cfg_dict)
     hermite_cfg = cfg_dict.pop('hermite_forcing', {})
+    hermite_forcing_options = pop_hermite_forcing_options(hermite_cfg)
+    hermite_seed_options = pop_hermite_seed_options(cfg_dict)
     config = SimulationConfig(**cfg_dict)
     hermite_amplitude = hermite_cfg.get('amplitude', 0.005)
     hermite_moments = tuple(hermite_cfg.get('forced_moments', [0, 1]))
@@ -215,7 +222,14 @@ def main() -> None:
     # Run simulation
     wall_start = time.time()
     state, history, total_injection, W_m_history, epsilon_nu_history, save_times = (
-        run_simulation(config, hermite_amplitude, hermite_moments)
+        run_simulation(
+            config,
+            alfven_forcing_options,
+            hermite_forcing_options,
+            hermite_seed_options,
+            hermite_amplitude,
+            hermite_moments,
+        )
     )
     wall_time = time.time() - wall_start
     print(f"\nSimulation complete in {wall_time:.1f}s")
@@ -259,6 +273,9 @@ def main() -> None:
         eta=config.physics.eta,
         hyper_n=config.physics.hyper_n,
         hyper_r=config.physics.hyper_r,
+        hermite_seed_enabled=hermite_seed_options.enabled,
+        hermite_seed_amplitude=hermite_seed_options.amplitude,
+        hermite_seed_rng=hermite_seed_options.seed,
         total_injection=total_injection,
     )
     print(f"Saved diagnostics: {npz_path}")

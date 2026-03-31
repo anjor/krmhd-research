@@ -9,10 +9,15 @@ Usage:
 from __future__ import annotations
 
 import io
+import sys
 import time
+from pathlib import Path
 
 import modal
 import yaml
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 app = modal.App("krmhd-nu-scan")
 
@@ -21,7 +26,7 @@ krmhd_image = (
     .apt_install("git")
     .pip_install(
         "jax[cuda12]",
-        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.3",
+        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.4",
         "numpy",
         "h5py",
         "pyyaml",
@@ -41,8 +46,27 @@ BASE_CONFIG = {
         "type": "random_spectrum", "amplitude": 0.05, "alpha": 1.667,
         "k_min": 1.0, "k_max": 10.0, "k_wave": [0.0, 0.0, 1.0], "M": 32,  # M=32 stabilizes
     },
-    "hermite_forcing": {"amplitude": 0.0035, "forced_moments": [0]},
-    "forcing": {"enabled": True, "amplitude": 0.005, "k_min": 1.0, "k_max": 2.0},
+    "hermite_seed": {
+        "enabled": True,
+        "amplitude": 1e-3,
+        "seed": 137,
+    },
+    "hermite_forcing": {
+        "amplitude": 0.0035,
+        "forced_moments": [0],
+        "mode": "perp_lowkz",
+        "max_nz": 1,
+        "include_nz0": False,
+    },
+    "forcing": {
+        "enabled": True,
+        "amplitude": 0.005,
+        "k_min": 1.0,
+        "k_max": 2.0,
+        "mode": "gandalf_perp_lowkz",
+        "max_nz": 1,
+        "include_nz0": False,
+    },
     "time_integration": {"n_steps": 40000, "cfl_safety": 0.3, "save_interval": 2000},
     "io": {
         "output_dir": "data", "save_spectra": True,
@@ -66,16 +90,24 @@ def run_nu_test(nu: float) -> dict:
 
     from krmhd.config import SimulationConfig
     from krmhd.diagnostics import compute_energy, hermite_moment_energy
-    from krmhd.forcing import force_alfven_modes_gandalf, force_hermite_moments
-    from krmhd.physics import initialize_hermite_moments, KRMHDState
+    from krmhd.physics import KRMHDState
     from krmhd.timestepping import compute_cfl_timestep, gandalf_step
+    from shared.alfven_forcing import apply_alfven_forcing, pop_alfven_forcing_options
+    from shared.hermite_forcing import apply_hermite_forcing, pop_hermite_forcing_options
+    from shared.hermite_seed import apply_hermite_seed, pop_hermite_seed_options
 
     cfg = dict(BASE_CONFIG)
     cfg["physics"] = dict(cfg["physics"])
+    cfg["forcing"] = dict(cfg["forcing"])
+    cfg["hermite_seed"] = dict(cfg["hermite_seed"])
+    cfg["hermite_forcing"] = dict(cfg["hermite_forcing"])
     cfg["physics"]["nu"] = nu
     cfg["name"] = f"nu_test_{nu:.1e}"
 
+    alfven_forcing_options = pop_alfven_forcing_options(cfg)
     hermite_cfg = cfg.pop("hermite_forcing", {})
+    hermite_forcing_options = pop_hermite_forcing_options(hermite_cfg)
+    hermite_seed_options = pop_hermite_seed_options(cfg)
     config = SimulationConfig(**cfg)
 
     hermite_amplitude = hermite_cfg.get("amplitude", 0.0035)
@@ -84,14 +116,7 @@ def run_nu_test(nu: float) -> dict:
     grid = config.create_grid()
     state = config.create_initial_state(grid)
     M = config.initial_condition.M
-
-    g_seed = initialize_hermite_moments(grid, M, perturbation_amplitude=1e-3, seed=137)
-    state = KRMHDState(
-        z_plus=state.z_plus, z_minus=state.z_minus,
-        B_parallel=state.B_parallel, g=g_seed,
-        M=state.M, beta_i=state.beta_i, v_th=state.v_th,
-        nu=state.nu, Lambda=state.Lambda, time=state.time, grid=state.grid,
-    )
+    state = apply_hermite_seed(state, options=hermite_seed_options)
 
     physics = config.physics
     ti = config.time_integration
@@ -130,17 +155,21 @@ def run_nu_test(nu: float) -> dict:
 
         if forcing_cfg.enabled:
             rng_key, subkey = jax.random.split(rng_key)
-            state, _ = force_alfven_modes_gandalf(
-                state, fampl=forcing_cfg.amplitude,
-                n_min=int(forcing_cfg.k_min), n_max=int(forcing_cfg.k_max),
-                dt=dt, key=subkey,
+            state, _ = apply_alfven_forcing(
+                state,
+                forcing_cfg=forcing_cfg,
+                dt=dt,
+                key=subkey,
+                options=alfven_forcing_options,
             )
-        rng_key, subkey = jax.random.split(rng_key)
-        state, _ = force_hermite_moments(
-            state, amplitude=hermite_amplitude,
-            n_min=int(forcing_cfg.k_min), n_max=int(forcing_cfg.k_max),
-            dt=dt, key=subkey, forced_moments=hermite_moments,
-        )
+        if hermite_amplitude > 0.0:
+            rng_key, subkey = jax.random.split(rng_key)
+            state, _ = apply_hermite_forcing(
+                state, amplitude=hermite_amplitude,
+                n_min=int(forcing_cfg.k_min), n_max=int(forcing_cfg.k_max),
+                dt=dt, key=subkey, forced_moments=hermite_moments,
+                options=hermite_forcing_options,
+            )
 
         if step % ti.save_interval == 0:
             energy = compute_energy(state)

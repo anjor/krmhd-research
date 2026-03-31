@@ -9,8 +9,13 @@ Run these for 200k steps to confirm true steady state.
 Also add Hermite forcing to the best one to test combined stability.
 """
 from __future__ import annotations
+import sys
 import time
+from pathlib import Path
 import modal
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 app = modal.App("krmhd-alfven-long")
 
@@ -19,7 +24,7 @@ krmhd_image = (
     .apt_install("git")
     .pip_install(
         "jax[cuda12]",
-        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.3",
+        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.4",
         "numpy", "h5py", "pyyaml",
     )
 )
@@ -48,9 +53,11 @@ def run_test(eta: float, fampl: float, include_hermite: bool, label: str) -> dic
 
     from krmhd.config import SimulationConfig
     from krmhd.diagnostics import compute_energy, hermite_moment_energy
-    from krmhd.forcing import force_alfven_modes_gandalf, force_hermite_moments
-    from krmhd.physics import initialize_hermite_moments, KRMHDState
+    from krmhd.physics import KRMHDState
     from krmhd.timestepping import compute_cfl_timestep, gandalf_step
+    from shared.alfven_forcing import AlfvenForcingOptions, apply_alfven_forcing
+    from shared.hermite_forcing import HermiteForcingOptions, apply_hermite_forcing
+    from shared.hermite_seed import HermiteSeedOptions, apply_hermite_seed
 
     M = 32
     n_steps = 200000
@@ -80,16 +87,24 @@ def run_test(eta: float, fampl: float, include_hermite: bool, label: str) -> dic
     physics = config.physics
     ti = config.time_integration
     forcing_cfg = config.forcing
+    alfven_forcing_options = AlfvenForcingOptions(
+        mode="gandalf_perp_lowkz",
+        max_nz=1,
+        include_nz0=False,
+    )
+    hermite_forcing_options = HermiteForcingOptions(
+        mode="perp_lowkz",
+        max_nz=1,
+        include_nz0=False,
+    )
+    hermite_seed_options = HermiteSeedOptions(
+        enabled=include_hermite,
+        amplitude=1e-3,
+        seed=137,
+    )
     rng_key = jax.random.PRNGKey(42)
 
-    if include_hermite:
-        g_seed = initialize_hermite_moments(grid, M, perturbation_amplitude=1e-3, seed=137)
-        state = KRMHDState(
-            z_plus=state.z_plus, z_minus=state.z_minus,
-            B_parallel=state.B_parallel, g=g_seed,
-            M=state.M, beta_i=state.beta_i, v_th=state.v_th,
-            nu=state.nu, Lambda=state.Lambda, time=state.time, grid=state.grid,
-        )
+    state = apply_hermite_seed(state, options=hermite_seed_options)
 
     etotal_history = []
     eps_nu_history = []
@@ -127,18 +142,21 @@ def run_test(eta: float, fampl: float, include_hermite: bool, label: str) -> dic
 
         if forcing_cfg.enabled:
             rng_key, subkey = jax.random.split(rng_key)
-            state, _ = force_alfven_modes_gandalf(
-                state, fampl=forcing_cfg.amplitude,
-                n_min=int(forcing_cfg.k_min), n_max=int(forcing_cfg.k_max),
-                dt=dt, key=subkey,
+            state, _ = apply_alfven_forcing(
+                state,
+                forcing_cfg=forcing_cfg,
+                dt=dt,
+                key=subkey,
+                options=alfven_forcing_options,
             )
 
         if include_hermite:
             rng_key, subkey = jax.random.split(rng_key)
-            state, _ = force_hermite_moments(
+            state, _ = apply_hermite_forcing(
                 state, amplitude=hermite_amplitude,
                 n_min=int(forcing_cfg.k_min), n_max=int(forcing_cfg.k_max),
                 dt=dt, key=subkey, forced_moments=hermite_moments_forced,
+                options=hermite_forcing_options,
             )
 
         if step % save_interval == 0:

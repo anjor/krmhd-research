@@ -1,5 +1,5 @@
 name: study02_nu3e-4
-description: "Study 2 collisionality scan: nu3e-4, M=32, benchmark params"
+description: "Study 2 collisionality scan: nu3e-4, M=128, low-kz Alfvén forcing"
 
 grid:
   Nx: 64
@@ -32,10 +32,21 @@ forcing:
   amplitude: 0.005
   k_min: 1.0
   k_max: 2.0
+  mode: gandalf_perp_lowkz
+  max_nz: 1
+  include_nz0: false
 
 hermite_forcing:
   amplitude: 0.0035
   forced_moments: [0]
+  mode: perp_lowkz
+  max_nz: 1
+  include_nz0: false
+
+hermite_seed:
+  enabled: true
+  amplitude: 0.001
+  seed: 137
 
 time_integration:
   n_steps: 200000

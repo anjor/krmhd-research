@@ -9,7 +9,13 @@ Usage:
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import modal
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 app = modal.App("krmhd-research")
 
@@ -19,7 +25,7 @@ krmhd_image = (
     .apt_install("git")
     .pip_install(
         "jax[cuda12]",
-        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.3",
+        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.4",
         "numpy",
         "h5py",
         "pyyaml",
@@ -66,14 +72,19 @@ def run_simulation_remote(config_yaml: str) -> dict:
         energy_spectrum_perpendicular,
         hermite_moment_energy,
     )
-    from krmhd.forcing import force_alfven_modes_gandalf, force_hermite_moments
+    from krmhd.physics import KRMHDState
     from krmhd.timestepping import compute_cfl_timestep, gandalf_step
-    from krmhd.physics import initialize_hermite_moments, KRMHDState
+    from shared.alfven_forcing import apply_alfven_forcing, pop_alfven_forcing_options
+    from shared.hermite_forcing import apply_hermite_forcing, pop_hermite_forcing_options
+    from shared.hermite_seed import apply_hermite_seed, pop_hermite_seed_options
 
     # Parse config from YAML string, extracting hermite_forcing before
     # passing to SimulationConfig (which doesn't know about this section).
     cfg_dict = yaml.safe_load(config_yaml)
+    alfven_forcing_options = pop_alfven_forcing_options(cfg_dict)
     hermite_cfg = cfg_dict.pop('hermite_forcing', {})
+    hermite_forcing_options = pop_hermite_forcing_options(hermite_cfg)
+    hermite_seed_options = pop_hermite_seed_options(cfg_dict)
     config = SimulationConfig(**cfg_dict)
     hermite_amplitude = hermite_cfg.get('amplitude', 0.005)
     hermite_moments = tuple(hermite_cfg.get('forced_moments', [0, 1]))
@@ -81,19 +92,7 @@ def run_simulation_remote(config_yaml: str) -> dict:
     # Set up state
     grid = config.create_grid()
     state = config.create_initial_state(grid)
-
-    # Seed g
-    g_seed = initialize_hermite_moments(
-        grid, config.initial_condition.M,
-        perturbation_amplitude=1e-3,
-        seed=137,
-    )
-    state = KRMHDState(
-        z_plus=state.z_plus, z_minus=state.z_minus,
-        B_parallel=state.B_parallel, g=g_seed,
-        M=state.M, beta_i=state.beta_i, v_th=state.v_th,
-        nu=state.nu, Lambda=state.Lambda, time=state.time, grid=state.grid,
-    )
+    state = apply_hermite_seed(state, options=hermite_seed_options)
 
     physics = config.physics
     ti = config.time_integration
@@ -152,28 +151,26 @@ def run_simulation_remote(config_yaml: str) -> dict:
 
         if forcing_cfg.enabled:
             rng_key, subkey = jax.random.split(rng_key)
-            state, inj_energy = force_alfven_modes_gandalf(
+            state, _ = apply_alfven_forcing(
                 state,
-                fampl=forcing_cfg.amplitude,
+                forcing_cfg=forcing_cfg,
+                dt=dt,
+                key=subkey,
+                options=alfven_forcing_options,
+            )
+
+        if hermite_amplitude > 0.0:
+            rng_key, subkey = jax.random.split(rng_key)
+            state, _ = apply_hermite_forcing(
+                state,
+                amplitude=hermite_amplitude,
                 n_min=int(forcing_cfg.k_min),
                 n_max=int(forcing_cfg.k_max),
                 dt=dt,
                 key=subkey,
+                forced_moments=hermite_moments,
+                options=hermite_forcing_options,
             )
-            total_injection += float(jnp.sum(inj_energy))
-
-        # Force g_0 (density) and g_1 (momentum) to provide continuous
-        # energy source for the Hermite cascade.
-        rng_key, subkey = jax.random.split(rng_key)
-        state, _ = force_hermite_moments(
-            state,
-            amplitude=hermite_amplitude,
-            n_min=int(forcing_cfg.k_min),
-            n_max=int(forcing_cfg.k_max),
-            dt=dt,
-            key=subkey,
-            forced_moments=hermite_moments,
-        )
 
         if step % ti.save_interval == 0:
             history.append(state)
@@ -213,6 +210,9 @@ def run_simulation_remote(config_yaml: str) -> dict:
         eta=physics.eta,
         hyper_n=physics.hyper_n,
         hyper_r=physics.hyper_r,
+        hermite_seed_enabled=hermite_seed_options.enabled,
+        hermite_seed_amplitude=hermite_seed_options.amplitude,
+        hermite_seed_rng=hermite_seed_options.seed,
         total_injection=total_injection,
     )
     npz_bytes = buf.getvalue()

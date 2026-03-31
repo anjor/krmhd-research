@@ -52,6 +52,9 @@ def compute_collisional_dissipation(
         so energy E=|g|^2 decays at dE/dt = -2*rate*E.
         Moments m=0 (density) and m=1 (momentum) are exempt.
     """
+    if M <= 1 or len(E_m) <= 2 or nu == 0.0:
+        return 0.0
+
     m_indices = np.arange(len(E_m))
     rates = nu * (m_indices / M) ** hyper_n
     # m=0,1 exempt from collisions

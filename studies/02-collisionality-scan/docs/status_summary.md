@@ -80,7 +80,7 @@ m=M bounces back, piling up and growing without bound.
 ## Code state
 
 - Branch: `collisionality-scan-benchmark-params`
-- GANDALF: pinned to v0.4.3 (hyper_n=6 support)
+- GANDALF: pinned to v0.4.4
 - All 9 configs: M=128, hyper_n=6, amplitude=0.0035, forced_moments=[0]
 - `modal_app.py` and `run_local.py`: hermite forcing is config-driven
 - `modal_nu_scan.py`: parallel ν scan script (needs numpy fix for deserialization)

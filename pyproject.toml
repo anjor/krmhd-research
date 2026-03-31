@@ -3,7 +3,7 @@ name = "krmhd-research"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
-    "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.3",
+    "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.4",
     "jax",
     "numpy",
     "matplotlib",

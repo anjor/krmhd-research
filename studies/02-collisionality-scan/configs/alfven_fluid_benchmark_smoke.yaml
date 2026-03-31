@@ -1,5 +1,5 @@
-name: study02_nu3e-3
-description: "Study 2 collisionality scan: nu3e-3, M=128, low-kz Alfvén forcing"
+name: study02_alfven_fluid_benchmark_smoke
+description: "Study 2 fluid-only RMHD smoke test: M=0, benchmark eta=2 and fampl=0.005"
 
 grid:
   Nx: 64
@@ -12,11 +12,11 @@ grid:
 physics:
   v_A: 1.0
   eta: 2.0
-  nu: 0.003
+  nu: 0.0
   beta_i: 1.0
   Lambda: 2.236
   hyper_r: 2
-  hyper_n: 6
+  hyper_n: 2
 
 initial_condition:
   type: random_spectrum
@@ -25,7 +25,7 @@ initial_condition:
   k_min: 1.0
   k_max: 10.0
   k_wave: [0.0, 0.0, 1.0]
-  M: 128
+  M: 0
 
 forcing:
   enabled: true
@@ -37,26 +37,26 @@ forcing:
   include_nz0: false
 
 hermite_forcing:
-  amplitude: 0.0035
+  amplitude: 0.0
   forced_moments: [0]
   mode: perp_lowkz
   max_nz: 1
   include_nz0: false
 
 hermite_seed:
-  enabled: true
-  amplitude: 0.001
+  enabled: false
+  amplitude: 0.0
   seed: 137
 
 time_integration:
-  n_steps: 200000
+  n_steps: 1000
   cfl_safety: 0.3
-  save_interval: 1000
+  save_interval: 100
 
 io:
-  output_dir: data
+  output_dir: data_alfven_benchmark
   save_spectra: true
   save_energy_history: true
   save_fields: false
   save_final_state: true
-  overwrite: false
+  overwrite: true
