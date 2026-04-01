@@ -165,14 +165,12 @@ def run_branch(
 
     # ---- Helper: save perpendicular energy spectrum ----
     def save_spectrum(state: KRMHDState, step: int) -> None:
-        spec = energy_spectrum_perpendicular(state)
+        k_perp_bins, E_perp = energy_spectrum_perpendicular(state)
         t = float(state.time)
         np.savez(
             spectra_dir / f"spectrum_t{t:06.1f}_step{step:07d}.npz",
-            k_perp=np.array(spec["k_perp"]),
-            E_kinetic=np.array(spec["E_kinetic"]),
-            E_magnetic=np.array(spec["E_magnetic"]),
-            E_total=np.array(spec["E_total"]),
+            k_perp=np.array(k_perp_bins),
+            E_total=np.array(E_perp),
             time=t,
             step=step,
         )
