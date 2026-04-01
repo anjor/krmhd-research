@@ -40,27 +40,30 @@ krmhd_image = (
     )
 )
 
-# Three branches from the 64³ calibration results.
-# eta=4/fampl=0.003 was the best 64³ survivor; the others bracket it.
+# Run 2: Gaussian white noise forcing (matching upstream benchmark default).
+# Previous run used force_alfven_modes_gandalf which has 1/k_perp weighting
+# that blew up at 128³. Now using force_alfven_modes (Gaussian) instead.
+# Branch 1 matches the exact benchmark defaults (eta=2, amplitude=0.01).
+# Branches 2-3 bracket with more dissipation.
 BRANCHES = [
     {
-        "label": "alfven128_eta4_f0p003",
-        "eta": 4.0,
-        "force_amplitude": 0.003,
+        "label": "alfven128_gauss_eta2_f0p01",
+        "eta": 2.0,
+        "force_amplitude": 0.01,
         "total_time": 200,
         "averaging_start": 80,
     },
     {
-        "label": "alfven128_eta2_f0p005",
+        "label": "alfven128_gauss_eta4_f0p01",
+        "eta": 4.0,
+        "force_amplitude": 0.01,
+        "total_time": 200,
+        "averaging_start": 80,
+    },
+    {
+        "label": "alfven128_gauss_eta2_f0p005",
         "eta": 2.0,
         "force_amplitude": 0.005,
-        "total_time": 200,
-        "averaging_start": 80,
-    },
-    {
-        "label": "alfven128_eta3_f0p004",
-        "eta": 3.0,
-        "force_amplitude": 0.004,
         "total_time": 200,
         "averaging_start": 80,
     },
@@ -98,7 +101,7 @@ def run_branch(
         energy_spectrum_perpendicular,
         hermite_moment_energy,
     )
-    from krmhd.forcing import force_alfven_modes_gandalf
+    from krmhd.forcing import force_alfven_modes
     from krmhd.io import save_checkpoint
     from krmhd.physics import KRMHDState, initialize_random_spectrum
     from krmhd.spectral import SpectralGrid3D
@@ -221,9 +224,9 @@ def run_branch(
 
         # Apply forcing
         rng_key, subkey = jax.random.split(rng_key)
-        state, rng_key = force_alfven_modes_gandalf(
+        state, rng_key = force_alfven_modes(
             state,
-            fampl=force_amplitude,
+            amplitude=force_amplitude,
             n_min=n_force_min,
             n_max=n_force_max,
             dt=dt,

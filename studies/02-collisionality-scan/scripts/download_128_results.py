@@ -24,9 +24,9 @@ LOCAL_OUTPUT = PROJECT_ROOT / "studies/02-collisionality-scan/data/benchmark_128
 VOLUME_NAME = "krmhd-benchmark-vol"
 
 BRANCHES = [
-    "alfven128_eta4_f0p003",
-    "alfven128_eta2_f0p005",
-    "alfven128_eta3_f0p004",
+    "alfven128_gauss_eta2_f0p01",
+    "alfven128_gauss_eta4_f0p01",
+    "alfven128_gauss_eta2_f0p005",
 ]
 
 
