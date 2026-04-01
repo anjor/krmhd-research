@@ -207,23 +207,10 @@ def run_branch(
     while state.time < total_time * tau_A:
         step += 1
 
-        # Advance state
-        state = gandalf_step(
-            state, dt, eta, v_A,
-            nu=nu, hyper_r=hyper_r, hyper_n=hyper_n,
-        )
-
-        # Fix JAX scalar time
-        if not isinstance(state.time, float):
-            state = KRMHDState(
-                z_plus=state.z_plus, z_minus=state.z_minus,
-                B_parallel=state.B_parallel, g=state.g,
-                M=state.M, beta_i=state.beta_i, v_th=state.v_th,
-                nu=state.nu, Lambda=state.Lambda,
-                time=float(state.time), grid=state.grid,
-            )
-
-        # Apply forcing
+        # Apply forcing FIRST (matching upstream benchmark ordering)
+        # This ensures freshly injected high-k energy is immediately
+        # damped by the dissipative step, rather than sitting undamped
+        # for a full timestep.
         rng_key, subkey = jax.random.split(rng_key)
         state, rng_key = force_alfven_modes(
             state,
@@ -234,7 +221,13 @@ def run_branch(
             key=subkey,
         )
 
-        # Fix JAX scalar time after forcing
+        # Advance state (includes dissipation)
+        state = gandalf_step(
+            state, dt, eta, v_A,
+            nu=nu, hyper_r=hyper_r, hyper_n=hyper_n,
+        )
+
+        # Fix JAX scalar time
         if not isinstance(state.time, float):
             state = KRMHDState(
                 z_plus=state.z_plus, z_minus=state.z_minus,
