@@ -40,16 +40,16 @@ krmhd_image = (
     )
 )
 
-# Run 3: Resume from t=200 steady branch, bump forcing to f=0.008, run to t=600.
-# f=0.005 was stable but cascade still developing at t=200.
-# f=0.01 blew up at t=165. f=0.008 splits the difference.
+# Run 4: Keep f=0.005 (stable) and run long to t=1000 τ_A.
+# f=0.008 blew up at t≈235; f=0.005 was stable through t=200 with
+# cascade still developing. Give it time.
 BRANCHES = [
     {
-        "label": "alfven128_gauss_eta2_f0p008",
+        "label": "alfven128_gauss_eta2_f0p005_long",
         "eta": 2.0,
-        "force_amplitude": 0.008,
-        "total_time": 600,
-        "averaging_start": 300,
+        "force_amplitude": 0.005,
+        "total_time": 1000,
+        "averaging_start": 500,
         "resume_from": "alfven128_gauss_eta2_f0p005/checkpoints/checkpoint_t0200.0.h5",
     },
 ]
