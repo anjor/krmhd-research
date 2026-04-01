@@ -40,32 +40,17 @@ krmhd_image = (
     )
 )
 
-# Run 2: Gaussian white noise forcing (matching upstream benchmark default).
-# Previous run used force_alfven_modes_gandalf which has 1/k_perp weighting
-# that blew up at 128³. Now using force_alfven_modes (Gaussian) instead.
-# Branch 1 matches the exact benchmark defaults (eta=2, amplitude=0.01).
-# Branches 2-3 bracket with more dissipation.
+# Run 3: Resume from t=200 steady branch, bump forcing to f=0.008, run to t=600.
+# f=0.005 was stable but cascade still developing at t=200.
+# f=0.01 blew up at t=165. f=0.008 splits the difference.
 BRANCHES = [
     {
-        "label": "alfven128_gauss_eta2_f0p01",
+        "label": "alfven128_gauss_eta2_f0p008",
         "eta": 2.0,
-        "force_amplitude": 0.01,
-        "total_time": 200,
-        "averaging_start": 80,
-    },
-    {
-        "label": "alfven128_gauss_eta4_f0p01",
-        "eta": 4.0,
-        "force_amplitude": 0.01,
-        "total_time": 200,
-        "averaging_start": 80,
-    },
-    {
-        "label": "alfven128_gauss_eta2_f0p005",
-        "eta": 2.0,
-        "force_amplitude": 0.005,
-        "total_time": 200,
-        "averaging_start": 80,
+        "force_amplitude": 0.008,
+        "total_time": 600,
+        "averaging_start": 300,
+        "resume_from": "alfven128_gauss_eta2_f0p005/checkpoints/checkpoint_t0200.0.h5",
     },
 ]
 
@@ -346,8 +331,8 @@ def main(resume: bool = False):
 
     futures = []
     for b in BRANCHES:
-        resume_path = None
-        if resume:
+        resume_path = b.get("resume_from")
+        if resume and not resume_path:
             resume_path = f"{b['label']}/checkpoints/checkpoint_t0080.0.h5"
         futures.append(
             run_branch.spawn(
