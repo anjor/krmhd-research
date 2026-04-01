@@ -40,17 +40,26 @@ krmhd_image = (
     )
 )
 
-# Run 4: Keep f=0.005 (stable) and run long to t=1000 τ_A.
-# f=0.008 blew up at t≈235; f=0.005 was stable through t=200 with
-# cascade still developing. Give it time.
+# Run 5: Try hyper_r=4 for sharper high-k dissipation.
+# All previous runs (hyper_r=2) blow up around t=230-250 regardless
+# of forcing amplitude. The runaway is driven by energy pileup at
+# high k_perp that hyper_r=2 can't damp fast enough.
+# Test two eta values: benchmark default (eta=2) and stronger (eta=4).
+# Fresh starts (not resuming — hyper_r change means different physics).
 BRANCHES = [
     {
-        "label": "alfven128_gauss_eta2_f0p005_long",
+        "label": "alfven128_gauss_eta2_f0p005_r4",
         "eta": 2.0,
         "force_amplitude": 0.005,
-        "total_time": 1000,
-        "averaging_start": 500,
-        "resume_from": "alfven128_gauss_eta2_f0p005/checkpoints/checkpoint_t0200.0.h5",
+        "total_time": 500,
+        "averaging_start": 200,
+    },
+    {
+        "label": "alfven128_gauss_eta4_f0p005_r4",
+        "eta": 4.0,
+        "force_amplitude": 0.005,
+        "total_time": 500,
+        "averaging_start": 200,
     },
 ]
 
@@ -69,6 +78,7 @@ def run_branch(
     force_amplitude: float,
     total_time: float,
     averaging_start: float,
+    hyper_r: int = 2,
     resume_from: str | None = None,
 ) -> dict:
     """Run a single 128³ Alfvénic cascade branch with checkpointing."""
@@ -106,7 +116,7 @@ def run_branch(
     v_A = 1.0
     beta_i = 1.0
     nu = 0.0  # Alfvén-only, no collisions
-    hyper_r = 2
+    # hyper_r passed as function parameter (default=2, now testing 4)
     hyper_n = 2
     M = 10
     cfl_safety = 0.3
@@ -341,6 +351,7 @@ def main(resume: bool = False):
                 force_amplitude=b["force_amplitude"],
                 total_time=b["total_time"],
                 averaging_start=b["averaging_start"],
+                hyper_r=b.get("hyper_r", 2),
                 resume_from=resume_path,
             )
         )
