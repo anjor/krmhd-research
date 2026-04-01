@@ -336,24 +336,18 @@ def run_branch(
 
 
 @app.local_entrypoint()
-def main():
+def main(resume: bool = False):
     """Submit all 128³ branches in parallel on A100 GPUs."""
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--resume", action="store_true",
-                        help="Resume from latest checkpoint on volume")
-    args = parser.parse_args()
-
     print(f"Submitting {len(BRANCHES)} 128³ benchmark branches...")
     for b in BRANCHES:
         print(f"  {b['label']}: eta={b['eta']}, f={b['force_amplitude']}")
-    if args.resume:
+    if resume:
         print("  (resuming from latest checkpoints)")
 
     futures = []
     for b in BRANCHES:
         resume_path = None
-        if args.resume:
+        if resume:
             resume_path = f"{b['label']}/checkpoints/checkpoint_t0080.0.h5"
         futures.append(
             run_branch.spawn(
