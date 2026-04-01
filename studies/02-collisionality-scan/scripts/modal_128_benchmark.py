@@ -17,7 +17,7 @@ Usage:
     modal volume ls krmhd-benchmark-vol /
 
     # Download results locally:
-    modal volume get krmhd-benchmark-vol /alfven128_eta4_f0p003 ./benchmark_output/
+    modal volume get krmhd-benchmark-vol /alfven128_eta4_f0p003 ./data/benchmark_128/
 """
 from __future__ import annotations
 
@@ -362,4 +362,4 @@ def main():
     print(f"\nResults saved to Modal volume 'krmhd-benchmark-vol'.")
     print("Download with:")
     for r in results:
-        print(f"  modal volume get krmhd-benchmark-vol /{r['label']} ./benchmark_output/{r['label']}")
+        print(f"  modal volume get krmhd-benchmark-vol /{r['label']} ./data/benchmark_128/{r['label']}")

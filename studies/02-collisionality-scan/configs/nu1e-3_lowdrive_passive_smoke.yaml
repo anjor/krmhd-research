@@ -54,7 +54,7 @@ time_integration:
   save_interval: 100
 
 io:
-  output_dir: data_passive_smoke
+  output_dir: data/passive_smoke
   save_spectra: true
   save_energy_history: true
   save_fields: false

@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-LOCAL_OUTPUT = PROJECT_ROOT / "studies/02-collisionality-scan/benchmark_output"
+LOCAL_OUTPUT = PROJECT_ROOT / "studies/02-collisionality-scan/data/benchmark_128"
 
 VOLUME_NAME = "krmhd-benchmark-vol"
 

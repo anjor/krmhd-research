@@ -27,10 +27,10 @@ STUDY_DIR = Path(__file__).resolve().parents[1]
 FIGURES_DIR = STUDY_DIR / "figures"
 
 COUPLED_RUN = (
-    STUDY_DIR / "data_lowdrive_prod" / "02_nu1e-3_20260330_163006_diagnostics.npz"
+    STUDY_DIR / "data" / "lowdrive_prod" / "02_nu1e-3_20260330_163006_diagnostics.npz"
 )
 PASSIVE_RUN = (
-    STUDY_DIR / "data_passive_smoke" / "02_nu1e-3_20260330_214808_diagnostics.npz"
+    STUDY_DIR / "data" / "passive_smoke" / "02_nu1e-3_20260330_214808_diagnostics.npz"
 )
 
 

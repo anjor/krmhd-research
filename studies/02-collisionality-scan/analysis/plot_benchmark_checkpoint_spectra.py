@@ -102,7 +102,7 @@ def main() -> None:
     parser.add_argument(
         "--input-dir",
         type=Path,
-        default=Path("studies/02-collisionality-scan/benchmark_output/alfven64_resume_t150/checkpoints"),
+        default=Path("studies/02-collisionality-scan/data/benchmark_output/alfven64_resume_t150/checkpoints"),
     )
     parser.add_argument(
         "--output-dir",

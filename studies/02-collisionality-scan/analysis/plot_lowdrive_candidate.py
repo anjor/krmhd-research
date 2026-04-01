@@ -30,8 +30,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 STUDY_DIR = Path(__file__).resolve().parents[1]
 FIGURES_DIR = STUDY_DIR / "figures"
 
-DEV_RUN = STUDY_DIR / "data_lowdrive" / "02_nu1e-3_20260330_161023_diagnostics.npz"
-PROD_RUN = STUDY_DIR / "data_lowdrive_prod" / "02_nu1e-3_20260330_163006_diagnostics.npz"
+DEV_RUN = STUDY_DIR / "data" / "lowdrive" / "02_nu1e-3_20260330_161023_diagnostics.npz"
+PROD_RUN = STUDY_DIR / "data" / "lowdrive_prod" / "02_nu1e-3_20260330_163006_diagnostics.npz"
 
 
 def load_run(path: Path, label: str) -> dict[str, np.ndarray | str]:

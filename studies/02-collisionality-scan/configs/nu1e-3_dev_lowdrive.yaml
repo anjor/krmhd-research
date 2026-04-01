@@ -54,7 +54,7 @@ time_integration:
   save_interval: 50
 
 io:
-  output_dir: data_lowdrive
+  output_dir: data/lowdrive
   save_spectra: true
   save_energy_history: true
   save_fields: false

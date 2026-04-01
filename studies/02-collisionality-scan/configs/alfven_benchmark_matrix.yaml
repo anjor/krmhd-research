@@ -11,42 +11,42 @@ experiments:
   - name: 64_resume_eta3_f0p005_from60
     description: "64^3 exact benchmark branch: increase eta only from the clean t=60 checkpoint."
     resolution: 64
-    resume_from: studies/02-collisionality-scan/benchmark_output/alfven64_resume_t150/checkpoints/checkpoint_t0060.0.h5
+    resume_from: studies/02-collisionality-scan/data/benchmark_output/alfven64_resume_t150/checkpoints/checkpoint_t0060.0.h5
     total_time: 110
     averaging_start: 90
     eta: 3.0
     force_amplitude: 0.005
-    output_dir: studies/02-collisionality-scan/benchmark_output/alfven64_resume_eta3_f0p005_from60
+    output_dir: studies/02-collisionality-scan/data/benchmark_output/alfven64_resume_eta3_f0p005_from60
 
   - name: 64_resume_eta2_f0p004_from60
     description: "64^3 exact benchmark branch: reduce forcing only from the clean t=60 checkpoint."
     resolution: 64
-    resume_from: studies/02-collisionality-scan/benchmark_output/alfven64_resume_t150/checkpoints/checkpoint_t0060.0.h5
+    resume_from: studies/02-collisionality-scan/data/benchmark_output/alfven64_resume_t150/checkpoints/checkpoint_t0060.0.h5
     total_time: 110
     averaging_start: 90
     eta: 2.0
     force_amplitude: 0.004
-    output_dir: studies/02-collisionality-scan/benchmark_output/alfven64_resume_eta2_f0p004_from60
+    output_dir: studies/02-collisionality-scan/data/benchmark_output/alfven64_resume_eta2_f0p004_from60
 
   - name: 64_resume_eta3_f0p004_from60
     description: "64^3 exact benchmark branch: slightly stronger dissipation and slightly weaker forcing."
     resolution: 64
-    resume_from: studies/02-collisionality-scan/benchmark_output/alfven64_resume_t150/checkpoints/checkpoint_t0060.0.h5
+    resume_from: studies/02-collisionality-scan/data/benchmark_output/alfven64_resume_t150/checkpoints/checkpoint_t0060.0.h5
     total_time: 110
     averaging_start: 90
     eta: 3.0
     force_amplitude: 0.004
-    output_dir: studies/02-collisionality-scan/benchmark_output/alfven64_resume_eta3_f0p004_from60
+    output_dir: studies/02-collisionality-scan/data/benchmark_output/alfven64_resume_eta3_f0p004_from60
 
   - name: 64_resume_eta4_f0p003_from60
     description: "64^3 exact benchmark branch: conservative late-time stability test."
     resolution: 64
-    resume_from: studies/02-collisionality-scan/benchmark_output/alfven64_resume_t150/checkpoints/checkpoint_t0060.0.h5
+    resume_from: studies/02-collisionality-scan/data/benchmark_output/alfven64_resume_t150/checkpoints/checkpoint_t0060.0.h5
     total_time: 110
     averaging_start: 90
     eta: 4.0
     force_amplitude: 0.003
-    output_dir: studies/02-collisionality-scan/benchmark_output/alfven64_resume_eta4_f0p003_from60
+    output_dir: studies/02-collisionality-scan/data/benchmark_output/alfven64_resume_eta4_f0p003_from60
 
   - name: 128_baseline_t60
     description: "128^3 exact benchmark smoke branch with the benchmark-style forcing/dissipation defaults made explicit."
@@ -55,4 +55,4 @@ experiments:
     averaging_start: 40
     eta: 2.0
     force_amplitude: 0.01
-    output_dir: studies/02-collisionality-scan/benchmark_output/alfven128_baseline_t60
+    output_dir: studies/02-collisionality-scan/data/benchmark_output/alfven128_baseline_t60

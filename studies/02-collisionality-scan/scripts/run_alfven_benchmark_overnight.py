@@ -15,7 +15,7 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG = PROJECT_ROOT / "studies/02-collisionality-scan/configs/alfven_benchmark_matrix.yaml"
-DEFAULT_LOG = PROJECT_ROOT / "studies/02-collisionality-scan/benchmark_output/overnight_loop_log.csv"
+DEFAULT_LOG = PROJECT_ROOT / "studies/02-collisionality-scan/data/benchmark_output/overnight_loop_log.csv"
 SCORE_SCRIPT = PROJECT_ROOT / "studies/02-collisionality-scan/analysis/score_benchmark_snapshots.py"
 
 

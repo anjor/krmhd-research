@@ -15,10 +15,10 @@ STUDY_DIR = Path(__file__).resolve().parents[1]
 FIGURES_DIR = STUDY_DIR / "figures"
 
 WORKAROUND_RUN = (
-    STUDY_DIR / "data_alfven_benchmark" / "02_alfven_20260331_094512_diagnostics.npz"
+    STUDY_DIR / "data" / "alfven_benchmark" / "02_alfven_20260331_094512_diagnostics.npz"
 )
 M0_RUN = (
-    STUDY_DIR / "data_alfven_benchmark" / "02_alfven_20260331_114340_diagnostics.npz"
+    STUDY_DIR / "data" / "alfven_benchmark" / "02_alfven_20260331_114340_diagnostics.npz"
 )
 
 

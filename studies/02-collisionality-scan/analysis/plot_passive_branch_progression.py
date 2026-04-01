@@ -15,10 +15,10 @@ STUDY_DIR = Path(__file__).resolve().parents[1]
 FIGURES_DIR = STUDY_DIR / "figures"
 
 SMOKE_RUN = (
-    STUDY_DIR / "data_passive_smoke" / "02_nu1e-3_20260330_214808_diagnostics.npz"
+    STUDY_DIR / "data" / "passive_smoke" / "02_nu1e-3_20260330_214808_diagnostics.npz"
 )
 LONG_RUN = (
-    STUDY_DIR / "data_passive_long" / "02_nu1e-3_20260331_074724_diagnostics.npz"
+    STUDY_DIR / "data" / "passive_long" / "02_nu1e-3_20260331_074724_diagnostics.npz"
 )
 
 
