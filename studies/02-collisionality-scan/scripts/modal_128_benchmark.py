@@ -84,6 +84,7 @@ def run_branch(
     force_amplitude: float,
     total_time: float,
     averaging_start: float,
+    resume_from: str | None = None,
 ) -> dict:
     """Run a single 128³ Alfvénic cascade branch with checkpointing."""
     import time as _time
@@ -102,7 +103,7 @@ def run_branch(
         hermite_moment_energy,
     )
     from krmhd.forcing import force_alfven_modes
-    from krmhd.io import save_checkpoint
+    from krmhd.io import save_checkpoint, load_checkpoint
     from krmhd.physics import KRMHDState, initialize_random_spectrum
     from krmhd.spectral import SpectralGrid3D
     from krmhd.timestepping import compute_cfl_timestep, gandalf_step
@@ -127,15 +128,22 @@ def run_branch(
     n_force_min = 1
     n_force_max = 2
 
-    # ---- Initial condition ----
-    grid = SpectralGrid3D.create(
-        Nx=resolution, Ny=resolution, Nz=resolution,
-        Lx=Lx, Ly=Ly, Lz=Lz,
-    )
-    state = initialize_random_spectrum(
-        grid, M=M, alpha=5.0 / 3.0, amplitude=0.05,
-        k_min=1.0, k_max=15.0, v_th=1.0, beta_i=beta_i, seed=42,
-    )
+    # ---- Initial condition or resume ----
+    initial_step = 0
+    if resume_from is not None:
+        ckpt_path = Path(VOL_MOUNT) / resume_from
+        state, grid, metadata = load_checkpoint(str(ckpt_path))
+        initial_step = int(metadata.get("step", 0))
+        print(f"  Resumed from {ckpt_path.name}: t={state.time:.2f}, step={initial_step}")
+    else:
+        grid = SpectralGrid3D.create(
+            Nx=resolution, Ny=resolution, Nz=resolution,
+            Lx=Lx, Ly=Ly, Lz=Lz,
+        )
+        state = initialize_random_spectrum(
+            grid, M=M, alpha=5.0 / 3.0, amplitude=0.05,
+            k_min=1.0, k_max=15.0, v_th=1.0, beta_i=beta_i, seed=42,
+        )
 
     # ---- Compute fixed dt (benchmark convention) ----
     dt = compute_cfl_timestep(state, v_A, cfl_safety)
@@ -160,7 +168,7 @@ def run_branch(
     ekin_history: list[float] = []
     emag_history: list[float] = []
     time_history: list[float] = []
-    last_checkpoint_time = 0.0
+    last_checkpoint_time = float(state.time) if resume_from else 0.0
     wall_start = _time.time()
 
     # ---- Helper: save perpendicular energy spectrum ----
@@ -199,7 +207,7 @@ def run_branch(
 
     # ---- Main time-stepping loop ----
     rng_key = jax.random.PRNGKey(42)
-    step = 0
+    step = initial_step
 
     while state.time < total_time * tau_A:
         step += 1
@@ -330,12 +338,23 @@ def run_branch(
 @app.local_entrypoint()
 def main():
     """Submit all 128³ branches in parallel on A100 GPUs."""
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--resume", action="store_true",
+                        help="Resume from latest checkpoint on volume")
+    args = parser.parse_args()
+
     print(f"Submitting {len(BRANCHES)} 128³ benchmark branches...")
     for b in BRANCHES:
         print(f"  {b['label']}: eta={b['eta']}, f={b['force_amplitude']}")
+    if args.resume:
+        print("  (resuming from latest checkpoints)")
 
     futures = []
     for b in BRANCHES:
+        resume_path = None
+        if args.resume:
+            resume_path = f"{b['label']}/checkpoints/checkpoint_t0080.0.h5"
         futures.append(
             run_branch.spawn(
                 label=b["label"],
@@ -343,6 +362,7 @@ def main():
                 force_amplitude=b["force_amplitude"],
                 total_time=b["total_time"],
                 averaging_start=b["averaging_start"],
+                resume_from=resume_path,
             )
         )
 
