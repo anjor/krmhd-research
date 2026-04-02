@@ -50,32 +50,27 @@ krmhd_image = (
 # Hold dissipation fixed (eta=2, hyper_r=2) and scan forcing amplitude.
 FORCING_MODE = "balanced_lowkz"  # Used in the time-stepping loop
 
+# Run 8: Stronger low-k_z forcing. Previous scan (f=0.001-0.01) was
+# stable but too weak — no cascade developed by t=500.
 BRANCHES = [
     {
-        "label": "alfven128_lowkz_f0p001",
+        "label": "alfven128_lowkz_f0p02",
         "eta": 2.0,
-        "force_amplitude": 0.001,
+        "force_amplitude": 0.02,
         "total_time": 500,
         "averaging_start": 250,
     },
     {
-        "label": "alfven128_lowkz_f0p002",
+        "label": "alfven128_lowkz_f0p05",
         "eta": 2.0,
-        "force_amplitude": 0.002,
+        "force_amplitude": 0.05,
         "total_time": 500,
         "averaging_start": 250,
     },
     {
-        "label": "alfven128_lowkz_f0p005",
+        "label": "alfven128_lowkz_f0p1",
         "eta": 2.0,
-        "force_amplitude": 0.005,
-        "total_time": 500,
-        "averaging_start": 250,
-    },
-    {
-        "label": "alfven128_lowkz_f0p01",
-        "eta": 2.0,
-        "force_amplitude": 0.01,
+        "force_amplitude": 0.1,
         "total_time": 500,
         "averaging_start": 250,
     },
