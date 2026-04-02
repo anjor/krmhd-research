@@ -46,6 +46,9 @@ krmhd_image = (
 # high k_perp that hyper_r=2 can't damp fast enough.
 # Test two eta values: benchmark default (eta=2) and stronger (eta=4).
 # Fresh starts (not resuming — hyper_r change means different physics).
+# Run 6: Resume hyper_r=4 branches from where they were interrupted.
+# Both survived past t=210 (well beyond hyper_r=2 blowup at t≈230).
+# Connection dropped but checkpoints saved on volume.
 BRANCHES = [
     {
         "label": "alfven128_gauss_eta2_f0p005_r4",
@@ -54,6 +57,7 @@ BRANCHES = [
         "hyper_r": 4,
         "total_time": 500,
         "averaging_start": 200,
+        "resume_from": "alfven128_gauss_eta2_f0p005_r4/checkpoints/checkpoint_t0190.0.h5",
     },
     {
         "label": "alfven128_gauss_eta4_f0p005_r4",
@@ -62,6 +66,7 @@ BRANCHES = [
         "hyper_r": 4,
         "total_time": 500,
         "averaging_start": 200,
+        "resume_from": "alfven128_gauss_eta4_f0p005_r4/checkpoints/checkpoint_t0210.0.h5",
     },
 ]
 
