@@ -40,33 +40,44 @@ krmhd_image = (
     )
 )
 
-# Run 5: Try hyper_r=4 for sharper high-k dissipation.
-# All previous runs (hyper_r=2) blow up around t=230-250 regardless
-# of forcing amplitude. The runaway is driven by energy pileup at
-# high k_perp that hyper_r=2 can't damp fast enough.
-# Test two eta values: benchmark default (eta=2) and stronger (eta=4).
-# Fresh starts (not resuming — hyper_r change means different physics).
-# Run 6: Resume hyper_r=4 branches from where they were interrupted.
-# Both survived past t=210 (well beyond hyper_r=2 blowup at t≈230).
-# Connection dropped but checkpoints saved on volume.
+# Run 7: Low-k_z forcing (balanced Elsasser) with fixed dissipation.
+# All Gaussian shell forcing runs blow up at 128³ due to energy pileup
+# at high k_perp — regardless of hyper_r (2 or 4) or eta (2 or 4).
+# The problem is the forcing exciting high-k_z modes that feed the pileup.
+#
+# Switch to balanced_elsasser_lowkz: restricts forcing to |n_z| <= 1,
+# excludes k_z=0, and uses Gaussian white noise (no 1/k_perp singularity).
+# Hold dissipation fixed (eta=2, hyper_r=2) and scan forcing amplitude.
+FORCING_MODE = "balanced_lowkz"  # Used in the time-stepping loop
+
 BRANCHES = [
     {
-        "label": "alfven128_gauss_eta2_f0p005_r4",
+        "label": "alfven128_lowkz_f0p001",
         "eta": 2.0,
-        "force_amplitude": 0.005,
-        "hyper_r": 4,
+        "force_amplitude": 0.001,
         "total_time": 500,
-        "averaging_start": 200,
-        "resume_from": "alfven128_gauss_eta2_f0p005_r4/checkpoints/checkpoint_t0210.0.h5",
+        "averaging_start": 250,
     },
     {
-        "label": "alfven128_gauss_eta4_f0p005_r4",
-        "eta": 4.0,
-        "force_amplitude": 0.005,
-        "hyper_r": 4,
+        "label": "alfven128_lowkz_f0p002",
+        "eta": 2.0,
+        "force_amplitude": 0.002,
         "total_time": 500,
-        "averaging_start": 200,
-        "resume_from": "alfven128_gauss_eta4_f0p005_r4/checkpoints/checkpoint_t0220.0.h5",
+        "averaging_start": 250,
+    },
+    {
+        "label": "alfven128_lowkz_f0p005",
+        "eta": 2.0,
+        "force_amplitude": 0.005,
+        "total_time": 500,
+        "averaging_start": 250,
+    },
+    {
+        "label": "alfven128_lowkz_f0p01",
+        "eta": 2.0,
+        "force_amplitude": 0.01,
+        "total_time": 500,
+        "averaging_start": 250,
     },
 ]
 
@@ -104,7 +115,7 @@ def run_branch(
         energy_spectrum_perpendicular,
         hermite_moment_energy,
     )
-    from krmhd.forcing import force_alfven_modes
+    from krmhd.forcing import force_alfven_modes, force_alfven_modes_balanced
     from krmhd.io import save_checkpoint, load_checkpoint
     from krmhd.physics import KRMHDState, initialize_random_spectrum
     from krmhd.spectral import SpectralGrid3D
@@ -215,18 +226,28 @@ def run_branch(
         step += 1
 
         # Apply forcing FIRST (matching upstream benchmark ordering)
-        # This ensures freshly injected high-k energy is immediately
-        # damped by the dissipative step, rather than sitting undamped
-        # for a full timestep.
         rng_key, subkey = jax.random.split(rng_key)
-        state, rng_key = force_alfven_modes(
-            state,
-            amplitude=force_amplitude,
-            n_min=n_force_min,
-            n_max=n_force_max,
-            dt=dt,
-            key=subkey,
-        )
+        if FORCING_MODE == "balanced_lowkz":
+            state, rng_key = force_alfven_modes_balanced(
+                state,
+                amplitude=force_amplitude,
+                n_min=n_force_min,
+                n_max=n_force_max,
+                dt=dt,
+                key=subkey,
+                max_nz=1,
+                include_nz0=False,
+                correlation=0.0,
+            )
+        else:
+            state, rng_key = force_alfven_modes(
+                state,
+                amplitude=force_amplitude,
+                n_min=n_force_min,
+                n_max=n_force_max,
+                dt=dt,
+                key=subkey,
+            )
 
         # Advance state (includes dissipation)
         state = gandalf_step(
