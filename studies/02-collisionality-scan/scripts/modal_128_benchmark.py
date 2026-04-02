@@ -57,7 +57,7 @@ BRANCHES = [
         "hyper_r": 4,
         "total_time": 500,
         "averaging_start": 200,
-        "resume_from": "alfven128_gauss_eta2_f0p005_r4/checkpoints/checkpoint_t0190.0.h5",
+        "resume_from": "alfven128_gauss_eta2_f0p005_r4/checkpoints/checkpoint_t0210.0.h5",
     },
     {
         "label": "alfven128_gauss_eta4_f0p005_r4",
@@ -66,7 +66,7 @@ BRANCHES = [
         "hyper_r": 4,
         "total_time": 500,
         "averaging_start": 200,
-        "resume_from": "alfven128_gauss_eta4_f0p005_r4/checkpoints/checkpoint_t0210.0.h5",
+        "resume_from": "alfven128_gauss_eta4_f0p005_r4/checkpoints/checkpoint_t0220.0.h5",
     },
 ]
 
