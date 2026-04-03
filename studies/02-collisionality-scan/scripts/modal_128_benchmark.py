@@ -50,34 +50,24 @@ krmhd_image = (
 # Hold dissipation fixed (eta=2, hyper_r=2) and scan forcing amplitude.
 FORCING_MODE = "balanced_lowkz"  # Used in the time-stepping loop
 
-# Run 10: Dissipation scan. Previous runs had η=2 which gives only
-# 0.15% damping/step at k⊥=200 — far too weak for an inertial range.
-# Resume from the clean f=0.02 state at t=500 and increase η.
-# Keep forcing and hyper_r fixed, scan η = 10, 20, 50.
+# Run 11: Extend η=20 and η=50 to t=2000. Both survived to t=1000
+# with spectra still developing. η=10 blew up at t=990.
 BRANCHES = [
-    {
-        "label": "alfven128_lowkz_f0p02_eta10",
-        "eta": 10.0,
-        "force_amplitude": 0.02,
-        "total_time": 1000,
-        "averaging_start": 750,
-        "resume_from": "alfven128_lowkz_f0p02/checkpoints/checkpoint_t0500.0.h5",
-    },
     {
         "label": "alfven128_lowkz_f0p02_eta20",
         "eta": 20.0,
         "force_amplitude": 0.02,
-        "total_time": 1000,
-        "averaging_start": 750,
-        "resume_from": "alfven128_lowkz_f0p02/checkpoints/checkpoint_t0500.0.h5",
+        "total_time": 2000,
+        "averaging_start": 1500,
+        "resume_from": "alfven128_lowkz_f0p02_eta20/checkpoints/checkpoint_t1000.0.h5",
     },
     {
         "label": "alfven128_lowkz_f0p02_eta50",
         "eta": 50.0,
         "force_amplitude": 0.02,
-        "total_time": 1000,
-        "averaging_start": 750,
-        "resume_from": "alfven128_lowkz_f0p02/checkpoints/checkpoint_t0500.0.h5",
+        "total_time": 2000,
+        "averaging_start": 1500,
+        "resume_from": "alfven128_lowkz_f0p02_eta50/checkpoints/checkpoint_t1000.0.h5",
     },
 ]
 
