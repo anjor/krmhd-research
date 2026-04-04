@@ -1,19 +1,22 @@
-"""Run 128³ Hermite calibration on Modal — add g₀ forcing to steady Alfvénic state.
+"""Run 128³ LINEAR Hermite benchmark on Modal — phase mixing only, no z± forcing.
 
-Resume from the η=100 steady Alfvénic checkpoint, expand M from 10 to 128,
-add Hermite forcing on g₀, and monitor the collisional dissipation rate ε_ν.
+This is the control experiment for the nonlinear Hermite calibration. With no
+Alfvén forcing, the z± fields decay and only the Hermite sector evolves via
+the parallel streaming term v_th * k_∥. Expected result:
+  - W(m) ~ m^{-1/2} (thesis prediction for phase mixing)
+  - ε_ν = 2ν Σ_{m≥2} (m/M)^n W_m → const as cascade fills in
 
-v2: Fixed Lambda=√5 (standard coupling for β_i=1). v1 inherited Lambda=1 from
-the Alfvénic checkpoint, which killed the Hermite cascade entirely.
+Same Lambda=√5, same resolution, same Hermite forcing as the nonlinear run.
+Provides a clean comparison: linear phase mixing vs nonlinear turbulent cascade.
 
 Usage:
-    uv run modal run studies/02-collisionality-scan/scripts/modal_128_hermite.py
+    uv run modal run studies/02-collisionality-scan/scripts/modal_128_hermite_linear.py
 """
 from __future__ import annotations
 
 import modal
 
-app = modal.App("krmhd-hermite-128")
+app = modal.App("krmhd-hermite-linear-128")
 
 volume = modal.Volume.from_name("krmhd-benchmark-vol", create_if_missing=True)
 
@@ -32,16 +35,13 @@ krmhd_image = (
 
 VOL_MOUNT = "/data"
 
-# Hermite calibration: single ν value to validate the setup
-# v2: Lambda=√5 fix (v1 had Lambda=1 which killed the cascade)
 BRANCHES = [
     {
-        "label": "hermite128_nu0p01_v2",
+        "label": "hermite128_linear_nu0p01",
         "nu": 0.01,
         "hermite_amplitude": 0.0035,
-        "total_time": 2500,  # 500 τ_A of Hermite evolution
-        "averaging_start": 2400,
-        "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5",
+        "total_time": 500,   # 500 τ_A from scratch
+        "averaging_start": 400,
     },
 ]
 
@@ -52,16 +52,16 @@ BRANCHES = [
     timeout=36000,  # 10 hours
     volumes={VOL_MOUNT: volume},
 )
-def run_hermite_branch(
+def run_linear_hermite(
     label: str,
     nu: float,
     hermite_amplitude: float,
     total_time: float,
     averaging_start: float,
-    resume_from: str,
 ) -> dict:
-    """Run 128³ Alfvénic + Hermite cascade."""
+    """Run 128³ LINEAR Hermite benchmark — no Alfvén forcing."""
     import time as _time
+    from functools import partial
     from pathlib import Path
 
     import jax
@@ -75,14 +75,12 @@ def run_hermite_branch(
         energy_spectrum_perpendicular,
         hermite_moment_energy,
     )
-    from functools import partial
-    from krmhd.forcing import force_alfven_modes_balanced
-    from krmhd.io import save_checkpoint, load_checkpoint
-    from krmhd.physics import KRMHDState, initialize_hermite_moments
+    from krmhd.io import save_checkpoint
+    from krmhd.physics import KRMHDState, initialize_random_spectrum
     from krmhd.spectral import SpectralGrid3D
     from krmhd.timestepping import compute_cfl_timestep, gandalf_step
 
-    # ---- Inlined low-k_z Hermite forcing (from shared/hermite_forcing.py) ----
+    # ---- Inlined low-k_z Hermite forcing ----
     @partial(jax.jit, static_argnums=(10,))
     def _hermite_forcing_lowkz_jit(
         kx, ky, kz, amplitude, kperp_min, kperp_max,
@@ -123,70 +121,57 @@ def run_hermite_branch(
         )
         return forcing, key
 
-    # ---- Output directory on the volume ----
+    # ---- Output directory ----
     out_dir = Path(VOL_MOUNT) / label
     ckpt_dir = out_dir / "checkpoints"
     spectra_dir = out_dir / "spectra"
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     spectra_dir.mkdir(parents=True, exist_ok=True)
 
-    # ---- Fixed physics ----
-    eta = 100.0
-    hyper_r = 2
-    hyper_n = 6  # Hermite hyper-collisions
-    M_new = 128  # Hermite resolution
-    cfl_safety = 0.3
+    # ---- Physics ----
+    resolution = 128
+    Lx = Ly = Lz = 1.0
     v_A = 1.0
-    Lz = 1.0
+    beta_i = 1.0
+    eta = 100.0       # Same as nonlinear run
+    hyper_r = 2
+    hyper_n = 6        # Hermite hyper-collisions
+    M = 128
+    cfl_safety = 0.3
     tau_A = Lz / v_A
 
-    # Alfvén forcing params (same as calibration)
-    force_amplitude = 0.02
+    # Hermite forcing params
     n_force_min = 1
     n_force_max = 2
+    forced_moments = (0,)
 
-    # Hermite forcing params
-    forced_moments = (0,)  # Force g₀ only
+    # Lambda = √5 for β_i = 1
+    Lambda = float(jnp.sqrt(5.0))
 
-    # ---- Load checkpoint and expand Hermite sector ----
-    ckpt_path = Path(VOL_MOUNT) / resume_from
-    state, grid, metadata = load_checkpoint(str(ckpt_path))
-    initial_step = int(metadata.get("step", 0))
-    print(f"  Resumed from {ckpt_path.name}: t={state.time:.2f}, step={initial_step}")
-    print(f"  Original M={state.M}, expanding to M={M_new}")
-
-    # Expand g from M=10 to M=128: keep existing moments, zero-pad the rest
-    old_g = jnp.array(state.g)  # shape (Nz, Ny, Nkx, M_old+1)
-    M_old = state.M
-    new_g = jnp.zeros(
-        (old_g.shape[0], old_g.shape[1], old_g.shape[2], M_new + 1),
-        dtype=old_g.dtype,
+    # ---- Initial condition: small random Alfvén + Hermite seed ----
+    grid = SpectralGrid3D.create(
+        Nx=resolution, Ny=resolution, Nz=resolution,
+        Lx=Lx, Ly=Ly, Lz=Lz,
     )
-    new_g = new_g.at[:, :, :, :M_old + 1].set(old_g)
-
-    # Add small Hermite seed to avoid g=0 fixed point
-    seed_g = initialize_hermite_moments(
-        grid, M_new, perturbation_amplitude=1e-3, seed=137,
+    # Start with very small z± (will decay without forcing)
+    state = initialize_random_spectrum(
+        grid, M=M, alpha=5.0 / 3.0, amplitude=0.01,
+        k_min=1.0, k_max=15.0, v_th=1.0, beta_i=beta_i, seed=42,
     )
-    # Only seed moments beyond M_old (don't disturb existing)
-    new_g = new_g.at[:, :, :, M_old + 1:].set(seed_g[:, :, :, M_old + 1:])
 
-    # Create new state with expanded Hermite sector
-    # Lambda=√5 for β_i=1 — Lambda=1 kills the Hermite cascade entirely
-    Lambda_correct = float(jnp.sqrt(5.0))
-    print(f"  Setting Lambda={Lambda_correct:.4f} (was {state.Lambda})")
+    # Override Lambda and nu
     state = KRMHDState(
         z_plus=state.z_plus,
         z_minus=state.z_minus,
         B_parallel=state.B_parallel,
-        g=new_g,
-        M=M_new,
-        beta_i=state.beta_i,
+        g=state.g,
+        M=M,
+        beta_i=beta_i,
         v_th=state.v_th,
         nu=nu,
-        Lambda=Lambda_correct,
-        time=state.time,
-        grid=state.grid,
+        Lambda=Lambda,
+        time=0.0,
+        grid=grid,
     )
 
     # ---- Compute fixed dt ----
@@ -197,10 +182,11 @@ def run_hermite_branch(
     snapshot_interval = 500
 
     print(f"\n{'='*70}")
-    print(f"128³ Alfvénic + Hermite Cascade: {label}")
+    print(f"128³ LINEAR Hermite Benchmark: {label}")
     print(f"{'='*70}")
     print(f"  eta={eta}, nu={nu}, hyper_r={hyper_r}, hyper_n={hyper_n}")
-    print(f"  M={M_new}, Alfvén f={force_amplitude}, Hermite f={hermite_amplitude}")
+    print(f"  M={M}, Lambda={Lambda:.4f}")
+    print(f"  Hermite f={hermite_amplitude}, NO Alfvén forcing")
     print(f"  forced_moments={forced_moments}")
     print(f"  dt={dt:.6f}, total_time={total_time} τ_A")
     print(f"  Device: {jax.devices()}")
@@ -211,18 +197,15 @@ def run_hermite_branch(
     eps_nu_history: list[float] = []
     hermite_energy_history: list[float] = []
     time_history: list[float] = []
-    last_checkpoint_time = float(state.time)
+    last_checkpoint_time = 0.0
     wall_start = _time.time()
 
-    # ---- Helper: compute ε_ν ----
     def compute_eps_nu(E_m: np.ndarray) -> float:
-        """Collisional dissipation: ε_ν = 2ν Σ_{m≥2} (m/M)^hyper_n E_m."""
         m_idx = np.arange(len(E_m))
-        rates = nu * (m_idx / M_new) ** hyper_n
-        rates[:2] = 0.0  # m=0,1 exempt
+        rates = nu * (m_idx / M) ** hyper_n
+        rates[:2] = 0.0
         return float(2.0 * np.sum(rates * E_m))
 
-    # ---- Helper: save spectrum + Hermite diagnostics ----
     def save_spectrum(state: KRMHDState, step: int) -> None:
         k_perp_bins, E_perp = energy_spectrum_perpendicular(state)
         E_m = np.array(hermite_moment_energy(state))
@@ -237,7 +220,6 @@ def run_hermite_branch(
             step=step,
         )
 
-    # ---- Helper: save checkpoint ----
     def do_checkpoint(state: KRMHDState, step: int, desc: str) -> None:
         t = float(state.time)
         path = ckpt_dir / f"checkpoint_t{t:06.1f}.h5"
@@ -245,46 +227,29 @@ def run_hermite_branch(
             "step": step,
             "eta": eta,
             "nu": nu,
-            "force_amplitude": force_amplitude,
             "hermite_amplitude": hermite_amplitude,
             "hyper_r": hyper_r,
             "hyper_n": hyper_n,
             "v_A": v_A,
-            "n_force_min": n_force_min,
-            "n_force_max": n_force_max,
-            "resolution": 128,
-            "M": M_new,
+            "resolution": resolution,
+            "M": M,
+            "Lambda": Lambda,
             "label": label,
             "description": desc,
+            "linear_benchmark": True,
         }
         save_checkpoint(state, str(path), metadata=metadata, overwrite=True)
         volume.commit()
         print(f"  💾 Checkpoint: {path.name} ({desc})")
 
-    # ---- Main loop ----
+    # ---- Main loop: Hermite forcing only, NO Alfvén forcing ----
     rng_key = jax.random.PRNGKey(42)
-    step = initial_step
+    step = 0
 
     while state.time < total_time * tau_A:
         step += 1
 
-        # Apply Alfvén forcing FIRST
-        rng_key, subkey = jax.random.split(rng_key)
-        state, rng_key = force_alfven_modes_balanced(
-            state,
-            amplitude=force_amplitude,
-            n_min=n_force_min,
-            n_max=n_force_max,
-            dt=dt,
-            key=subkey,
-            max_nz=1,
-            include_nz0=False,
-            correlation=0.0,
-        )
-
-        # Apply Hermite forcing (low-k_z, same mask as Alfvén forcing)
-        # Hermite cascade rate ~ k_∥, so full-shell forcing would inject
-        # energy at high k_z that cascades to high m too fast → pileup.
+        # Apply Hermite forcing ONLY (no Alfvén forcing — linear benchmark)
         rng_key, subkey = jax.random.split(rng_key)
         hermite_forcing_field, rng_key = _hermite_forcing_lowkz(
             state.grid, hermite_amplitude,
@@ -352,7 +317,7 @@ def run_hermite_branch(
             do_checkpoint(state, step, f"periodic t={state.time:.1f}")
             last_checkpoint_time = state.time
 
-        # ---- Spectral snapshots during averaging ----
+        # ---- Spectral snapshots ----
         if state.time >= averaging_start * tau_A and step % snapshot_interval == 0:
             save_spectrum(state, step)
 
@@ -362,11 +327,11 @@ def run_hermite_branch(
 
     wall_time = _time.time() - wall_start
 
-    # ---- Steady-state check on ε_ν ----
+    # ---- Steady-state check ----
     if len(eps_nu_history) >= 4:
         half = len(eps_nu_history) // 2
         second_half = eps_nu_history[half:]
-        valid = [e for e in second_half if np.isfinite(e)]
+        valid = [e for e in second_half if np.isfinite(e) and e > 0]
         if valid:
             mean_eps = sum(valid) / len(valid)
             max_dev = max(abs(e - mean_eps) for e in valid)
@@ -410,28 +375,27 @@ def run_hermite_branch(
 
 @app.local_entrypoint()
 def main():
-    """Submit Hermite calibration runs."""
-    print(f"Submitting {len(BRANCHES)} Hermite calibration branches...")
+    """Submit linear Hermite benchmark."""
+    print(f"Submitting {len(BRANCHES)} linear Hermite benchmark branches...")
     for b in BRANCHES:
         print(f"  {b['label']}: ν={b['nu']}, hermite_f={b['hermite_amplitude']}")
 
     futures = []
     for b in BRANCHES:
         futures.append(
-            run_hermite_branch.spawn(
+            run_linear_hermite.spawn(
                 label=b["label"],
                 nu=b["nu"],
                 hermite_amplitude=b["hermite_amplitude"],
                 total_time=b["total_time"],
                 averaging_start=b["averaging_start"],
-                resume_from=b["resume_from"],
             )
         )
 
     results = [f.get() for f in futures]
 
     print(f"\n{'='*80}")
-    print("HERMITE CALIBRATION RESULTS")
+    print("LINEAR HERMITE BENCHMARK RESULTS")
     print(f"{'='*80}")
     for r in results:
         print(f"  {r['label']}: {r['verdict']}, ε_ν={r['eps_nu_final']:.4e}, "
