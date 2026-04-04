@@ -61,7 +61,7 @@ BRANCHES = [
         "force_amplitude": 0.02,
         "total_time": 2000,
         "averaging_start": 1900,
-        "resume_from": "alfven128_lowkz_f0p02_eta50/checkpoints/checkpoint_t1800.0.h5",
+        "resume_from": "alfven128_lowkz_f0p02_eta50/checkpoints/checkpoint_t1800.1.h5",
     },
 ]
 
