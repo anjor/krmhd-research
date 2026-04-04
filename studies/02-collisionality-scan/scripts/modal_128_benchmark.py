@@ -50,24 +50,18 @@ krmhd_image = (
 # Hold dissipation fixed (eta=2, hyper_r=2) and scan forcing amplitude.
 FORCING_MODE = "balanced_lowkz"  # Used in the time-stepping loop
 
-# Run 11: Extend η=20 and η=50 to t=2000. Both survived to t=1000
-# with spectra still developing. η=10 blew up at t=990.
+# Run 12: Step 1 of Hermite phase — stabilize Alfvénic spectrum with η=100.
+# Resume from η=50 t=1800 checkpoint (best developed spectrum before pileup).
+# η=100 gives 7.4% damping/step at k=200, should suppress the mild pileup.
+# Run 200 τ_A to confirm stability, then proceed to Hermite forcing.
 BRANCHES = [
     {
-        "label": "alfven128_lowkz_f0p02_eta20",
-        "eta": 20.0,
+        "label": "alfven128_lowkz_f0p02_eta100",
+        "eta": 100.0,
         "force_amplitude": 0.02,
         "total_time": 2000,
-        "averaging_start": 1500,
-        "resume_from": "alfven128_lowkz_f0p02_eta20/checkpoints/checkpoint_t1000.0.h5",
-    },
-    {
-        "label": "alfven128_lowkz_f0p02_eta50",
-        "eta": 50.0,
-        "force_amplitude": 0.02,
-        "total_time": 2000,
-        "averaging_start": 1500,
-        "resume_from": "alfven128_lowkz_f0p02_eta50/checkpoints/checkpoint_t1000.0.h5",
+        "averaging_start": 1900,
+        "resume_from": "alfven128_lowkz_f0p02_eta50/checkpoints/checkpoint_t1800.0.h5",
     },
 ]
 
