@@ -32,12 +32,12 @@ krmhd_image = (
 
 VOL_MOUNT = "/data"
 
-# Hermite calibration: single ν value to validate the setup
-# v2: Lambda=√5 fix (v1 had Lambda=1 which killed the cascade)
+# Hermite calibration: ν=1.0 (ν=0.01 blew up — too weak for M=128)
+# v3: Lambda=√5 fix + ν=1.0
 BRANCHES = [
     {
-        "label": "hermite128_nu0p01_v2",
-        "nu": 0.01,
+        "label": "hermite128_nu1p0_v3",
+        "nu": 1.0,
         "hermite_amplitude": 0.0035,
         "total_time": 2500,  # 500 τ_A of Hermite evolution
         "averaging_start": 2400,
