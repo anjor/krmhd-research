@@ -37,8 +37,8 @@ VOL_MOUNT = "/data"
 
 BRANCHES = [
     {
-        "label": "hermite128_linear_nu0p01",
-        "nu": 0.01,
+        "label": "hermite128_linear_nu1p0",
+        "nu": 1.0,
         "hermite_amplitude": 0.0035,
         "total_time": 500,   # 500 τ_A from scratch
         "averaging_start": 400,
