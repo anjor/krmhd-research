@@ -32,17 +32,17 @@ krmhd_image = (
 
 VOL_MOUNT = "/data"
 
-# Hermite calibration: ν=1.0 (ν=0.01 blew up — too weak for M=128)
-# v3: Lambda=√5 fix + ν=1.0
+# Hermite ν-scan: find highest ν that stabilizes, then lower
+# v4: scan ν=100,50,20,10 in parallel — short runs (50 τ_A) to find stability threshold
 BRANCHES = [
-    {
-        "label": "hermite128_nu1p0_v3",
-        "nu": 1.0,
-        "hermite_amplitude": 0.0035,
-        "total_time": 2500,  # 500 τ_A of Hermite evolution
-        "averaging_start": 2400,
-        "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5",
-    },
+    {"label": "hermite128_nu100", "nu": 100.0, "hermite_amplitude": 0.0035, "total_time": 2050, "averaging_start": 2040,
+     "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5"},
+    {"label": "hermite128_nu50",  "nu": 50.0,  "hermite_amplitude": 0.0035, "total_time": 2050, "averaging_start": 2040,
+     "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5"},
+    {"label": "hermite128_nu20",  "nu": 20.0,  "hermite_amplitude": 0.0035, "total_time": 2050, "averaging_start": 2040,
+     "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5"},
+    {"label": "hermite128_nu10",  "nu": 10.0,  "hermite_amplitude": 0.0035, "total_time": 2050, "averaging_start": 2040,
+     "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5"},
 ]
 
 
