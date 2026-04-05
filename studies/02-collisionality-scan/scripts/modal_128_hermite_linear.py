@@ -37,7 +37,7 @@ VOL_MOUNT = "/data"
 
 BRANCHES = [
     {
-        "label": "hermite128_linear_nu1p0",
+        "label": "hermite128_linear_16cube_nu1p0",
         "nu": 1.0,
         "hermite_amplitude": 0.0035,
         "total_time": 500,   # 500 τ_A from scratch
@@ -48,7 +48,7 @@ BRANCHES = [
 
 @app.function(
     image=krmhd_image,
-    gpu="A100",
+    gpu="T4",  # 16³ is tiny, no need for A100
     timeout=36000,  # 10 hours
     volumes={VOL_MOUNT: volume},
 )
@@ -129,7 +129,9 @@ def run_linear_hermite(
     spectra_dir.mkdir(parents=True, exist_ok=True)
 
     # ---- Physics ----
-    resolution = 128
+    # Linear phase mixing: no nonlinear k-coupling, so spatial resolution
+    # doesn't matter. Use 16³ instead of 128³ for massive speedup.
+    resolution = 16
     Lx = Ly = Lz = 1.0
     v_A = 1.0
     beta_i = 1.0
