@@ -34,13 +34,14 @@ VOL_MOUNT = "/data"
 
 # Hermite ν-scan: find highest ν that stabilizes, then lower
 # v4: scan ν=100,50,20,10 in parallel — short runs (50 τ_A) to find stability threshold
+# Extend stable probes to 200 τ_A + probe ν=2 for threshold
 BRANCHES = [
-    {"label": "hermite128_nu5",  "nu": 5.0, "hermite_amplitude": 0.0035, "total_time": 2050, "averaging_start": 2040,
+    {"label": "hermite128_nu5_long",  "nu": 5.0, "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
+     "resume_from": "hermite128_nu5/checkpoints/checkpoint_t2050.0.h5"},
+    {"label": "hermite128_nu3_long",  "nu": 3.0, "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
+     "resume_from": "hermite128_nu3/checkpoints/checkpoint_t2050.0.h5"},
+    {"label": "hermite128_nu2",       "nu": 2.0, "hermite_amplitude": 0.0035, "total_time": 2050, "averaging_start": 2040,
      "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5"},
-    {"label": "hermite128_nu3",  "nu": 3.0, "hermite_amplitude": 0.0035, "total_time": 2050, "averaging_start": 2040,
-     "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5"},
-    {"label": "hermite128_nu10_long", "nu": 10.0, "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
-     "resume_from": "hermite128_nu10/checkpoints/checkpoint_t2030.0.h5"},
 ]
 
 
