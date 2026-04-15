@@ -36,13 +36,8 @@ krmhd_image = (
 VOL_MOUNT = "/data"
 
 BRANCHES = [
-    {
-        "label": "hermite128_linear_16cube_nu1p0",
-        "nu": 1.0,
-        "hermite_amplitude": 0.0035,
-        "total_time": 500,   # 500 τ_A from scratch
-        "averaging_start": 400,
-    },
+    {"label": "hermite_linear_16cube_nu5_long",  "nu": 5.0,  "hermite_amplitude": 0.0035, "total_time": 50, "averaging_start": 40},
+    {"label": "hermite_linear_16cube_nu10_long", "nu": 10.0, "hermite_amplitude": 0.0035, "total_time": 50, "averaging_start": 40},
 ]
 
 
