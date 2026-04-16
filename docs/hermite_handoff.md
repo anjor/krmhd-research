@@ -1,12 +1,26 @@
 # Hermite Cascade Handoff — April 2026
 
+## Current status (2026-04-16)
+
+**Blocked on GANDALF fix.** The original "cascade outruns damping" story
+(first two paragraphs below) turned out to be wrong — see "Diagnosis
+update — April 16, 2026" below. The nonlinear-Hermite blowup is a
+Lawson-RK4 numerical instability at high m·k_z, not a physical pileup.
+
+GANDALF issue filed: [anjor/gandalf#137](https://github.com/anjor/gandalf/issues/137)
+(IMEX — implicit streaming + damping, explicit nonlinear advection).
+Upstream work is in progress. The nu-scan at M=128 will be re-run once
+the fix ships; see "What to run once GANDALF ships a fix" below.
+
 ## Summary
 
 The 128^3 Hermite cascade campaign (April 4-6, 2026) achieved a working
 **linear phase-mixing benchmark** but revealed that **all nonlinear runs
 (with z+/- turbulence) eventually blow up** regardless of collisionality.
-This is the key finding: the Alfvenic turbulent background drives the
-Hermite cascade faster than (m/M)^6 hyper-dissipation can absorb at M=128.
+The original interpretation — Alfvénic turbulence driving the Hermite
+cascade faster than (m/M)^6 hyper-dissipation can absorb at M=128 — is
+superseded by the numerical-instability diagnosis further down; the
+blowup is a scheme-level issue, not physics.
 
 ## What was accomplished
 
