@@ -35,13 +35,16 @@ VOL_MOUNT = "/data"
 # Hermite ν-scan: find highest ν that stabilizes, then lower
 # v4: scan ν=100,50,20,10 in parallel — short runs (50 τ_A) to find stability threshold
 # Extend stable probes to 200 τ_A + probe ν=2 for threshold
-# GANDALF v0.5.0 IMEX-RK222 ν-scan for the dissipative-anomaly signature.
-# ν=3 acceptance already cleared (hermite128_nu3_imex: ε_ν=49.2±10.7 over 200 τ_A).
-# Run ν=5 and ν=10 to test ν-independence of the ε_ν plateau.
+# IMEX-RK222 ν-scan extensions: probe the ε_ν(ν) curve.
+# Already have ν∈{3,5,10} at 49.2 — plateau confirmed. Add ν=1 (expect possible
+# deviation at low ν) and ν∈{20,50} (expect ε_ν to rise as hyper-dissipation
+# outruns the cascade → leaves the plateau).
 BRANCHES = [
-    {"label": "hermite128_nu5_imex",  "nu": 5.0,  "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
+    {"label": "hermite128_nu1_imex",  "nu": 1.0,  "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
      "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5"},
-    {"label": "hermite128_nu10_imex", "nu": 10.0, "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
+    {"label": "hermite128_nu20_imex", "nu": 20.0, "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
+     "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5"},
+    {"label": "hermite128_nu50_imex", "nu": 50.0, "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
      "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5"},
 ]
 

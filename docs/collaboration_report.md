@@ -91,6 +91,17 @@ research context for the eventual write-up.
 - **Extended runs to t=2000 (2026-04-03 → 2026-04-04).** η=20 blew up again at t=1265 (same instability). η=50 survived to t=1960 before NaN. The η=50 spectra at t=1800 are the best achieved: inertial-range-like region from n⊥≈3 to n⊥≈15–20 with appropriate slope. Clean window is t=1500–1800; mild pileup appears at t≈1900 near dealiasing boundary (n=42).
 - **Mode number insight (2026-04-04).** Plotting against mode number n⊥ (instead of k⊥ with 2π factors) clarified the picture: forcing at n=1–2, cascade extends to n≈15–20, dealiasing cutoff at n=42. The usable inertial range is about one decade in scale.
 - **Next phase: η=100 stabilization + Hermite (2026-04-04).** Resuming from η=50 t=1800 checkpoint with η=100 (7.4% damping/step at k=200) to suppress the mild pileup and stabilize the Alfvénic spectrum. If successful, this becomes the base state for Hermite forcing (M=128, hyper_n=6, g₀ forcing, ν=0.01 calibration). Filed long-time instability as gandalf#136.
+- **η=100 Alfvénic base state reached (2026-04-05).** `alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5` became the production Alfvénic steady state: 8% E variation over the last 50 τ_A, clean low-to-mid-k⊥ cascade. Every subsequent Hermite run resumes from this checkpoint.
+- **Lambda=1 gotcha in checkpoints (2026-04-05).** Alfvénic checkpoints store `Lambda=1.0`; the factor `(1-1/Λ)` in the g-coupling then vanishes and the Hermite cascade is silently killed. Every Hermite resume now explicitly overrides to `Λ=√5` (the β_i=1 value). Filed as a local procedural rule.
+- **Linear Hermite benchmark works (2026-04-05).** 16³-spatial, M=128, ν=1, no z± drive: 500 τ_A of clean phase mixing, W(m) monotonically decreasing, ε_ν ~ 0.23 with 94% noise. Establishes that the Hermite sector plumbing is correct; nonlinear failures are not a linear-solver problem.
+- **Nonlinear Hermite campaign — all runs blow up (2026-04-04 → 2026-04-14).** ν-scan at M=128, 128³, hyper_n=6 (ν=1,3,5,10 long; ν=20,50,100 short probes). Every long run eventually NaNs: ν=1 at ~80 τ_A, ν=3 at ~122, ν=5 at ~167, ν=10 at ~184. Higher ν delays onset but does not prevent it. The 50-τ_A probes (ν=20,50,100) gave ε_ν ~ 46–63, which looked like a plateau but turned out to be transients of a numerically unstable run.
+- **Diagnosis: numerical, not physical (2026-04-16).** Initial hypothesis was physical pileup (Alfvénic k_z broadening → cascade outruns damping at m=M). Direct inspection of saved W(m,t), g k_z spectra, and onset statistics killed that story: W(m=M) stays at O(1) noise for the entire 100–180 τ_A before blowup (no accumulation), g(k_z, m=M) is at 10⁻¹⁴ pre-blowup (no flux arriving), blowup is simultaneous across all m at ν-independent rate (should be localized at m=M if physical), and z± k_z spectrum matches the Alfvénic-only reference. Diagnostics live in `analysis/diagnose_hermite_blowup.py` and `figures/hermite_blowup_*.png`. Handoff written at `docs/hermite_handoff.md`.
+- **GANDALF issue #137 filed (2026-04-16).** Root cause: Lawson-RK4 composition of an exact integrating factor for streaming with explicit RK stages on nonlinear advection leaks `dt·v_th·k_z·√m/Λ` into the stability envelope. Candidate fix proposed: IMEX — implicit streaming + damping, explicit nonlinear advection. Acceptance test defined: ν=3, M=128, 128³, 200 τ_A without blowup and ε_ν reaching steady value.
+- **GANDALF v0.5.0 shipped (2026-04-17).** PR #138 implements ARS(2,2,2) IMEX-RK222 with per-k_z batched LU solve for the implicit streaming + damping operator; nonlinear Poisson bracket stays explicit. `gandalf_step` default flipped to `scheme="imex_rk222"`. PR #143 adds advisory `scheme` checkpoint metadata with mismatch warning so we don't silently resume on the wrong integrator.
+- **Acceptance test passed first try (2026-04-17).** `hermite128_nu3_imex` ran 200 τ_A from the Alfvénic checkpoint, 7.2h on A100, zero NaN. After the 30 τ_A Hermite fill-in transient, ε_ν = 49.2 ± 10.7 (rel 21.6%). E_total still drifting upward (×1.52) — injection > dissipation because the Hermite sector was empty at resume; full energy balance would need a longer run, but ε_ν is already steady.
+- **Dissipative anomaly confirmed (2026-04-18).** `hermite128_nu5_imex` and `hermite128_nu10_imex` completed cleanly at 200 τ_A each. ε_ν mean (skipping transient): ν=3: 49.21±10.65, ν=5: 49.26±10.61, ν=10: 49.23±10.81. Across 3.3× in ν the means agree to 0.1% and E_total rises by identical 1.52×. Combined with the old Lawson short probes (ν=20,50,100 at 60/53/46 over 50 τ_A before numerical blowup), ε_ν ≈ 50 holds across >30× in ν. Figure: `figures/hermite128_imex_nu_scan.{png,pdf}`.
+- **Phase-mixing spectrum confirmed too (2026-04-18).** Time-averaged W(m) over the 100 τ_A averaging window (83 snapshots per run) cleanly follows m^{-1/2} in the inertial range m∈[4,40]: fitted slopes −0.484 (ν=3), −0.489 (ν=5), −0.493 (ν=10), all within ~2% of the Zocco–Schekochihin prediction. At high m the curves split in the expected ν-order (less damping → more energy piles up before (m/M)⁶ kicks in), but the dissipation integrand 2ν(m/M)⁶W(m) nearly coincides across ν in the bulk dissipation range m≈70–110 — cumulative sums match to 0.2% (48.1, 48.0, 48.0). Figure: `figures/hermite128_imex_Wm_spectrum.{png,pdf}`.
+- **Extended ν-scan in flight (2026-04-18).** Three more runs submitted to probe the ε_ν(ν) shape: ν=1 (possible low-ν departure from plateau), ν=20 and ν=50 (expected to leave plateau as hyper-dissipation outruns the cascade). Expected wall time ~7h on A100 each, running in parallel from the same Alfvénic t=2000 checkpoint. Once complete, the summary plot ε_ν(ν) vs ν will be the headline figure for the write-up.
 
 ---
 
@@ -196,14 +207,47 @@ The AI found GANDALF's own benchmark parameters (from `alfvenic_cascade_benchmar
 
 Updated all 9 configs to these benchmark parameters and ran the full sweep on Modal with GANDALF v0.4.2. **All 9 configurations ran to completion with zero blowups** -- the first fully stable sweep.
 
-### Phase 9: Current status
+### Phase 9: $64^2 \times 32$ scan (superseded)
 
-**Result:** $\varepsilon_\nu \propto \nu$ (linear scaling, no plateau). The Hermite cascade is not yet self-sustaining from MHD turbulence. The $g$ energy decays from its initial seed rather than being replenished by the MHD cascade.
+The original $64^2 \times 32$, $M=32$ scan with GANDALF v0.4.2 reported $\varepsilon_\nu \propto \nu$ with no plateau, and was interpreted as the Hermite cascade failing to self-sustain. That conclusion no longer stands: the campaign was rebuilt at much higher resolution and later uncovered a scheme-level numerical problem that had been masking the physics. This section is retained for historical context; the operational results are in Phases 10--11 below.
 
-**Interpretation:** The dissipative anomaly requires the MHD turbulence to actively drive energy into the Hermite hierarchy via the coupling terms $\{z^\pm, g_m\}$. The coupling mechanism exists ($\Lambda = \sqrt{5}$) but either:
-- The runs need to be longer for the cascade to establish itself
-- Stronger turbulence amplitude is needed to overcome the initial transient
-- Higher Hermite resolution ($M > 32$) may be required to resolve the cascade front
+### Phase 10: $128^3$ Alfvenic base state and nonlinear Hermite blowup (April 2026)
+
+With Modal GPU infrastructure in place, the campaign moved to $128^3$ spatial with $M=128$. Establishing a clean Alfvenic steady state at this resolution took several weeks of parameter-space navigation (details in the rolling notes above): the key lever was raising $\eta$ to 100 with low-$k_z$ balanced Elsasser forcing, which stabilized the long-time cascade without a late-time pileup. The checkpoint `alfven128_lowkz_f0p02_eta100/...t2000.0.h5` became the production base state and has been reused unchanged in every subsequent Hermite run.
+
+Turning on $g_0$ forcing on top of that base state produced nonlinear Hermite runs that all blew up. Higher $\nu$ delayed onset (80, 122, 167, 184 $\tau_A$ for $\nu=1,3,5,10$) but did not prevent it. Short 50 $\tau_A$ probes at $\nu=20,50,100$ gave $\varepsilon_\nu \sim 46$--$63$, which looked like a plateau but turned out to be transients of a numerically unstable run.
+
+**Diagnosis (2026-04-16):** direct inspection of the saved data contradicted the initial "physical pileup" narrative. $W(m=M)$ sat at $\mathcal{O}(1)$ noise through the entire 100--180 $\tau_A$ pre-blowup window with no accumulation; the $k_z$ spectrum of $g(m=M)$ was at the $10^{-14}$ noise floor, so no cascade flux was arriving at $m=M$ in the first place; the blowup was simultaneous at all $m$ at roughly the same rate (physical pileup would localize at $m \approx M$); and the $z^\pm$ $k_z$ spectrum matched the Alfvenic-only reference. All signatures of a numerical instability, not a physical cascade.
+
+### Phase 11: GANDALF IMEX-RK222 fix and the dissipative anomaly (2026-04-17 to 2026-04-18)
+
+**Issue gandalf#137 filed (2026-04-16).** The root-cause hypothesis: Lawson-RK4 composes an exact integrating factor for streaming with explicit RK stages on nonlinear advection, leaking $\mathrm{d}t \cdot v_{\mathrm{th}} k_z \sqrt{m}/\Lambda$ into the stability envelope. Proposed fix: IMEX with implicit streaming + hyper-collisional damping and explicit nonlinear advection. Acceptance test defined: $\nu=3$, $M=128$, $128^3$, 200 $\tau_A$ without blowup.
+
+**GANDALF v0.5.0 (2026-04-17).** PR #138 implements ARS(2,2,2) IMEX-RK222 with a per-$k_z$ batched LU solve for the implicit operator; nonlinear advection stays explicit. `gandalf_step` default flipped to `scheme="imex_rk222"`. PR #143 adds advisory `scheme` checkpoint metadata with mismatch warning to guard against silently resuming on the wrong integrator.
+
+**Acceptance test passed first try.** `hermite128_nu3_imex` ran 200 $\tau_A$ from the Alfvenic checkpoint in 7.2h on an A100, zero NaN. After skipping the first 30 $\tau_A$ of Hermite fill-in, $\varepsilon_\nu = 49.2 \pm 10.7$ (rel 21.6%). $E_\mathrm{total}$ still drifts upward ($\times 1.52$) because the Hermite sector was empty at resume; full energy balance would need a longer run, but $\varepsilon_\nu$ itself is already steady.
+
+**Dissipative anomaly confirmed (2026-04-18).** Three IMEX runs at $\nu \in \{3, 5, 10\}$ gave statistically identical time-averaged dissipation:
+
+| $\nu$ | $\varepsilon_\nu$ (mean $\pm$ std) | rel std | $E_\mathrm{total}$ ratio |
+|-------|------------------------------------|---------|--------------------------|
+| 3     | $49.21 \pm 10.65$                  | 21.6%   | 1.52                     |
+| 5     | $49.26 \pm 10.61$                  | 21.5%   | 1.52                     |
+| 10    | $49.23 \pm 10.81$                  | 22.0%   | 1.52                     |
+
+Across $3.3\times$ in $\nu$ the means agree to 0.1%. Combined with the short Lawson probes at $\nu \in \{20, 50, 100\}$ ($\varepsilon_\nu \approx 60, 53, 46$ before numerical blowup set in), $\varepsilon_\nu \approx 50$ holds across $> 30\times$ in $\nu$.
+
+Time-averaged $\langle W(m)\rangle_t$ over the 100 $\tau_A$ averaging window (83 snapshots per run) cleanly follows $m^{-1/2}$ in the inertial range $m \in [4, 40]$:
+
+| $\nu$ | fitted slope |
+|-------|--------------|
+| 3     | $-0.484$     |
+| 5     | $-0.489$     |
+| 10    | $-0.493$     |
+
+All three match the Zocco--Schekochihin phase-mixing prediction to $\sim 2\%$. At high $m$ the curves split in the expected $\nu$-order (weaker damping $\to$ more energy piles up before $(m/M)^6$ kicks in), but the dissipation integrand $2\nu(m/M)^6 W(m)$ nearly coincides across $\nu$ in $m \approx 70$--$110$, with cumulative sums $48.1, 48.0, 48.0$ --- agreement to 0.2%. Figures: `figures/hermite128_imex_nu_scan.{png,pdf}`, `figures/hermite128_imex_Wm_spectrum.{png,pdf}`.
+
+**Extended scan in flight.** Three more runs submitted on 2026-04-18: $\nu = 1$ (possible low-$\nu$ deviation from plateau), $\nu = 20$, $\nu = 50$ (expected to leave the plateau as hyper-dissipation starts to outrun the cascade). Once complete, a dedicated $\varepsilon_\nu(\nu)$ plot will be the headline summary figure.
 
 ---
 
@@ -215,9 +259,15 @@ Updated all 9 configs to these benchmark parameters and ran the full sweep on Mo
 | #120 | Hermite time integration unconditionally unstable | Fixed in v0.4.0 (PR #121) |
 | #122 | Missing dealiasing in RK2 step and RHS assembly for $g$ | Fixed in v0.4.2 (PR #123) |
 | #124 | RK2 fundamentally unstable for Hermite advection | Fixed in v0.4.2 (PR #125) |
-| #126 | RK4 returns time as JAX array instead of float | Workaround in `modal_app.py` |
+| #126 | RK4 returns time as JAX array instead of float | Fixed in v0.4.3 (PR #134) |
+| #129 | Docs: kinetic-turbulence getting-started guide and forcing/diagnostic clarifications | Fixed in v0.4.3 (PR #130) |
+| #131 | `static_argnums` bug in `gaussian_white_noise_fourier_perp_lowkz` JIT wrapper | Fixed in v0.4.3 (PR #135) |
+| #132 | Support RMHD-only runs with $M=0$ (docs say it works, code rejects $M<2$) | Fixed in v0.4.4 (PR #133) |
+| #136 | Resolution-independent hyper-dissipation sets $\nu$-independent damping rate at the grid edge | Open |
+| #137 | Numerical instability in Hermite integrator at high $M \cdot k_z$ --- propose IMEX | Fixed in v0.5.0 (PR #138) |
+| #142 | Record integrator scheme on checkpoints with mismatch warning | Fixed in v0.5.0 (PR #143) |
 
-The three stability/dealiasing bugs (#120, #122, #124) were all discovered through the process of trying to run the collisionality scan. They represent genuine numerical analysis insights: the mismatch between the time-integration scheme and the mathematical character of the equations (oscillatory and advective terms needing integrating factors and higher-order methods, respectively).
+The five numerical-scheme issues (#120, #122, #124, #137, and the resolution-of-dissipation scaling in #136) were all discovered through running the collisionality campaign. Each represents a real mismatch between a time-integration or dissipation choice and the mathematical character of the equations: oscillatory streaming needing integrating factors (#120), $g$ advection needing dealiasing and a stability-bounded method on the imaginary axis (#122, #124), and the Lawson-RK4 composition of integrating factor with nonlinear stages leaking a hidden CFL constraint into the envelope at high $M \cdot k_z$ (#137). The April 2026 diagnosis of #137 in particular required ruling out the physically plausible "cascade outruns damping" story from the scheme-level signature, which was the single longest debugging step of the entire campaign.
 
 ---
 
@@ -284,7 +334,29 @@ The collaboration was most productive when operating in a tight loop: the AI run
 
 ## 6. Next Steps
 
-1. **Longer runs** at low $\nu$ to determine whether the Hermite cascade needs more time to establish itself from MHD driving
-2. **Higher forcing amplitude** to increase the energy flux into the Hermite hierarchy
-3. **Hermite resolution study** ($M = 64, 128$) to check whether the cascade front is resolved
-4. **Comparison with theory** for the expected scaling of the cascade equilibration time with $\nu$
+### Immediate (completing the scan)
+
+1. **Finish the extended $\nu$-scan.** $\nu \in \{1, 20, 50\}$ in flight. $\nu = 1$ tests whether the plateau continues to smaller $\nu$ or deviates; $\nu = 20, 50$ test where the plateau breaks upward as hyper-dissipation starts to outrun the cascade.
+2. **Headline figure.** $\varepsilon_\nu$ vs $\nu$ summary plot across the full scan $\nu \in \{1, 3, 5, 10, 20, 50\}$, with error bars from the window-variance and a fit to the plateau region.
+3. **Long equilibration run.** Extend one branch (most likely $\nu = 3$) to $\sim 500$ $\tau_A$ to let $E_\mathrm{total}$ reach a true injection/dissipation balance. The scalar $\varepsilon_\nu$ is already steady; this is for the cleanest steady-state $W(m)$ and $E(k_\perp)$ spectra for the paper.
+
+### Before the write-up
+
+4. **Sanity checks on the plateau interpretation.** Compare $\varepsilon_\nu$ against an independent estimate of the Alfvenic-to-Hermite energy flux (derivable from the Poisson-bracket coupling $\{\Phi, g_0\}$) to confirm it equals the injection rate. If they match, the plateau is literally "all injected energy ends up dissipated at $m \sim M$, independent of $\nu$".
+5. **Cascade rate check.** Compute the forward Hermite flux $\Pi(m)$ (GANDALF provides `hermite_flux`) and verify it is constant in $m$ across the inertial range --- that is the standard "constant-flux cascade" test the $m^{-1/2}$ slope implies.
+
+### Paper write-up plan
+
+Target: JPP letter or short paper. Working structure:
+
+- **Intro:** The dissipative anomaly in hydro; its KRMHD analogue as the phase-space cascade to high Hermite moment $m$; what was previously shown (Zocco--Schekochihin phase-mixing spectrum) and what was missing (direct nonlinear demonstration of $\nu$-independent $\varepsilon_\nu$).
+- **Model and numerics:** KRMHD equations, Hermite representation of $g$, GANDALF solver, 128$^3$ spatial + $M=128$ Hermite, $\beta_i = 1$, driven Alfvenic forcing + direct $g_0$ forcing at low $k_z$, hyper-dissipation $(m/M)^6$. One paragraph on the IMEX-RK222 integrator (with pointer to GANDALF v0.5.0) --- this is new and worth describing because readers who reproduce the setup need to know.
+- **Results.** Figure 1: $\varepsilon_\nu(\nu)$ plateau across $\nu \in \{1, 3, 5, 10, 20, 50\}$ with old-Lawson short-probe points overlaid as triangles for context. Figure 2: $\langle W(m)\rangle_t$ showing $m^{-1/2}$ in the inertial range, with a panel showing the compensating product $2\nu(m/M)^6 W(m)$ to make the cancellation between $W$ and $\nu$ visible. Figure 3: $E(k_\perp)$ and $\Pi(m)$ to show the Alfvenic base state is honest and the Hermite cascade has constant flux. Quantitative table of slopes and plateau values.
+- **Discussion:** How $W(m)$ and $\nu$ self-adjust to keep the product invariant; finite-$M$ effects; what this does and does not say about the truly collisionless limit.
+- **Supplementary / methods:** The Lawson-RK4 numerical-instability story. Short, honest, and useful for reproducers --- this is the kind of thing that saves the next group six weeks.
+
+### Farther out (if the anomaly plot is compelling)
+
+6. **$\nu$-dependence of the $W(m)$ split in the dissipation range.** The plots already show a clean $\nu$-ordering at high $m$; there is probably a predictable scaling of where the curves diverge. Worth checking against theory.
+7. **Resolution study.** Re-run the plateau at $M = 64$ and $M = 256$ to bound finite-$M$ corrections. Cheap; important for a referee.
+8. **Forcing-amplitude scan.** $\varepsilon_\nu$ should scale with the injection rate; establishing that explicitly would tighten the anomaly claim.
