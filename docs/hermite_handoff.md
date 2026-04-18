@@ -8,28 +8,34 @@ implicitly and leaves only Poisson-bracket nonlinearities explicit.
 `gandalf_step` default is now `scheme="imex_rk222"`. PR #143 adds
 checkpoint scheme metadata.
 
-**Acceptance test passed (ν=3, M=128, 128³, 200 τ_A).** Run
-`hermite128_nu3_imex` completed the full 200 τ_A window from the
-Alfvénic steady-state checkpoint at t=2000 without NaN or blowup —
-the first M=128 nonlinear run to survive past ~122 τ_A. ε_ν settled
-into a noisy plateau within ~20 τ_A:
+**Dissipative anomaly confirmed.** Three IMEX-RK222 runs at
+ν ∈ {3, 5, 10}, M=128, 128³, 200 τ_A from the Alfvénic t=2000
+checkpoint all completed clean and gave essentially identical
+ε_ν (after skipping the 30 τ_A Hermite fill-in transient):
 
-- ε_ν = 49.2 ± 10.7 (mean ± std, after skipping initial 30 τ_A),
-  rel std 21.6%.
-- E_total drifts upward (26.8k → 40.7k, ~1.5×) — the Hermite sector
-  was empty at t=2000 and is still filling in; full energy balance
-  not yet reached, but the dissipation rate is already steady.
-- Wall time 7.2h on A100.
-- Plot: `figures/hermite128_nu3_imex_timeseries.{png,pdf}`.
+| Run                   | ν  | ε_ν (mean ± std) | rel std | E_ratio | Wall   |
+|-----------------------|----|------------------|---------|---------|--------|
+| `hermite128_nu3_imex` |  3 | 49.21 ± 10.65    | 21.6%   | 1.52    | 7.2h   |
+| `hermite128_nu5_imex` |  5 | 49.26 ± 10.61    | 21.5%   | 1.52    | 6.7h   |
+| `hermite128_nu10_imex`| 10 | 49.23 ± 10.81    | 22.0%   | 1.52    | 6.7h   |
 
-The ε_ν ≈ 50 plateau is consistent with the old ν=50 and ν=100 short
-(50 τ_A) Lawson probes (53 and 46) that happened to survive before
-the numerical instability kicked in. That ν-independence across ~30×
-in ν is the dissipative-anomaly signature we were after — but it
-needs the ν=5, 10 IMEX long runs to confirm.
+Across 3.3× in ν the mean ε_ν agrees to **0.1%**, and E_total rises
+by identical 1.52× — injection/dissipation balance is ν-independent.
+Extended against the old Lawson short-probe data (ν=20: 60.5, ν=50:
+53.2, ν=100: 46.0, each 50 τ_A before numerical blowup set in),
+ε_ν ≈ 50 holds across >30× in ν. That is the dissipative-anomaly
+signature we were after.
 
-**Next:** run ν=5 and ν=10 at 200 τ_A (same script, extend BRANCHES)
-and plot ε_ν(ν).
+- Combined plot: `figures/hermite128_imex_nu_scan.{png,pdf}`.
+- Per-run plot for ν=3: `figures/hermite128_nu3_imex_timeseries.{png,pdf}`.
+- The "NOT_STEADY" script flag (~70% variance) reflects E_total still
+  rising, not ε_ν — the dissipation rate is already steady. Full
+  energy balance would need a longer run (Hermite sector was empty
+  at t=2000).
+
+**Next:** either (a) push ε_ν(ν) to lower ν (0.1, 1) to see where
+the plateau breaks, and/or (b) run one branch to 500+ τ_A to reach
+full energy balance and characterise the steady-state W(m) spectrum.
 
 ## Summary
 
@@ -99,7 +105,9 @@ All data lives on `krmhd-benchmark-vol`. Key entries:
 - `hermite128_linear_16cube_nu1p0/` — 500 tau_A, stable
 
 **Nonlinear Hermite — IMEX-RK222 (v0.5.0):**
-- `hermite128_nu3_imex/` — 200 τ_A completed clean, ε_ν = 49 ± 11 (2026-04-17)
+- `hermite128_nu3_imex/`  — 200 τ_A clean, ε_ν = 49.21 ± 10.65 (2026-04-17)
+- `hermite128_nu5_imex/`  — 200 τ_A clean, ε_ν = 49.26 ± 10.61 (2026-04-18)
+- `hermite128_nu10_imex/` — 200 τ_A clean, ε_ν = 49.23 ± 10.81 (2026-04-18)
 
 **Nonlinear Hermite — Lawson-RK4 (superseded, all blown up):**
 - `hermite128_nu1p0_v3/` — NaN at t~2185
