@@ -25,7 +25,7 @@ krmhd_image = (
     .apt_install("git")
     .pip_install(
         "jax[cuda12]",
-        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.4",
+        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.5.0",
         "numpy",
         "h5py",
         "pyyaml",
@@ -235,7 +235,7 @@ def run_linear_hermite(
             "description": desc,
             "linear_benchmark": True,
         }
-        save_checkpoint(state, str(path), metadata=metadata, overwrite=True)
+        save_checkpoint(state, str(path), metadata=metadata, scheme="imex_rk222", overwrite=True)
         volume.commit()
         print(f"  💾 Checkpoint: {path.name} ({desc})")
 
@@ -269,6 +269,7 @@ def run_linear_hermite(
         state = gandalf_step(
             state, dt, eta, v_A,
             nu=nu, hyper_r=hyper_r, hyper_n=hyper_n,
+            scheme="imex_rk222",
         )
 
         # Fix JAX scalar time

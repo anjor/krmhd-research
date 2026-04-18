@@ -1,16 +1,35 @@
 # Hermite Cascade Handoff — April 2026
 
-## Current status (2026-04-16)
+## Current status (2026-04-18)
 
-**Blocked on GANDALF fix.** The original "cascade outruns damping" story
-(first two paragraphs below) turned out to be wrong — see "Diagnosis
-update — April 16, 2026" below. The nonlinear-Hermite blowup is a
-Lawson-RK4 numerical instability at high m·k_z, not a physical pileup.
+**Unblocked.** GANDALF v0.5.0 (PR anjor/gandalf#138) ships an IMEX-RK222
+Hermite integrator that treats streaming + hyper-collisional damping
+implicitly and leaves only Poisson-bracket nonlinearities explicit.
+`gandalf_step` default is now `scheme="imex_rk222"`. PR #143 adds
+checkpoint scheme metadata.
 
-GANDALF issue filed: [anjor/gandalf#137](https://github.com/anjor/gandalf/issues/137)
-(IMEX — implicit streaming + damping, explicit nonlinear advection).
-Upstream work is in progress. The nu-scan at M=128 will be re-run once
-the fix ships; see "What to run once GANDALF ships a fix" below.
+**Acceptance test passed (ν=3, M=128, 128³, 200 τ_A).** Run
+`hermite128_nu3_imex` completed the full 200 τ_A window from the
+Alfvénic steady-state checkpoint at t=2000 without NaN or blowup —
+the first M=128 nonlinear run to survive past ~122 τ_A. ε_ν settled
+into a noisy plateau within ~20 τ_A:
+
+- ε_ν = 49.2 ± 10.7 (mean ± std, after skipping initial 30 τ_A),
+  rel std 21.6%.
+- E_total drifts upward (26.8k → 40.7k, ~1.5×) — the Hermite sector
+  was empty at t=2000 and is still filling in; full energy balance
+  not yet reached, but the dissipation rate is already steady.
+- Wall time 7.2h on A100.
+- Plot: `figures/hermite128_nu3_imex_timeseries.{png,pdf}`.
+
+The ε_ν ≈ 50 plateau is consistent with the old ν=50 and ν=100 short
+(50 τ_A) Lawson probes (53 and 46) that happened to survive before
+the numerical instability kicked in. That ν-independence across ~30×
+in ν is the dissipative-anomaly signature we were after — but it
+needs the ν=5, 10 IMEX long runs to confirm.
+
+**Next:** run ν=5 and ν=10 at 200 τ_A (same script, extend BRANCHES)
+and plot ε_ν(ν).
 
 ## Summary
 
@@ -79,7 +98,10 @@ All data lives on `krmhd-benchmark-vol`. Key entries:
 **Linear Hermite (good):**
 - `hermite128_linear_16cube_nu1p0/` — 500 tau_A, stable
 
-**Nonlinear Hermite (all blown up):**
+**Nonlinear Hermite — IMEX-RK222 (v0.5.0):**
+- `hermite128_nu3_imex/` — 200 τ_A completed clean, ε_ν = 49 ± 11 (2026-04-17)
+
+**Nonlinear Hermite — Lawson-RK4 (superseded, all blown up):**
 - `hermite128_nu1p0_v3/` — NaN at t~2185
 - `hermite128_nu10_long/` — blew up at t~2184
 - `hermite128_nu5_long/` — blew up at t~2167

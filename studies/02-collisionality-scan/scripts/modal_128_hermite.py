@@ -22,7 +22,7 @@ krmhd_image = (
     .apt_install("git")
     .pip_install(
         "jax[cuda12]",
-        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.4.4",
+        "gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.5.0",
         "numpy",
         "h5py",
         "pyyaml",
@@ -35,12 +35,11 @@ VOL_MOUNT = "/data"
 # Hermite ν-scan: find highest ν that stabilizes, then lower
 # v4: scan ν=100,50,20,10 in parallel — short runs (50 τ_A) to find stability threshold
 # Extend stable probes to 200 τ_A + probe ν=2 for threshold
+# GANDALF v0.5.0 acceptance test for issue #137 (IMEX-RK222 Hermite integrator).
+# Resumes from the Alfvénic steady state and runs 200 τ_A at ν=3 under imex_rk222.
+# Pass gate: no blowup + ε_ν reaches statistically steady value.
 BRANCHES = [
-    {"label": "hermite128_nu5_long",  "nu": 5.0, "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
-     "resume_from": "hermite128_nu5/checkpoints/checkpoint_t2050.0.h5"},
-    {"label": "hermite128_nu3_long",  "nu": 3.0, "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
-     "resume_from": "hermite128_nu3/checkpoints/checkpoint_t2050.0.h5"},
-    {"label": "hermite128_nu2",       "nu": 2.0, "hermite_amplitude": 0.0035, "total_time": 2050, "averaging_start": 2040,
+    {"label": "hermite128_nu3_imex", "nu": 3.0, "hermite_amplitude": 0.0035, "total_time": 2200, "averaging_start": 2100,
      "resume_from": "alfven128_lowkz_f0p02_eta100/checkpoints/checkpoint_t2000.0.h5"},
 ]
 
@@ -149,7 +148,7 @@ def run_hermite_branch(
 
     # ---- Load checkpoint and expand Hermite sector ----
     ckpt_path = Path(VOL_MOUNT) / resume_from
-    state, grid, metadata = load_checkpoint(str(ckpt_path))
+    state, grid, metadata = load_checkpoint(str(ckpt_path), expected_scheme="imex_rk222")
     initial_step = int(metadata.get("step", 0))
     print(f"  Resumed from {ckpt_path.name}: t={state.time:.2f}, step={initial_step}")
     print(f"  Original M={state.M}, expanding to M={M_new}")
@@ -256,7 +255,7 @@ def run_hermite_branch(
             "label": label,
             "description": desc,
         }
-        save_checkpoint(state, str(path), metadata=metadata, overwrite=True)
+        save_checkpoint(state, str(path), metadata=metadata, scheme="imex_rk222", overwrite=True)
         volume.commit()
         print(f"  💾 Checkpoint: {path.name} ({desc})")
 
@@ -306,6 +305,7 @@ def run_hermite_branch(
         state = gandalf_step(
             state, dt, eta, v_A,
             nu=nu, hyper_r=hyper_r, hyper_n=hyper_n,
+            scheme="imex_rk222",
         )
 
         # Fix JAX scalar time
