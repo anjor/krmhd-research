@@ -8,34 +8,45 @@ implicitly and leaves only Poisson-bracket nonlinearities explicit.
 `gandalf_step` default is now `scheme="imex_rk222"`. PR #143 adds
 checkpoint scheme metadata.
 
-**Dissipative anomaly confirmed.** Three IMEX-RK222 runs at
-ν ∈ {3, 5, 10}, M=128, 128³, 200 τ_A from the Alfvénic t=2000
-checkpoint all completed clean and gave essentially identical
-ε_ν (after skipping the 30 τ_A Hermite fill-in transient):
+**Dissipative anomaly confirmed across 50× in ν.** Six IMEX-RK222
+runs at ν ∈ {1, 3, 5, 10, 20, 50}, M=128, 128³, 200 τ_A from the
+Alfvénic t=2000 checkpoint all completed clean. After the 30 τ_A
+Hermite fill-in transient:
 
-| Run                   | ν  | ε_ν (mean ± std) | rel std | E_ratio | Wall   |
-|-----------------------|----|------------------|---------|---------|--------|
-| `hermite128_nu3_imex` |  3 | 49.21 ± 10.65    | 21.6%   | 1.52    | 7.2h   |
-| `hermite128_nu5_imex` |  5 | 49.26 ± 10.61    | 21.5%   | 1.52    | 6.7h   |
-| `hermite128_nu10_imex`| 10 | 49.23 ± 10.81    | 22.0%   | 1.52    | 6.7h   |
+| ν  | ε_ν (ts mean ± std) | ε_ν (spec window) | ΣW_m (mean) | slope m∈[4,40] |
+|----|---------------------|---------------------|-------------|-----------------|
+|  1 | 48.42 ± 11.41       | 48.56               | 359         | -0.472          |
+|  3 | 49.21 ± 10.65       | 48.15               | 162         | -0.484          |
+|  5 | 49.26 ± 10.61       | 47.99               | 137         | -0.489          |
+| 10 | 49.23 ± 10.81       | 47.99               | 126         | -0.493          |
+| 20 | 49.21 ± 10.99       | 48.26               | 121         | -0.494          |
+| 50 | 49.21 ± 11.21       | 48.79               | 114         | -0.496          |
 
-Across 3.3× in ν the mean ε_ν agrees to **0.1%**, and E_total rises
-by identical 1.52× — injection/dissipation balance is ν-independent.
-Extended against the old Lawson short-probe data (ν=20: 60.5, ν=50:
-53.2, ν=100: 46.0, each 50 τ_A before numerical blowup set in),
-ε_ν ≈ 50 holds across >30× in ν. That is the dissipative-anomaly
-signature we were after.
+ε_ν plateau: 49.09 ± 0.30 across six ν values. Even ν=1 sits at the
+plateau — predicted to possibly deviate, it does not. Total Hermite
+energy drops 359 → 114 as ν goes 1 → 50 (self-adjustment), with a
+kink around ν ≈ 3. Inertial-range slope is within 5% of the
+Zocco–Schekochihin m^{-1/2} phase-mixing prediction across all six.
+Dissipation-integrand peak shifts from m ≈ M at low ν to m ≈ 80 at
+ν=50, but the integrated ε_ν matches to <2% across the full scan.
 
-- Combined plot: `figures/hermite128_imex_nu_scan.{png,pdf}`.
-- Per-run plot for ν=3: `figures/hermite128_nu3_imex_timeseries.{png,pdf}`.
-- The "NOT_STEADY" script flag (~70% variance) reflects E_total still
-  rising, not ε_ν — the dissipation rate is already steady. Full
-  energy balance would need a longer run (Hermite sector was empty
-  at t=2000).
+- Headline plot: `figures/hermite128_imex_eps_nu_plateau.{png,pdf}`.
+- Full W(m) overlay: `figures/hermite128_imex_Wm_spectrum_full.{png,pdf}`.
+- Three-run detail: `figures/hermite128_imex_nu_scan.{png,pdf}`.
 
-**Next:** either (a) push ε_ν(ν) to lower ν (0.1, 1) to see where
-the plateau breaks, and/or (b) run one branch to 500+ τ_A to reach
-full energy balance and characterise the steady-state W(m) spectrum.
+The "NOT_STEADY" script flag (~70% variance) reflects E_total still
+rising ×1.52 in every run (Hermite sector was empty at t=2000, and
+injection > dissipation until full energy balance is reached). The
+scalar ε_ν is steady within ~25 τ_A — decoupled from the E_total
+fill-in.
+
+**Next:**
+- Extend one branch (ν=3 candidate) to ~500 τ_A for full E_total
+  equilibration and cleanest steady-state W(m) / E(k⊥) for the paper.
+- Sanity check: compare ε_ν against an independent estimate of the
+  Alfvénic→Hermite energy flux from the Poisson-bracket coupling.
+- Cascade-rate check: compute Π(m) via `hermite_flux` and verify
+  constant flux across the inertial range.
 
 ## Summary
 
@@ -105,9 +116,12 @@ All data lives on `krmhd-benchmark-vol`. Key entries:
 - `hermite128_linear_16cube_nu1p0/` — 500 tau_A, stable
 
 **Nonlinear Hermite — IMEX-RK222 (v0.5.0):**
+- `hermite128_nu1_imex/`  — 200 τ_A clean, ε_ν = 48.42 ± 11.41 (2026-04-18)
 - `hermite128_nu3_imex/`  — 200 τ_A clean, ε_ν = 49.21 ± 10.65 (2026-04-17)
 - `hermite128_nu5_imex/`  — 200 τ_A clean, ε_ν = 49.26 ± 10.61 (2026-04-18)
 - `hermite128_nu10_imex/` — 200 τ_A clean, ε_ν = 49.23 ± 10.81 (2026-04-18)
+- `hermite128_nu20_imex/` — 200 τ_A clean, ε_ν = 49.21 ± 10.99 (2026-04-18)
+- `hermite128_nu50_imex/` — 200 τ_A clean, ε_ν = 49.21 ± 11.21 (2026-04-18)
 
 **Nonlinear Hermite — Lawson-RK4 (superseded, all blown up):**
 - `hermite128_nu1p0_v3/` — NaN at t~2185

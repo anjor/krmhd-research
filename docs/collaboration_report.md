@@ -102,6 +102,7 @@ research context for the eventual write-up.
 - **Dissipative anomaly confirmed (2026-04-18).** `hermite128_nu5_imex` and `hermite128_nu10_imex` completed cleanly at 200 τ_A each. ε_ν mean (skipping transient): ν=3: 49.21±10.65, ν=5: 49.26±10.61, ν=10: 49.23±10.81. Across 3.3× in ν the means agree to 0.1% and E_total rises by identical 1.52×. Combined with the old Lawson short probes (ν=20,50,100 at 60/53/46 over 50 τ_A before numerical blowup), ε_ν ≈ 50 holds across >30× in ν. Figure: `figures/hermite128_imex_nu_scan.{png,pdf}`.
 - **Phase-mixing spectrum confirmed too (2026-04-18).** Time-averaged W(m) over the 100 τ_A averaging window (83 snapshots per run) cleanly follows m^{-1/2} in the inertial range m∈[4,40]: fitted slopes −0.484 (ν=3), −0.489 (ν=5), −0.493 (ν=10), all within ~2% of the Zocco–Schekochihin prediction. At high m the curves split in the expected ν-order (less damping → more energy piles up before (m/M)⁶ kicks in), but the dissipation integrand 2ν(m/M)⁶W(m) nearly coincides across ν in the bulk dissipation range m≈70–110 — cumulative sums match to 0.2% (48.1, 48.0, 48.0). Figure: `figures/hermite128_imex_Wm_spectrum.{png,pdf}`.
 - **Extended ν-scan in flight (2026-04-18).** Three more runs submitted to probe the ε_ν(ν) shape: ν=1 (possible low-ν departure from plateau), ν=20 and ν=50 (expected to leave plateau as hyper-dissipation outruns the cascade). Expected wall time ~7h on A100 each, running in parallel from the same Alfvénic t=2000 checkpoint. Once complete, the summary plot ε_ν(ν) vs ν will be the headline figure for the write-up.
+- **Extended ν-scan complete: plateau holds over 50× in ν (2026-04-18 → 2026-04-19).** All three extensions ran 200 τ_A clean, including ν=1 (no sign of the low-ν deviation the user had expected). Windowed means: ν=1: 48.42±11.41; ν=20: 49.21±10.99; ν=50: 49.21±11.21. Full six-point plateau: ε_ν = 49.09 ± 0.30 across ν∈{1,3,5,10,20,50}. Mean total Hermite energy ΣW_m drops monotonically 359 → 114 across the same range (self-adjustment), with a visible kink around ν≈3 where the curve flattens. Inertial-range slope across the scan: m^{-0.472} to m^{-0.496}, all within 5% of the Zocco-Schekochihin m^{-1/2} prediction. The per-m dissipation integrand peak shifts from m≈M at low ν to m≈80 at ν=50, but the integrated ε_ν matches to <2%. Figures: `figures/hermite128_imex_eps_nu_plateau.{png,pdf}` (headline), `figures/hermite128_imex_Wm_spectrum_full.{png,pdf}` (six-curve W(m) + integrand).
 
 ---
 
@@ -247,7 +248,18 @@ Time-averaged $\langle W(m)\rangle_t$ over the 100 $\tau_A$ averaging window (83
 
 All three match the Zocco--Schekochihin phase-mixing prediction to $\sim 2\%$. At high $m$ the curves split in the expected $\nu$-order (weaker damping $\to$ more energy piles up before $(m/M)^6$ kicks in), but the dissipation integrand $2\nu(m/M)^6 W(m)$ nearly coincides across $\nu$ in $m \approx 70$--$110$, with cumulative sums $48.1, 48.0, 48.0$ --- agreement to 0.2%. Figures: `figures/hermite128_imex_nu_scan.{png,pdf}`, `figures/hermite128_imex_Wm_spectrum.{png,pdf}`.
 
-**Extended scan in flight.** Three more runs submitted on 2026-04-18: $\nu = 1$ (possible low-$\nu$ deviation from plateau), $\nu = 20$, $\nu = 50$ (expected to leave the plateau as hyper-dissipation starts to outrun the cascade). Once complete, a dedicated $\varepsilon_\nu(\nu)$ plot will be the headline summary figure.
+**Plateau extends to 50$\times$ in $\nu$ (2026-04-19).** The extended scan completed on $\nu \in \{1, 20, 50\}$, each 200 $\tau_A$ clean. The plateau holds across all six $\nu$ values in the scan:
+
+| $\nu$ | $\bar\varepsilon_\nu$ (ts window) | $\bar\varepsilon_\nu$ (spectrum window) | $\langle\sum_m W(m)\rangle_t$ | slope $m\in[4,40]$ |
+|-------|-----------------------------------|-----------------------------------------|-------------------------------|--------------------|
+|  1    | $48.42 \pm 11.41$                 | 48.56                                   | 359                           | $-0.472$           |
+|  3    | $49.21 \pm 10.65$                 | 48.15                                   | 162                           | $-0.484$           |
+|  5    | $49.26 \pm 10.61$                 | 47.99                                   | 137                           | $-0.489$           |
+| 10    | $49.23 \pm 10.81$                 | 47.99                                   | 126                           | $-0.493$           |
+| 20    | $49.21 \pm 10.99$                 | 48.26                                   | 121                           | $-0.494$           |
+| 50    | $49.21 \pm 11.21$                 | 48.79                                   | 114                           | $-0.496$           |
+
+The six-point plateau average is $\varepsilon_\nu = 49.09 \pm 0.30$. Even $\nu = 1$, where the plateau was expected to possibly deviate, sits within 2% of the others. Total Hermite energy drops $359 \to 114$ as $\nu$ goes $1 \to 50$ (self-adjustment), with a visible kink around $\nu \approx 3$ where the curve flattens. Inertial-range slope is within 5% of the Zocco--Schekochihin $m^{-1/2}$ prediction across all six. The per-$m$ dissipation integrand peak shifts from $m \approx M$ at low $\nu$ to $m \approx 80$ at $\nu = 50$, but the integrated $\varepsilon_\nu$ matches to $< 2\%$. Headline figure: `figures/hermite128_imex_eps_nu_plateau.{png,pdf}`; full $W(m)$ overlay: `figures/hermite128_imex_Wm_spectrum_full.{png,pdf}`.
 
 ---
 
