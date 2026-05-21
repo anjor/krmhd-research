@@ -27,7 +27,7 @@
 \maketitle
 
 \begin{abstract}
-We report direct numerical evidence for a dissipative anomaly in the phase-space cascade of driven kinetic reduced magnetohydrodynamic (KRMHD) turbulence. Six simulations at $128^3$ spatial and $M=128$ Hermite resolution, driven by Alfv\'enic forcing plus a low-$\kperp$ Hermite source, were run for $200\,\taua$ each across $\nu \in \{1, 3, 5, 10, 20, 50\}$ --- a $50\times$ range in collisionality. The time-averaged collisional dissipation rate $\bar\epsnu = 49.09 \pm 0.30$ is independent of $\nu$ to better than $1\%$, while the Hermite spectrum $\langle W(m)\rangle_t$ follows the Zocco--Schekochihin $m^{-1/2}$ phase-mixing prediction in the inertial range $m \in [4, 40]$ (measured slopes $-0.472$ to $-0.496$). At the dissipation scales, $W(m)$ and $\nu$ self-adjust so that the compensated quantity $2\nu(m/M)^6 W(m)$ remains nearly invariant, with cumulative dissipation matching to $< 2\%$ across the scan. The result confirms the phase-space analogue of the classical hydrodynamic dissipative anomaly and establishes a direct nonlinear benchmark for KRMHD solvers.
+We report direct numerical evidence for a dissipative anomaly in the phase-space cascade of driven kinetic reduced magnetohydrodynamic (KRMHD) turbulence. Six simulations at $128^3$ spatial and $M=128$ Hermite resolution, driven by Alfv\'enic forcing plus a low-$\kperp$ Hermite source, were run for $200\,\taua$ each across $\nu \in \{1, 3, 5, 10, 20, 50\}$ --- a $50\times$ range in collisionality. The time-averaged collisional dissipation rate $\bar\epsnu = 49.09 \pm 0.30$ is independent of $\nu$ to better than $1\%$, while the Hermite spectrum $\langle W(m)\rangle_t$ follows the Zocco--Schekochihin $m^{-1/2}$ phase-mixing prediction in the inertial range $m \in [4, 40]$ (measured slopes $-0.472$ to $-0.496$). At the dissipation scales, $W(m)$ and $\nu$ self-adjust so that the compensated quantity $2\nu(m/M)^6 W(m)$ remains nearly invariant, with cumulative dissipation matching to $< 2\%$ across the scan. A three-point Hermite-resolution check at $\nu = 3$ over $M \in \{64, 128, 256\}$ shows the plateau value is independent of the truncation to within $\sim 2.5\%$. The result confirms the phase-space analogue of the classical hydrodynamic dissipative anomaly and establishes a direct nonlinear benchmark for KRMHD solvers.
 
 Reaching this regime required resolving a numerical instability in the default Lawson-RK4 Hermite integrator at large $M \cdot k_z$. The fix --- an ARS(2,2,2) IMEX-RK222 scheme with implicit streaming and damping --- is described in Appendix~A and ships in GANDALF v0.5.0.
 \end{abstract}
@@ -38,7 +38,9 @@ The classical dissipative anomaly in hydrodynamic turbulence is the statement th
 
 The same logic ought to apply to any system that has a cascade and a dissipation mechanism acting at the far end of that cascade. In weakly collisional plasmas, KRMHD \citep{schekochihin2009} predicts a phase-space cascade in which the perturbed distribution function, expanded in Hermite moments $g_m$ of the parallel velocity, transfers energy from low $m$ to high $m$ under parallel streaming. Collisions act as a dissipation mechanism concentrated at high $m$. The obvious question is whether $\epsnu$, the collisional dissipation rate computed from the Hermite spectrum, approaches a $\nu$-independent plateau as $\nu \to 0$.
 
-Linear phase mixing, in which $g_m$ cascades deterministically under the streaming operator alone, was analysed by \citet{zocco2011} and gives a Hermite spectrum $W(m) \propto m^{-1/2}$. The nonlinear problem, in which turbulent Alfv\'enic fluctuations at $\zpm$ nonlinearly couple to $g_m$ through the Poisson bracket $\{\Phi, g_m\}$, is much harder and has been a standing target since \citet{kanekar2015}. Prior numerical attempts at moderate resolution have not cleanly separated an inertial range from the forcing and dissipation scales, nor directly demonstrated a $\nu$-independent $\epsnu$.
+Linear phase mixing, in which $g_m$ cascades deterministically under the streaming operator alone, was analysed by \citet{zocco2011} and gives a Hermite spectrum $W(m) \propto m^{-1/2}$. The nonlinear problem, in which turbulent Alfv\'enic fluctuations at $\zpm$ nonlinearly couple to $g_m$ through the Poisson bracket $\{\Phi, g_m\}$, is much harder and has been a standing target since \citet{kanekar2015}.
+
+The phase-space cascade has since been studied along several complementary lines. \citet{schekochihin2016} developed a scaling theory contrasting phase mixing with nonlinear advection in drift-kinetic turbulence, arguing that nonlinear coupling suppresses the leakage of free energy to high $m$ and that the energetically dominant scales are essentially fluid-like. \citet{adkins2018} solved a stochastic-electric-field model in 1D Vlasov--Hermite phase space exactly and predicted $W(m) \propto m^{-3/2}$ once anti-phase-mixing echoes dominate the nonlinear transfer. \citet{meyrand2019} reported the first nonlinear driven 3D KRMHD turbulence simulation and confirmed the fluidization picture, but at a single $\nu$ and single $M$; no $\nu$ scan and no direct test of $\bar\epsnu(\nu)$ was performed. On the theory side, \citet{eyink2018} established the existence of dissipative anomalies in nearly collisionless plasma turbulence from a coarse-grained Vlasov--Maxwell--Landau analysis, and \citet{nastac2024} demonstrated a phase-space entropy cascade and dissipative anomaly in driven gyrokinetic turbulence, providing a clear example of the phenomenon in a related kinetic system. What is missing --- and what this paper supplies --- is a direct numerical demonstration of a $\nu$-independent $\bar\epsnu$ in nonlinear driven KRMHD turbulence with the inertial range cleanly separated from the forcing and dissipation scales, via an explicit factor-of-$50$ scan in $\nu$ at fixed forcing, resolution, and $M$.
 
 In this paper we present such a demonstration. At $128^3$ spatial resolution with $M=128$ Hermite moments and hyper-collisional damping $\propto (m/M)^6$, we drive Alfv\'enic turbulence to a steady state and then add a low-$\kperp$ forcing on the $g_0$ moment. After a $\sim\!25\,\taua$ fill-in transient the Hermite sector settles into a statistically stationary cascade. Scanning $\nu$ over a factor of $50$ produces $\bar\epsnu$ values that agree to $< 1\%$, with an inertial-range $W(m)$ slope within $\sim\!2\%$ of $m^{-1/2}$ and a visible compensation between $W$ and $\nu$ at the damped scales. We interpret this as direct numerical evidence for the dissipative anomaly in a kinetic plasma turbulence problem.
 
@@ -90,11 +92,11 @@ $50$ & $49.21 \pm 11.21$ & $48.79$ & $114$ & $-0.496$ \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{hermite128_imex_eps_nu_plateau.pdf}
-\caption{\textbf{Dissipative anomaly.} Left: time-averaged collisional dissipation $\bar\epsnu$ as a function of $\nu$, from six IMEX runs at $M=128$, $128^3$, $200\,\taua$. Blue circles are time-series means with $\pm 1\sigma$ error bars; red diamonds are spectrum-window means. The horizontal dashed line at $\bar\epsnu = 49.09$ is the six-point mean. Gray squares are legacy Lawson-RK4 short-probe points ($50\,\taua$ before numerical blowup set in; see Appendix~A) and are shown for reference only. Right: total time-averaged Hermite energy $\langle \sum_m W(m) \rangle_t$ versus $\nu$, showing the self-adjustment of the spectrum: as $\nu$ decreases, more total Hermite energy is carried (by $\sim 3\times$ from $\nu=50$ to $\nu=1$), while $\bar\epsnu$ stays fixed.}
+\caption{\textbf{Dissipative anomaly.} Time-averaged collisional dissipation $\bar\epsnu$ as a function of $\nu$, from six IMEX runs at $M=128$, $128^3$, $200\,\taua$. Blue circles are time-series means with $\pm 1\sigma$ error bars; red diamonds are spectrum-window means. The horizontal dashed line at $\bar\epsnu = 49.09$ is the six-point mean. Gray squares are legacy Lawson-RK4 short-probe points ($50\,\taua$ before numerical blowup set in; see Appendix~A) and are shown for reference only. Across a factor of $50$ in $\nu$, $\bar\epsnu$ is flat to better than $1\%$.}
 \label{fig:plateau}
 \end{figure}
 
-The right panel of Figure~\ref{fig:plateau} shows the mechanism. As $\nu$ decreases, the Hermite sector accumulates more total energy --- $\langle \sum_m W(m) \rangle_t$ rises from $114$ at $\nu = 50$ to $359$ at $\nu = 1$. The relationship has a visible kink around $\nu \approx 3$; above that value the energy depends weakly on $\nu$, below it the dependence steepens. What does not change is the integrated dissipation. This is the compensating behaviour expected of an anomaly: the spectrum adjusts at the damped scales so that the product $\nu \cdot W$ gives the same dissipation regardless of the prefactor.
+The corresponding self-adjustment of the spectrum at the dissipation scales is evident in Table~\ref{tab:scan}: as $\nu$ decreases, the total time-averaged Hermite energy $\langle \sum_m W(m) \rangle_t$ rises monotonically from $114$ at $\nu = 50$ to $359$ at $\nu = 1$ --- a factor of $\sim 3$ --- while $\bar\epsnu$ stays fixed. The detailed redistribution of energy in $m$ that produces this compensation is the subject of \S\ref{sec:results}.2.
 
 \subsection{The Hermite spectrum and compensated integrand}
 
@@ -109,65 +111,61 @@ Figure~\ref{fig:wm} shows the time-averaged Hermite spectrum $\langle W(m) \rang
 
 At $m \gtrsim 60$ the curves split in the expected order: lower $\nu$ carries more energy in the damped tail, because weaker collisional damping lets energy pile up before the $(m/M)^6$ factor catches it. The right panel of Figure~\ref{fig:wm} shows the corresponding dissipation integrand. At $\nu = 50$ the integrand peaks at $m \approx 80$; at $\nu = 1$ it peaks near $m = M$. But the areas under all six curves are equal to $\sim 2\%$: the cumulative values are $\epsnu \in \{48.6, 48.1, 48.0, 48.0, 48.3, 48.8\}$ (ordered by increasing $\nu$). This is the dissipative anomaly at the spectral level --- the dissipation range moves with $\nu$, the spectrum within it adjusts, and the integral that matters for the energy budget remains invariant.
 
-% TODO (next session): Figure 3 --- Alfvenic base-state E(k_perp) + W(m,t)
-% heatmap from the nu=3 run, to document (i) the base state is a legitimate
-% inertial-range Alfvenic cascade and (ii) the Hermite sector shows no
-% pileup or blowup over the 200 tau_A window.
+\subsection{Hermite-resolution convergence}
+\label{sec:Mconv}
+
+The plateau at $M = 128$ is one slice through a two-dimensional convergence question: does $\bar\epsnu$ depend on $M$, and if so, does the $\nu$-independence we have demonstrated at $M = 128$ survive that dependence? To address this we repeated the $\nu = 3$ run at $M = 64$ (for $200\,\taua$) and at $M = 256$ (for $100\,\taua$, shortened so the run fits in a single Modal session at twice the per-step cost). The results are:
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$M$ & $\bar\epsnu$ (ts) & $\langle \sum_m W(m) \rangle_t$ & run length \\
+\midrule
+$64$  & $49.11 \pm 10.99$ & $144$ & $200\,\taua$ \\
+$128$ & $49.21 \pm 10.65$ & $162$ & $200\,\taua$ \\
+$256$ & $50.28 \pm \phantom{0}9.92$  & $198$ & $100\,\taua$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Across a factor of $4$ in $M$, $\bar\epsnu$ shifts by $\sim 2.4\%$ --- well inside the $\pm 1\sigma$ scatter of any single time-series mean and an order of magnitude smaller than the variations one would naively expect if dissipation were limited by the truncation rather than by the cascade. The total Hermite energy $\langle \sum_m W(m) \rangle_t$ does grow monotonically with $M$ (from $144$ at $M = 64$ to $198$ at $M = 256$), as expected: increasing $M$ moves the hyper-collisional cutoff $\nu(m/M)^6$ outward in $m$ and the cascade fills the extra room before being damped. The dissipation rate, which is the integral that matters for the energy budget, is unaffected. This is the $M$-convergence content of the dissipative anomaly: not only is $\bar\epsnu$ independent of $\nu$ at fixed $M$, it is also independent of $M$ at fixed $\nu$, at this resolution.
+
+Figure~\ref{fig:basestate} documents the base state and the absence of a Hermite pileup, for the $\nu = 3$ run. The left panel is the time-averaged perpendicular energy spectrum $E(\kperp)$ of the driven state: a forced band at $\kperp \lesssim 12$, a short inertial range consistent with $\kperp^{-3/2}$, and a clean resistive cutoff beyond $\kperp \approx 40$. The base state is a legitimate, if modest, Alfv\'enic cascade and not a pathological or under-resolved one. The right panel is the Hermite spectrum $W(m, t)$ over the stationary window: the energy stays concentrated at low $m$ and decays monotonically to a tail at $m = M$ carrying only $\sim 2\%$ of the $m = 0$ value, with no growth over the $100\,\taua$ shown. There is no pileup at the truncation and no blowup --- in contrast to the Lawson-RK4 behaviour of Appendix~A.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{hermite128_nu3_imex_basestate_wmt.pdf}
+\caption{\textbf{Base state and absence of a Hermite pileup}, from the $\nu = 3$ IMEX run. Left: time-averaged perpendicular energy spectrum $E(\kperp)$ over $t \in [2100, 2200]\,\taua$. The shaded band is the forcing range; the dashed line is the measured inertial-range slope $\kperp^{-1.43}$, close to $\kperp^{-3/2}$, fitted over $\kperp \in [12, 42]$. The steep fall beyond is the hyper-resistive cutoff. Right: Hermite spectrum $W(m, t)$ over the same window. Energy remains concentrated at low $m$ and stationary in time; the $m = M$ tail is $\sim 2\%$ of the $m = 0$ peak and does not grow. The horizontal banding at high $m$ is the even/odd Hermite parity of the streaming operator.}
+\label{fig:basestate}
+\end{figure}
 
 \section{Discussion}
 \label{sec:discussion}
 
-% TODO (next session, ~400 words):
-% - Self-adjustment of W(m) vs nu: the kink at nu~3 suggests two regimes.
-%   At large nu, damping sets the dissipation scale above m=M; the cascade
-%   fills the inertial range and is cut off before m=M. At small nu, the
-%   cascade actually reaches m=M and dissipation is bounded by the truncation
-%   rather than physics. The plateau persists in both regimes because
-%   injection rate sets epsilon, not the dissipation mechanism.
-% - Finite-M caveat: eps_nu plateau would in principle break as M -> infinity
-%   and we reach the collisionless limit. Our M=128 is the largest published
-%   at this resolution; resolution study at M=64 and M=256 is a follow-up.
-% - What this does and does not say about the truly collisionless limit.
-%   The anomaly is a finite-nu statement; the collisionless limit requires
-%   careful handling of the m=M boundary.
-% - Comparison to Zocco-Schekochihin linear result: agreement is strong,
-%   but nonlinearity does not change the slope within our resolution.
-% - Connection to the echo / stochastic phase-mixing picture.
+The plateau in $\bar\epsnu(\nu)$ is the standard signature of a constant-flux turbulent cascade. A driven turbulence problem separates into three scale ranges: a forcing range, an inertial range, and a dissipation range. In the inertial range, energy is transferred between scales without being removed, so the flux through any intermediate scale is constant in scale --- it is set by the inertial-range dynamics, not by the dissipation mechanism. As $\nu$ decreases, the dissipation range retreats to higher $m$, but the inertial-range flux is unchanged. The integrated collisional dissipation $\bar\epsnu$, which is whatever the inertial range delivers to the damped scales, therefore approaches a $\nu$-independent value. The flat plateau across our factor-of-$50$ scan is the integrated form of this statement; the moment-space redistribution of energy that supports it is shown directly in Figure~\ref{fig:wm}.
+
+The crossover at $\nu \approx 3$, visible as a kink in the total Hermite energy reported in Table~\ref{tab:scan}, is naturally interpreted in this picture. At large $\nu$, the hyper-collisional damping $\nu(m/M)^6$ is broad enough to reach into the nominal inertial range; modes in $m \in [4, 40]$ partially feel the dissipation and the inertial range is short. As $\nu$ decreases, the dissipation range retreats to higher $m$ and the inertial range becomes oblivious to $\nu$, in the sense that $W(m)$ in the inertial range no longer depends on $\nu$. The plateau in $\bar\epsnu$ holds across both regimes because injection still sets the dissipation rate; the constant-flux argument does not require the inertial range to be wide, only that one exists.
+
+Two caveats delimit the result. The plateau is a finite-$\nu$, finite-$M$ statement: with the cascade truncated at $m = M$, the genuinely collisionless limit $\nu \to 0$ at fixed $M$ is not directly accessible. The $M$-convergence check in \S\ref{sec:Mconv} shows that $\bar\epsnu$ is stable to within $\sim 2.5\%$ across $M \in \{64, 128, 256\}$ at $\nu = 3$, so at this $\nu$ the plateau value is set by the cascade rather than by the truncation, but we cannot extrapolate to arbitrarily small $\nu$ without further $M$-scans at the low-$\nu$ end of the scan, where the cascade reaches further into $m$. Second, the perpendicular inertial range in our $128^3$ setup is short (Figure~\ref{fig:basestate}); a larger $k_\perp$ dynamic range would strengthen the constant-flux argument on the perpendicular side and would let us probe the regime where echoes from imbalanced cascades could matter.
+
+Our nonlinear simulations reproduce the linear phase-mixing slope $W(m) \propto m^{-1/2}$ of \citet{zocco2011} to within $5\%$ across the scan, and to within $1\%$ for the three least-damped runs. The \citet{adkins2018} solvable model of stochastic phase mixing predicts a steeper $m^{-3/2}$ scaling once anti-phase-mixing echoes dominate the nonlinear transfer; we do not see that scaling at our resolution. Whether the absence reflects a fundamental feature of KRMHD turbulence at our parameters --- balanced, weakly compressible, $\beta_i = 1$ --- or simply insufficient dynamic range in $m$ and $\kperp$ remains open. Extending the \citet{meyrand2019} fluidization picture to imbalanced turbulence, where the echo mechanism is expected to be progressively suppressed by cross-helicity, is a separate direction we are pursuing in follow-up work.
 
 \section*{Acknowledgements}
 
-% TODO: funding / compute acknowledgement (Modal credits), conversations
-% (Schekochihin, Dorland, et al.), code review.
+Compute for the simulations reported here was provided by Modal. The author thanks A.~A.~Schekochihin for discussions of the phase-space cascade and its connection to the dissipative anomaly, and acknowledges the code review that accompanied the GANDALF v0.5.0 IMEX-RK222 integrator.
 
 \appendix
 
 \section{A numerical instability in Lawson-RK4 and the IMEX-RK222 fix}
 \label{app:imex}
 
-% TODO (next session, ~300 words):
-% - State the observation: every nonlinear Hermite run under Lawson-RK4
-%   blew up, with onset delayed (not prevented) by nu. Onset times:
-%   ~80 tau_A (nu=1), ~122 (nu=3), ~167 (nu=5), ~184 (nu=10).
-% - Diagnosis: W(m=M) bounded at O(1) noise pre-blowup (no pileup), g(k_z)
-%   at m=M at 10^{-14} noise floor (no flux arriving), simultaneous all-m
-%   exponential growth at nu-independent rate (physical pileup would
-%   localise). These signatures identify a scheme-level stability problem,
-%   not a physical cascade pileup.
-% - Mechanism: Lawson-RK4 composes exp(L_stream dt) with explicit RK stages
-%   on N(z+-, g). For pure streaming this is exact and unitary, but the
-%   composition leaks dt * v_th * k_z * sqrt(m) / Lambda into the stability
-%   envelope. At M=128, 128^3, low-k_z forcing, this is O(1) for
-%   cfl_safety=0.3.
-% - Fix: Ascher-Ruuth-Spiteri IMEX-RK222 (Ascher et al. 1997). Streaming +
-%   hyper-collisional damping solved implicitly per k_z via tridiagonal LU;
-%   nonlinear advection stays explicit. Removes the hidden CFL from linear
-%   terms; stability is set by standard perpendicular advection CFL.
-% - Implementation: GANDALF v0.5.0, PR #138. Acceptance test (nu=3, M=128,
-%   128^3, 200 tau_A) deferred from upstream to this paper's runs, cleared
-%   first-try.
-% - Supplementary reference: detailed diagnosis figures and supporting data
-%   at docs/hermite_handoff.md and analysis/diagnose_hermite_blowup.py in
-%   the krmhd-research repository.
+Every nonlinear Hermite run attempted with GANDALF's default Lawson-RK4 integrator blew up. The onset was delayed, but not prevented, by collisionality: it set in at $\approx 80\,\taua$ for $\nu = 1$, $122\,\taua$ for $\nu = 3$, $167\,\taua$ for $\nu = 5$, and $184\,\taua$ for $\nu = 10$. The monotonic dependence of the onset time on $\nu$ initially suggested a physical pileup of energy at the truncation.
+
+Three diagnostics ruled that out. First, $W(m = M)$ remained bounded at the $\mathcal{O}(1)$ noise level until the moment of blowup, with no gradual accumulation beforehand. Second, the parallel-wavenumber spectrum of $g_m$ at $m = M$ sat at the $10^{-14}$ floor throughout --- no flux was reaching the truncation. Third, when the blowup occurred, all Hermite moments grew exponentially at once, at a $\nu$-independent rate; a physical cascade pileup would instead localise in $m$. Together these signatures identify a scheme-level stability failure rather than a physical cascade overflow.
+
+The mechanism lies in the Lawson composition. Lawson-RK4 applies an exact integrating factor $\exp(\mathcal{L}_{\mathrm{stream}}\,\mathrm{d}t)$ for the linear streaming operator and explicit Runge--Kutta stages for the Poisson-bracket nonlinearity. For pure streaming this is exact and norm-preserving, but composing it with the explicit stages leaks a hidden CFL condition, $\mathrm{d}t\,\vth\,k_z\sqrt{m}/\Lambda$, into the stability envelope. At $M = 128$, $128^3$, with low-$k_z$ forcing and a CFL safety factor of $0.3$, this quantity is $\mathcal{O}(1)$ and the scheme is marginally unstable --- enough to seed a slow exponential growth that eventually dominates.
+
+The fix is the ARS(2,2,2) IMEX-RK222 scheme of \citet{ascher1997}: the linear streaming and hyper-collisional damping are treated implicitly via a per-$k_z$ tridiagonal LU factorisation on the Hermite axis, while the nonlinear advection remains explicit. This removes the linear terms from the explicit stability constraint, which is then set by the standard perpendicular-advection CFL alone. The scheme ships in GANDALF v0.5.0 (pull request \#138); its acceptance test --- $\nu = 3$, $M = 128$, $128^3$, $200\,\taua$ --- cleared on the first attempt. Detailed diagnostic figures and the supporting analysis are archived with the run records (\texttt{docs/hermite\_handoff.md} and \texttt{analysis/diagnose\_hermite\_blowup.py}).
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
