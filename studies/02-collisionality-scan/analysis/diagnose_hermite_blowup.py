@@ -102,16 +102,26 @@ def kz_axis(grid) -> np.ndarray:
 # Figure 1: W(m, t) pcolormesh per run + Σ W and ε_ν side panel
 # ---------------------------------------------------------------------------
 def plot_Wmt_per_run() -> None:
-    fig, axes = plt.subplots(len(RUNS), 2, figsize=(14, 3.5 * len(RUNS)),
-                              gridspec_kw={"width_ratios": [2.4, 1.0]})
-    if len(RUNS) == 1:
-        axes = np.array([axes])
-
-    for row, run in enumerate(RUNS):
+    # Preload spectra and keep only runs that have data, so a missing-data
+    # run (e.g. ν=1 if its blowup spectra were never fetched) does not leave
+    # an empty row in the grid.
+    runs_data = []
+    for run in RUNS:
         spectra = load_spectra(run.label)
         if not spectra:
-            print(f"  No spectra for {run.label}")
+            print(f"  No spectra for {run.label}, skipping its row")
             continue
+        runs_data.append((run, spectra))
+    if not runs_data:
+        print("  No runs with spectra; nothing to plot")
+        return
+
+    fig, axes = plt.subplots(len(runs_data), 2, figsize=(14, 3.5 * len(runs_data)),
+                              gridspec_kw={"width_ratios": [2.4, 1.0]})
+    if len(runs_data) == 1:
+        axes = np.array([axes])
+
+    for row, (run, spectra) in enumerate(runs_data):
         t, W = stack_Wm_t(spectra)
         M = W.shape[1] - 1
         m = np.arange(W.shape[1])
