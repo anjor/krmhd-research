@@ -1,0 +1,11 @@
+{
+  "q1": "B",
+  "q2": {
+    "A": true,
+    "B": false,
+    "C": true,
+    "D": true,
+    "E": false
+  },
+  "q3": "C"
+}
