@@ -6,6 +6,8 @@ functions so the study can switch between:
 - Gaussian white-noise forcing in a total-|k| shell
 - the original GANDALF shell forcing in total |k|
 - balanced Elsasser forcing in a perpendicular band and low-|nz|
+- independently driven Elsasser fields with a prescribed injection
+  cross-helicity
 - a GANDALF-amplitude variant restricted to a perpendicular band and low-|nz|
 
 The low-|nz| path preserves the current "force phi only" behavior by applying
@@ -26,6 +28,7 @@ from krmhd.forcing import (
     force_alfven_modes,
     force_alfven_modes_balanced,
     force_alfven_modes_gandalf,
+    gaussian_white_noise_fourier_perp_lowkz,
 )
 from krmhd.physics import KRMHDState
 from krmhd.spectral import SpectralGrid3D
@@ -39,6 +42,7 @@ class AlfvenForcingOptions:
     max_nz: int = 1
     include_nz0: bool = False
     correlation: float = 0.0
+    target_sigma_c: float = 0.0
 
 
 def pop_alfven_forcing_options(cfg_dict: dict[str, Any]) -> AlfvenForcingOptions:
@@ -48,11 +52,13 @@ def pop_alfven_forcing_options(cfg_dict: dict[str, Any]) -> AlfvenForcingOptions
     max_nz = int(forcing_dict.pop("max_nz", 1))
     include_nz0 = bool(forcing_dict.pop("include_nz0", False))
     correlation = float(forcing_dict.pop("correlation", 0.0))
+    target_sigma_c = float(forcing_dict.pop("target_sigma_c", 0.0))
     return AlfvenForcingOptions(
         mode=mode,
         max_nz=max_nz,
         include_nz0=include_nz0,
         correlation=correlation,
+        target_sigma_c=target_sigma_c,
     )
 
 
@@ -103,6 +109,20 @@ def apply_alfven_forcing(
             correlation=options.correlation,
         )
 
+    if options.mode == "imbalanced_elsasser_lowkz":
+        return force_alfven_modes_imbalanced(
+            state,
+            amplitude=forcing_cfg.amplitude,
+            n_min=n_min,
+            n_max=n_max,
+            dt=dt,
+            key=key,
+            target_sigma_c=options.target_sigma_c,
+            max_nz=options.max_nz,
+            include_nz0=options.include_nz0,
+            correlation=options.correlation,
+        )
+
     if options.mode == "gandalf_perp_lowkz":
         return force_alfven_modes_gandalf_perp_lowkz(
             state,
@@ -118,8 +138,87 @@ def apply_alfven_forcing(
     raise ValueError(
         f"Unknown Alfvén forcing mode {options.mode!r}. "
         "Expected 'gaussian_shell', 'gandalf_shell', "
-        "'balanced_elsasser_lowkz', or 'gandalf_perp_lowkz'."
+        "'balanced_elsasser_lowkz', 'imbalanced_elsasser_lowkz', or "
+        "'gandalf_perp_lowkz'."
     )
+
+
+def force_alfven_modes_imbalanced(
+    state: KRMHDState,
+    amplitude: float,
+    n_min: int,
+    n_max: int,
+    dt: float,
+    key: Array,
+    target_sigma_c: float,
+    max_nz: int = 1,
+    include_nz0: bool = False,
+    correlation: float = 0.0,
+) -> tuple[KRMHDState, Array]:
+    """Independently force z⁺ and z⁻ at a specified injection imbalance.
+
+    The forcing amplitudes obey ``A_±² = A² (1 ± sigma_c)``.  Each random
+    realisation is then normalised in its perpendicular-gradient norm, so its
+    finite-mode injection imbalance is exactly the requested value rather
+    than merely correct in an ensemble average.  Thus the injection imbalance
+    ``(epsilon_plus - epsilon_minus)/(epsilon_plus + epsilon_minus)`` equal
+    to ``target_sigma_c``.  This is deliberately an *injection* controller:
+    it does not rescale the evolved fields, which would alter the RMHD
+    dynamics.  The realised, scale-resolved cross-helicity must therefore be
+    measured from the statistically steady state.
+    """
+    if not -1.0 < target_sigma_c < 1.0:
+        raise ValueError(
+            f"target_sigma_c must lie strictly between -1 and 1, got {target_sigma_c}"
+        )
+    if not 0.0 <= correlation < 1.0:
+        raise ValueError(f"correlation must be in [0, 1), got {correlation}")
+
+    amp_plus = amplitude * jnp.sqrt(1.0 + target_sigma_c)
+    amp_minus = amplitude * jnp.sqrt(1.0 - target_sigma_c)
+    key, plus_key, minus_key = jax.random.split(key, 3)
+    force_plus, _ = gaussian_white_noise_fourier_perp_lowkz(
+        state.grid, amp_plus, n_min, n_max, max_nz, include_nz0, dt, plus_key
+    )
+    force_minus, _ = gaussian_white_noise_fourier_perp_lowkz(
+        state.grid, amp_minus, n_min, n_max, max_nz, include_nz0, dt, minus_key
+    )
+    if correlation:
+        # Preserve the requested z- variance while correlating its phase with z+.
+        rho = jnp.asarray(correlation, dtype=force_plus.real.dtype)
+        force_minus = (
+            jnp.sqrt(1.0 - rho**2) * force_minus
+            + rho * (amp_minus / amp_plus) * force_plus
+        )
+
+    # At the low-k forcing band there are few independent modes.  Without this
+    # realisation-by-realisation normalisation, a nominally balanced drive has
+    # O(10%) sample imbalance, which makes a "target sigma_c" calibration
+    # needlessly seed-dependent.  The common normalisation retains independent
+    # phases while fixing the ratio of injected Elsasser gradient energies.
+    # The upstream Gaussian forcing uses A/sqrt(dt), so its injected power is
+    # proportional to A²/dt.  Retain that white-noise scaling after fixing the
+    # per-realisation ratio.
+    force_plus = _normalise_gradient_power(force_plus, state.grid, amp_plus**2 / dt)
+    force_minus = _normalise_gradient_power(force_minus, state.grid, amp_minus**2 / dt)
+
+    return state.model_copy(
+        update={
+            "z_plus": state.z_plus + force_plus,
+            "z_minus": state.z_minus + force_minus,
+        }
+    ), key
+
+
+def _normalise_gradient_power(field: Array, grid: SpectralGrid3D, target_power: Array) -> Array:
+    """Set a forcing field's rFFT-weighted perpendicular-gradient power."""
+    kperp2 = grid.kx[jnp.newaxis, jnp.newaxis, :] ** 2 + grid.ky[jnp.newaxis, :, jnp.newaxis] ** 2
+    weights = jnp.full((grid.Nx // 2 + 1,), 2.0, dtype=field.real.dtype)
+    weights = weights.at[0].set(1.0)
+    if grid.Nx % 2 == 0:
+        weights = weights.at[-1].set(1.0)
+    power = jnp.sum(weights[jnp.newaxis, jnp.newaxis, :] * kperp2 * jnp.abs(field) ** 2)
+    return field * jnp.sqrt(target_power / power)
 
 
 def force_alfven_modes_gandalf_perp_lowkz(
