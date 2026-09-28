@@ -10,7 +10,7 @@ Rules, in addition to the repo `CLAUDE.md`:
 
 - Never launch Modal. Production runs go into `RUNS.md` as a queue entry: config path, purpose, gate served, estimated A100-hours. Anjor launches them and adds the run ID and data path to the entry.
 - Runs that fit on the Mac may be run directly: grids up to 32³ with M ≤ 64, under 20 minutes wall time. Use `uv run`.
-- Questions for Anjor go into `QUESTIONS.md` and into one short email to anjor.kanekar@gmail.com per stop.
+- Questions for Anjor go into `QUESTIONS.md`.
 - Every claim goes into `claims.md`: claim, origin (human, agent, literature), evidence, falsifier, status.
 - Every derivation is a script in `derivations/` that checks itself with SymPy or a numerical test.
 - Gates are code in `analysis/gates.py`. The success signal is `validate_run(run_id)`, never a narrative.
