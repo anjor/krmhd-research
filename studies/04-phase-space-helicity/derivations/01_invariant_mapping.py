@@ -72,6 +72,7 @@ parity), so it is outside the nearest-neighbour ansatz of this derivation and
 outside the diagnostics planned in PLAN.md.  Part C only checks the Gamma
 coefficient identity numerically; H_ph-sp is left to a decision at Gate 1.
 
+Requires GANDALF >= 0.6.0 (no B_parallel field).
 Run:  uv run python studies/04-phase-space-helicity/derivations/01_invariant_mapping.py
 Exit status is non-zero if any check fails.
 """
@@ -283,7 +284,7 @@ def part_b() -> None:
             zp = np.asarray(st.z_plus) * mask
             zm = np.asarray(st.z_minus) * mask
             state = KRMHDState(
-                z_plus=jnp.asarray(zp), z_minus=jnp.asarray(zm), B_parallel=st.B_parallel,
+                z_plus=jnp.asarray(zp), z_minus=jnp.asarray(zm),
                 g=jnp.asarray(g), M=M, beta_i=1.0, v_th=1.0, nu=0.0, Lambda=float(Lambda),
                 time=0.0, grid=grid,
             )

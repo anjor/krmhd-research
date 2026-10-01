@@ -4,7 +4,7 @@ Equations, conventions, defaults and tolerances. Written 1 October 2026 from the
 
 ## 1. Equations in GANDALF variables
 
-GANDALF evolves, in Fourier space on a triply periodic box, the Elsasser potentials z⁺, z⁻, the parallel field B∥ (frozen in the current solver, gandalf#7) and M+1 Hermite moments g_m, m = 0…M, of the ion perturbed distribution function along v∥.
+GANDALF evolves, in Fourier space on a triply periodic box, the Elsasser potentials z⁺, z⁻ and M+1 Hermite moments g_m, m = 0…M, of one compressive kinetic field along v∥. In KRMHD the compressive sector is two decoupled hierarchies G^± (Schekochihin et al. 2009; CMM 2026 App. B, eqs. B4–B7), each a fixed linear combination of the density-like and δB∥-like v⊥-moments of the ion distribution (B5), each with its own coupling constant Λ^±. GANDALF's g with a given Λ is G^σ for the σ with Λ^σ = Λ. Its zeroth moment is therefore the corresponding mixture of δn/n and δB∥/B, not δn alone (the `g0_rhs` docstring's "δn_e/n₀" is loose). δn/n and δB∥/B are recovered from the zeroth moments of both hierarchies, so a single GANDALF run carries one of the two; the other needs a run at the other Λ. As of GANDALF v0.6.0 (gandalf#149, this repo PR #9) there is no separate B∥ field.
 
 Potentials: Φ = (z⁺ + z⁻)/2 (stream function), Ψ = (z⁺ − z⁻)/2 (parallel vector potential A∥).
 
@@ -31,7 +31,7 @@ A is symmetric for m ≥ 1 and asymmetric only in the (0,1) block. Both ∂_z an
 
 Hermite basis: orthonormal Hermite functions ψ_m(v) = N_m H_m(v) e^{−v²/2}, N_m = (2^m m! √π)^{−1/2}, v = v∥/v_th (`hermite.py`). So ∫ g² dv = Σ_m g_m² and Σ_k |g_m(k)|² is the free energy in moment m up to the g_0 weight in §2.
 
-Parameters: β_i = 1, v_th = 1, v_A = 1, τ = T_i/T_e = 1, Z = 1. Λ enters only through c_Λ. Λ± = −τ/Z + 1/β_i ± √((1 + τ/Z)² + 1/β_i²) = ±√5 at these parameters. The ν-scan used Λ = +√5 = 2.2360677 (checkpoint attr `state/Lambda`), so c_Λ = (1 − 1/√5)/√2 = 0.39100. For Λ⁻ = −√5, c_Λ = (1 + 1/√5)/√2 = 1.02315. Λ = 1 gives c_Λ = 0 and decouples g_0 from the hierarchy (the Study 2 lost run). **Which Λ sign corresponds to which sign of the invariant is a Phase 0 deliverable, not assumed here.**
+Parameters: β_i = 1, v_th = 1, v_A = 1, τ = T_i/T_e = 1, Z = 1. Λ enters only through c_Λ. Λ± = −τ/Z + 1/β_i ± √((1 + τ/Z)² + 1/β_i²) = ±√5 at these parameters. The ν-scan used Λ = +√5 = 2.2360677 (checkpoint attr `state/Lambda`), so c_Λ = (1 − 1/√5)/√2 = 0.39100. For Λ⁻ = −√5, c_Λ = (1 + 1/√5)/√2 = 1.02315. Λ = 1 gives c_Λ = 0 and decouples g_0 from the hierarchy (the Study 2 lost run). **The Λ sign selects which of the two decoupled compressive fields G^± is evolved; it does not set the sign of the invariant (D01 Part C).**
 
 ## 2. Quadratic invariants of the collisionless, unforced, ideal system **[D01]**
 
@@ -130,7 +130,7 @@ Study-wide (from repo CLAUDE.md): energy balance within 5 %, total energy fluctu
 | 20 | `hermite128_nu20_imex/` | t = 2180, 2190, 2200 | no | 49.2 |
 | 50 | `hermite128_nu50_imex/` | t = 2180, 2190, 2200 | no | 49.2 |
 
-Same labels on Modal volume `krmhd-benchmark-vol`, each with `checkpoints/` every 10 τ_A and `spectra/` every 500 steps in the averaging window. Fetch with `studies/02-collisionality-scan/scripts/download_128_results.py --only <label> --spectra-only`. Checkpoint schema: `grid` attrs (L, N), `metadata` attrs (ν, η, orders, forcing, scheme, step), `state` attrs (Λ, M, β_i, ν, v_th, time), datasets `state/{z_plus,z_minus,B_parallel,g}_{real,imag}` float32, g shape [128, 128, 65, 129].
+Same labels on Modal volume `krmhd-benchmark-vol`, each with `checkpoints/` every 10 τ_A and `spectra/` every 500 steps in the averaging window. Fetch with `studies/02-collisionality-scan/scripts/download_128_results.py --only <label> --spectra-only`. Checkpoint schema: `grid` attrs (L, N), `metadata` attrs (ν, η, orders, forcing, scheme, step), `state` attrs (Λ, M, β_i, ν, v_th, time), datasets `state/{z_plus,z_minus,g}_{real,imag}` float32 plus legacy `state/B_parallel_{real,imag}` (ignored by GANDALF ≥ 0.6.0 `load_checkpoint`), g shape [128, 128, 65, 129].
 
 ## 9. Known gaps and deviations
 
@@ -138,4 +138,4 @@ Same labels on Modal volume `krmhd-benchmark-vol`, each with `checkpoints/` ever
 2. The IMEX operator L and the explicit bracket are split; conservation residuals at finite dt are second order, not round-off. The Gate 2 criterion is convergence with dt, not machine zero.
 3. g carries a resistive sink over all m. This is in GANDALF by design (both schemes). It is a term in the budgets, not an error.
 4. Hermite forcing noise in the ν-scan runner was float32. Local tests use float64.
-5. B∥ is frozen. The compressive sector is g only.
+5. One run evolves one compressive hierarchy G^σ. Both σ need two runs (Λ = ±√5). There is no separate B∥ field in GANDALF v0.6.0.

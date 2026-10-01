@@ -27,7 +27,7 @@ Item 3 corrected a statement in the first draft of `SPEC.md` §2, which had both
 
 ## Comparison with Chandran, Mallet & Meyrand 2026, Appendix B
 
-Read only after the above. Their (B4) is the kinetic equation for the two compressive fields G^± with Λ^± of (B7); at β_i = τ = Z = 1, Λ^± = ±√5. Expanded in Hermite polynomials with the √(2^m m!) normalisation (B27–B30), G̃^±_m obeys the same ladder as GANDALF's g_m with the same (1 − 1/Λ) coupling at m = 1, so GANDALF's single hierarchy at Λ = +√5 is their G^+ (claim C6).
+Read only after the above. Their (B4) is the kinetic equation for the two compressive fields G^± with Λ^± of (B7); at β_i = τ = Z = 1, Λ^± = ±√5. Expanded in Hermite polynomials with the √(2^m m!) normalisation (B27–B30), G̃^±_m obeys the same ladder as GANDALF's g_m with the same (1 − 1/Λ) coupling at m = 1, so GANDALF's single hierarchy with Λ = +√5 is their G^+ branch, and with Λ = −√5 it would be G^−. Each G^± is a fixed mixture of the density-like and δB∥-like kinetic fields (B5); GANDALF evolves one such mixture per run (claim C6).
 
 - Their energy (B31), Σ G̃_m² − G̃_0²/Λ, is Q1 term for term.
 - Their additional invariant (B25), (B32), Γ^± = (v_th/√2) ∫ [Σ √(m+1) G̃_m G̃_{m+1} − G̃_0 G̃_1/Λ], is Q2 term for term: the m = 0 coefficient is 1 − 1/Λ and the m ≥ 1 coefficients are √(m+1), ratio √2 to ours for all m (`derivations/01_invariant_mapping.py` Part C).
