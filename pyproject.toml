@@ -10,4 +10,5 @@ dependencies = [
     "pyyaml",
     "h5py",
     "modal",
+    "sympy>=1.14.0",
 ]
