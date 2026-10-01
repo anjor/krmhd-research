@@ -134,7 +134,7 @@ Same labels on Modal volume `krmhd-benchmark-vol`, each with `checkpoints/` ever
 
 ## 9. Known gaps and deviations
 
-1. Only zero truncation is selectable in `gm_rhs`. The symmetric closure exists in `krmhd.hermite` but is not wired in. Phase 1 task 3 ("test both closures") needs either a GANDALF issue for runtime closure selection or a study-local RHS that reimplements the ladder for the conservation tests only. Anjor decides.
+1. ~~Only zero truncation is selectable in `gm_rhs`.~~ Resolved in GANDALF v0.6.0 (gandalf#153, closes #155): `closure="zero" | "symmetric"` on `gandalf_step`, `krmhd_rhs` and `PhysicsConfig`, applied consistently to the explicit RHS, the Lawson eigensystem and the IMEX operator.
 2. The IMEX operator L and the explicit bracket are split; conservation residuals at finite dt are second order, not round-off. The Gate 2 criterion is convergence with dt, not machine zero.
 3. g carries a resistive sink over all m. This is in GANDALF by design (both schemes). It is a term in the budgets, not an error.
 4. Hermite forcing noise in the ν-scan runner was float32. Local tests use float64.
