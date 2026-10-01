@@ -53,7 +53,7 @@ Expected structure of the proof: a quadratic form g†Pg is conserved by ∂_t g
 
 Physical identification (blind rediscovery test, D01): A is the matrix of multiplication by v∥ in the orthonormal Hermite basis, so for Λ → ∞ Γ = Σ_k g†Ag is the Hermite image of ∫ dv∥ v∥ g². Γ is the first v∥ moment of the free-energy density; finite Λ only changes the m = 0 weight.
 
-Reference profiles (`derivations/02_reference_profiles.py`): (a) linear phase mixing, neighbouring moments in quadrature, Γ_m = 0 for m ≥ 1; (b) the Adkins–Schekochihin echo model.
+Reference profiles (`derivations/02_reference_profiles.py`, `reference_profiles.npz`): (a) linear phase mixing at one k with white-noise forcing on g_0: Γ_m = 0 exactly for every m including m = 0 (parity of the propagator), W(m) ∝ m^{−0.49}, constant Π; (b) an echo-type stochastic model with Kraichnan white-in-time advection and the antisymmetrised Hermite velocity derivative (the literal Adkins–Schekochihin 3.10 is unstable as a truncated system, claim C11): W(m) ∝ m^{−1.0}, Π⁻/Π⁺ = 0.24, and both the k-summed Γ(m) and its k-odd part indistinguishable from zero. Consequence for the experiment: neither reference produces Γ; only the symmetry-breaking pair forcing of Phase 2 does.
 
 ## 3. Dissipation and time stepping (as applied by `timestepping.gandalf_step`, scheme `imex_rk222`)
 
