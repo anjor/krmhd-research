@@ -246,19 +246,7 @@ def force_alfven_modes_gandalf_perp_lowkz(
     z_plus_new = state.z_plus + forcing
     z_minus_new = state.z_minus + forcing
 
-    new_state = KRMHDState(
-        z_plus=z_plus_new,
-        z_minus=z_minus_new,
-        B_parallel=state.B_parallel,
-        g=state.g,
-        M=state.M,
-        beta_i=state.beta_i,
-        v_th=state.v_th,
-        nu=state.nu,
-        Lambda=state.Lambda,
-        time=state.time,
-        grid=state.grid,
-    )
+    new_state = state.model_copy(update={"z_plus": z_plus_new, "z_minus": z_minus_new})
     return new_state, key
 
 

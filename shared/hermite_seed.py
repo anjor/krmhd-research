@@ -26,7 +26,7 @@ def apply_hermite_seed(state, *, options: HermiteSeedOptions):
     if not options.enabled or options.amplitude <= 0.0:
         return state
 
-    from krmhd.physics import KRMHDState, initialize_hermite_moments
+    from krmhd.physics import initialize_hermite_moments
 
     g_seed = initialize_hermite_moments(
         state.grid,
@@ -34,16 +34,4 @@ def apply_hermite_seed(state, *, options: HermiteSeedOptions):
         perturbation_amplitude=options.amplitude,
         seed=options.seed,
     )
-    return KRMHDState(
-        z_plus=state.z_plus,
-        z_minus=state.z_minus,
-        B_parallel=state.B_parallel,
-        g=g_seed,
-        M=state.M,
-        beta_i=state.beta_i,
-        v_th=state.v_th,
-        nu=state.nu,
-        Lambda=state.Lambda,
-        time=state.time,
-        grid=state.grid,
-    )
+    return state.model_copy(update={"g": g_seed})
