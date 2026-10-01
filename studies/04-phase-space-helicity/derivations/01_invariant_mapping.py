@@ -49,6 +49,29 @@ confirms dW/dt = dGamma/dt = 0 to round-off, for Lambda = +sqrt(5) and
 (1 instead of 1 - 1/Lambda) and the wrong p_0 give O(1) residuals, so the
 test has teeth.
 
+Part C: mapping to Chandran, Mallet & Meyrand 2026 (arXiv:2607.27981), Appendix B.
+Their compressive fields G^+- obey (B4) with Lambda^+- of (B7); expanded in
+Hermite polynomials with the sqrt(2^m m!) normalisation (B27-B30) the
+coefficients Gtilde_m obey the same ladder as GANDALF's g_m with the same
+(1 - 1/Lambda) coupling, so g_m <-> Gtilde^+_m for Lambda = Lambda^+ = +sqrt5
+at beta_i = tau = Z = 1 (and Gtilde^-_m for Lambda = Lambda^- = -sqrt5).
+Their energy (B31) is sum Gtilde_m^2 - Gtilde_0^2/Lambda, i.e. weight
+(1 - 1/Lambda) on m = 0: our W.  Their additional invariant (B25), (B32)
+
+    Gamma^+- = (v_th/sqrt2) int d^3r [ sum_m sqrt(m+1) Gtilde_m Gtilde_{m+1} - Gtilde_0 Gtilde_1/Lambda ]
+
+has the m = 0 coefficient (1 - 1/Lambda) and m >= 1 coefficients sqrt(m+1):
+the same ratios as our p_m.  With unit volume and v_th = 1,
+Gamma_ours = 2 Gamma^+-_CMM.  (B25) identifies it as the first v_par moment
+of the free-energy density, int v_par (G)^2/(2 F_M) dv, minus M_0 M_1/Lambda.
+
+The paper's headline 'phase-space helicity' H_ph-sp (B18) is a different
+invariant, P int (G)^2/(2 v_par F_M) dv, with a 1/v_par weight.  Its Hermite
+representation is a dense matrix (1/v_par couples all moments of opposite
+parity), so it is outside the nearest-neighbour ansatz of this derivation and
+outside the diagnostics planned in PLAN.md.  Part C only checks the Gamma
+coefficient identity numerically; H_ph-sp is left to a decision at Gate 1.
+
 Run:  uv run python studies/04-phase-space-helicity/derivations/01_invariant_mapping.py
 Exit status is non-zero if any check fails.
 """
@@ -282,9 +305,33 @@ def part_b() -> None:
             check(f"B5 RHS is nontrivial ({tag})", Gs > 0 and Ws > 0 and np.abs(gdot).max() > 1e-3)
 
 
+def part_c() -> None:
+    """Coefficient identity between our p_m and CMM (B32), and the Lambda^+- values."""
+    print("Part C: mapping to Chandran, Mallet & Meyrand (B7), (B31), (B32)")
+    beta_i, tau, Z = 1.0, 1.0, 1.0
+    root = np.sqrt((1.0 + tau / Z) ** 2 + beta_i ** -2)
+    Lp = -tau / Z + 1.0 / beta_i + root
+    Lm = -tau / Z + 1.0 / beta_i - root
+    check("C1 Lambda^+ = +sqrt5 at beta_i = tau = Z = 1 (B7)", abs(Lp - np.sqrt(5.0)) < 1e-12, f"{Lp:.6f}")
+    check("C2 Lambda^- = -sqrt5 at beta_i = tau = Z = 1 (B7)", abs(Lm + np.sqrt(5.0)) < 1e-12, f"{Lm:.6f}")
+    check("C3 nu-scan checkpoints used Lambda^+ (state/Lambda = 2.2360677)", abs(2.2360677 - Lp) < 1e-6)
+    for Lambda in (Lp, Lm):
+        M = 12
+        m = np.arange(M)
+        ours = np.sqrt(2.0 * (m + 1.0))
+        ours[0] = np.sqrt(2.0) * (1.0 - 1.0 / Lambda)
+        cmm = np.sqrt(m + 1.0)                 # coefficient of Gtilde_m Gtilde_{m+1} in (B32)
+        cmm[0] = 1.0 - 1.0 / Lambda            # sqrt(1) - 1/Lambda
+        ratio = ours / cmm
+        check(f"C4 p_m / c_m^CMM is a constant (= sqrt2) for all m (Lambda={Lambda:+.4f})",
+              np.allclose(ratio, np.sqrt(2.0)), f"ratio range {ratio.min():.6f}..{ratio.max():.6f}")
+    print("     Gamma_ours = sqrt2 * [sum_m sqrt(m+1) g_m g_{m+1} - g_0 g_1/Lambda] = 2 Gamma^+-_CMM (unit volume, v_th = 1)")
+
+
 if __name__ == "__main__":
     part_a()
     part_b()
+    part_c()
     if FAILURES:
         print(f"\nFAILED: {FAILURES}")
         sys.exit(1)
