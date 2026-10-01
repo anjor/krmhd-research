@@ -250,7 +250,7 @@ def run_one(
         if not isinstance(state.time, float):
             state = KRMHDState(
                 z_plus=state.z_plus, z_minus=state.z_minus,
-                B_parallel=state.B_parallel, g=state.g,
+                g=state.g,
                 M=state.M, beta_i=state.beta_i, v_th=state.v_th,
                 nu=state.nu, Lambda=state.Lambda,
                 time=float(state.time), grid=state.grid,

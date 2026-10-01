@@ -133,7 +133,6 @@ def run_case(case: dict) -> dict:
             state = KRMHDState(
                 z_plus=state.z_plus,
                 z_minus=state.z_minus,
-                B_parallel=state.B_parallel,
                 g=state.g,
                 M=state.M,
                 beta_i=state.beta_i,

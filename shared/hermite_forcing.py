@@ -80,19 +80,7 @@ def apply_hermite_forcing(
         g_new = jnp.array(state.g)
         for m in forced_moments:
             g_new = g_new.at[:, :, :, m].add(forcing)
-        new_state = KRMHDState(
-            z_plus=state.z_plus,
-            z_minus=state.z_minus,
-            B_parallel=state.B_parallel,
-            g=g_new,
-            M=state.M,
-            beta_i=state.beta_i,
-            v_th=state.v_th,
-            nu=state.nu,
-            Lambda=state.Lambda,
-            time=state.time,
-            grid=state.grid,
-        )
+        new_state = state.model_copy(update={"g": g_new})
         return new_state, key
 
     raise ValueError(
