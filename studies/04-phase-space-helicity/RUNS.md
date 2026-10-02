@@ -6,3 +6,4 @@ The cap is 200 A100-hours for the whole study (`loop/config.env`). `compute_ledg
 
 | Set | Configs | Purpose | Depends on | Est. A100-h | Timeout/run (h) | Status | Launch | Run IDs | Data path | Actual A100-h |
 |---|---|---|---|---|---|---|---|---|---|---|
+| smoke | none (`modal_launch.py smoke`) | launcher round trip, CPU only, no GPU | none | 0 | 0.25 | done | L001 | 04_smoke_20261002_053747 | krmhd-benchmark-vol:/study04/smoke/04_smoke_20261002_053747 | 0 |

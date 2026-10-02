@@ -18,11 +18,11 @@ Nothing. No Modal runs, no GANDALF PRs.
 
 ## Compute
 
-Cap 200 A100-hours. Used 0, reserved 0. Source: `uv run python studies/04-phase-space-helicity/loop/modal_launch.py status`.
+Compute cap 200.0 A100-h: used 0.00, reserved 0.00, left 200.00 (launches 1, runs in flight 0)
 
 ## Iterations, newest first
 
-- it-20261001-2139 — done: loop setup, run interactively from Anjor's brief `loop/SETUP_PROMPT.md`. Recorded decisions 1 to 5 and the loop design; built `LOOP.md`, the runner, the launcher and the two reviewer subagents; tested them. No physics. Next: Gate 1.
+- it-20261001-2139 — done: loop setup, run interactively from Anjor's brief `loop/SETUP_PROMPT.md`. Recorded decisions 1 to 5 and the loop design; built `LOOP.md`, the runner, the launcher and the two reviewer subagents; tested them; smoke launch L001 round trip at 0 A100-h. No physics. Next: Gate 1.
 
 ## Before the loop
 
