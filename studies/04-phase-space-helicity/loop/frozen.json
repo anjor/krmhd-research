@@ -1,0 +1,9 @@
+{
+  "note": "Hashes of the frozen sections (PLAN.md §2 with the decision-4 clarification, PLAN.md §7, SPEC.md §7), recorded at loop setup. The runner writes STOP if the current text no longer matches. Only Anjor changes this file.",
+  "recorded_utc": "2026-10-01T22:14:23Z",
+  "entries": {
+    "studies/04-phase-space-helicity/PLAN.md#2. Question": "61868a506b9496df20eca05d0f830c9930b3195314ccf83e6e561bc37e2f6c7b",
+    "studies/04-phase-space-helicity/PLAN.md#7. Kill criteria": "399c6043dcc43ddc9970a08c9be8fb008a7474ff248f261d04b8168c256e651b",
+    "studies/04-phase-space-helicity/SPEC.md#7. Tolerances": "473b02c451e4141fb85c03772919e568a722b022d08e0f8326734ccbaba00841"
+  }
+}

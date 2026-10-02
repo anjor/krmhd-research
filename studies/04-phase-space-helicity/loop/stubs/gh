@@ -1,0 +1,26 @@
+#!/bin/bash
+# Stub of the gh CLI. Used only by loop/selftest.sh (and preflight tests); never by the loop.
+#
+#   gh auth status   exits $S04_STUB_GH_RC (default 0)
+#   gh api ...       prints "true" (every permission check passes) unless S04_STUB_GH_RC != 0
+#   anything else    prints nothing, exits 0
+# Every call is appended to $S04_STUB_DIR/gh_calls when S04_STUB_DIR is set.
+
+set -u
+D="${S04_STUB_DIR:-}"
+if [ -n "$D" ]; then
+  mkdir -p "$D"
+  echo "$*" >> "$D/gh_calls"
+fi
+RC="${S04_STUB_GH_RC:-0}"
+case "${1:-} ${2:-}" in
+  "auth status")
+    if [ "$RC" = 0 ]; then echo "github.com: logged in (stub)" >&2; else echo "You are not logged into any GitHub hosts (stub)" >&2; fi
+    exit "$RC"
+    ;;
+  "api "*)
+    [ "$RC" = 0 ] || exit 1
+    echo "true"
+    ;;
+esac
+exit 0

@@ -2,3 +2,5 @@
 **/data/
 __pycache__/
 *.pyc
+.claude/settings.local.json
+studies/04-phase-space-helicity/.loop/
