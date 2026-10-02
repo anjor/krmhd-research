@@ -1,8 +1,8 @@
 {
-  "integrity": "244ccc35b501d20e284767dd9362f6daef80a16ffb3c093902e74252def69f78",
+  "integrity": "335e17c0767180cebec3f76a2c4bff69b691ca5da1946551513b23ea57639918",
   "launches": [
     {
-      "app_id": null,
+      "app_id": "ap-ZGMH0xZsqycUsnnBB393RP",
       "app_name": "s04-loop-l001-smoke",
       "created_utc": "2026-10-02T05:37:47Z",
       "frozen": {},
@@ -19,7 +19,7 @@
       "runs": [
         {
           "attempts": [],
-          "call_id": null,
+          "call_id": "fc-01M3XHYPVRQ8KNAZ93AXZ4MZED",
           "charge_basis": null,
           "charged_hours": null,
           "config": null,
@@ -27,11 +27,11 @@
           "reserved_hours": 0.0,
           "result": null,
           "run_id": "04_smoke_20261002_053747",
-          "status": "reserved",
+          "status": "running",
           "volume_path": "/study04/smoke/04_smoke_20261002_053747"
         }
       ],
-      "state": "reserved",
+      "state": "launched",
       "timeout_hours": 0.25,
       "volume": "krmhd-benchmark-vol"
     }
