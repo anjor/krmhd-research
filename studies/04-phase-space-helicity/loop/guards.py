@@ -65,6 +65,7 @@ import re
 import shlex
 import subprocess
 import sys
+import textwrap
 import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
@@ -1281,6 +1282,40 @@ def started_by(call: Call, when: float) -> bool:
     return call.use_ts is None or call.use_ts <= when + ORDER_SLACK_SEC
 
 
+_HANDBACK_START = "[Subagent hand-back]"
+_HANDBACK_END = "The report follows:"
+
+
+def strip_handback(text: str) -> str:
+    """A subagent's own report, without the frame Claude Code puts around it.
+
+    Claude Code 2.1.287 returns a subagent's final text to the session as a tool_result that
+    starts with a '[Subagent hand-back] ... The report follows:' paragraph, can carry
+    '[harness: ...]' notes, and indents every line of the report (seen on this Mac,
+    2026-10-02). The agent saves the report itself, so T1 must compare the saved file with
+    the report and not with the frame. Text without the frame comes back unchanged.
+    """
+    if not text.lstrip().startswith(_HANDBACK_START):
+        return text
+    cut = text.find(_HANDBACK_END)
+    if cut < 0:
+        return text
+    lines = text[cut + len(_HANDBACK_END):].split("\n")
+    while lines and (not lines[0].strip() or lines[0].strip().startswith("[harness:")):
+        lines.pop(0)
+    if not lines:
+        return ""
+    # The report is the indented block. The harness appends its own unindented lines after
+    # it ('agentId: ...', '<usage>...</usage>'), which are not part of the report.
+    indent = lines[0][:len(lines[0]) - len(lines[0].lstrip())]
+    report = []
+    for line in lines:
+        if line.strip() and indent and not line.startswith(indent):
+            break
+        report.append(line)
+    return textwrap.dedent("\n".join(report)).strip("\n")
+
+
 def content_text(content: Any) -> str:
     """Text of a tool_result content: a string, or a list of {type: text, text} parts."""
     if isinstance(content, str):
@@ -1352,6 +1387,8 @@ def parse_transcript(path: Path) -> Transcript:
                         call = calls.get(str(item.get("tool_use_id", "")))
                         if call is not None:
                             call.result = content_text(item.get("content"))
+                            if call.name in SUBAGENT_TOOLS:
+                                call.result = strip_handback(call.result)
                             call.is_error = bool(item.get("is_error"))
                             call.result_line = index
                             call.result_ts = stamp
