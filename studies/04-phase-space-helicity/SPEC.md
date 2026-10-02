@@ -70,11 +70,12 @@ Reference profiles (`derivations/02_reference_profiles.py`, `reference_profiles.
 |---|---|---|---|---|---|---|---|
 | Conservation | 32³ | 32, 64 | 0 | 0 | L = 1 | Mac, `uv run` | Gate 2 residuals vs dt and M |
 | Forcing test | 32³ | 64 | 3 | 100 | L = 1 | Mac | Gate 3 |
-| Checkpoint analysis | 128³ | 128 | 1–50 | 100 | L = 1 | Mac, existing data | Gate 2 budgets, base-state Γ |
-| Set A | 128³ | 128 | 3 | 100 | L = 1 | Modal, Anjor | Gate 4 |
-| Set B | 128³ | 64, 256 | two values | 100 | L = 1 | Modal, Anjor | convergence |
+| Checkpoint analysis | 128³ | 128 | 1–50 | 100 | L = 1 | Mac, existing data | Gate 2 budgets, base-state Γ; with the v0.5.0 checkpoints a pipeline test only (decision 5) |
+| Base state | 128³ | 128 (Hermite branch) | 3 (Hermite branch) | 100 | L = 1 | Modal, the agent | decision 5: the Alfvénic base state regenerated to saturation on the pinned GANDALF with the forcing recalibrated, then the ν = 3 Hermite branch that set A starts from |
+| Set A | 128³ | 128 | 3 | 100 | L = 1 | Modal, the agent | Gate 4 |
+| Set B | 128³ | 64, 256 | two values | 100 | L = 1 | Modal, the agent | convergence |
 
-Box: L_x = L_y = L_z = 1 (checkpoint attrs). k_⊥ and k_z in units of 2π/L. τ_A = 1. Local runs must stay under 20 minutes wall time.
+Box: L_x = L_y = L_z = 1 (checkpoint attrs). k_⊥ and k_z in units of 2π/L. τ_A = 1. Local runs must stay under 20 minutes wall time. Modal runs are launched by the agent through `loop/modal_launch.py` only (decision 1, 1 October 2026).
 
 ## 5. Forcing
 
@@ -119,6 +120,10 @@ Gate 4 (experiment)
 
 Study-wide (from repo CLAUDE.md): energy balance within 5 %, total energy fluctuations < 10 % of mean over the final 50 τ_A, E(k⊥) shows an inertial range.
 
+## 7a. Gate 4 criteria per run set
+
+Added 1 October 2026 (decision 3, `LOOP.md`). Before set A or set B is launched, the agent writes here, in a subsection `### 7a.<set>`, the quantities, the averaging windows and the criteria that will judge that set, consistent with §7, and puts the same criteria in code in `analysis/gate4_<set>.py`, with a critic pass. For set B this includes the convergence criteria. The new base state (decision 5) is accepted the same way: its criteria go in `### 7a.base` and its evaluation in `analysis/gate_base.py` (`LOOP.md` §5). The launch freezes the subsection and the code (`modal_launch.py launch --freeze`). After the launch, changing them is a hard stop.
+
 ## 8. Base-state inventory (Study 2 ν-scan, IMEX, all from the same t₀ = 2000 τ_A Alfvénic checkpoint)
 
 | ν | Local path (`studies/02-collisionality-scan/data/`) | Checkpoints | Spectra | ε_ν |
@@ -139,3 +144,4 @@ Same labels on Modal volume `krmhd-benchmark-vol`, each with `checkpoints/` ever
 3. g carries a resistive sink over all m. This is in GANDALF by design (both schemes). It is a term in the budgets, not an error.
 4. Hermite forcing noise in the ν-scan runner was float32. Local tests use float64.
 5. One run evolves one compressive hierarchy G^σ. Both σ need two runs (Λ = ±√5). There is no separate B∥ field in GANDALF v0.6.0.
+6. The ν-scan checkpoints of §8 were made on GANDALF v0.5.0, before gandalf#144 (Elsasser nonlinearity 2× too large) and #148 (first-order z± stepper). Under decision 5 (1 October 2026) they serve only to test the Phase 1 pipeline, and no science claim rests on them. The agent regenerates the base state on the pinned GANDALF (run class "Base state" in §4) and set A starts from it.

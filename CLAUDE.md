@@ -15,7 +15,7 @@ This repo orchestrates numerical experiments using the GANDALF KRMHD spectral so
 ## Critical Rules
 
 ### 1. GANDALF is read-only
-GANDALF is installed as a Python package (`import krmhd` or `from krmhd import ...`). **Never modify GANDALF source code from this repo.** If GANDALF needs changes, file an issue on https://github.com/anjor/gandalf.
+GANDALF is installed as a Python package (`import krmhd` or `from krmhd import ...`). **Never modify GANDALF source code from this repo.** If GANDALF needs changes, file an issue on https://github.com/anjor/gandalf. Study 04's loop changes GANDALF through PRs on the GANDALF repo, under `studies/04-phase-space-helicity/LOOP.md`.
 
 ### 2. Physics validation before science
 Every simulation must pass these gates before extracting any scientific result:
