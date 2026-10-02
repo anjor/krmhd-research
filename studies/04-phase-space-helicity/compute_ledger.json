@@ -1,5 +1,5 @@
 {
-  "integrity": "335e17c0767180cebec3f76a2c4bff69b691ca5da1946551513b23ea57639918",
+  "integrity": "a6fa1eddf5ef527215cd6aee0caadaee7a2fe81a41243ea10a725e3e500c6770",
   "launches": [
     {
       "app_id": "ap-ZGMH0xZsqycUsnnBB393RP",
@@ -18,20 +18,28 @@
       "run_set": "smoke",
       "runs": [
         {
-          "attempts": [],
+          "attempts": [
+            {
+              "attempt_id": "1c51dd518aa4",
+              "end_utc": "2026-10-02T05:40:42Z",
+              "hours": 0.0301,
+              "start_utc": "2026-10-02T05:38:53Z",
+              "status": "ok"
+            }
+          ],
           "call_id": "fc-01M3XHYPVRQ8KNAZ93AXZ4MZED",
-          "charge_basis": null,
-          "charged_hours": null,
+          "charge_basis": "none",
+          "charged_hours": 0.0,
           "config": null,
           "config_sha256": null,
           "reserved_hours": 0.0,
-          "result": null,
+          "result": "ok: {\"run_id\": \"04_smoke_20261002_053747\", \"status\": \"ok\", \"result\": {\"run_id\": \"04_smoke_20261002_053747\", \"launch_id\": \"L001\", \"repo_commit\": \"30bdc8181df52fa7b307e5453b776a09ffa142c1\", \"attempt_id\": \"1c51dd518aa4\", \"call_id\": \"fc-01M3XHYPVRQ8KNAZ93AXZ4MZED\", \"python\": \"3.12.6\", \"gandalf_sha_env\": \"6596bb85af8795a857bc8e52d275ebffa30ba6a5\", \"jax_version_env\": \"0.9.1\", \"repo_mount_ok\": true, \"repo_listing\": [\"LOOP.md\", \"PLAN.md\", \"QUESTIONS.md\", \"RUNS.md\", \"SPEC.md\", \"STATUS.md\", \"analysis\",...",
           "run_id": "04_smoke_20261002_053747",
-          "status": "running",
+          "status": "finished",
           "volume_path": "/study04/smoke/04_smoke_20261002_053747"
         }
       ],
-      "state": "launched",
+      "state": "closed",
       "timeout_hours": 0.25,
       "volume": "krmhd-benchmark-vol"
     }
