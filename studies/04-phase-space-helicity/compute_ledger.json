@@ -1,0 +1,43 @@
+{
+  "integrity": "244ccc35b501d20e284767dd9362f6daef80a16ffb3c093902e74252def69f78",
+  "launches": [
+    {
+      "app_id": null,
+      "app_name": "s04-loop-l001-smoke",
+      "created_utc": "2026-10-02T05:37:47Z",
+      "frozen": {},
+      "gandalf_commit": "6596bb85af8795a857bc8e52d275ebffa30ba6a5",
+      "gate_report": null,
+      "iteration": "it-20261001-2139",
+      "jax_version": "0.9.1",
+      "kind": "smoke",
+      "launch_id": "L001",
+      "local_test": null,
+      "notes": "",
+      "repo_commit": "30bdc8181df52fa7b307e5453b776a09ffa142c1",
+      "run_set": "smoke",
+      "runs": [
+        {
+          "attempts": [],
+          "call_id": null,
+          "charge_basis": null,
+          "charged_hours": null,
+          "config": null,
+          "config_sha256": null,
+          "reserved_hours": 0.0,
+          "result": null,
+          "run_id": "04_smoke_20261002_053747",
+          "status": "reserved",
+          "volume_path": "/study04/smoke/04_smoke_20261002_053747"
+        }
+      ],
+      "state": "reserved",
+      "timeout_hours": 0.25,
+      "volume": "krmhd-benchmark-vol"
+    }
+  ],
+  "note": "Written only by loop/modal_launch.py. The cap is in loop/config.env. A hand edit breaks the integrity hash and the runner writes STOP.",
+  "schema": 1,
+  "study": "04-phase-space-helicity",
+  "unit": "A100-hours"
+}
