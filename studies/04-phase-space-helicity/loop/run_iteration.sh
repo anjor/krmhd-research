@@ -41,9 +41,12 @@
 # main with origin (a conflict that will not rebase: keep the loop's commits on a pushed
 # loop-diverged-* branch, reset a clean main to origin, STOP); then check STOP before anything
 # from HEAD runs; then take the loop files from HEAD and check those files, the .gitignore
-# rules, the setup, Modal apps from earlier sessions still unchecked, WAIT, the backoff, the
-# daily and total caps (from transcripts and from the log), gh and modal logins, and running
-# loop apps against the ledger.
+# rules, the setup, Modal apps from earlier sessions still unchecked (no session until they
+# are; STOP once the oldest waiting window ended APPS_UNCHECKED_STOP_SEC ago), WAIT, the
+# backoff, the daily and total caps (from transcripts and from the log), gh and modal logins,
+# and running loop apps against the ledger; then record GANDALF's branches outside study04/,
+# its tags, and origin's tags. At every start the Study 2 data link is excluded locally and
+# the tracked files it hides (data/.gitkeep) are marked skip-worktree.
 #
 # The session: claude -p in its own session and process group, with SIGPIPE, SIGINT, SIGQUIT
 # and SIGXFSZ reset to their defaults, and a watchdog that records its processes and kills
@@ -51,18 +54,21 @@
 #
 # After it: kill left-over processes, including any process without a terminal whose working
 # directory is in the clone or the GANDALF worktree; seal the transcript (its sha256 in
-# .loop/transcripts.sha256); put back a .git/config the session changed; transcript checks T2
-# and T3 (before anything is stashed); the .gitignore rules; rescue a half-done git operation;
-# save commits left off main on a pushed branch; put back a committed STOP the session
-# deleted (a finding); commit a STOP the session left uncommitted (with its Blocking line when
-# QUESTIONS.md only gained lines); commit the session's uncommitted log lines (only if they
-# append) and WAIT; stash the rest; append a stub entry if the session's entry has no End:
-# line or work was stashed or rescued; push (a failure leaves .loop/push_pending, retried
-# before the next session); then the guards (guards.py commit-guards with provenance,
-# frozen-check, ledger-verify, transcript T1 and T4, a hard-stop outcome without STOP, streak,
-# and apps-check over the session's time window). A missing transcript after a session that
-# committed is a finding. Any finding writes STOP, committed and pushed (or, if the local
-# commit fails, pushed straight onto origin/main). Then the backoff: a rate_limit_event whose
+# .loop/transcripts.sha256); put back a .git/config the session changed; transcript checks T2,
+# T3 and T5 (before anything is stashed); the .gitignore rules; rescue a half-done git
+# operation; save commits left off main on a pushed branch; put back a committed STOP the
+# session deleted (a finding); commit a STOP the session left uncommitted (with its Blocking
+# line when QUESTIONS.md only gained lines); set the data link's skip-worktree bits again;
+# commit the session's uncommitted log lines (only if they append) and WAIT; stash the rest;
+# append a stub entry if the session's entry has no End: line or work was stashed or
+# rescued; push (a failure leaves .loop/push_pending, retried before the next session); then
+# the guards (guards.py commit-guards with provenance, frozen-check, ledger-verify,
+# transcript T1, with the launcher's own report check, and T4, a hard-stop outcome without
+# STOP, GANDALF's branches and tags against the record and origin's tags against the list
+# taken before the session, streak, and apps-check over the session's time window). A
+# missing transcript after a session that committed is a finding. Any finding writes STOP,
+# committed and pushed (or, if the local commit fails, pushed straight onto origin/main).
+# Then the backoff: a rate_limit_event whose
 # status is not 'allowed' sets it to the later of now + FAST_FAIL_BACKOFF_SEC and its reset
 # time + RATE_LIMIT_MARGIN_SEC; a session that failed within FAST_FAIL_SEC sets now +
 # FAST_FAIL_BACKOFF_SEC.
@@ -74,16 +80,16 @@
 # function that bash parses before running it, so a session that edits this file on disk
 # cannot change what the running runner does. For the same reason the checks run from a
 # copy of the loop files (guards.py, loopcommon.py, frozen.json, config.env, settings.json,
-# prompt.md) taken from the commit the session started from, under the interpreter's real
-# path with -I -S, and claude gets its --settings from that copy.
+# prompt.md, modal_launch.py) taken from the commit the session started from, under the
+# interpreter's real path with -I -S, and claude gets its --settings from that copy.
 
 set -u
 umask 022
 
 STUDY_REL="studies/04-phase-space-helicity"
 LOOP_REL="$STUDY_REL/loop"
-CONFIG_KEYS="COMPUTE_CAP_A100_HOURS CLAUDE_BIN CLAUDE_MODEL CLAUDE_EFFORT MAX_BUDGET_USD DAILY_ITERATION_CAP TOTAL_ITERATION_CAP SESSION_TIME_LIMIT_SEC PAUSE_BETWEEN_ITERATIONS_SEC FAST_FAIL_SEC FAST_FAIL_BACKOFF_SEC WIP_STREAK_LIMIT WATCHDOG_POLL_SEC KILL_GRACE_SEC GANDALF_WORKTREE MODAL_APP_PREFIX MODAL_VOLUME MODAL_VOLUME_ROOT LOOP_GIT_NAME LOOP_GIT_EMAIL MODAL_BIN GH_BIN PYTHON_BIN UV_BIN STOP_ON_ANY_NEW_MODAL_APP RATE_LIMIT_MARGIN_SEC"
-NUMERIC_KEYS="DAILY_ITERATION_CAP TOTAL_ITERATION_CAP SESSION_TIME_LIMIT_SEC PAUSE_BETWEEN_ITERATIONS_SEC FAST_FAIL_SEC FAST_FAIL_BACKOFF_SEC WIP_STREAK_LIMIT WATCHDOG_POLL_SEC KILL_GRACE_SEC RATE_LIMIT_MARGIN_SEC"
+CONFIG_KEYS="COMPUTE_CAP_A100_HOURS CLAUDE_BIN CLAUDE_MODEL CLAUDE_EFFORT MAX_BUDGET_USD DAILY_ITERATION_CAP TOTAL_ITERATION_CAP SESSION_TIME_LIMIT_SEC PAUSE_BETWEEN_ITERATIONS_SEC FAST_FAIL_SEC FAST_FAIL_BACKOFF_SEC WIP_STREAK_LIMIT WATCHDOG_POLL_SEC KILL_GRACE_SEC GANDALF_WORKTREE MODAL_APP_PREFIX MODAL_VOLUME MODAL_VOLUME_ROOT LOOP_GIT_NAME LOOP_GIT_EMAIL MODAL_BIN GH_BIN PYTHON_BIN UV_BIN STOP_ON_ANY_NEW_MODAL_APP RATE_LIMIT_MARGIN_SEC APPS_UNCHECKED_STOP_SEC"
+NUMERIC_KEYS="DAILY_ITERATION_CAP TOTAL_ITERATION_CAP SESSION_TIME_LIMIT_SEC PAUSE_BETWEEN_ITERATIONS_SEC FAST_FAIL_SEC FAST_FAIL_BACKOFF_SEC WIP_STREAK_LIMIT WATCHDOG_POLL_SEC KILL_GRACE_SEC RATE_LIMIT_MARGIN_SEC APPS_UNCHECKED_STOP_SEC"
 NET_TIMEOUT=300   # seconds for git fetch/push; a hung network call must not hang the loop
 DATA_LINK_REL="studies/02-collisionality-scan/data"
 
@@ -163,6 +169,7 @@ load_config() {  # load_config FILE: read it, apply S04_ overrides, fill default
   [ -n "$PYTHON_BIN" ] || PYTHON_BIN="$REPO/.venv/bin/python"
   [ -n "$UV_BIN" ] || UV_BIN=uv
   [ -n "$RATE_LIMIT_MARGIN_SEC" ] || RATE_LIMIT_MARGIN_SEC=300
+  [ -n "$APPS_UNCHECKED_STOP_SEC" ] || APPS_UNCHECKED_STOP_SEC=86400
   [ -n "$STOP_ON_ANY_NEW_MODAL_APP" ] || STOP_ON_ANY_NEW_MODAL_APP=1
   for k in CLAUDE_BIN MODAL_BIN GH_BIN PYTHON_BIN UV_BIN GANDALF_WORKTREE; do
     eval "v=\$$k"
@@ -225,9 +232,11 @@ guard() {  # guard SUBCOMMAND ...: guards.py from the trusted copy, against this
 }
 
 make_trusted() {  # make_trusted REV: copy the loop's checking files out of commit REV
+  # modal_launch.py is copied for T1, which runs the launcher's own report check from it; a
+  # commit without it makes that check fail, which counts against any PASS report.
   local rev="$1" f
   mkdir -p "$TRUSTED" || return 1
-  for f in guards.py loopcommon.py frozen.json config.env settings.json prompt.md; do
+  for f in guards.py loopcommon.py frozen.json config.env settings.json prompt.md modal_launch.py; do
     rm -f "$TRUSTED/$f"
     if g cat-file -e "$rev:$LOOP_REL/$f" 2>/dev/null; then
       g cat-file -p "$rev:$LOOP_REL/$f" > "$TRUSTED/$f" || return 1
@@ -471,12 +480,42 @@ ensure_excludes() {  # the runner's state and run data never go into a stash, wh
   for rule in "/$STUDY_REL/.loop/" "**/data/"; do
     if ! grep -qxF -- "$rule" "$ex" 2>/dev/null; then echo "$rule" >> "$ex"; note excluded "$rule"; fi
   done
+  ensure_data_link start
+}
+
+ensure_data_link() {  # ensure_data_link start|post: keep the Study 2 data link and the files it hides out of the way of git
   # The clone links Study 2's data to Anjor's checkout. The **/data/ rule does not match a
-  # symlink, and a stash would remove the link, so keep it out of git locally.
-  if [ -L "$REPO/$DATA_LINK_REL" ] && ! g check-ignore -q "$DATA_LINK_REL"; then
+  # symlink, and a stash would remove the link, so the link is excluded locally. The link
+  # replaces a folder that holds tracked files (data/.gitkeep): git then sees them as deleted,
+  # 'beyond a symbolic link', and a stash cannot put them back, so each is marked
+  # skip-worktree. 'git read-tree HEAD' drops that bit, so it is set again before the
+  # post-session stash too.
+  local when="$1" ex path n=0
+  [ -L "$REPO/$DATA_LINK_REL" ] || return 0
+  # --no-index: the index holds data/.gitkeep, and without it git calls no tracked path ignored.
+  if ! g check-ignore -q --no-index -- "$DATA_LINK_REL"; then
+    ex=$(g rev-parse --git-path info/exclude 2>/dev/null) || return 0
+    case "$ex" in /*) ;; *) ex="$REPO/$ex" ;; esac
+    mkdir -p "$(dirname "$ex")"
     echo "/$DATA_LINK_REL" >> "$ex"
     note excluded_data_link "$DATA_LINK_REL"
   fi
+  while IFS= read -r path; do
+    [ -n "$path" ] || continue
+    if g update-index --skip-worktree -- "$path" >/dev/null 2>&1; then
+      n=$((n + 1))
+    else
+      note skip_worktree_failed "$path"
+      say "could not mark $path skip-worktree; a stash will fail on it"
+    fi
+  done <<EOF
+$(g ls-files -v -- "$DATA_LINK_REL/" 2>/dev/null | awk '$1 != "S" && $1 != "s" { sub(/^[^ ]+ /, ""); print }')
+EOF
+  if [ "$n" -gt 0 ]; then
+    if [ "$when" = post ]; then note skip_worktree_reset "$n"; else note skip_worktree "$n"; fi
+    say "marked $n tracked file(s) under the Study 2 data link skip-worktree ($when)"
+  fi
+  return 0
 }
 
 latest_iter() {  # the newest iteration ID with a transcript, or 'unknown'
@@ -823,6 +862,30 @@ stash_note() {  # every stash entry with its sha, and unmerged rescue branches, 
   echo "${s:-none}"
 }
 
+gandalf_refs_record() {  # gandalf_refs_record ID: before the session, GANDALF's own branches and tags, and origin's tags
+  # The worktree shares its refs with Anjor's checkout of GANDALF, so its branches outside
+  # study04/ and its tags are his. After the session a change to them writes STOP: a deleted
+  # branch, a branch made or moved other than by Anjor's own git identity (the reflogs say),
+  # and any tag made, moved or deleted, locally or on origin. A tag that origin already had
+  # (Anjor's, fetched by the session) is fine. The record holds its time and that identity.
+  local id="$1"
+  rm -f "$STATE"/gandalf-refs.pre.* "$STATE"/gandalf-tags.origin.* "$STATE"/gandalf-tags.origin-after.*
+  if guard gandalf-refs --worktree "$GANDALF_WORKTREE" > "$STATE/gandalf-refs.tmp" 2>/dev/null; then
+    mv "$STATE/gandalf-refs.tmp" "$STATE/gandalf-refs.pre.$id"
+  else
+    rm -f "$STATE/gandalf-refs.tmp"
+    note gandalf_refs_unrecorded 1
+    say "could not record GANDALF's branches and tags before the session; they are not checked after it"
+    return 0
+  fi
+  if ! with_timeout 60 git -C "$GANDALF_WORKTREE" -c core.hooksPath=/dev/null -c core.fsmonitor=false \
+       ls-remote --tags origin > "$STATE/gandalf-tags.origin.$id" 2>/dev/null; then
+    rm -f "$STATE/gandalf-tags.origin.$id"
+    note gandalf_origin_tags unread
+  fi
+  return 0
+}
+
 # ---------------------------------------------------------------------------
 # Modal apps against the ledger
 # ---------------------------------------------------------------------------
@@ -867,6 +930,40 @@ $out"
 }
 
 APPS_DECISION="For each app listed: find out what it is, stop it with 'modal app stop <app id>' if it should not run, and record what it cost. If you launched it yourself, say so. Then resume."
+APPS_OVERDUE_DECISION="On this Mac, make 'modal app list --json' work again (login, network, CLI version). In the Modal dashboard, look for apps created during the windows above that compute_ledger.json does not know, and stop any that should not run. Then resume: the runner checks the windows before the next session. If you checked them by hand and the list still cannot be read, delete .loop/app_windows in the loop clone before you resume."
+
+# A session's window waits in .loop/app_windows until 'modal app list --json' can be read and
+# checked. Until then no session starts (the check is retried at every runner start). If the
+# oldest waiting window ended APPS_UNCHECKED_STOP_SEC ago or more, the runner writes STOP, so
+# that a check that cannot be made never stalls the loop without Anjor hearing of it.
+
+apps_overdue() {  # 0 if the oldest session window still waiting for its check ended APPS_UNCHECKED_STOP_SEC ago or more
+  local oldest
+  [ -s "$STATE/app_windows" ] || return 1
+  oldest=$(awk 'NR == 1 { print $2 }' "$STATE/app_windows")
+  case "$oldest" in ''|*[!0-9]*) oldest=$(stat -f %m "$STATE/app_windows" 2>/dev/null || echo 0) ;; esac
+  [ $(( $(date +%s) - oldest )) -ge "$APPS_UNCHECKED_STOP_SEC" ]
+}
+
+apps_overdue_reason() {  # the STOP text for session windows that could not be checked in time
+  local ws we list="" limit
+  while read -r ws we; do
+    case "$ws:$we" in
+      [0-9]*:[0-9]*) list="$list $(date -u -r "$ws" +%Y-%m-%dT%H:%M:%SZ) to $(date -u -r "$we" +%Y-%m-%dT%H:%M:%SZ);" ;;
+      *) list="$list (unreadable line '$ws $we');" ;;
+    esac
+  done < "$STATE/app_windows"
+  if [ "$APPS_UNCHECKED_STOP_SEC" -ge 3600 ]; then limit="$((APPS_UNCHECKED_STOP_SEC / 3600)) h"; else limit="${APPS_UNCHECKED_STOP_SEC} s"; fi
+  printf "modal apps unchecked: the runner cannot read the Modal app list (%s), so for %s or more it has not been able to check for Modal apps created during these session windows (UTC):%s no session starts until they are checked." \
+    "$APPS_ERROR" "$limit" "$list"
+}
+
+iter_start_epoch() {  # iter_start_epoch ID: the UTC minute an iteration ID names (it-YYYYMMDD-HHMM), as an epoch
+  local d="${1#it-}"
+  d="${d%%-*}${d#*-}"
+  case "$d" in [0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]) ;; *) return 1 ;; esac
+  date -j -u -f '%Y%m%d%H%M%S' "${d}00" +%s 2>/dev/null
+}
 
 # ---------------------------------------------------------------------------
 # After a session (also used to recover an iteration whose runner died)
@@ -942,9 +1039,9 @@ finish_iteration() {  # finish_iteration ID BEFORE EXIT_CODE DURATION_SEC NOTE T
     GITCONFIG_CHANGED=0
   fi
   # 1. Transcript checks that need the session's files on disk: T3 reads the scripts it ran,
-  # which a stash would remove. T2 needs only the sealed transcripts.
-  out=$(guard transcript-check --transcript "$transcript" --checks T2,T3 --transcripts-dir "$STATE/transcripts" \
-          --manifest "$STATE/transcripts.sha256" 2>&1)
+  # which a stash would remove. T2 needs only the sealed transcripts, T5 only this one.
+  out=$(guard transcript-check --transcript "$transcript" --checks T2,T3,T5 --transcripts-dir "$STATE/transcripts" \
+          --manifest "$STATE/transcripts.sha256" --worktree "$GANDALF_WORKTREE" 2>&1)
   case $? in
     0) ;;
     1) add_reason "transcript" "$out" ;;
@@ -990,6 +1087,9 @@ finish_iteration() {  # finish_iteration ID BEFORE EXIT_CODE DURATION_SEC NOTE T
   fi
   commit_uncommitted_stop "$id"
   # 6. Uncommitted log lines and WAIT are committed (they are the record), the rest stashed.
+  # The data link's skip-worktree bits first: a session that dropped them would otherwise
+  # leave a deletion that no stash can take.
+  ensure_data_link post
   save_log_changes "$id" "$before"
   if ! stash_dirty "loop-stash $id"; then
     add_reason "stash failed" "The working tree could not be stashed after the session, so no session may start on it: $STASH_LEFT"
@@ -1044,6 +1144,30 @@ finish_iteration() {  # finish_iteration ID BEFORE EXIT_CODE DURATION_SEC NOTE T
   if [ -n "$REASONS" ]; then
     DECISION="Each line above names a commit or a file and the rule it broke. Revert or approve each flagged change (look at the commits with git show), then resume."
   fi
+  # GANDALF's own branches and tags, as recorded before the session, and origin's tags then
+  # and now: a tag pushed with a refspec leaves no local tag behind.
+  if [ -f "$STATE/gandalf-refs.pre.$id" ]; then
+    if ! with_timeout 60 git -C "$GANDALF_WORKTREE" -c core.hooksPath=/dev/null -c core.fsmonitor=false \
+         ls-remote --tags origin > "$STATE/gandalf-tags.origin-after.$id" 2>/dev/null; then
+      rm -f "$STATE/gandalf-tags.origin-after.$id"
+      note gandalf_origin_tags_after unread
+    fi
+    if [ ! -f "$STATE/gandalf-tags.origin.$id" ] || [ ! -f "$STATE/gandalf-tags.origin-after.$id" ]; then
+      note gandalf_origin_tags_unchecked 1
+      say "origin's tags were not compared before and after the session: a list could not be read"
+    fi
+    out=$(guard gandalf-refs-check --worktree "$GANDALF_WORKTREE" --before "$STATE/gandalf-refs.pre.$id" \
+            --origin-tags "$STATE/gandalf-tags.origin.$id" --origin-tags-after "$STATE/gandalf-tags.origin-after.$id" 2>&1)
+    case $? in
+      0) ;;
+      1)
+        add_reason "gandalf refs" "$out"
+        DECISION="${DECISION:+$DECISION }The GANDALF repo's branches outside study04/ and its tags are yours: the loop touches only study04/ branches and never tags. A branch you moved or made yourself in ~/repos/anjor/gandalf is not listed; a tag, or a branch you deleted, is, whoever changed it. Put back what the session changed (git reflog in ~/repos/anjor/gandalf shows old branch tips; check whether a new tag reached origin and started a release workflow), or approve the change if you made it yourself during the session, then resume."
+        ;;
+      *) note gandalf_refs_unchecked "$(printf '%s\n' "$out" | head -1)"; say "GANDALF's branches and tags not checked: $out" ;;
+    esac
+    rm -f "$STATE/gandalf-refs.pre.$id" "$STATE/gandalf-tags.origin.$id" "$STATE/gandalf-tags.origin-after.$id"
+  fi
   out=$(guard streak --loop-committer "$LOOP_GIT_NAME" 2>&1)
   n=$(printf '%s\n' "$out" | head -1)
   case "$n" in
@@ -1058,7 +1182,11 @@ finish_iteration() {  # finish_iteration ID BEFORE EXIT_CODE DURATION_SEC NOTE T
   apps_guard "after iteration $id"
   case $? in
     12) add_reason "modal apps" "$APPS_PROBLEM"; DECISION="$DECISION $APPS_DECISION" ;;
-    14) note apps_unchecked "$APPS_ERROR"; say "Modal app check postponed: $APPS_ERROR" ;;
+    14)
+      note apps_unchecked "$APPS_ERROR"
+      say "Modal app check postponed: $APPS_ERROR"
+      if apps_overdue; then add_reason "modal apps unchecked" "$(apps_overdue_reason)"; DECISION="$DECISION $APPS_OVERDUE_DECISION"; fi
+      ;;
   esac
   REASONS=$(printf '%s\n' "$REASONS" | sed '/^[[:space:]]*$/d')
   if [ -n "$REASONS" ]; then
@@ -1085,12 +1213,23 @@ inflight_runner_alive() {  # the runner named in .loop/inflight is alive: hand i
 }
 
 recover_dead_iteration() {  # a runner died mid-iteration: finish that iteration's bookkeeping now
-  local dead_id dead_before dead_start dead_pid dead_lst
+  local dead_id dead_before dead_start dead_pid dead_lst win_start
   read -r dead_id dead_before dead_start dead_pid dead_lst < "$STATE/inflight"
   if inflight_runner_alive; then return 13; fi
   say "iteration ${dead_id:-?} has no finished bookkeeping (its runner died); recovering it"
   note recovered "${dead_id:-unknown}"
-  [ -n "${dead_start:-}" ] && echo "$dead_start $(date +%s)" >> "$STATE/app_windows"
+  # Its session window is checked for Modal apps like any other. Without a recorded start,
+  # the minute in its iteration ID starts the window; without that, the window starts at 0,
+  # so that every app the ledger does not know is flagged rather than none.
+  win_start="${dead_start:-}"
+  case "$win_start" in
+    ''|*[!0-9]*)
+      win_start=$(iter_start_epoch "${dead_id:-}") || win_start=0
+      [ -n "$win_start" ] || win_start=0
+      note window_start_guessed "$win_start"
+      ;;
+  esac
+  echo "$win_start $(date +%s)" >> "$STATE/app_windows"
   if [ -z "${dead_id:-}" ] || [ -z "${dead_before:-}" ] || [ "$ANCHOR" != "$dead_before" ]; then
     # HEAD may hold that session's unchecked commits, so nothing from it runs (GUARD_PY is
     # empty): STOP is written by the runner alone.
@@ -1388,13 +1527,22 @@ $clone_problems" "Remove those files from the loop clone (they are not committed
     return 12
   fi
 
-  # 8. Apps created during an earlier session that could not be checked then.
+  # 8. Apps created during an earlier session that could not be checked then. No session
+  # starts until they are checked; a check that stays impossible for too long is a STOP.
   if [ -s "$STATE/app_windows" ]; then
     apps_guard "pending check of an earlier session"
     case $? in
       12) write_stop "modal apps" "$APPS_PROBLEM" "$APPS_DECISION"; runlog skip-stop reason=modal_apps; return 12 ;;
-      14) echo $(( $(date +%s) + FAST_FAIL_BACKOFF_SEC )) > "$STATE/backoff_until"
-          runlog skip-auth "reason=$(clean "$APPS_ERROR")"; return 14 ;;
+      14)
+        if apps_overdue; then
+          write_stop "modal apps unchecked" "$(apps_overdue_reason)" "$APPS_OVERDUE_DECISION"
+          runlog skip-stop "reason=modal_apps_unchecked error=$(clean "$APPS_ERROR")"
+          return 12
+        fi
+        echo $(( $(date +%s) + FAST_FAIL_BACKOFF_SEC )) > "$STATE/backoff_until"
+        runlog skip-auth "reason=$(clean "$APPS_ERROR") pending_windows=$(wc -l < "$STATE/app_windows" | tr -d ' ')"
+        return 14
+        ;;
     esac
   fi
 
@@ -1471,6 +1619,7 @@ $clone_problems" "Remove those files from the loop clone (they are not committed
   fi
   started=$(utc_now)
   before=$(g rev-parse HEAD)
+  gandalf_refs_record "$ITER_ID"
   STASH_NOTE=$(stash_note)
   prompt=$(guard render-prompt --template "$TRUSTED/prompt.md" --iter "$ITER_ID" --started "$started" \
              --worktree "$GANDALF_WORKTREE" --stash-note "$STASH_NOTE") \

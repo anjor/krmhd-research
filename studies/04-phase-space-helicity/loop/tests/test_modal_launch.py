@@ -20,6 +20,7 @@ from __future__ import annotations
 import contextlib
 import enum
 import fcntl
+import hashlib
 import importlib.util
 import io
 import json
@@ -74,6 +75,14 @@ SET_GATES = {"base": (GATE1,), "A": (GATE, GATE_BASE), "B": (GATE4_A,)}
 LOCAL = f"{STUDY}/local_tests/setA_smoke.log"
 RUN_SET_PY = f"{STUDY}/runcode/run_set.py"
 RUNS_MD = f"{STUDY}/RUNS.md"
+SPEC_MD = f"{STUDY}/SPEC.md"
+EVAL_A = f"{STUDY}/analysis/gate4_A.py"
+EVAL_B = f"{STUDY}/analysis/gate4_B.py"
+EVAL_BASE = f"{STUDY}/analysis/gate_base.py"
+# The keys every launch of each run set freezes (LOOP.md section 5): its criteria in SPEC.md
+# section 7a and the file that evaluates them.
+SET_FREEZE = {"base": (f"{SPEC_MD}#7a.base", EVAL_BASE), "A": (f"{SPEC_MD}#7a.A", EVAL_A),
+              "B": (f"{SPEC_MD}#7a.B", EVAL_B)}
 
 SAFE_MODAL_ENV = {
     "MODAL_SERVER_URL": "http://127.0.0.1:9",
@@ -139,6 +148,10 @@ SPEC = textwrap.dedent("""\
     ### 7a.B Set B
 
     Criterion B.
+
+    ### 7a.base Base state
+
+    Saturation: total energy within 10 % of its mean over the final 50 tau_A.
 
     ## 8. Next
 
@@ -248,6 +261,9 @@ TEMPLATE_FILES: Dict[str, str] = {
         """),
     RUN_SET_PY: "def run(cfg, out_dir, ctx):\n    return {'ok': True}\n",
     f"{STUDY}/runcode/no_run.py": "def main():\n    return 0\n",
+    EVAL_A: "# Gate 4 evaluation of set A (scratch)\nTHRESHOLD = 2.0\n",
+    EVAL_B: "# Gate 4 evaluation of set B (scratch)\nTHRESHOLD = 2.0\n",
+    EVAL_BASE: "# Base-state gate evaluation (scratch)\nSATURATION_TOLERANCE = 0.1\n",
     CFG1: f"entrypoint: {RUN_SET_PY}\nN: 32\nseed: 1\n",
     CFG2: f"entrypoint: {RUN_SET_PY}\nN: 32\nseed: 2\n",
     CFG3: f"entrypoint: {RUN_SET_PY}\nN: 32\nseed: 3\n",
@@ -449,20 +465,24 @@ class Scratch:
 
     def launch_args(self, *configs: str, run_set: str = "A", hours: float = 3.0,
                     gates: Optional[Tuple[str, ...]] = None, local: str = LOCAL,
-                    extra: Tuple[str, ...] = ()) -> List[str]:
-        """The launch command line; the gate reports default to the ones the set launches on."""
+                    extra: Tuple[str, ...] = (), freeze: Optional[Tuple[str, ...]] = None) -> List[str]:
+        """The launch command line. The gate reports default to the ones the set launches on,
+        and the freeze keys to the set's own (SET_FREEZE); ``freeze`` gives exactly the keys."""
         args = ["launch", "--set", run_set, "--timeout-hours", str(hours)]
         for gate in (SET_GATES.get(run_set, (GATE,)) if gates is None else gates):
             args += ["--gate-report", gate]
+        for key in (SET_FREEZE.get(run_set, ()) if freeze is None else freeze):
+            args += ["--freeze", key]
         return args + ["--local-test", local, *extra, *configs]
 
     def launch(self, *configs: str, run_set: str = "A", hours: float = 3.0, gate: Optional[str] = None,
                gates: Optional[Tuple[str, ...]] = None, local: str = LOCAL, extra: Tuple[str, ...] = (),
+               freeze: Optional[Tuple[str, ...]] = None,
                env: Optional[Dict[str, str]] = None) -> subprocess.CompletedProcess:
         if gate is not None:
             gates = (gate,)
         return self.launcher(*self.launch_args(*configs, run_set=run_set, hours=hours, gates=gates,
-                                               local=local, extra=extra), env=env)
+                                               local=local, extra=extra, freeze=freeze), env=env)
 
     def status(self) -> str:
         proc = self.launcher("status")
@@ -594,11 +614,14 @@ class LaunchTests(LauncherCase):
         self.assertEqual(ledger, self.s.remote_ledger())
         self.assertEqual(lc.verify_ledger(ledger), [])
         launch = ledger["launches"][0]
+        # Every launch of a set freezes the set's section 7a and its evaluation (LOOP.md section 5).
+        frozen = {SET_FREEZE["A"][0]: lc.sha256_text(lc.extract_section(SPEC, "7a.A")),
+                  SET_FREEZE["A"][1]: lc.sha256_file(self.s.repo / EVAL_A)}
         expected = {
             "launch_id": "L001", "kind": "gpu", "run_set": "A", "iteration": ITER_ID,
             "repo_commit": self.base_head, "gandalf_commit": GANDALF_SHA, "jax_version": "0.9.1",
             "app_name": "s04-loop-l001-a", "app_id": "ap-stub-1", "timeout_hours": 3.0,
-            "gate_report": [GATE, GATE_BASE], "local_test": LOCAL, "frozen": {}, "state": "launched",
+            "gate_report": [GATE, GATE_BASE], "local_test": LOCAL, "frozen": frozen, "state": "launched",
             "volume": "krmhd-benchmark-vol",
         }
         for key, value in expected.items():
@@ -867,9 +890,9 @@ class LaunchTests(LauncherCase):
         self.assertRefused(self.s.launcher("reconcile"), "ledger")  # never re-stamps a hand edit
         self.assertEqual(self.s.snapshot(), snap)
         status = self.s.launcher("status")
-        self.assertExit(status, 1)
+        self.assertRefused(status, "ledger")  # exit 1 comes with its REFUSED line, as for the commands above
         self.assertTrue(status.stdout.startswith("Compute cap 20.0 A100-h: "))
-        self.assertIn("LEDGER PROBLEMS", status.stderr)
+        self.assertIn("integrity hash does not match its content", status.stderr)
 
     def test_rolled_back_ledger_blocks_launch_and_reconcile(self) -> None:
         launch = self.launched(CFG1, CFG2, hours=3)
@@ -1108,16 +1131,17 @@ class LaunchTests(LauncherCase):
         self.assertEqual(self.s.snapshot(), snap)
 
     def test_freeze_records_hashes_and_a_later_change_blocks_launches(self) -> None:
-        key_section = f"{STUDY}/SPEC.md#7a.A"
-        key_file = RUN_SET_PY
+        key_section, key_eval = SET_FREEZE["A"]  # the set's own keys, given by self.s.launch
+        key_file = RUN_SET_PY  # one more, as for a study file the evaluation imports
         self.assertOk(self.s.launch(CFG1, extra=("--freeze", key_section, "--freeze", key_file)))
         frozen = self.s.ledger()["launches"][0]["frozen"]
         self.assertEqual(frozen, {key_section: lc.frozen_key_hash(self.s.repo, key_section),
+                                  key_eval: lc.sha256_file(self.s.repo / key_eval),
                                   key_file: lc.sha256_file(self.s.repo / key_file)})
         spec = (self.s.repo / STUDY / "SPEC.md").read_text().replace("three standard errors", "two")
         self.s.commit_file(f"{STUDY}/SPEC.md", spec, msg="change a frozen criterion")
         snap = self.s.snapshot()
-        proc = self.s.launch(CFG2)
+        proc = self.s.launch(CFG2, extra=("--freeze", key_file))
         self.assertRefused(proc, "frozen")
         self.assertIn("7a.A", proc.stderr)
         self.assertEqual(self.s.snapshot(), snap)
@@ -1126,6 +1150,7 @@ class LaunchTests(LauncherCase):
         snap = self.s.snapshot()
         proc = self.s.launch(CFG1, extra=("--freeze", f"{STUDY}/SPEC.md#9z. Nope"))
         self.assertRefused(proc, "freeze")
+        self.assertIn("9z. Nope", proc.stderr)
         self.assertEqual(self.s.snapshot(), snap)
 
     def test_frozen_manifest_change_blocks_launches(self) -> None:
@@ -1290,6 +1315,266 @@ class GateReportLaunchTests(LauncherCase):
                 proc = self.s.launch(CFG1, gates=(rel, GATE_BASE))
                 self.assertRefused(proc, "gate-report")
                 self.assertIn("the file name is not", proc.stderr)
+
+
+class SetFreezeTests(LauncherCase):
+    """Every launch of a run set freezes what will judge its runs (LOOP.md section 5)."""
+
+    def test_every_launch_of_a_set_freezes_its_criteria_and_its_evaluation(self) -> None:
+        snap = self.s.snapshot()
+        for run_set, (criteria, evaluation) in SET_FREEZE.items():
+            other = SET_FREEZE["B" if run_set == "A" else "A"]
+            cases = [
+                ((), (criteria, evaluation)),  # the audit's case: no --freeze at all
+                ((criteria,), (evaluation,)),
+                ((evaluation,), (criteria,)),
+                (other, (criteria, evaluation)),  # another set's keys do not count
+                (("./" + criteria, evaluation), (criteria,)),  # nor does another spelling of a key
+            ]
+            for freeze, missing in cases:
+                with self.subTest(run_set=run_set, freeze=freeze):
+                    proc = self.s.launch(CFG1, run_set=run_set, hours=1, freeze=freeze)
+                    self.assertRefused(proc, "freeze")
+                    for key in (criteria, evaluation):
+                        self.assertEqual(f"missing --freeze '{key}'" in proc.stderr, key in missing, key)
+        self.assertEqual(self.s.snapshot(), snap)
+        self.assertEqual(self.s.spawn_log(), [])
+        # With its own keys each set launches, and the ledger records their hashes.
+        for i, (run_set, (criteria, evaluation)) in enumerate(SET_FREEZE.items()):
+            self.assertOk(self.s.launch(CFG1, run_set=run_set, hours=1))
+            launch = self.s.ledger()["launches"][i]
+            self.assertEqual(launch["run_set"], run_set)
+            section = lc.extract_section(SPEC, criteria.partition("#")[2])
+            self.assertTrue(section.startswith(f"### 7a.{run_set} "), section)
+            self.assertEqual(launch["frozen"], {criteria: lc.sha256_text(section),
+                                                evaluation: lc.sha256_file(self.s.repo / evaluation)})
+        # A smoke launch freezes nothing and needs no key.
+        self.assertOk(self.s.launcher("smoke", "--sleep", "0"))
+        self.assertEqual(self.s.ledger()["launches"][-1]["frozen"], {})
+
+    def test_the_set_keys_must_resolve_in_the_commit_launched(self) -> None:
+        criteria, evaluation = SET_FREEZE["B"]
+        spec = (self.s.repo / SPEC_MD).read_text()
+        eval_text = (self.s.repo / evaluation).read_text()
+        gitignore = (self.s.repo / ".gitignore").read_text()
+
+        def refused(needle: str) -> None:
+            snap = self.s.snapshot()
+            proc = self.s.launch(CFG1, run_set="B", hours=1)
+            self.assertRefused(proc, "freeze")
+            self.assertIn(needle, proc.stderr)
+            self.assertEqual(self.s.snapshot(), snap)
+
+        # SPEC.md has no subsection 7a.B, or two of them.
+        self.s.commit_file(SPEC_MD, spec.replace("### 7a.B Set B\n\nCriterion B.\n\n", ""), msg="no 7a.B")
+        refused(f"--freeze '{criteria}' does not resolve: no heading of {SPEC_MD} matches '7a.B'")
+        self.s.commit_file(SPEC_MD, spec.replace("## 8. Next", "### 7a.B again\n\nOther.\n\n## 8. Next"),
+                           msg="two 7a.B")
+        refused("or more than one does")
+        self.s.commit_file(SPEC_MD, spec, msg="restore SPEC.md")
+        # The evaluation is not in the commit: deleted, or present but ignored, so the tree
+        # is clean while the file exists only in this clone.
+        self.s.git("rm", "-q", "--", evaluation)
+        self.s.git("commit", "-q", "-m", "delete the evaluation")
+        self.s.git("push", "-q", "origin", "main")
+        refused(f"--freeze '{evaluation}': {evaluation} is not a regular file committed at HEAD")
+        write(self.s.repo / evaluation, eval_text)
+        self.s.commit_file(".gitignore", gitignore + f"{evaluation}\n", msg="ignore the evaluation")
+        self.assertEqual(self.s.porcelain(), "")
+        self.assertIsNotNone(lc.frozen_key_hash(self.s.repo, evaluation))  # it would resolve in this clone
+        refused(f"{evaluation} is not a regular file committed at HEAD")
+        # A link committed in its place: the code it points to is not what the commit records.
+        (self.s.repo / evaluation).unlink()
+        os.symlink("gate4_A.py", self.s.repo / evaluation)
+        write(self.s.repo / ".gitignore", gitignore)
+        self.s.git("add", "--", ".gitignore", evaluation)
+        self.s.git("commit", "-q", "-m", "the evaluation as a link")
+        self.s.git("push", "-q", "origin", "main")
+        self.assertIn("120000", self.s.git("ls-tree", "HEAD", "--", evaluation))
+        refused(f"{evaluation} is not a regular file committed at HEAD")
+        # The committed file itself: the launch goes ahead.
+        (self.s.repo / evaluation).unlink()
+        self.s.commit_file(evaluation, eval_text, msg="the evaluation as a file")
+        self.assertOk(self.s.launch(CFG1, run_set="B", hours=1))
+        self.assertEqual(set(self.s.ledger()["launches"][0]["frozen"]), {criteria, evaluation})
+
+    def test_a_later_launch_of_a_set_gives_everything_the_set_froze(self) -> None:
+        helper = RUN_SET_PY  # one more key, as for a study file the evaluation imports
+        self.assertOk(self.s.launch(CFG1, hours=1, extra=("--freeze", helper)))  # L001, set A
+        snap = self.s.snapshot()
+        proc = self.s.launch(CFG2, hours=1)  # the set's own two keys only
+        self.assertRefused(proc, "freeze")
+        self.assertIn(f"missing --freeze '{helper}' (frozen by L001, an earlier launch of set A)", proc.stderr)
+        self.assertNotIn(f"missing --freeze '{SET_FREEZE['A'][0]}'", proc.stderr)
+        self.assertEqual(self.s.snapshot(), snap)
+        self.assertOk(self.s.launch(CFG2, hours=1, extra=("--freeze", helper)))  # L002
+        first, second = self.s.ledger()["launches"][:2]
+        self.assertEqual(set(second["frozen"]), set(SET_FREEZE["A"]) | {helper})
+        self.assertEqual(second["frozen"], first["frozen"])  # the same keys with the same hashes
+        # Another set does not take over set A's keys.
+        self.assertOk(self.s.launch(CFG3, run_set="B", hours=1))  # L003
+        self.assertEqual(set(self.s.ledger()["launches"][2]["frozen"]), set(SET_FREEZE["B"]))
+        # A launch that sent no call to Modal froze nothing ...
+        extra_key = f"{STUDY}/runcode/no_run.py"
+        (self.s.stub / "fail_spawn").touch()
+        self.assertExit(self.s.launch(CFG1, run_set="base", hours=1, extra=("--freeze", extra_key)), 1)  # L004
+        (self.s.stub / "fail_spawn").unlink()
+        self.assertEqual(self.s.ledger()["launches"][3]["state"], "launch_failed")
+        self.assertOk(self.s.launch(CFG1, run_set="base", hours=1))  # L005
+        # ... but one cut off after its reservation (still 'reserved', its app may run) did.
+        (self.s.stub / "die_after_reserve").touch()
+        self.assertExit(self.s.launch(CFG2, run_set="base", hours=1, extra=("--freeze", extra_key)), 9)  # L006
+        (self.s.stub / "die_after_reserve").unlink()
+        self.assertEqual(self.s.ledger()["launches"][5]["state"], "reserved")
+        snap = self.s.snapshot()
+        proc = self.s.launch(CFG3, run_set="base", hours=1)
+        self.assertRefused(proc, "freeze")
+        self.assertIn(f"missing --freeze '{extra_key}' (frozen by L006, an earlier launch of set base)", proc.stderr)
+        self.assertEqual(self.s.snapshot(), snap)
+        self.assertOk(self.s.launch(CFG3, run_set="base", hours=1, extra=("--freeze", extra_key)))  # L007
+        # The hashes must be unchanged too: a key whose content changed blocks every launch.
+        self.s.commit_file(helper, "def run(cfg, out_dir, ctx):\n    return {'changed': True}\n", msg="edit")
+        proc = self.s.launch(CFG1, hours=1, extra=("--freeze", helper))
+        self.assertRefused(proc, "frozen")
+        self.assertIn(f"frozen item changed: {helper}", proc.stderr)
+
+    def test_every_study_file_the_evaluation_imports_is_frozen_with_it(self) -> None:
+        # The verification's case: set A's evaluation applies the validation checks through a
+        # study module, as LOOP.md section 5 has it, and that module holds a tolerance. Its
+        # key, and that of what it imports in turn, must be given at the first launch already.
+        validation = f"{STUDY}/analysis/validation.py"
+        helpers = f"{STUDY}/analysis/helpers.py"
+        self.s.commit_file(helpers, "def mean(xs):\n    return sum(xs) / len(xs)\n", msg="helpers")
+        self.s.commit_file(validation, "from helpers import mean\nENERGY_TOL = 0.01\n", msg="validation module")
+        self.s.commit_file(EVAL_A, "import json\nimport numpy as np\nfrom validation import ENERGY_TOL\n"
+                                   "THRESHOLD = 2.0\n", msg="evaluation that imports it")
+        snap = self.s.snapshot()
+        proc = self.s.launch(CFG1, hours=1)  # the set's two keys only
+        self.assertRefused(proc, "freeze")
+        self.assertIn(f"missing --freeze '{validation}' (imported by {EVAL_A})", proc.stderr)
+        self.assertIn(f"missing --freeze '{helpers}' (imported by {validation})", proc.stderr)
+        proc = self.s.launch(CFG1, hours=1, extra=("--freeze", validation))
+        self.assertRefused(proc, "freeze")
+        self.assertNotIn(f"missing --freeze '{validation}'", proc.stderr)
+        self.assertIn(f"missing --freeze '{helpers}' (imported by {validation})", proc.stderr)
+        self.assertEqual(self.s.snapshot(), snap)
+        keys = (*SET_FREEZE["A"], validation, helpers)
+        self.assertOk(self.s.launch(CFG1, hours=1, extra=("--freeze", validation, "--freeze", helpers)))  # L001
+        self.assertEqual(self.s.ledger()["launches"][0]["frozen"],
+                         {key: lc.frozen_key_hash(self.s.repo, key) for key in keys})
+        # A later launch needs them again, and once launched the module cannot change.
+        self.assertRefused(self.s.launch(CFG2, hours=1), "freeze")
+        self.s.git_as_loop("rm", "-q", "--", validation)  # nor can the evaluation stop importing it
+        self.s.git_as_loop("commit", "-q", "-m", "Study 04 [it-x]: drop the module")
+        self.s.git("push", "-q", "origin", "main")
+        proc = self.s.launch(CFG2, hours=1, extra=("--freeze", validation, "--freeze", helpers))
+        self.assertRefused(proc, "frozen")
+        self.assertIn(f"frozen item missing: {validation}", proc.stderr)
+        write(self.s.repo / validation, "from helpers import mean\nENERGY_TOL = 0.05  # looser\n")
+        self.s.git_as_loop("add", "--", validation)
+        self.s.git_as_loop("commit", "-q", "-m", "Study 04 [it-x]: loosen the energy tolerance")
+        self.s.git("push", "-q", "origin", "main")
+        proc = self.s.launch(CFG2, hours=1, extra=("--freeze", validation, "--freeze", helpers))
+        self.assertRefused(proc, "frozen")
+        self.assertIn(f"frozen item changed: {validation}", proc.stderr)
+        self.assertEqual(len(self.s.ledger()["launches"]), 1)
+
+    def test_the_evaluation_may_import_nothing_that_the_launcher_cannot_freeze(self) -> None:
+        evaluation = SET_FREEZE["B"][1]
+        helper = f"{STUDY}/analysis/helper_b.py"
+        gitignore = (self.s.repo / ".gitignore").read_text()
+        cases = [  # (evaluation, what the refusal says about it)
+            ("import scipy.stats\n", f"{evaluation} line 1 imports scipy.stats, which is neither a study file"),
+            ("from shared.validation import check\n", f"{evaluation} line 1 imports shared.validation"),
+            ("def late():\n    import krmhd\n", f"{evaluation} line 2 imports krmhd"),
+            ("import importlib\nhelper = importlib.import_module('helper_b')\n",
+             f"{evaluation} line 1 imports importlib"),
+            ("exec(open('helper_b.py').read())\n", f"{evaluation} line 1 calls exec()"),
+            # A folder put on sys.path cannot bring in code the launcher does not see.
+            ("import sys\nsys.path.insert(0, 'studies/04-phase-space-helicity/runcode')\nimport run_set\n",
+             f"{evaluation} line 3 imports run_set, which is neither a study file"),
+        ]
+        for i, (text, needle) in enumerate(cases):
+            with self.subTest(evaluation=text):
+                self.s.commit_file(evaluation, text, msg=f"evaluation {i}")
+                snap = self.s.snapshot()
+                proc = self.s.launch(CFG1, run_set="B", hours=1)
+                self.assertRefused(proc, "freeze")
+                self.assertIn(needle, proc.stderr)
+                self.assertIn("never krmhd or shared", proc.stderr)
+                self.assertEqual(self.s.snapshot(), snap)
+        self.assertIsNone(self.s.ledger())
+        self.assertEqual(self.s.spawn_log(), [])
+        # A study file it imports must be committed: an ignored copy in this clone does not count.
+        write(self.s.repo / helper, "LIMIT = 1\n")
+        self.s.commit_file(".gitignore", gitignore + f"{helper}\n", msg="ignore the helper")
+        self.s.commit_file(evaluation, "from helper_b import LIMIT\n", msg="evaluation that imports the helper")
+        self.assertEqual(self.s.porcelain(), "")
+        proc = self.s.launch(CFG1, run_set="B", hours=1, extra=("--freeze", helper))
+        self.assertRefused(proc, "freeze")
+        self.assertIn(f"{helper}, which {evaluation} imports, is not a regular file committed at HEAD", proc.stderr)
+        self.s.commit_file(".gitignore", gitignore, msg="stop ignoring it")
+        self.s.commit_file(helper, "LIMIT = 1\n", msg="commit the helper")
+        self.assertOk(self.s.launch(CFG1, run_set="B", hours=1, extra=("--freeze", helper)))
+        self.assertEqual(set(self.s.ledger()["launches"][0]["frozen"]), {*SET_FREEZE["B"], helper})
+
+    def test_a_change_hidden_from_git_status_is_refused(self) -> None:
+        # A skip-worktree or assume-unchanged bit makes git status ignore a file's working
+        # copy, which the image would upload and the ledger would hash (the verification's case).
+        eval_text = (self.s.repo / EVAL_A).read_text()
+        self.s.git("update-index", "--skip-worktree", "--", EVAL_A)
+        write(self.s.repo / EVAL_A, eval_text.replace("THRESHOLD = 2.0", "THRESHOLD = 0.5"))
+        self.assertEqual(self.s.porcelain(), "")
+        snap = self.s.snapshot()
+        proc = self.s.launch(CFG1, hours=1)
+        self.assertRefused(proc, "clean-tree")
+        self.assertIn(f"S {EVAL_A}", proc.stderr)
+        self.assertRefused(self.s.launcher("smoke", "--sleep", "0"), "clean-tree")
+        self.assertEqual(self.s.snapshot(), snap)
+        self.s.git("update-index", "--no-skip-worktree", "--", EVAL_A)
+        self.s.git("checkout", "--", EVAL_A)
+        # A config with an assume-unchanged bit, even while its content is unchanged.
+        self.s.git("update-index", "--assume-unchanged", "--", CFG1)
+        proc = self.s.launch(CFG1, hours=1)
+        self.assertRefused(proc, "clean-tree")
+        self.assertIn(f"h {CFG1}", proc.stderr)
+        self.s.git("update-index", "--no-assume-unchanged", "--", CFG1)
+        self.assertEqual(self.s.snapshot(), snap)
+        # A bit outside the folders the image uploads does not count: the loop's clone keeps
+        # one on the tracked .gitkeep behind the Study 2 data link, whose working copy is gone.
+        keep = "studies/02-collisionality-scan/data/.gitkeep"
+        write(self.s.repo / keep, "")
+        self.s.git("add", "-f", "--", keep)
+        self.s.git("commit", "-q", "-m", "Study 2 data placeholder")
+        self.s.git("push", "-q", "origin", "main")
+        self.s.git("update-index", "--skip-worktree", "--", keep)
+        (self.s.repo / keep).unlink()
+        self.assertEqual(self.s.porcelain(), "")
+        self.assertOk(self.s.launch(CFG1, hours=1))
+
+    def test_a_freeze_key_is_hashed_as_the_commit_holds_it(self) -> None:
+        # Outside the folders the clean-tree check reads, a hidden change is still refused:
+        # the ledger records HEAD's content, and the working copy the runner checks must match.
+        key = "CLAUDE.md"
+        committed_text = (self.s.repo / key).read_bytes()
+        self.s.git("update-index", "--skip-worktree", "--", key)
+        write(self.s.repo / key, "# edited where git status cannot see it\n")
+        self.assertEqual(self.s.porcelain(), "")
+        snap = self.s.snapshot()
+        proc = self.s.launch(CFG1, hours=1, extra=("--freeze", key))
+        self.assertRefused(proc, "freeze")
+        self.assertIn(f"the working tree's {key} is not the content committed at HEAD", proc.stderr)
+        self.assertEqual(self.s.snapshot(), snap)
+        (self.s.repo / key).write_bytes(committed_text)  # the bit stays; the content is HEAD's again
+        # A key is matched exactly by the runner and by later launches, so it is spelt one way.
+        for spelling in ("./CLAUDE.md", f"{STUDY}/../../CLAUDE.md", f"{self.s.repo}/CLAUDE.md"):
+            with self.subTest(spelling=spelling):
+                proc = self.s.launch(CFG1, hours=1, extra=("--freeze", spelling))
+                self.assertRefused(proc, "freeze")
+                self.assertIn("as its normalised repo-relative path", proc.stderr)
+        self.assertEqual(self.s.snapshot(), snap)
+        self.assertOk(self.s.launch(CFG1, hours=1, extra=("--freeze", key)))
+        self.assertEqual(self.s.ledger()["launches"][0]["frozen"][key], hashlib.sha256(committed_text).hexdigest())
 
 
 class HistoryTests(LauncherCase):
@@ -2021,17 +2306,26 @@ class CheckReportTests(LauncherCase):
 
 class OtherCommandTests(LauncherCase):
 
-    def _run_without_modal(self, repo: Optional[Path], command: str) -> subprocess.CompletedProcess:
+    def _run_without_modal(self, repo: Optional[Path], *args: str) -> subprocess.CompletedProcess:
+        """The launcher with ``args``, in one process. The last line of stdout is NO_MODAL
+        unless Modal was imported, or an import of it was even tried."""
         script = (repo / STUDY / "loop" / "modal_launch.py") if repo else (LOOP_DIR / "modal_launch.py")
         code = textwrap.dedent(f"""\
             import runpy, sys
-            sys.argv = ["modal_launch.py", {command!r}]
+            tried = []
+            class Watch:
+                def find_spec(self, name, path=None, target=None):
+                    if name == "modal" or name.startswith("modal."):
+                        tried.append(name)
+                    return None
+            sys.meta_path.insert(0, Watch())
+            sys.argv = ["modal_launch.py", *{list(args)!r}]
             rc = 0
             try:
                 runpy.run_path({str(script)!r}, run_name="__main__")
             except SystemExit as exc:
                 rc = exc.code or 0
-            print("MODAL_IMPORTED" if "modal" in sys.modules else "NO_MODAL")
+            print("MODAL_IMPORTED" if "modal" in sys.modules or tried else "NO_MODAL")
             sys.exit(rc)
             """)
         env = dict(self.s.env)
@@ -2052,6 +2346,166 @@ class OtherCommandTests(LauncherCase):
         self.assertEqual(verify.stdout.splitlines()[0], "ledger ok")
         self.assertEqual(verify.stdout.splitlines()[-1], "NO_MODAL")
         self.assertEqual(self.s.porcelain(), "")
+
+    def test_check_report_and_verify_never_import_modal(self) -> None:
+        # Both read only files and git, so they work, and find problems, without Modal and
+        # without the network: origin points nowhere.
+        self.s.git("remote", "set-url", "origin", str(self.s.root / "no-such-remote.git"))
+
+        def check(args: Tuple[str, ...], code: int, needle: str) -> None:
+            with self.subTest(args=args):
+                proc = self._run_without_modal(self.s.repo, *args)
+                self.assertExit(proc, code)
+                self.assertIn(needle, proc.stdout + proc.stderr)
+                self.assertEqual(proc.stdout.splitlines()[-1], "NO_MODAL")
+                if args[0] != "status" and "--set" not in args:
+                    self.assertNotIn("REFUSED", proc.stderr)  # they list the problems instead
+
+        check(("check-report", GATE), 0, f"{GATE}: ok")
+        check(("check-report", f"{STUDY}/gate_reports/G3_fail.md"), 1, "the Result line is 'Result: FAIL'")
+        check(("check-report", "--set", "A", GATE, GATE_BASE), 0, "reports ok for a launch of set A")
+        check(("check-report", "--set", "A", GATE), 1, "REFUSED [gate-report]")
+        check(("verify",), 0, "ledger ok")
+        # A ledger that fails its check: verify lists the problems, and status is refused.
+        broken = dict(lc.empty_ledger(), launches=[{"launch_id": "L001", "state": "launched", "runs": []}],
+                      integrity="0" * 64)
+        (self.s.repo / LEDGER).write_text(json.dumps(broken) + "\n")
+        check(("verify",), 1, "ledger problem: ledger integrity hash does not match")
+        check(("status",), 1, "REFUSED [ledger]")
+
+    def test_check_report_verify_and_status_need_only_the_standard_library(self) -> None:
+        # The runner's report check (T1) runs 'check-report' from a copy of the launcher with
+        # -I -S, so without site-packages: no Modal and no PyYAML. verify and status need no more.
+        script = self.s.repo / STUDY / "loop" / "modal_launch.py"
+        env = dict(self.s.env, S04_REPO=str(self.s.repo))
+        cases = [
+            (("check-report", GATE), 0, f"{GATE}: ok"),
+            (("check-report", f"{STUDY}/gate_reports/G3_fail.md"), 1, "the Result line is 'Result: FAIL'"),
+            (("check-report", "--set", "A", GATE, GATE_BASE), 0, "reports ok for a launch of set A"),
+            (("verify",), 0, "ledger ok"),
+            (("status",), 0, "Compute cap 20.0 A100-h: used 0.00"),
+        ]
+        for args, code, needle in cases:
+            with self.subTest(args=args):
+                proc = run_cmd([sys.executable, "-I", "-S", "-B", str(script), *args], cwd=self.s.repo, env=env,
+                               check=False)
+                self.assertExit(proc, code)
+                self.assertIn(needle, proc.stdout + proc.stderr)
+                self.assertNotIn("Traceback", proc.stderr)
+        self.assertEqual(self.s.porcelain(), "")
+
+    def test_status_refuses_a_ledger_it_cannot_read_or_that_fails_its_check(self) -> None:
+        # The [ledger] hard stop, as for the commands that write the ledger: exit 1 always
+        # comes with its REFUSED line. verify keeps listing the problems (exit 1). Neither
+        # ever stops with a traceback, whatever the hand edit.
+        path = self.s.repo / LEDGER
+
+        def one_launch(**fields: Any) -> str:
+            run = dict({"run_id": "04_c1_20261005_101200", "status": "running"}, **fields.pop("run", {}))
+            launch = dict({"launch_id": "L001", "state": "launched", "runs": [run]}, **fields)
+            return json.dumps({"schema": 1, "launches": [launch]}) + "\n"
+
+        no_runs = "Compute cap 20.0 A100-h: used 0.00, reserved 0.00, left 20.00 (launches 1, runs in flight 0)"
+        one_run = "Compute cap 20.0 A100-h: used 0.00, reserved 0.00, left 20.00 (launches 1, runs in flight 1)"
+        cases = [  # (ledger text, what the refusal names, what status still prints: lines, or None to skip)
+            ("{not json\n", f"cannot read {LEDGER}", []),
+            ("[]\n", "ledger is not a JSON object", []),
+            (json.dumps({"schema": 1, "launches": "none"}) + "\n", "'launches' is not a list of objects", []),
+            # Values the check once crashed on: a launch_id or run_id that cannot be a dict key.
+            (one_launch(launch_id=["L001"], runs=[]), "L001", [no_runs]),
+            (one_launch(run={"run_id": {"x": 1}}), "run_id",
+             [one_run, "in flight: {'x': 1} (L001, None, set None) status running, reserved 0 A100-h, app -, call -"]),
+            # An integer too large for a float: the check itself raises OverflowError, and so
+            # does the sum of the hours, so status has nothing sound to print.
+            (one_launch(run={"reserved_hours": int("1" + "0" * 400)}), f"{LEDGER} fails its check", None),
+        ]
+        for text, needle, lines in cases:
+            with self.subTest(ledger=text[:80]):
+                path.write_text(text)
+                snap = self.s.snapshot()
+                status = self.s.launcher("status")
+                self.assertRefused(status, "ledger")
+                self.assertIn(needle, status.stderr)
+                self.assertNotIn("Traceback", status.stderr)
+                if lines is not None:
+                    self.assertEqual(status.stdout.splitlines(), lines)
+                verify = self.s.launcher("verify")  # unchanged: it lists the problems
+                self.assertExit(verify, 1)
+                self.assertIn("ledger problem: ", verify.stdout)
+                self.assertNotIn("Traceback", verify.stderr)
+                self.assertEqual(self.s.snapshot(), snap)
+
+    def test_a_ledger_check_that_raises_is_a_refusal_not_a_crash(self) -> None:
+        # Whatever a hand edit makes lc.verify_ledger raise, every command treats the ledger
+        # as one that fails its check: launch, smoke and reconcile (read_verified_ledger) and
+        # status refuse with [ledger], and verify lists the problem.
+        ml = import_launcher_module()
+        env = dict(self.s.launcher_env(), PYTHONDONTWRITEBYTECODE="1")
+
+        def run(*argv: str) -> Tuple[int, str, str]:
+            out, err = io.StringIO(), io.StringIO()
+            with mock.patch.dict(os.environ, env, clear=True), contextlib.redirect_stdout(out), \
+                    contextlib.redirect_stderr(err):
+                code = ml.main(list(argv))
+            return code, out.getvalue(), err.getvalue()
+
+        snap = self.s.snapshot()
+        with mock.patch.object(ml.lc, "verify_ledger", side_effect=TypeError("unhashable type: 'list'")):
+            code, out, err = run("status")
+            self.assertEqual(code, 1, out + err)
+            self.assertIn("REFUSED [ledger]", err)
+            self.assertIn("the ledger cannot be checked (TypeError: unhashable type: 'list')", err)
+            self.assertTrue(out.startswith("Compute cap 20.0 A100-h: "), out)  # its compute line comes first
+            code, out, err = run("verify")
+            self.assertEqual(code, 1, out + err)
+            self.assertIn("ledger problem: the ledger cannot be checked (TypeError: unhashable type: 'list')", out)
+            for argv in (self.s.launch_args(CFG1, hours=1), ["smoke", "--sleep", "0"], ["reconcile"]):
+                with self.subTest(argv=argv[0]):
+                    code, out, err = run(*argv)
+                    self.assertEqual(code, 1, out + err)
+                    self.assertIn("REFUSED [ledger]: verify_ledger failed: the ledger cannot be checked "
+                                  "(TypeError", err)
+            with self.assertRaises(ml.Refusal) as caught:
+                ml.read_verified_ledger(self.s.repo)
+            self.assertEqual(caught.exception.rule, "ledger")
+        self.assertEqual(self.s.snapshot(), snap)
+        self.assertEqual(self.s.spawn_log(), [])
+
+    def test_a_committed_ledger_that_breaks_the_check_blocks_every_write(self) -> None:
+        # The same through the real check, on a ledger in a commit (here Anjor's, so that the
+        # history is not what refuses it): an integer too large for a float.
+        big = int("1" + "0" * 400)
+        data = {"schema": 1, "launches": [{"launch_id": "L001", "state": "launched", "kind": "gpu", "run_set": "A",
+                                           "runs": [{"run_id": "04_c1_20261005_101200", "status": "running",
+                                                     "reserved_hours": big}]}]}
+        self.s.commit_file(LEDGER, json.dumps(data) + "\n", msg="a ledger with a huge reservation")
+        snap = self.s.snapshot()
+        for argv in (("status",), tuple(self.s.launch_args(CFG1, hours=1)), ("smoke", "--sleep", "0"),
+                     ("reconcile",)):
+            with self.subTest(argv=argv[0]):
+                proc = self.s.launcher(*argv)
+                self.assertRefused(proc, "ledger")
+                self.assertNotIn("Traceback", proc.stderr)
+        verify = self.s.launcher("verify")
+        self.assertExit(verify, 1)
+        self.assertIn("ledger problem: ", verify.stdout)
+        self.assertNotIn("Traceback", verify.stderr)
+        self.assertEqual(self.s.snapshot(), snap)
+        # A sound ledger on top of it: the history check compares the two versions, and one
+        # that it cannot read is no ledger HEAD's extends.
+        data["launches"][0]["runs"][0]["reserved_hours"] = 3.0
+        write(self.s.repo / LEDGER, lc.ledger_text(data))
+        self.s.git_as_loop("add", "--", LEDGER)
+        self.s.git_as_loop("commit", "-q", "-m", f"{PREFIX}: tidy")
+        self.s.git("push", "-q", "origin", "main")
+        self.assertOk(self.s.launcher("verify"))
+        snap = self.s.snapshot()
+        proc = self.s.launch(CFG1, hours=1)
+        self.assertRefused(proc, "ledger")
+        self.assertIn("is not a launcher-made successor of the version committed in", proc.stderr)
+        self.assertNotIn("Traceback", proc.stderr)
+        self.assertEqual(self.s.snapshot(), snap)
+        self.assertEqual(self.s.spawn_log(), [])
 
     def test_status_and_verify_on_the_real_repo(self) -> None:
         """The launcher's own repo, read only and without importing Modal.
@@ -2308,6 +2762,141 @@ class GateReportTests(unittest.TestCase):
             self.skipTest("no gate report template in LOOP.md")
         for block in templates:
             self.assertTrue(self.problems(block))
+
+
+class EvaluationImportTests(unittest.TestCase):
+    """What the launcher reads from a set evaluation's import statements (evaluation_imports)."""
+
+    A = f"{STUDY}/analysis"
+
+    def setUp(self) -> None:
+        self.ml = import_launcher_module()
+        self._tmp = tempfile.TemporaryDirectory(prefix="s04-imports-")
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def imports(self, files: Dict[str, str], evaluation: str = EVAL_A) -> Tuple[Dict[str, str], List[str]]:
+        """evaluation_imports over a fresh folder holding ``files`` (repo-relative path -> text)."""
+        root = Path(tempfile.mkdtemp(dir=self._tmp.name)).resolve()
+        for rel, text in files.items():
+            write(root / rel, text)
+        return self.ml.evaluation_imports(root, evaluation)
+
+    def test_study_files_are_found_directly_and_through_each_other(self) -> None:
+        A = self.A
+        found, problems = self.imports({
+            EVAL_A: textwrap.dedent("""\
+                from __future__ import annotations
+                import json, math, os.path
+                import numpy as np
+                import h5py
+                import yaml
+                from validation import valid
+                from lib import stats
+                from common.thresholds import LIMIT
+
+                def late():
+                    try:
+                        import helpers_late
+                    except ImportError:
+                        pass
+                """),
+            f"{A}/validation.py": "import helpers\nimport gate4_A  # the evaluation itself\n",
+            f"{A}/helpers.py": "X = 1\n",
+            f"{A}/helpers_late.py": "Y = 2\n",
+            f"{A}/lib/__init__.py": "",
+            f"{A}/lib/stats.py": "from . import util\nfrom .sub.deep import Z\nfrom .. import helpers\n",
+            f"{A}/lib/util.py": "",
+            f"{A}/lib/sub/deep.py": "Z = 3\n",  # sub/ is a namespace package
+            f"{STUDY}/common/thresholds.py": "LIMIT = 2.0\n",  # through the study folder on sys.path
+            f"{A}/unused.py": "import scipy\n",  # nothing imports it, so nothing reads it
+        })
+        self.assertEqual(problems, [])
+        self.assertEqual(found, {
+            f"{A}/validation.py": EVAL_A,
+            f"{A}/lib/__init__.py": EVAL_A,
+            f"{A}/lib/stats.py": EVAL_A,
+            f"{STUDY}/common/thresholds.py": EVAL_A,
+            f"{A}/helpers_late.py": EVAL_A,
+            f"{A}/helpers.py": f"{A}/validation.py",
+            f"{A}/lib/util.py": f"{A}/lib/stats.py",
+            f"{A}/lib/sub/deep.py": f"{A}/lib/stats.py",
+        })
+
+    def test_every_file_a_name_can_load_counts(self) -> None:
+        A = self.A
+        found, problems = self.imports({
+            EVAL_A: "import tools\nimport statistics\nimport yaml\nfrom pack import *\n",
+            f"{A}/tools.py": "",
+            f"{STUDY}/tools.py": "",  # the study folder may come first on sys.path
+            f"{A}/statistics.py": "",  # shadows the standard library's module
+            f"{A}/yaml/notes.txt": "",  # a folder without __init__.py does not shadow PyYAML
+            f"{A}/pack/__init__.py": "",
+            f"{A}/pack/one.py": "",
+            f"{A}/pack/two.py": "",
+        })
+        self.assertEqual(problems, [])
+        self.assertEqual(sorted(found), sorted([f"{A}/tools.py", f"{STUDY}/tools.py", f"{A}/statistics.py",
+                                                f"{A}/pack/__init__.py", f"{A}/pack/one.py", f"{A}/pack/two.py"]))
+
+    def test_what_an_evaluation_may_not_import(self) -> None:
+        A = self.A
+        found, problems = self.imports({
+            EVAL_A: textwrap.dedent("""\
+                import krmhd
+                from shared.validation import check
+                import scipy.stats
+                import matplotlib.pyplot as plt
+                import importlib
+                from importlib import util
+                import runpy
+                mod = __import__("validation")
+                exec("x = 1")
+                value = eval("1 + 1")
+                code = compile("x", "f", "eval")
+                import fast
+                import Helpers
+                from ... import outside
+                import validation
+                import broken
+                import Lib
+                import deep
+                """),
+            f"{A}/fast.pyc": "",  # bytecode without its source
+            f"{A}/helpers.py": "",  # 'Helpers' is another name
+            f"{A}/lib/__init__.py": "",  # and 'Lib' another package
+            f"{A}/validation.py": "\n\nimport shared\n",
+            f"{A}/broken.py": "def f(:\n",
+            f"{A}/deep.py": "x = " + "-" * 200000 + "1\n",  # too deep for Python's parser
+        })
+        not_listed = (f"which is neither a study file (in {A}/ or {STUDY}/) nor the standard library, numpy, "
+                      "h5py or yaml")
+        expected = [
+            f"{EVAL_A} line 1 imports krmhd",
+            f"{EVAL_A} line 2 imports shared.validation",
+            f"{EVAL_A} line 3 imports scipy.stats, {not_listed}",
+            f"{EVAL_A} line 4 imports matplotlib.pyplot, {not_listed}",
+            f"{EVAL_A} line 5 imports importlib",
+            f"{EVAL_A} line 6 imports importlib",
+            f"{EVAL_A} line 7 imports runpy",
+            f"{EVAL_A} line 8 calls __import__()",
+            f"{EVAL_A} line 9 calls exec()",
+            f"{EVAL_A} line 10 calls eval()",
+            f"{EVAL_A} line 11 calls compile()",
+            f"{EVAL_A} line 12 imports {A}/fast.pyc, which is not Python source",
+            f"{EVAL_A} line 13 imports Helpers, {not_listed}",
+            f"{EVAL_A} line 14 has a relative import that reaches outside {STUDY}/",
+            f"{EVAL_A} line 17 imports Lib, {not_listed}",
+            f"{A}/validation.py line 3 imports shared",
+        ]
+        unreadable = sorted(p for p in problems if "cannot be read as Python" in p)
+        self.assertEqual(len(unreadable), 2, problems)
+        self.assertTrue(unreadable[0].startswith(f"{A}/broken.py cannot be read as Python (SyntaxError"), unreadable)
+        self.assertRegex(unreadable[1],
+                         rf"^{re.escape(A)}/deep\.py cannot be read as Python \((MemoryError|RecursionError)")
+        self.assertEqual(sorted(p for p in problems if p not in unreadable), sorted(expected))
+        self.assertEqual(sorted(found), [f"{A}/broken.py", f"{A}/deep.py", f"{A}/validation.py"])
 
 
 class BudgetChargeTests(unittest.TestCase):

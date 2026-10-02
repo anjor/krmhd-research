@@ -7,17 +7,21 @@ Run it from the repo root:
 
 Commands
 --------
-launch --set S --timeout-hours H --gate-report P [--gate-report P]... --local-test P [--freeze KEY]... CONFIG...
+launch --set S --timeout-hours H --gate-report P [--gate-report P]... --local-test P
+       --freeze KEY [--freeze KEY]... CONFIG...
     Reserve H A100-hours per config, commit and push the reservation, then start one
     detached Modal call per config (one A100 each, no retries, timeout H). Every gate
-    report given must pass the report check (below).
+    report given must pass the report check (below), and the freeze keys must include
+    the set's own, every study file its evaluation imports and every key an earlier
+    launch of the set froze (below).
 smoke [--sleep S]
-    The same path with a tiny CPU-only function. Charges zero hours.
+    The same path with a tiny CPU-only function. Charges zero hours and freezes nothing.
 reconcile [--launch L]
     Ask Modal which calls have finished and charge them from the attempt records on the
     volume. Commits and pushes the ledger if it changed.
 status
-    The compute line for the log (cap, used, reserved, left), then the runs in flight.
+    The compute line for the log (cap, used, reserved, left), then the runs in flight. A
+    ledger that cannot be read or fails its check is refused with [ledger] (exit 1).
 fetch RUN_ID [--checkpoints] [--dest DIR]
     Download a run's directory from the volume (default studies/04-.../data/<set>/<run>/),
     without checkpoints/ unless --checkpoints, and its attempt records into _attempts/
@@ -35,7 +39,8 @@ Exit codes
 ----------
 0   done.
 1   refused: a rule failed and nothing was changed (the message names the rule); or a
-    launch that sent no call to Modal and released its whole reservation.
+    launch that sent no call to Modal and released its whole reservation. verify, and
+    check-report without --set, print the problems they found instead of a REFUSED line.
 2   usage or environment error (config, git, Modal unreachable). For reconcile: some runs
     could not be checked and were left exactly as they were; run it again later.
 3   launch or smoke: the outcome of at least one run is uncertain. Its spawn raised after
@@ -77,6 +82,24 @@ name that agree, and no unfilled template text. Each run set (base, A, B; there 
 others) launches only on the reports LOOP.md names for it, and a quality gate's report
 must be its newest evaluation (check_gate_reports).
 
+The code and criteria that judge a run set are frozen from its first launch, whether or
+not the agent remembers to ask (LOOP.md section 5). Every launch of set S gives, as
+--freeze keys spelt exactly so, the set's criteria, the subsection '### 7a.<S> ...' of
+SPEC.md, and the one file that evaluates them, analysis/gate4_<S>.py for sets A and B and
+analysis/gate_base.py for the base state (set_freeze_keys), each resolving in the commit
+launched. It also gives every study file that the evaluation imports, directly or through
+another, which the launcher finds by reading the import statements (evaluation_imports);
+the evaluation may import nothing else but the standard library, numpy, h5py and yaml,
+and may load no code in any other way, so that the list of code is complete. And it gives
+every key that an earlier launch of S froze, a failed launch apart (check_set_freeze).
+A data file the evaluation reads is no import: the agent freezes it with a key of its
+own, which every later launch of the set then has to give. The ledger records the hashes
+of the content committed at HEAD, which must match the working tree (resolve_freeze),
+and from then on a change to any of them is refused here (check_frozen_items) and makes
+the runner write STOP. A launch also refuses a skip-worktree or assume-unchanged bit on
+any file the image uploads, since git status does not show such a file's changes
+(require_clean).
+
 Every commit this script makes touches only compute_ledger.json and has a subject that
 starts with "Study 04 [launcher]". The runner writes STOP on any other commit that
 touches the ledger, and the ledger's integrity hash exposes hand edits. Loop commits are
@@ -98,11 +121,16 @@ origin is a local, non-GitHub repository). S04_REPO overrides the repo root (tes
 from __future__ import annotations
 
 import argparse
+import ast
 import contextlib
 import fcntl
+import hashlib
+import importlib.machinery
 import importlib.util
+import io
 import json
 import os
+import posixpath
 import re
 import shutil
 import signal
@@ -148,9 +176,20 @@ ATTEMPTS_DIRNAME = "_attempts"  # modal_app.ATTEMPTS_DIRNAME: records live in /<
 CONFIGS_REL = f"{lc.STUDY_REL}/configs"
 GATE_REPORTS_REL = f"{lc.STUDY_REL}/gate_reports"
 RUNS_REL = f"{lc.STUDY_REL}/RUNS.md"
+SPEC_REL = f"{lc.STUDY_REL}/SPEC.md"
+ANALYSIS_REL = f"{lc.STUDY_REL}/analysis"
 CALL_STATES = ("running", "ok", "failed", "expired", "timeout", "error")
 # The plan's three GPU run sets (LOOP.md section 3: a fourth is a hard stop).
 RUN_SETS = ("base", "A", "B")
+# The folders modal_app.py copies into the image (add_local_dir): the run code comes from here.
+IMAGE_FOLDERS = ("shared", lc.STUDY_REL)
+# What a run set's evaluation may import besides study files (LOOP.md section 5, item 2: "only
+# the standard library, numpy, h5py, yaml and study files frozen with it, never krmhd or
+# shared/"), and the ways of loading code that a reading of its import statements cannot follow.
+EVAL_THIRD_PARTY = ("numpy", "h5py", "yaml")
+EVAL_FORBIDDEN = ("krmhd", "shared")
+EVAL_LOADER_MODULES = ("importlib", "imp", "pkgutil", "runpy", "zipimport")
+EVAL_LOADER_CALLS = ("__import__", "compile", "eval", "exec")
 
 _SHA40 = re.compile(r"^[0-9a-f]{40}$")
 _NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,39}$")
@@ -357,14 +396,35 @@ def require_on_main(repo: Path) -> None:
         raise Refusal("branch", f"the repo is on {branch!r}; the launcher works only on main")
 
 
+def hidden_from_status(repo: Path) -> List[str]:
+    """Tracked files under IMAGE_FOLDERS whose changes git status does not show.
+
+    'git ls-files -v' tags a file with a skip-worktree bit 'S' and one with an
+    assume-unchanged bit with a lower-case letter; git status then ignores its working copy,
+    which is what the image uploads and what the ledger hashes. Only these folders are
+    checked, because the loop's clone keeps such a bit, on purpose, on a tracked file behind
+    the Study 2 data link, outside them.
+    """
+    out = git(repo, "ls-files", "-v", "-z", "--", *IMAGE_FOLDERS).stdout
+    return [entry for entry in out.split("\0") if entry and not entry.startswith("H ")]
+
+
 def require_clean(repo: Path) -> None:
-    """Refuse unless the working tree is clean (untracked files count)."""
+    """Refuse unless the working tree is clean (untracked files count) and nothing that the
+    image uploads hides a change from git status (hidden_from_status)."""
     out = git(repo, "status", "--porcelain").stdout.strip()
     if out:
         lines = out.splitlines()
         raise Refusal("clean-tree", f"the working tree is not clean ({len(lines)} entries; "
                       f"untracked files count): {'; '.join(lines[:5])}. Commit and push first, "
                       "so the runs use code that is in the repo.")
+    hidden = hidden_from_status(repo)
+    if hidden:
+        raise Refusal("clean-tree", f"{len(hidden)} tracked file(s) under {' and '.join(IMAGE_FOLDERS)}/ carry a "
+                      f"skip-worktree or assume-unchanged bit ('git ls-files -v': {'; '.join(hidden[:5])}). git "
+                      "status does not show their changes, so the launcher cannot tell that the image and the "
+                      "ledger get the committed content. Only 'git update-index' sets or clears such a bit; this "
+                      "is a hard stop for Anjor.")
 
 
 def fetch_origin(repo: Path) -> None:
@@ -516,6 +576,19 @@ def read_ledger(repo: Path) -> Dict[str, Any]:
     return ledger
 
 
+def ledger_problems(ledger: Any) -> List[str]:
+    """lc.verify_ledger's list of problems; an exception from the check itself is one more.
+
+    A hand edit can break the check itself, for example with an integer too large for a
+    float (OverflowError). Every command must then refuse the ledger or list the problem,
+    never stop with a traceback.
+    """
+    try:
+        return lc.verify_ledger(ledger)
+    except Exception as exc:  # noqa: BLE001 - whatever the edit broke, the ledger fails its check
+        return [f"the ledger cannot be checked ({short_exc(exc)})"]
+
+
 def read_verified_ledger(repo: Path) -> Dict[str, Any]:
     """The ledger, refused unless verify_ledger passes.
 
@@ -528,7 +601,7 @@ def read_verified_ledger(repo: Path) -> Dict[str, Any]:
         raise Refusal("ledger", f"cannot read {lc.LEDGER_REL}: {exc}") from None
     if not isinstance(ledger, dict):
         raise Refusal("ledger", f"{lc.LEDGER_REL} is not a JSON object")
-    problems = lc.verify_ledger(ledger)
+    problems = ledger_problems(ledger)
     if problems:
         raise Refusal("ledger", "verify_ledger failed: " + "; ".join(problems) + ". Only this "
                       "script writes the ledger; a hand edit is a hard stop for Anjor.")
@@ -734,12 +807,15 @@ def check_ledger_succession(repo: Path, settings: Settings, history: GitHistory)
             raise EnvError(f"git cannot read the ledger version {version_id[:12]}")
         version = _ledger_from_blob(content, commits[0])
         if any(not history.trusted(c, loop) for c in commits):
-            problems = lc.verify_ledger(version)
+            problems = ledger_problems(version)
             if problems:
                 raise Refusal("ledger", f"the ledger committed in {history.who(commits[0])} fails verify_ledger: "
                               f"{'; '.join(problems[:6])}. Only this script writes the ledger; a hand edit is a "
                               "hard stop for Anjor.")
-        problems = lc.ledger_extends(version, head_ledger)
+        try:
+            problems = lc.ledger_extends(version, head_ledger)
+        except Exception as exc:  # noqa: BLE001 - a version the comparison cannot read is no successor
+            problems = [f"the two versions cannot be compared ({short_exc(exc)})"]
         if problems:
             raise Refusal("ledger", f"the ledger at HEAD ({history.head[:12]}, written by {head_by}) is not a "
                           f"launcher-made successor of the version committed in {history.who(commits[0])}: "
@@ -1224,15 +1300,293 @@ def check_run_set(repo: Path, run_set: str, require_row: bool) -> None:
                       "The run set gets its row (with the estimate) before it launches.")
 
 
+def head_blob(repo: Path, rel: str) -> Optional[bytes]:
+    """The content of ``rel`` in the commit HEAD points to, or None unless it is a regular file
+    there: not missing, not a link and not under a linked folder (git records nothing beyond a link)."""
+    out = git(repo, "ls-tree", "-z", "HEAD", "--", rel).stdout
+    meta, _tab, path = out.split("\0", 1)[0].partition("\t")
+    fields = meta.split()
+    if path != rel or len(fields) != 3 or fields[:2] not in (["100644", "blob"], ["100755", "blob"]):
+        return None
+    return _cat_objects(repo, [fields[2]]).get(fields[2])
+
+
+def _worktree_key_hash(repo: Path, key: str) -> Optional[str]:
+    """lc.frozen_key_hash, the hash the runner's frozen check reads; None also for a file that
+    is not UTF-8 text."""
+    try:
+        return lc.frozen_key_hash(repo, key)
+    except (OSError, ValueError):
+        return None
+
+
+def committed_key_hash(repo: Path, key: str) -> Tuple[Optional[str], str]:
+    """(sha256 of a --freeze key in the commit launched, '') or (None, why it does not resolve).
+
+    A key is a repo-relative path, or 'path#heading' for a Markdown section, as for
+    lc.frozen_key_hash. The hash is taken from HEAD's copy of the file, which must be a
+    regular file there, and it must equal the hash of the working tree's copy, which the
+    runner's frozen check reads. The tree is clean, but a skip-worktree or assume-unchanged
+    bit hides a change from git status, and the ledger must never record content that no
+    commit holds.
+    """
+    rel, sep, heading = key.partition("#")
+    if rel != posixpath.normpath(rel) or rel in (".", "..") or rel.startswith(("/", "../")):
+        return None, (f"write {rel!r} as its normalised repo-relative path (the runner and later launches "
+                      "match keys exactly)")
+    blob = head_blob(repo, rel)
+    if blob is None:
+        return None, f"{rel} is not a regular file committed at HEAD"
+    try:
+        # Decoded as Path.read_text decodes the working-tree file in lc.frozen_key_hash.
+        section = lc.extract_section(io.TextIOWrapper(io.BytesIO(blob), encoding="utf-8").read(),
+                                     heading) if sep else None
+    except ValueError as exc:  # UnicodeDecodeError
+        return None, f"{rel} is not UTF-8 text ({short_exc(exc, 100)})"
+    if sep and section is None:
+        return None, f"no heading of {rel} matches '{heading}', or more than one does"
+    sha = lc.sha256_text(section) if section is not None else hashlib.sha256(blob).hexdigest()
+    if _worktree_key_hash(repo, key) != sha:
+        return None, (f"the working tree's {rel} is not the content committed at HEAD, although git status shows "
+                      "no change (a skip-worktree or assume-unchanged bit hides it)")
+    return sha, ""
+
+
 def resolve_freeze(repo: Path, keys: Sequence[str]) -> Dict[str, str]:
-    """The sha256 of each ``--freeze`` key; refuse a key that does not resolve."""
+    """The sha256 of each ``--freeze`` key in the commit launched (committed_key_hash); refuse
+    the launch if any key does not resolve there."""
     frozen: Dict[str, str] = {}
+    problems: List[str] = []
     for key in keys:
-        sha = lc.frozen_key_hash(repo, key)
+        sha, why = committed_key_hash(repo, key)
         if sha is None:
-            raise Refusal("freeze", f"--freeze {key!r} does not resolve (file or heading missing)")
-        frozen[key] = sha
+            problems.append(f"--freeze {key!r} does not resolve: {why}")
+        else:
+            frozen[key] = sha
+    if problems:
+        raise Refusal("freeze", f"{'; '.join(problems)}. A frozen item is recorded as the commit launched holds "
+                      "it, so its file must be committed and unchanged.")
     return frozen
+
+
+def _listing(repo: Path, folder: str, cache: Dict[str, Set[str]]) -> Set[str]:
+    """The entry names of a folder of the working tree (empty if there is no such folder), cached."""
+    if folder not in cache:
+        try:
+            cache[folder] = set(os.listdir(repo / folder))
+        except OSError:
+            cache[folder] = set()
+    return cache[folder]
+
+
+def _module_candidates(repo: Path, folders: Sequence[str], name: str,
+                       cache: Dict[str, Set[str]]) -> Tuple[List[str], List[str], List[str]]:
+    """What an import of ``name`` can load from ``folders``, looked for as Python's path finder does.
+
+    Returns (Python source files, other files Python would load, package folders): '<name>.py',
+    a package '<name>/__init__.py' and its folder, the folder of a namespace package, and
+    '<name>.pyc' or an extension module, which an evaluation may not load. A name matches only
+    in its exact case, as Python requires on a case-insensitive file system.
+    """
+    sources: List[str] = []
+    others: List[str] = []
+    packages: List[str] = []
+    suffixes = importlib.machinery.all_suffixes()
+    for folder in folders:
+        names = _listing(repo, folder, cache)
+        base = f"{folder}/{name}"
+        if name in names and (repo / base).is_dir():
+            packages.append(base)
+            inner = _listing(repo, base, cache)
+            for suffix in suffixes:
+                if f"__init__{suffix}" in inner and (repo / base / f"__init__{suffix}").is_file():
+                    (sources if suffix == ".py" else others).append(f"{base}/__init__{suffix}")
+        for suffix in suffixes:
+            if name + suffix in names and (repo / (base + suffix)).is_file():
+                (sources if suffix == ".py" else others).append(base + suffix)
+    return sources, others, packages
+
+
+def evaluation_imports(repo: Path, evaluation: str) -> Tuple[Dict[str, str], List[str]]:
+    """The study files a run set's evaluation imports, and the imports LOOP.md does not allow it.
+
+    Returns ({study file: the file that imports it}, problems), over the evaluation and, in
+    turn, every study file it imports. Every import statement counts, also one inside a
+    function or a try block. The evaluation runs as 'uv run python <file>', so Python looks
+    for a module first in the evaluation's folder; the study folder is searched too, in case
+    the evaluation puts it on sys.path, and a name found in both counts both files. A
+    relative import is looked up from the importing file's folder, and must stay inside the
+    study folder. A name found in neither folder must be the standard library, numpy, h5py
+    or yaml (LOOP.md section 5, item 2), so that a folder the evaluation adds to sys.path
+    cannot bring in code that the launcher does not see; krmhd and shared never count. The
+    import statements cannot show code loaded any other way, so no file may import
+    importlib, imp, pkgutil, runpy or zipimport, or call __import__, compile, eval or exec.
+    """
+    roots = list(dict.fromkeys([posixpath.dirname(evaluation), lc.STUDY_REL]))
+    external = set(getattr(sys, "stdlib_module_names", ())) | set(EVAL_THIRD_PARTY)
+    cache: Dict[str, Set[str]] = {}
+    found: Dict[str, str] = {}
+    problems: List[str] = []
+    queue = [evaluation]
+
+    def take(importer: str, where: str, sources: Sequence[str], others: Sequence[str]) -> None:
+        """Record the study files an import loads; refuse any that is not Python source."""
+        for rel in sources:
+            if rel != evaluation and rel not in found:
+                found[rel] = importer
+                queue.append(rel)
+        problems.extend(f"{where} imports {rel}, which is not Python source" for rel in others)
+
+    def follow(importer: str, where: str, folders: Sequence[str], parts: Sequence[str]) -> List[str]:
+        """Each part of a dotted module name in turn; returns the package folders of the last part."""
+        current = list(folders)
+        for part in parts:
+            sources, others, current = _module_candidates(repo, current, part, cache)
+            take(importer, where, sources, others)
+            if not current:
+                break
+        return current
+
+    while queue:
+        rel = queue.pop(0)
+        try:
+            tree = ast.parse((repo / rel).read_bytes(), filename=rel)
+        except (OSError, SyntaxError, ValueError, RecursionError, MemoryError) as exc:  # the last two: too deep
+            problems.append(f"{rel} cannot be read as Python ({short_exc(exc, 120)})")
+            continue
+        for node in ast.walk(tree):
+            where = f"{rel} line {getattr(node, 'lineno', '?')}"
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in EVAL_LOADER_CALLS:
+                problems.append(f"{where} calls {node.func.id}()")
+                continue
+            if isinstance(node, ast.Import):
+                statements = [(0, alias.name, []) for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                statements = [(node.level, node.module or "", [alias.name for alias in node.names])]
+            else:
+                continue
+            for level, module, names in statements:
+                parts = module.split(".") if module else []
+                if level:
+                    base = posixpath.dirname(rel)
+                    for _ in range(level - 1):
+                        base = posixpath.dirname(base)
+                    if base != lc.STUDY_REL and not base.startswith(lc.STUDY_REL + "/"):
+                        problems.append(f"{where} has a relative import that reaches outside {lc.STUDY_REL}/")
+                        continue
+                    folders = follow(rel, where, [base], parts)
+                else:
+                    top = parts[0]
+                    if top in EVAL_FORBIDDEN or top in EVAL_LOADER_MODULES:
+                        problems.append(f"{where} imports {module}")
+                        continue
+                    sources, others, packages = _module_candidates(repo, roots, top, cache)
+                    if not sources and not others and (not packages or top in external):
+                        if top not in external:
+                            problems.append(f"{where} imports {module}, which is neither a study file (in "
+                                            f"{' or '.join(r + '/' for r in roots)}) nor the standard library, "
+                                            "numpy, h5py or yaml")
+                        continue
+                    folders = follow(rel, where, roots, parts)
+                for name in names:
+                    if name == "*":
+                        take(rel, where, [f"{f}/{n}" for f in folders for n in sorted(_listing(repo, f, cache))
+                                          if n.endswith(".py") and (repo / f / n).is_file()], [])
+                    else:
+                        follow(rel, where, folders, [name])
+    return found, list(dict.fromkeys(problems))
+
+
+def set_freeze_keys(run_set: str) -> List[str]:
+    """The two freeze keys that every launch of a plan run set gives (LOOP.md section 5).
+
+    The set's criteria, the subsection '### 7a.<S> <title>' of SPEC.md, and the one file
+    that evaluates them: analysis/gate4_<S>.py for sets A and B (Gate 4), and
+    analysis/gate_base.py for the base state (the base-state gate).
+    """
+    evaluation = "gate_base.py" if run_set == "base" else f"gate4_{run_set}.py"
+    return [f"{SPEC_REL}#7a.{run_set}", f"{ANALYSIS_REL}/{evaluation}"]
+
+
+def earlier_freeze_keys(ledger: Dict[str, Any], run_set: str) -> Dict[str, List[str]]:
+    """Each key that an earlier launch of ``run_set`` froze, with the IDs of those launches.
+
+    A failed launch (state launch_failed) sent no call to Modal and froze nothing, as in
+    lc.ledger_frozen_entries, which the frozen checks of the launcher and the runner read.
+    """
+    keys: Dict[str, List[str]] = {}
+    for launch in ledger.get("launches", []):
+        if launch.get("run_set") != run_set or launch.get("state") == "launch_failed":
+            continue
+        frozen = launch.get("frozen")
+        for key in frozen if isinstance(frozen, dict) else {}:
+            keys.setdefault(str(key), []).append(str(launch.get("launch_id")))
+    return keys
+
+
+def committed_regular_file(repo: Path, rel: str) -> bool:
+    """True if the commit HEAD points to has ``rel`` as a regular file: not missing, not a
+    link and not under a linked folder (git records nothing beyond a link)."""
+    out = git(repo, "ls-tree", "-z", "HEAD", "--", rel).stdout
+    meta, _tab, path = out.split("\0", 1)[0].partition("\t")
+    return path == rel and meta.split()[:2] in (["100644", "blob"], ["100755", "blob"])
+
+
+def check_set_freeze(repo: Path, ledger: Dict[str, Any], run_set: str, keys: Sequence[str]) -> None:
+    """Refuse a launch of a plan run set that does not freeze what judges its runs (LOOP.md section 5).
+
+    Every launch of set base, A or B gives as --freeze keys, each spelt exactly as its
+    normalised repo-relative path:
+    - the set's two keys (set_freeze_keys), each resolving in the commit launched: its file
+      is a regular file committed at HEAD, and for SPEC.md exactly one heading matches 7a.<S>;
+    - every study file that the evaluation imports, directly or through another study file
+      (evaluation_imports), each a regular file committed at HEAD. The evaluation must keep
+      to the imports LOOP.md allows it, so that this list is complete;
+    - every key that an earlier launch of the set froze (earlier_freeze_keys);
+      check_frozen_items has already refused any of those whose content changed.
+    resolve_freeze then checks each key against HEAD's copy. So the freeze of the criteria
+    and of the code that applies them does not depend on the agent remembering the flags.
+    A data file the evaluation reads is not an import, and is frozen only if the agent gives
+    its key; from then on every launch of the set must give it too.
+    """
+    given = set(keys)
+    criteria, evaluation = set_freeze_keys(run_set)
+    problems: List[str] = []
+    named: Set[str] = set()  # keys reported missing, so that each is named once
+
+    def need(key: str, why: str) -> None:
+        """Report ``key`` once if the launch does not give it."""
+        if key not in given and key not in named:
+            named.add(key)
+            problems.append(f"missing --freeze '{key}' ({why})")
+
+    for key, what in ((criteria, "criteria"), (evaluation, "evaluation")):
+        rel, _sep, heading = key.partition("#")
+        if key not in given:
+            need(key, f"the set's {what}")
+        elif not committed_regular_file(repo, rel):
+            problems.append(f"--freeze '{key}': {rel} is not a regular file committed at HEAD")
+        elif _worktree_key_hash(repo, key) is None:
+            why = (f"no heading of {rel} matches '{heading}', or more than one does (the set's criteria go under "
+                   f"section 7a as '### {heading} <title>')" if heading else f"{rel} cannot be read")
+            problems.append(f"--freeze '{key}' does not resolve: {why}")
+    if committed_regular_file(repo, evaluation):
+        imported, import_problems = evaluation_imports(repo, evaluation)
+        problems += import_problems
+        for rel, importer in imported.items():
+            if not committed_regular_file(repo, rel):
+                problems.append(f"{rel}, which {importer} imports, is not a regular file committed at HEAD")
+            else:
+                need(rel, f"imported by {importer}")
+    for key, launches in sorted(earlier_freeze_keys(ledger, run_set).items()):
+        need(key, f"frozen by {', '.join(launches)}, an earlier launch of set {run_set}")
+    if problems:
+        raise Refusal("freeze", f"set {run_set}: {'; '.join(problems)}. Every launch of set {run_set} freezes the "
+                      f"set's criteria in SPEC.md section 7a.{run_set}, the file that evaluates them and every study "
+                      "file that file imports, directly or through another, spelt as above, and everything an "
+                      "earlier launch of the set froze, so that nothing that judges the runs can change once they "
+                      "exist. The evaluation imports only the standard library, numpy, h5py, yaml and study "
+                      "files, never krmhd or shared, and loads no code in any other way (LOOP.md section 5).")
 
 
 def check_frozen_items(repo: Path, ledger: Dict[str, Any]) -> None:
@@ -2180,6 +2534,7 @@ def cmd_launch(args: argparse.Namespace, repo: Path) -> int:
         gates = check_gate_reports(repo, args.gate_report or [], args.set)
         local = check_local_test(repo, args.local_test)
         check_run_set(repo, args.set, require_row=True)
+        check_set_freeze(repo, ledger, args.set, args.freeze or [])
         frozen = resolve_freeze(repo, args.freeze or [])
         gandalf, jax_version = lock_pins(repo)
         check_cap(settings.cap, ledger, len(configs) * hours)
@@ -2580,25 +2935,41 @@ def cmd_reconcile(args: argparse.Namespace, repo: Path) -> int:
 
 
 def cmd_status(args: argparse.Namespace, repo: Path) -> int:
-    """The compute line first (it goes into the log's Compute field), then runs in flight."""
+    """The compute line first (it goes into the log's Compute field), then runs in flight.
+
+    A ledger that cannot be read or fails its check (lc.verify_ledger) is the [ledger] hard
+    stop, as for the commands that write the ledger: status prints the compute line and the
+    runs in flight if it can work them out, and is then refused, so that its exit code 1
+    always comes with a 'REFUSED [ledger]' line.
+    """
     settings = load_settings(repo)
-    ledger = read_ledger(repo)
     try:
-        line = lc.status_line(settings.cap, ledger)
+        ledger: Any = lc.load_ledger(ledger_file(repo))
+    except (OSError, ValueError) as exc:
+        raise Refusal("ledger", f"cannot read {lc.LEDGER_REL}: {exc}. Only this script writes the ledger; "
+                      "a ledger that fails its check is a hard stop for Anjor.") from None
+    problems = ledger_problems(ledger)
+    lines: List[str] = []
+    excess: Optional[str] = None
+    try:
+        lines.append(lc.status_line(settings.cap, ledger))
         excess = cap_excess(settings.cap, ledger)
-    except (TypeError, ValueError, KeyError, AttributeError) as exc:
-        raise EnvError(f"the ledger is malformed: {exc}") from None
-    print(line)
-    for launch, run in lc.iter_runs(ledger):
-        if run.get("charged_hours") is None and run.get("status") != "not_launched":
-            print(f"in flight: {run.get('run_id')} ({launch.get('launch_id')}, {launch.get('kind')}, "
-                  f"set {launch.get('run_set')}) status {run.get('status')}, reserved "
-                  f"{fmt_h(run.get('reserved_hours') or 0)} A100-h, app {launch.get('app_id') or '-'}, "
-                  f"call {run.get('call_id') or '-'}")
-    problems = lc.verify_ledger(ledger)
+        for launch, run in lc.iter_runs(ledger):
+            if run.get("charged_hours") is None and run.get("status") != "not_launched":
+                lines.append(f"in flight: {run.get('run_id')} ({launch.get('launch_id')}, {launch.get('kind')}, "
+                             f"set {launch.get('run_set')}) status {run.get('status')}, reserved "
+                             f"{fmt_h(run.get('reserved_hours') or 0)} A100-h, app {launch.get('app_id') or '-'}, "
+                             f"call {run.get('call_id') or '-'}")
+    except Exception as exc:  # noqa: BLE001 - e.g. OverflowError from an integer too large for a float
+        if not problems:
+            raise EnvError(f"the ledger is malformed: {short_exc(exc)}") from None
+        lines, excess = [], None  # nothing sound to print; the refusal below says why
+    for line in lines:
+        print(line)
     if problems:
-        print("LEDGER PROBLEMS: " + "; ".join(problems) + " (see 'modal_launch.py verify')", file=sys.stderr)
-        return EXIT_REFUSED
+        raise Refusal("ledger", f"{lc.LEDGER_REL} fails its check: {'; '.join(problems)}. Only this script writes "
+                      "the ledger; a ledger that fails its check is a hard stop for Anjor ('modal_launch.py "
+                      "verify' lists the problems).")
     if excess:
         print(excess, file=sys.stderr)
         return EXIT_CAP_EXCEEDED
@@ -2660,7 +3031,7 @@ def cmd_verify(args: argparse.Namespace, repo: Path) -> int:
     if not isinstance(ledger, dict):
         print(f"ledger problem: {lc.LEDGER_REL} is not a JSON object")
         return EXIT_REFUSED
-    problems = lc.verify_ledger(ledger)
+    problems = ledger_problems(ledger)
     if problems:
         for problem in problems:
             print(f"ledger problem: {problem}")
@@ -2741,7 +3112,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "(repeatable; every report given must pass)")
     p.add_argument("--local-test", required=True, help="committed record of the local smoke test")
     p.add_argument("--freeze", action="append", default=[],
-                   help="'path#heading' or 'path' to freeze at launch (repeatable)")
+                   help="'path#heading' or 'path' to freeze at launch (repeatable). Every launch of a set gives "
+                        f"{SPEC_REL}#7a.<S> and {ANALYSIS_REL}/gate4_<S>.py ({ANALYSIS_REL}/gate_base.py for "
+                        "base), every study file that file imports, and every key an earlier launch of the set froze")
     p.add_argument("configs", nargs="+", help=f"committed YAML configs under {CONFIGS_REL}/")
     p.set_defaults(func=cmd_launch)
 

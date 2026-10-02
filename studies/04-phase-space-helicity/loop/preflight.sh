@@ -6,8 +6,11 @@
 # anything failed. It changes nothing except what `uv sync --frozen` installs (skip that
 # with --skip-uv). It calls only read commands of gh and modal: `gh auth status`, `gh api`
 # GETs, `modal app list`, `modal volume list`. It also checks the clone marker
-# (git config s04.loopclone), the .gitignore rules for .loop/ and data/, and that the clone
-# holds no local settings, untracked .claude/ files, CLAUDE.local.md or git hooks.
+# (git config s04.loopclone), the .gitignore rules for .loop/ and data/, that the clone
+# holds no local settings, untracked .claude/ files, CLAUDE.local.md or git hooks, where
+# Study 2's data folder is a link, that the link is excluded and the tracked files it hides
+# carry the skip-worktree bit, and that the GANDALF repo keeps reflogs and gives Anjor's own
+# git identity (not the loop's), by which the runner tells his branch moves from the loop's.
 #
 # --allow-stubs lets config.env point at loop/stubs/ (the self-test does that); in the real
 # loop that is a FAIL.
@@ -20,7 +23,7 @@ for a in "$@"; do
   case "$a" in
     --skip-uv) SKIP_UV=1 ;;
     --allow-stubs) ALLOW_STUBS=1 ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
     *) echo "preflight.sh: unknown option $a" >&2; exit 2 ;;
   esac
 done
@@ -45,7 +48,7 @@ else
 fi
 
 # --- config.env, read as KEY=VALUE text (never sourced), with the runner's S04_ overrides ---
-KEYS="COMPUTE_CAP_A100_HOURS CLAUDE_BIN CLAUDE_MODEL CLAUDE_EFFORT MAX_BUDGET_USD DAILY_ITERATION_CAP TOTAL_ITERATION_CAP SESSION_TIME_LIMIT_SEC PAUSE_BETWEEN_ITERATIONS_SEC FAST_FAIL_SEC FAST_FAIL_BACKOFF_SEC WIP_STREAK_LIMIT WATCHDOG_POLL_SEC KILL_GRACE_SEC GANDALF_WORKTREE MODAL_APP_PREFIX MODAL_VOLUME MODAL_VOLUME_ROOT LOOP_GIT_NAME LOOP_GIT_EMAIL MODAL_BIN GH_BIN PYTHON_BIN UV_BIN STOP_ON_ANY_NEW_MODAL_APP RATE_LIMIT_MARGIN_SEC"
+KEYS="COMPUTE_CAP_A100_HOURS CLAUDE_BIN CLAUDE_MODEL CLAUDE_EFFORT MAX_BUDGET_USD DAILY_ITERATION_CAP TOTAL_ITERATION_CAP SESSION_TIME_LIMIT_SEC PAUSE_BETWEEN_ITERATIONS_SEC FAST_FAIL_SEC FAST_FAIL_BACKOFF_SEC WIP_STREAK_LIMIT WATCHDOG_POLL_SEC KILL_GRACE_SEC GANDALF_WORKTREE MODAL_APP_PREFIX MODAL_VOLUME MODAL_VOLUME_ROOT LOOP_GIT_NAME LOOP_GIT_EMAIL MODAL_BIN GH_BIN PYTHON_BIN UV_BIN STOP_ON_ANY_NEW_MODAL_APP RATE_LIMIT_MARGIN_SEC APPS_UNCHECKED_STOP_SEC"
 for k in $KEYS; do eval "$k="; done
 trim() { local s="$1"; s="${s#"${s%%[![:space:]]*}"}"; s="${s%"${s##*[![:space:]]}"}"; printf '%s' "$s"; }
 if [ -f "$LOOP_DIR/config.env" ]; then
@@ -185,8 +188,22 @@ case "${STOP_ON_ANY_NEW_MODAL_APP:-1}" in
 esac
 data="$REPO/studies/02-collisionality-scan/data/hermite128_nu3_imex"
 if [ -e "$data" ]; then pass "ν-scan data resolves: $data"; else fail "ν-scan data resolves: $data"; fi
-if [ -L "$REPO/studies/02-collisionality-scan/data" ]; then
-  info "studies/02-collisionality-scan/data is a link to $(readlink "$REPO/studies/02-collisionality-scan/data")"
+link_rel="studies/02-collisionality-scan/data"
+if [ -L "$REPO/$link_rel" ]; then
+  info "$link_rel is a link to $(readlink "$REPO/$link_rel")"
+  # The link hides the tracked files of the folder it replaces (data/.gitkeep). Without the
+  # skip-worktree bit git sees them as deleted, and no stash can take that deletion.
+  unset_bits=$(git -C "$REPO" ls-files -v -- "$link_rel/" 2>/dev/null | awk '$1 != "S" && $1 != "s" { sub(/^[^ ]+ /, ""); print }' | tr '\n' ' ')
+  if [ -z "$(trim "$unset_bits")" ]; then
+    pass "the tracked files under the data link are marked skip-worktree"
+  else
+    fail "tracked files under the data link lack the skip-worktree bit: $unset_bits(the runner sets it at its start; by hand: git update-index --skip-worktree -- <path>)"
+  fi
+  if git -C "$REPO" check-ignore -q --no-index -- "$link_rel"; then
+    pass "the data link is excluded from git"
+  else
+    fail "the data link is not ignored: add /$link_rel to .git/info/exclude (the runner adds it at its start)"
+  fi
 fi
 
 # --- GANDALF worktree ------------------------------------------------------------------------
@@ -196,6 +213,18 @@ if [ -d "$GANDALF_WORKTREE" ] && git -C "$GANDALF_WORKTREE" rev-parse --is-insid
   main_gandalf=$(cd "$REPO/../gandalf" 2>/dev/null && pwd -P)
   if [ -n "$main_gandalf" ] && [ "$wt_top" = "$main_gandalf" ]; then
     fail "the GANDALF worktree is ../gandalf itself; the loop must use its own worktree"
+  fi
+  # The runner tells a branch Anjor moves during a session from one the loop moves by the git
+  # identity in the branch's reflog, so that identity must be readable and not the loop's,
+  # and the repo must keep reflogs.
+  ident=$(guard gandalf-refs --worktree "$GANDALF_WORKTREE" 2>/dev/null | sed -n 's/^ *"ident": "\(.*\)",*$/\1/p')
+  if [ -n "$ident" ]; then
+    pass "Anjor's git identity in the GANDALF repo: $ident"
+  else
+    fail "Anjor's git identity in the GANDALF repo cannot be read, or is the loop's (git var GIT_COMMITTER_IDENT there): every branch he moves during a session would stop the loop"
+  fi
+  if [ "$(git -C "$GANDALF_WORKTREE" config --get core.logAllRefUpdates 2>/dev/null)" = false ]; then
+    fail "core.logAllRefUpdates is false in the GANDALF repo: without reflogs every branch Anjor moves during a session would stop the loop"
   fi
 else
   fail "GANDALF worktree $GANDALF_WORKTREE exists and is a git work tree"

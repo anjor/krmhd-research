@@ -79,9 +79,13 @@ build_template() {
   else
     printf '# Questions for Anjor\n\n## Blocking\n\nNone.\n\n## Open, not blocking\n\n## For review\n\n## Answered\n' > "$t/$STUDY_REL/QUESTIONS.md"
   fi
-  for f in run_iteration.sh run_forever.sh wait.sh pause.sh resume.sh preflight.sh guards.py loopcommon.py prompt.md settings.json; do
+  for f in run_iteration.sh run_forever.sh wait.sh pause.sh resume.sh preflight.sh guards.py loopcommon.py prompt.md settings.json modal_launch.py; do
     cp "$SRC_LOOP/$f" "$t/$STUDY_REL/loop/$f" || return 1
   done
+  # Study 2's data folder holds a tracked .gitkeep, as in the real repo, so that a case that
+  # replaces the folder with a link meets the file the link hides.
+  mkdir -p "$t/studies/02-collisionality-scan/data"
+  : > "$t/studies/02-collisionality-scan/data/.gitkeep"
   cat > "$t/$STUDY_REL/loop/config.env" <<EOF
 # Test settings written by selftest.sh.
 COMPUTE_CAP_A100_HOURS=20
@@ -118,6 +122,7 @@ EOF
   "$PY" "$t/$STUDY_REL/loop/guards.py" --repo "$t" frozen-record > /dev/null || return 1
   git -C "$t" init -q -b main
   git -C "$t" add -A
+  git -C "$t" add -f "studies/02-collisionality-scan/data/.gitkeep"
   git -C "$t" commit -q -m "seed" || return 1
   echo "Second commit, so that HEAD~1 exists." >> "$t/$STUDY_REL/STATUS.md"
   git -C "$t" commit -q -am "seed 2" || return 1
@@ -491,7 +496,11 @@ case_marker_isolation() {
 case_stop_present() {
   new_case stop_present
   anjor_clone
+  # pause.sh reads config.env as text: a line it would run if it sourced the file must not run.
+  printf 'SOURCED_MARK=$(touch "%s")\n' "$C/config_was_run" >> "$AN/$STUDY_REL/loop/config.env"
   (cd "$AN" && bash "$STUDY_REL/loop/pause.sh" "self-test pause") > "$C/pause.out" 2>&1 || fail "pause.sh failed: $(tail -1 "$C/pause.out")"
+  [ ! -e "$C/config_was_run" ] && [ ! -e "$AN/config_was_run" ] || fail "pause.sh ran config.env as shell code"
+  git -C "$AN" checkout -q -- "$STUDY_REL/loop/config.env"
   expect_stop "Paused by Anjor: self-test pause"
   remote_show "$STUDY_REL/QUESTIONS.md" | grep -q '^- \*\*STOP .* (anjor)\*\*' || fail "no Blocking line from pause.sh"
   [ "$(git --git-dir="$C/remote.git" log -1 --format=%an main)" = anjor ] || fail "pause commit not Anjor's"
@@ -505,6 +514,31 @@ case_stop_present() {
   run_iter normal
   expect_rc 0
   expect_called 1
+  finish_case
+}
+
+case_pause_resume_clone() {  # pause.sh and resume.sh refuse to run in the loop's clone
+  local rc
+  new_case pause_resume_clone
+  OUT="$C/pause.out"
+  (cd "$CL" && bash "$STUDY_REL/loop/pause.sh" "from the clone") > "$OUT" 2>&1
+  rc=$?
+  [ "$rc" = 2 ] || fail "pause.sh in the loop clone exit $rc, expected 2"
+  grep -q "run this in your own checkout, not the loop clone" "$OUT" || fail "pause.sh gave no reason: $(tail -1 "$OUT")"
+  [ ! -e "$CL/$STUDY_REL/STOP" ] || fail "pause.sh wrote STOP in the loop clone"
+  expect_no_stop
+  # resume.sh, with a STOP that Anjor pushed from his own checkout.
+  anjor_clone
+  (cd "$AN" && bash "$STUDY_REL/loop/pause.sh" "a real pause") > "$C/pause-an.out" 2>&1 || fail "pause.sh failed in Anjor's checkout"
+  git -C "$CL" pull -q --ff-only origin main
+  OUT="$C/resume.out"
+  (cd "$CL" && bash "$STUDY_REL/loop/resume.sh") > "$OUT" 2>&1
+  rc=$?
+  [ "$rc" = 2 ] || fail "resume.sh in the loop clone exit $rc, expected 2"
+  grep -q "run this in your own checkout, not the loop clone" "$OUT" || fail "resume.sh gave no reason: $(tail -1 "$OUT")"
+  [ -e "$CL/$STUDY_REL/STOP" ] || fail "resume.sh removed STOP in the loop clone"
+  expect_stop "a real pause"
+  [ "$(git --git-dir="$C/remote.git" log -1 --format=%s main)" = "Study 04: pause loop" ] || fail "something was committed after the pause"
   finish_case
 }
 
@@ -1070,18 +1104,46 @@ case_app_check_postponed() {
   finish_case
 }
 
-case_data_link() {
+case_data_link() {  # the Study 2 data link hides a tracked data/.gitkeep: excluded, skip-worktree, kept so
+  local keep="studies/02-collisionality-scan/data/.gitkeep"
   new_case data_link
-  mkdir -p "$C/elsewhere/hermite128_nu3_imex" "$CL/studies/02-collisionality-scan"
+  git -C "$CL" ls-files --error-unmatch -- "$keep" > /dev/null 2>&1 || fail "the template does not track $keep"
+  mkdir -p "$C/elsewhere/hermite128_nu3_imex"
+  rm -rf "$CL/studies/02-collisionality-scan/data"
   ln -s "$C/elsewhere" "$CL/studies/02-collisionality-scan/data"
   run_iter normal
   expect_rc 0
   expect_called 1
+  expect_no_stop
   [ -L "$CL/studies/02-collisionality-scan/data" ] || fail "the data link is gone"
   git -C "$CL" stash list | grep -q . && fail "the runner stashed something: $(git -C "$CL" stash list | head -1)"
   grep -qx '/studies/02-collisionality-scan/data' "$CL/.git/info/exclude" || fail "data link not added to info/exclude"
   expect_lastlog "excluded_data_link"
+  expect_lastlog "skip_worktree=1"
+  git -C "$CL" ls-files -v -- "$keep" | grep -q '^S ' || fail "$keep lacks the skip-worktree bit: $(git -C "$CL" ls-files -v -- "$keep")"
   expect_synced
+  OUT="$C/preflight.out"
+  env S04_STUB_DIR="$C/stub" bash "$CL/$STUDY_REL/loop/preflight.sh" --skip-uv --allow-stubs > "$OUT" 2>&1
+  grep -q '^PASS  the tracked files under the data link are marked skip-worktree' "$OUT" || fail "preflight did not pass the bit"
+  grep -q '^PASS  the data link is excluded from git' "$OUT" || fail "preflight did not pass the exclude rule"
+  grep -q '^PASS  working tree clean' "$OUT" || fail "preflight did not find the tree clean"
+  # A session that drops the bit, as 'git read-tree HEAD' would, and commits only its log: the
+  # runner sets the bit again before its stash, so nothing is stashed and nothing stops.
+  run_iter drop_skip_worktree
+  expect_rc 0
+  expect_no_stop
+  expect_lastlog "skip_worktree_reset=1"
+  expect_lastlog "outcome=done"
+  git -C "$CL" stash list | grep -q . && fail "the runner stashed something after the bit was dropped"
+  git --git-dir="$C/remote.git" ls-tree -r --name-only main | grep -qx "$keep" || fail "$keep is gone from the remote"
+  [ "$(grep -cx '/studies/02-collisionality-scan/data' "$CL/.git/info/exclude")" = 1 ] \
+    || fail "the data link's exclude rule was written more than once: $(grep -c data "$CL/.git/info/exclude")"
+  expect_synced
+  # Without the bit, preflight fails.
+  git -C "$CL" update-index --no-skip-worktree -- "$keep"
+  OUT="$C/preflight2.out"
+  env S04_STUB_DIR="$C/stub" bash "$CL/$STUDY_REL/loop/preflight.sh" --skip-uv --allow-stubs > "$OUT" 2>&1
+  grep -q '^FAIL  tracked files under the data link lack the skip-worktree bit' "$OUT" || fail "preflight did not flag the missing bit"
   finish_case
 }
 
@@ -1400,6 +1462,17 @@ case_preflight_stubs() {
   env S04_STUB_DIR="$C/stub" bash "$CL/$STUDY_REL/loop/preflight.sh" --skip-uv --allow-stubs > "$OUT" 2>&1
   rc=$?
   [ "$rc" = 0 ] || fail "preflight exit $rc: $(grep '^FAIL' "$OUT" | head -3 | tr '\n' ' ')"
+  grep -q "^PASS  Anjor's git identity in the GANDALF repo: anjor <anjor@example.invalid>" "$OUT" \
+    || fail "preflight did not read Anjor's git identity in the GANDALF repo"
+  # A GANDALF repo whose identity is the loop's, and that keeps no reflogs.
+  git init -q "$C/gwt"
+  git -C "$C/gwt" config user.name krmhd-loop
+  git -C "$C/gwt" config core.logAllRefUpdates false
+  OUT="$C/preflight1b.out"
+  env S04_STUB_DIR="$C/stub" S04_GANDALF_WORKTREE="$C/gwt" bash "$CL/$STUDY_REL/loop/preflight.sh" --skip-uv --allow-stubs > "$OUT" 2>&1
+  grep -q "^FAIL  Anjor's git identity in the GANDALF repo cannot be read, or is the loop's" "$OUT" \
+    || fail "preflight accepted the loop's identity as Anjor's"
+  grep -q '^FAIL  core.logAllRefUpdates is false in the GANDALF repo' "$OUT" || fail "preflight did not flag a repo without reflogs"
   OUT="$C/preflight2.out"
   env S04_STUB_DIR="$C/stub" S04_STUB_GH_RC=1 bash "$CL/$STUDY_REL/loop/preflight.sh" --skip-uv --allow-stubs > "$OUT" 2>&1
   rc=$?
@@ -1412,6 +1485,164 @@ case_preflight_stubs() {
   OUT="$C/preflight4.out"
   env S04_STUB_DIR="$C/stub" bash "$CL/$STUDY_REL/loop/preflight.sh" --skip-uv --allow-stubs > "$OUT" 2>&1
   grep -q '^FAIL  the clone holds files' "$OUT" || fail "preflight did not flag a git hook"
+  finish_case
+}
+
+# ---------------------------------------------------------------------------
+# Cases: records, gate reports, gh, GANDALF refs, the Modal app check
+# ---------------------------------------------------------------------------
+
+case_t1_check_unavailable() {  # T1 counts a PASS report it cannot put through the launcher's check
+  local start copy out rc f
+  new_case t1_check_unavailable
+  start=$(git -C "$CL" rev-parse HEAD)
+  run_iter gate_pass_with_critic
+  expect_rc 0
+  expect_no_stop
+  copy="$C/guards-copy"
+  mkdir -p "$copy"
+  for f in guards.py loopcommon.py frozen.json config.env; do cp "$CL/$STUDY_REL/loop/$f" "$copy/$f"; done
+  out=$("$PY" -I -S "$copy/guards.py" --repo "$CL" transcript-check --transcript "$ST/transcripts/$LAST_ID.jsonl" \
+          --checks T1 --before "$start" --after HEAD --loop-committer krmhd-loop 2>&1)
+  rc=$?
+  [ "$rc" = 1 ] || fail "transcript-check without the launcher's copy: exit $rc, expected 1: $out"
+  printf '%s\n' "$out" | grep -q "T1 report form: the launcher's report check could not run on $STUDY_REL/gate_reports/G1_$LAST_ID.md" \
+    || fail "no finding for the check that could not run: $out"
+  cp "$CL/$STUDY_REL/loop/modal_launch.py" "$copy/modal_launch.py"
+  out=$("$PY" -I -S "$copy/guards.py" --repo "$CL" transcript-check --transcript "$ST/transcripts/$LAST_ID.jsonl" \
+          --checks T1 --before "$start" --after HEAD --loop-committer krmhd-loop 2>&1) \
+    || fail "with the launcher's copy back, the report failed: $out"
+  finish_case
+}
+
+records_setup() {  # records_setup: Anjor's decisions.md, claims.md and ANSWER/VETO lines, committed and pushed
+  printf '# Decisions\n\n| Date | Decision | By | Why |\n|---|---|---|---|\n| 2026-10-01 | Use set B | agent (it-20261001-1200) | reasons |\n' \
+    > "$CL/$STUDY_REL/decisions.md"
+  printf '# Claims\n\n| ID | Claim | Status |\n|---|---|---|\n| C1 | Gamma is conserved. | open |\n| C2 | W cascades. | open |\n' \
+    > "$CL/$STUDY_REL/claims.md"
+  printf '\n### Q90. A test question\n\nANSWER: use option b, and say why.\n\n- R90 Gate 1 passed\n  VETO: redo Gate 1, the window is wrong.\n' \
+    >> "$CL/$STUDY_REL/QUESTIONS.md"
+  anjor_commit "Anjor: records for the test" && git -C "$CL" push -q origin main
+}
+
+case_records() {  # a session that edits recorded decisions, Anjor's lines or a claim's text stops the loop
+  local mode
+  for mode in records_edit records_ok; do
+    new_case "$mode"
+    records_setup || fail "could not set up the records"
+    run_iter "$mode"
+    if [ "$mode" = records_edit ]; then
+      expect_rc 12
+      expect_stop "decisions-edit: $STUDY_REL/decisions.md lost or changed the row '2026-10-01|Use set B|agent (it-20261001-1200)|reasons'"
+      expect_stop "answer-edit: $STUDY_REL/QUESTIONS.md lost or changed Anjor's line 'VETO: redo Gate 1, the window is wrong.'"
+      expect_stop "claim-edit: $STUDY_REL/claims.md: the text changed for claim C2"
+      expect_lastlog "guards=STOP"
+    else
+      expect_rc 0
+      expect_no_stop
+      expect_lastlog "guards=ok"
+      remote_show "$STUDY_REL/QUESTIONS.md" | grep -q "^Handled ($LAST_ID): did option b" || fail "the Handled note is not on the remote"
+    fi
+    expect_synced
+    finish_case
+  done
+}
+
+case_gandalf_refs() {  # GANDALF's branches outside study04/ and its tags are Anjor's
+  local mode G GO W
+  for mode in tamper ok anjor; do
+    new_case "gandalf_refs_$mode"
+    G="$C/gandalf"
+    GO="$C/gandalf-origin.git"
+    git init -q "$G"
+    (cd "$G" && echo a > a && git add a && git commit -q -m one && echo b > b && git add b && git commit -q -m two \
+       && git branch pr-101 && git branch study04/old && git tag v0.6.0) || fail "could not build the GANDALF repo"
+    git clone -q --bare "$G" "$GO"
+    git -C "$G" remote add origin "$GO"
+    git -C "$GO" tag v0.7.0 main  # pushed by Anjor from elsewhere; the session's fetch brings it in
+    W="$G"
+    if [ "$mode" = anjor ]; then
+      # As on the Mac: the loop works in a linked worktree of Anjor's checkout, which has main.
+      W="$C/gandalf-study04"
+      git -C "$G" worktree add -q --detach "$W" main || fail "could not add the worktree"
+    fi
+    run_iter "gandalf_refs_$mode" S04_GANDALF_WORKTREE="$W" S04_STUB_WT="$W"
+    git -C "$G" rev-parse -q --verify refs/tags/v0.7.0 > /dev/null || fail "the session did not fetch v0.7.0"
+    if [ "$mode" = tamper ]; then
+      expect_rc 12
+      expect_stop "gandalf-refs: the branch pr-101 was deleted"
+      expect_stop "gandalf-refs: the branch main moved from"
+      expect_stop "(by krmhd-loop <loop@example.invalid>)"
+      expect_stop "gandalf-refs: a new tag v9.9.9"
+      expect_stop "gandalf-refs: origin gained the tag v9.9.8"
+      git -C "$G" rev-parse -q --verify refs/tags/v9.9.8 > /dev/null && fail "the refspec push left a local tag; the case tests nothing"
+      remote_show "$STUDY_REL/STOP" | grep -q "study04/new-work\|study04/old" && fail "a study04/ branch was flagged"
+      remote_show "$STUDY_REL/STOP" | grep -q "v0.7.0" && fail "a tag that origin had before the session was flagged"
+    else
+      expect_rc 0
+      expect_no_stop
+      expect_lastlog "guards=ok"
+    fi
+    if [ "$mode" = anjor ]; then
+      [ "$(git -C "$G" log -1 --format=%s main)" = "Anjor's own work" ] || fail "Anjor's commit on main is not there"
+      git -C "$G" rev-parse -q --verify refs/heads/anjor-feature > /dev/null || fail "Anjor's new branch is not there"
+    fi
+    lastlog | grep -q "gandalf_origin_tags_unchecked\|gandalf_refs_unchecked\|gandalf_refs_unrecorded" \
+      && fail "GANDALF's refs or origin's tags went unchecked: $(lastlog)"
+    ls "$ST"/gandalf-refs.pre.* "$ST"/gandalf-tags.origin* > /dev/null 2>&1 && fail "the record of GANDALF's refs was left behind"
+    finish_case
+  done
+}
+
+case_app_check_overdue() {  # a session window that cannot be checked holds sessions back, then stops the loop
+  new_case app_check_overdue
+  run_iter modal_rogue_offline
+  expect_rc 0
+  expect_no_stop
+  expect_lastlog "apps_unchecked"
+  # The app list still cannot be read: no session starts, and the window waits.
+  run_iter normal
+  expect_rc 14
+  expect_called 1
+  expect_lastlog "skip-auth"
+  expect_lastlog "pending_windows=1"
+  [ -s "$ST/app_windows" ] || fail "the session window was dropped unchecked"
+  expect_no_stop
+  # Once the oldest waiting window ended more than APPS_UNCHECKED_STOP_SEC ago: STOP.
+  sleep 2
+  run_iter normal S04_APPS_UNCHECKED_STOP_SEC=1
+  expect_rc 12
+  expect_called 1
+  expect_stop "modal apps unchecked: the runner cannot read the Modal app list"
+  [ -s "$ST/app_windows" ] || fail "the session window was dropped"
+  finish_case
+  # The same right after the session that could not be checked.
+  new_case app_check_overdue_post
+  run_iter modal_rogue_offline S04_APPS_UNCHECKED_STOP_SEC=0
+  expect_rc 12
+  expect_called 1
+  expect_stop "modal apps unchecked"
+  expect_lastlog "apps_unchecked"
+  finish_case
+}
+
+case_dead_runner_window() {  # a dead runner recorded no session start: its window comes from its iteration ID
+  local dead before now stamp
+  new_case dead_runner_window
+  now=$(date +%s)
+  dead="it-$(date -u -r $((now - 120)) +%Y%m%d-%H%M)"
+  before=$(git -C "$CL" rev-parse HEAD)
+  mkdir -p "$ST"
+  echo "$dead $before" > "$ST/inflight"
+  stamp=$(date -u -r "$now" '+%Y-%m-%d %H:%M:%S+00:00')
+  printf '[{"App ID": "ap-late", "Description": "handmade", "State": "stopped", "Tasks": "0", "Created at": "%s", "Stopped at": "%s"}]\n' \
+    "$stamp" "$stamp" > "$C/stub/apps.json"
+  run_iter normal
+  expect_rc 12
+  expect_called 0
+  expect_stop "ap-late"
+  expect_lastlog "window_start_guessed="
+  [ ! -f "$ST/inflight" ] || fail "inflight not cleared"
   finish_case
 }
 
@@ -1584,6 +1815,398 @@ case_guards_questions_clean() {
   finish_case
 }
 
+case_guards_records() {  # decisions-edit, answer-edit, claim-edit: what may change and what may not
+  local base out rc q d cl
+  new_case guards_records
+  q="$CL/$STUDY_REL/QUESTIONS.md"; d="$CL/$STUDY_REL/decisions.md"; cl="$CL/$STUDY_REL/claims.md"
+  records_setup || fail "could not set up the records"
+  base=$(git -C "$CL" rev-parse HEAD)
+  # Allowed: a superseding row, the table realigned, Anjor's answer moved with a Handled note
+  # below it, a claim's status, a new claim.
+  printf '| 2026-10-02 | Supersedes Use set B | agent (it-20261002-0001) | why |\n' >> "$d"
+  replace_line "$d" "| 2026-10-01 | Use set B | agent (it-20261001-1200) | reasons |" "|2026-10-01|Use set B|agent (it-20261001-1200)|reasons|"
+  # A formatter widens the '|---|' line (and may set its alignment): no decision is in it.
+  replace_line "$d" "|---|---|---|---|" "| ---------- | :-------- | ---------------------- | --- |"
+  grep -q '^| ---------- | :-------- |' "$d" || fail "the separator line was not rewritten; the case tests nothing"
+  awk '/^ANSWER: use option b/ { held = $0; next } { print } END { print ""; print "## Moved"; print "> " held; print "Handled (it-20261002-0001): done" }' \
+    "$q" > "$q.tmp" && mv "$q.tmp" "$q"
+  replace_line "$cl" "| C1 | Gamma is conserved. | open |" "| C1 | Gamma is conserved. | supported |"
+  printf '| C3 | A new claim. | open |\n' >> "$cl"
+  loop_commit "loop: allowed record changes"
+  # Anjor changes his own veto during the session; the loop keeps his version.
+  replace_line "$q" "  VETO: redo Gate 1, the window is wrong." "  VETO: redo Gate 1, the window and the fit are wrong."
+  anjor_commit "Anjor: sharpen the veto"
+  printf 'Handled (it-20261002-0002): reopened Gate 1\n' >> "$q"
+  loop_commit "loop: handles the veto"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop)
+  rc=$?
+  [ "$rc" = 0 ] || fail "allowed record changes were flagged (exit $rc): $out"
+  # Not allowed: a changed row, a changed line of Anjor's, a changed claim text, a claim's row gone.
+  base=$(git -C "$CL" rev-parse HEAD)
+  replace_line "$d" "|2026-10-01|Use set B|agent (it-20261001-1200)|reasons|" "| 2026-10-01 | Use set B | agent (it-20261001-1200) | better reasons |"
+  replace_line "$q" "  VETO: redo Gate 1, the window and the fit are wrong." "  VETO: redo Gate 1."
+  replace_line "$cl" "| C2 | W cascades. | open |" "| C2 | W cascades forward. | open |"
+  loop_commit "loop: rewrites records"
+  awk '!/^\| C3 /' "$cl" > "$cl.tmp" && mv "$cl.tmp" "$cl"
+  loop_commit "loop: drops a claim"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop)
+  rc=$?
+  [ "$rc" = 1 ] || fail "edited records passed (exit $rc)"
+  printf '%s\n' "$out" | grep -qF "decisions-edit: $STUDY_REL/decisions.md lost or changed the row '2026-10-01|Use set B|agent (it-20261001-1200)|reasons'" \
+    || fail "a changed decisions.md row was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "answer-edit: $STUDY_REL/QUESTIONS.md lost or changed Anjor's line 'VETO: redo Gate 1, the window and the fit are wrong.'" \
+    || fail "a changed VETO line (Anjor's newer version) was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "claim-edit: $STUDY_REL/claims.md: the text changed for claim C2" || fail "a changed claim text was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "claim-edit: $STUDY_REL/claims.md: the row is gone for claim C3" || fail "a dropped claim row was not flagged: $out"
+  [ "$(printf '%s\n' "$out" | grep -c 'answer-edit')" = 1 ] || fail "a lost line was reported more than once: $out"
+  # A loop merge that keeps its own side and drops a VETO line Anjor added on the other.
+  base=$(git -C "$CL" rev-parse HEAD)
+  git -C "$CL" checkout -q -b anjorside
+  printf '  VETO: a new veto from Anjor.\n' >> "$q"
+  anjor_commit "Anjor: a new veto"
+  git -C "$CL" checkout -q main
+  printf 'loop note\n' >> "$CL/$STUDY_REL/STATUS.md"
+  loop_commit "loop: work"
+  GIT_AUTHOR_NAME=krmhd-loop GIT_AUTHOR_EMAIL=loop@example.invalid GIT_COMMITTER_NAME=krmhd-loop GIT_COMMITTER_EMAIL=loop@example.invalid \
+    git -C "$CL" merge -q -s ours --no-edit anjorside > /dev/null 2>&1 || fail "the merge did not go through"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop)
+  printf '%s\n' "$out" | grep -qF "answer-edit: $STUDY_REL/QUESTIONS.md lost or changed Anjor's line 'VETO: a new veto from Anjor.'" \
+    || fail "a merge that dropped Anjor's VETO line was not flagged: $out"
+  finish_case
+}
+
+case_guards_gate4() {  # gate4-repeat: a set's Gate 4 decision is made once; report-name: reports by name
+  local base out g
+  new_case guards_gate4
+  g="$CL/$STUDY_REL/gate_reports"
+  mkdir -p "$g"
+  # Sets C, D and E stand for sets Anjor added to the launcher (report-name reads its RUN_SETS).
+  sed -i '' 's/^RUN_SETS = .*/RUN_SETS = ("base", "A", "B", "C", "D", "E")/' "$CL/$STUDY_REL/loop/modal_launch.py"
+  grep -q '^RUN_SETS = ("base", "A", "B", "C", "D", "E")$' "$CL/$STUDY_REL/loop/modal_launch.py" || fail "could not add the test sets"
+  printf '# Gate 4 report, set A: it-20260930-1200\n\nResult: NOT DECIDED\n' > "$g/G4_A_it-20260930-1200.md"
+  anjor_commit "an undecided evaluation of set A"
+  base=$(git -C "$CL" rev-parse HEAD)
+  printf '# Gate 4 report, set A: it-20261001-1200\n\nCoded check: FAIL\nResult: FAIL\n' > "$g/G4_A_it-20261001-1200.md"
+  loop_commit "set A decided"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop) \
+    || fail "the first decision after a NOT DECIDED evaluation was flagged: $out"
+  printf '# Gate 4 report, set A: it-20261001-1300\n\n**Result**: PASS\n' > "$g/G4_A_it-20261001-1300.md"
+  loop_commit "set A evaluated again"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop)
+  printf '%s\n' "$out" | grep -qF "gate4-repeat: $STUDY_REL/gate_reports/G4_A_it-20261001-1300.md is a new Gate 4 evaluation of set A, but $STUDY_REL/gate_reports/G4_A_it-20261001-1200.md" \
+    || fail "a second decision of set A was not flagged: $out"
+  [ "$(printf '%s\n' "$out" | grep -c 'gate4-repeat')" = 1 ] || fail "expected one gate4-repeat finding: $out"
+  # Deleted, then written again under another name.
+  base=$(git -C "$CL" rev-parse HEAD)
+  printf '# Gate 4 report, set B: it-20261002-0100\n\nResult: FAIL\n' > "$g/G4_B_it-20261002-0100.md"
+  loop_commit "set B decided"
+  git -C "$CL" rm -q "$g/G4_B_it-20261002-0100.md"
+  loop_commit "set B report dropped"
+  printf '# Gate 4 report, set B: it-20261002-0200\n\nResult: PASS\n' > "$g/G4_B_it-20261002-0200.md"
+  loop_commit "set B evaluated again"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop)
+  printf '%s\n' "$out" | grep -q "gate4-repeat: $STUDY_REL/gate_reports/G4_B_it-20261002-0200.md is a new Gate 4 evaluation of set B, but $STUDY_REL/gate_reports/G4_B_it-20261002-0100.md (committed in " \
+    || fail "an evaluation written again after its report was deleted was not flagged: $out"
+  # A decided Result changed in place (an undecided one may be decided in place), and two
+  # evaluations of one set in one commit.
+  base=$(git -C "$CL" rev-parse HEAD)
+  printf '# Gate 4 report, set C: it-20261002-0300\n\nResult: NOT DECIDED\n' > "$g/G4_C_it-20261002-0300.md"
+  loop_commit "set C undecided"
+  replace_line "$g/G4_C_it-20261002-0300.md" "Result: NOT DECIDED" "Result: FAIL"
+  loop_commit "set C decided in place"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop) \
+    || fail "deciding an undecided report in place was flagged: $out"
+  replace_line "$g/G4_C_it-20261002-0300.md" "Result: FAIL" "Result: PASS"
+  loop_commit "set C changed its mind"
+  printf '# Gate 4 report, set D: it-20261002-0400\n\nResult: FAIL\n' > "$g/G4_D_it-20261002-0400.md"
+  printf '# Gate 4 report, set D: it-20261002-0500\n\nResult: PASS\n' > "$g/G4_D_it-20261002-0500.md"
+  loop_commit "set D twice"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop)
+  printf '%s\n' "$out" | grep -qF "gate4-repeat: $STUDY_REL/gate_reports/G4_C_it-20261002-0300.md changes the Result of a Gate 4 evaluation of set C from 'Result: FAIL' to 'Result: PASS'" \
+    || fail "a decided Result changed in place was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "(added in the same commit)" || fail "two evaluations in one commit were not flagged: $out"
+  # One evaluation committed in two steps (down to its Coded check line, then the critic's
+  # lines and the Result) is not a repeat; a second evaluation after it is.
+  base=$(git -C "$CL" rev-parse HEAD)
+  printf '# Gate 4 report, set E: it-20261003-1200\n\nCoded check: FAIL\n' > "$g/G4_E_it-20261003-1200.md"
+  loop_commit "set E evaluated, before its review"
+  printf 'Critic: VERDICT: SUPPORTED, it-20261003-1200, critic_it-20261003-1200_1.md\nKill criteria: none met\nResult: FAIL\n' \
+    >> "$g/G4_E_it-20261003-1200.md"
+  loop_commit "set E finished"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop) \
+    || fail "an evaluation finished in a second commit was flagged: $out"
+  printf '# Gate 4 report, set E: it-20261004-1200\n\nResult: PASS\n' > "$g/G4_E_it-20261004-1200.md"
+  loop_commit "set E evaluated again"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop)
+  printf '%s\n' "$out" | grep -qF "gate4-repeat: $STUDY_REL/gate_reports/G4_E_it-20261004-1200.md is a new Gate 4 evaluation of set E" \
+    || fail "a second evaluation after a two-step first one was not flagged: $out"
+  # report-name: a first evaluation of set A under a set name the launcher does not have, then
+  # one under the right name; a misspelt name; a stray file. Critic and local files are fine.
+  base=$(git -C "$CL" rev-parse HEAD)
+  printf '# Gate 4 report, set setA: it-20261005-1200\n\nResult: FAIL\n' > "$g/G4_setA_it-20261005-1200.md"
+  loop_commit "set A, misnamed"
+  printf '# Gate 4 report, set A: it-20261006-1200\n\nResult: PASS\n' > "$g/g4_A_it-20261006-1200.md"
+  printf 'notes\n' > "$g/README.md"
+  printf '# Critic report it-20261006-1200_1: x\n' > "$g/critic_it-20261006-1200_1.md"
+  printf '# Local test\n' > "$g/local_A_it-20261006-1200.md"
+  loop_commit "more files"
+  out=$(gp commit-guards --before "$base" --after HEAD --loop-committer krmhd-loop)
+  printf '%s\n' "$out" | grep -qF "report-name: $STUDY_REL/gate_reports/G4_setA_it-20261005-1200.md" \
+    || fail "a Gate 4 report of a set the launcher does not have was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "report-name: $STUDY_REL/gate_reports/g4_A_it-20261006-1200.md" \
+    || fail "a misspelt report name was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "report-name: $STUDY_REL/gate_reports/README.md" || fail "a stray file was not flagged: $out"
+  printf '%s\n' "$out" | grep -q "report-name: $STUDY_REL/gate_reports/\(critic_\|local_\)" && fail "a critic or local file was flagged: $out"
+  # The guards read Result lines exactly as the launcher does.
+  "$PY" -I -S -B - "$CL/$STUDY_REL/loop" <<'EOF' || fail "guards.result_lines and modal_launch._result_lines disagree"
+import sys
+sys.path.insert(0, sys.argv[1])
+import guards, modal_launch
+samples = ["Result: NOT DECIDED\n", "**Result**: PASS\n", "> Final result: FAIL\nResult: NOT DECIDED\n",
+           "  Result: NOT DECIDED  \n", "| Result | x |\n", "Results: none\n", "result: not decided\n",
+           "Resultant: 3\n", "Result (rerun): PASS\r\n", "# Gate 4 report, set A: it-20261001-1200\n"]
+bad = [s for s in samples if guards.result_lines(s) != modal_launch._result_lines(s)]
+sys.exit(1 if bad else 0)
+EOF
+  finish_case
+}
+
+case_guards_shell_forms() {  # T2 and T3 read 'uv run' shells, substitutions, cd, and -h as a flag's value
+  local t out a
+  new_case guards_shell_forms
+  t="$C/sh.jsonl"
+  a="$CL/$STUDY_REL/analysis"
+  mkdir -p "$a"
+  for f in side1 side2 side3 side4 side6; do printf 'import modal\n\napp = modal.App("%s")\n' "$f" > "$a/$f.py"; done
+  printf 'import numpy\n' > "$a/clean.py"
+  "$PY" - "$t" <<'EOF' || fail "could not write the transcript"
+import json, sys
+calls = [
+    ("m1", "gh pr merge 5 -R anjor/gandalf --subject -h --squash"),
+    ("m2", 'uv run bash -c "gh pr merge 6 -R anjor/gandalf --squash"'),
+    ("m3", "gh pr merge 7 -R anjor/gandalf --help"),
+    ("m4", 'git commit -m "$(gh pr merge 8 -R anjor/gandalf --squash)"'),
+    ("m5", "gh pr -R anjor/gandalf merge 9 --squash"),
+    ("p1", 'uv run bash -c "python studies/04-phase-space-helicity/analysis/side1.py"'),
+    ("p2", 'uv run bash -c "cd studies/04-phase-space-helicity/analysis && python side2.py"'),
+    ("p3", 'uv run --directory studies/04-phase-space-helicity bash -c "python -m analysis.side3"'),
+    ("p4", 'echo "$(uv run python studies/04-phase-space-helicity/analysis/side4.py)"'),
+    ("p5", 'uv run bash -c "python studies/04-phase-space-helicity/analysis/clean.py"'),
+    ("p6", 'uv run bash -c "cd $SOMEWHERE && python side5.py"'),
+    ("p7", "uv run -w numpy python studies/04-phase-space-helicity/analysis/side6.py"),
+]
+with open(sys.argv[1], "w") as fh:
+    for cid, cmd in calls:
+        use = {"type": "tool_use", "id": cid, "name": "Bash", "input": {"command": cmd}}
+        fh.write(json.dumps({"type": "assistant", "message": {"content": [use]}}) + "\n")
+        fh.write(json.dumps({"type": "user", "message": {"content": [
+            {"type": "tool_result", "tool_use_id": cid, "content": "ok", "is_error": False}]}}) + "\n")
+EOF
+  out=$(gp transcript-check --transcript "$t" --checks T2,T3 --transcripts-dir "$C/none" --manifest "$C/none.sha256")
+  for n in 5 6 8; do
+    printf '%s\n' "$out" | grep -qF "T2 a GANDALF merge ran without --match-head-commit <sha>: gh pr merge $n -R anjor/gandalf" \
+      || fail "T2 missed merge $n: $out"
+  done
+  printf '%s\n' "$out" | grep -qF "T2 a GANDALF merge ran without --match-head-commit <sha>: gh pr -R anjor/gandalf merge 9" \
+    || fail "T2 missed merge 9, its --repo before the action: $out"
+  printf '%s\n' "$out" | grep -q "gh pr merge 7 " && fail "T2 counted help as a merge: $out"
+  for n in 1 2 4 6; do
+    printf '%s\n' "$out" | grep -q "T3 the session ran .*side$n.py with uv run, and it imports Modal" || fail "T3 missed side$n: $out"
+  done
+  printf '%s\n' "$out" | grep -qF "T3 the session ran module analysis.side3 with uv run, and it imports Modal" || fail "T3 missed side3: $out"
+  printf '%s\n' "$out" | grep -qF "T3 the session ran side5.py in a directory that its command line does not spell out" \
+    || fail "T3 missed a run in an unknown directory: $out"
+  printf '%s\n' "$out" | grep -q "clean.py" && fail "T3 flagged a script that does not import Modal: $out"
+  finish_case
+}
+
+case_guards_gandalf_refs() {  # gandalf-refs on its own: who moved a branch (the reflog), and origin's tags
+  local G GO W out rc loop_env
+  new_case guards_gandalf_refs
+  G="$C/gandalf"; GO="$C/gandalf-origin.git"; W="$C/gandalf-study04"
+  git init -q "$G"
+  (cd "$G" && echo a > a && git add a && git commit -q -m one && echo b > b && git add b && git commit -q -m two \
+     && for b in pr-101 pr-102 pr-103 pr-104 study04/old; do git branch "$b"; done && git tag v0.6.0 HEAD~1) \
+    || fail "could not build the GANDALF repo"
+  git clone -q --bare "$G" "$GO"
+  git -C "$G" remote add origin "$GO"
+  git -C "$GO" tag v0.7.0 main     # Anjor's tag on origin before the session; a fetch brings it in
+  git -C "$GO" tag v0.5.0 main~1   # one that origin then loses
+  git -C "$G" worktree add -q --detach "$W" main || fail "could not add the worktree"
+  # The record, as the runner takes it: with the loop's identity exported.
+  loop_env="GIT_AUTHOR_NAME=krmhd-loop GIT_AUTHOR_EMAIL=loop@example.invalid GIT_COMMITTER_NAME=krmhd-loop GIT_COMMITTER_EMAIL=loop@example.invalid"
+  env $loop_env "$PY" -I -S "$CL/$STUDY_REL/loop/guards.py" --repo "$CL" gandalf-refs --worktree "$W" > "$C/rec" \
+    || fail "gandalf-refs failed"
+  grep -q '"ident": "anjor <anjor@example.invalid>"' "$C/rec" || fail "the record lacks Anjor's identity: $(head -c 300 "$C/rec")"
+  git -C "$W" ls-remote --tags origin > "$C/pre"
+  sleep 1
+  # Anjor, in his checkout: a commit on main, a new branch, a fetch of his tag. Allowed.
+  (cd "$G" && echo c > c && git add c && git commit -q -m "anjor three" && git branch anjor-feature \
+     && git fetch -q origin --tags) || fail "Anjor's work failed"
+  # The loop: a study04/ branch (allowed), a move of pr-101 under its own identity.
+  env $loop_env git -C "$W" checkout -q -b study04/x
+  env $loop_env git -C "$W" commit -q --allow-empty -m loopwork
+  env $loop_env git -C "$W" branch -f pr-101 HEAD
+  # A move written by hand, with no reflog entry, and one under a third identity.
+  git -C "$W" rev-parse HEAD > "$G/.git/refs/heads/pr-102"
+  GIT_COMMITTER_NAME=mallory GIT_COMMITTER_EMAIL=m@example.invalid git -C "$W" branch -f pr-103 HEAD
+  # A deletion, even by Anjor (a deleted branch's reflog is gone with it).
+  git -C "$G" branch -q -D pr-104
+  # Origin: a tag pushed with a refspec (no local tag), one lost, one moved.
+  env $loop_env git -C "$W" push -q origin HEAD:refs/tags/v9.9.8
+  git -C "$GO" tag -d v0.5.0 > /dev/null
+  git -C "$GO" tag -f v0.6.0 main > /dev/null
+  git -C "$W" ls-remote --tags origin > "$C/post"
+  out=$(env $loop_env "$PY" -I -S "$CL/$STUDY_REL/loop/guards.py" --repo "$CL" gandalf-refs-check --worktree "$W" \
+          --before "$C/rec" --origin-tags "$C/pre" --origin-tags-after "$C/post")
+  rc=$?
+  [ "$rc" = 1 ] || fail "gandalf-refs-check exit $rc, expected 1: $out"
+  printf '%s\n' "$out" | grep -qF "gandalf-refs: the branch pr-101 moved from" || fail "the loop's move of pr-101 was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "(by krmhd-loop <loop@example.invalid>)" || fail "the loop's move was not attributed: $out"
+  printf '%s\n' "$out" | grep -F "the branch pr-102 moved" | grep -qF "(no reflog entry records it)" \
+    || fail "a move without a reflog entry was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "(by mallory <m@example.invalid>)" || fail "a move under another identity was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "gandalf-refs: the branch pr-104 was deleted" || fail "a deletion was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "gandalf-refs: origin gained the tag v9.9.8" || fail "a tag pushed with a refspec was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "gandalf-refs: origin lost the tag v0.5.0" || fail "a tag origin lost was not flagged: $out"
+  printf '%s\n' "$out" | grep -qF "gandalf-refs: the tag v0.6.0 on origin moved" || fail "a tag moved on origin was not flagged: $out"
+  printf '%s\n' "$out" | grep -q "branch main \|anjor-feature\|study04/\|tag v0.7.0" \
+    && fail "Anjor's own work, a study04/ branch or a fetched tag was flagged: $out"
+  # A record in the older form (no time, no identity): every move counts again.
+  grep -o '"refs/[^"]*": "[0-9a-f]*"' "$C/rec" | sed 's/^"\([^"]*\)": "\([0-9a-f]*\)"$/\1	\2/' > "$C/rec.txt"
+  out=$("$PY" -I -S "$CL/$STUDY_REL/loop/guards.py" --repo "$CL" gandalf-refs-check --worktree "$W" --before "$C/rec.txt")
+  printf '%s\n' "$out" | grep -qF "gandalf-refs: the branch main moved from" \
+    || fail "with an old record, Anjor's move of main was not flagged: $out"
+  finish_case
+}
+
+case_guards_t5_forms() {  # T5: the forms of a gh call that reaches another repository, and the reads that do not
+  local t out rc n other
+  new_case guards_t5_forms
+  t="$C/t5.jsonl"
+  other="$C/otherrepo"  # a checkout of another repository, outside the clone and the worktree
+  git init -q "$other"
+  mkdir -p "$CL/$STUDY_REL/data/scratch"
+  git init -q "$CL/$STUDY_REL/data/scratch/nested"  # another repository inside the clone
+  "$PY" - "$t" "$other" "$WORK/gandalf-wt" <<'EOF' || fail "could not write the transcript"
+import json, sys
+other, wt = sys.argv[2], sys.argv[3]
+calls = [
+    # (id, command, denied, parent tool use: a call made inside a subagent)
+    ("b1", "gh issue create -R bad-1/r --title t --body-file f.md", False, None),
+    ("b2", "gh pr comment 3 --repo=bad-2/r --body-file f.md", False, None),
+    ("b3", "gh issue comment 4 -Rbad-3/r --body-file f.md", False, None),
+    ("b4", 'bash -c "gh pr create -R bad-4/r --title t --body-file f.md"', False, None),
+    ("b5", "gh pr comment https://github.com/bad-5/r/pull/3 --body-file f.md", False, None),
+    ("b6", "GH_REPO=bad-6/r gh issue create --title t --body-file f.md", False, None),
+    ("b7", "gh issue transfer 155 bad-7/r -R anjor/gandalf", False, None),
+    ("b8", "gh api repos/bad-8/r/issues -f title=x", False, None),
+    ("b9", "gh run rerun 5 -R bad-9/r", False, None),
+    ("b10", "gh label create x -R bad-10/r", False, None),
+    ("b11", "gh issue create -R bad-11/r --title t --body-file f.md", False, "toolu_agent"),
+    ("b12", "export GH_REPO=bad-12/r && gh issue create --title t --body-file f.md", False, None),
+    ("b13", "gh repo create bad-13/r --private", False, None),
+    ("b14", "gh pr create -f -R bad-14/r --title t", False, None),
+    ("b15", "gh gist create notes-b15.md", False, None),
+    ("b16", "gh release create v9.9.9 -R anjor/gandalf", False, None),
+    ("b17", "gh secret set TOKEN --org bad-17", False, None),
+    # A cluster of short flags with R in it; -h as a flag's value; 'uv run' with a shell, env
+    # or global options; command substitutions in double quotes, backticks and here-documents.
+    ("b18", "gh pr create -dR bad-18/r --title t --body-file f.md", False, None),
+    ("b19", "gh issue create -R bad-19/r --title -h --body-file f.md", False, None),
+    ("b20", 'uv run bash -c "gh issue create -R bad-20/r --title t --body-file f.md"', False, None),
+    ("b21", "uv run env GH_REPO=bad-21/r gh issue create --title t --body-file f.md", False, None),
+    ("b22", 'echo "$(gh issue create -R bad-22/r --title t --body-file f.md)"', False, None),
+    ("b23", "echo `gh issue create -R bad-23/r --title t --body-file f.md`", False, None),
+    ("b24", "gh pr create -fRbad-24/r --title t", False, None),
+    ("b25", "cat <<END\n$(gh issue create -R bad-25/r --title t --body-file f.md)\nEND", False, None),
+    ("b26", "uv --directory /tmp run gh issue create -R bad-26/r --title t", False, None),
+    # No repository named, run where gh takes another one.
+    ("c1", "uv run --directory %s gh issue create --title c1 --body-file f.md" % other, False, None),
+    ("c2", 'uv run bash -c "cd %s && gh pr create --title c2 --body-file f.md"' % other, False, None),
+    ("c3", "env -C %s gh issue create --title c3" % other, False, None),
+    ("c4", "uv run --directory studies/04-phase-space-helicity/data/scratch/nested gh issue create --title c4", False, None),
+    ("c5", "uv run env GIT_DIR=%s/.git gh issue create --title c5" % other, False, None),
+    ("c6", 'uv run bash -c "cd $SOMEWHERE && gh issue create --title c6"', False, None),
+    # gh commands that reach outside every repository, or that the runner cannot follow.
+    ("d1", "uv run gh alias set iss 'issue create -R x/y'", False, None),
+    ("d2", "uv run gh api graphql -f query=q", False, None),
+    ("d3", "uv run gh frobnicate --now", False, None),
+    ("d4", "uv run gh api -X POST user/repos -f name=d4", False, None),
+    ("d5", "uv run gh repo fork anjor/gandalf", False, None),
+    ("d6", "uv run gh codespace create -R anjor/gandalf", False, None),
+    ("d7", "uv run gh repo delete anjor/krmhd-research --yes", False, None),
+    ("d8", "uv run gh repo edit --visibility public", False, None),
+    ("g1", "gh issue view 12 -R good-1/r", False, None),
+    ("g2", "gh pr list --repo good-2/r", False, None),
+    ("g3", "gh pr checks 3 -R good-3/r", False, None),
+    ("g4", "gh pr diff 3 -R good-4/r", False, None),
+    ("g5", "gh run view 7 -R good-5/r --log-failed", False, None),
+    ("g6", "gh repo view good-6/r", False, None),
+    ("g7", "gh issue create -R anjor/gandalf --title good-7 --body-file f.md", False, None),
+    ("g8", "gh pr comment 9 -R Anjor/KRMHD-Research --body-file good-8.md", False, None),
+    ("g9", "gh issue create -R good-9/r --title t", True, None),
+    ("g10", 'git commit -m "later: gh issue create -R good-10/r"', False, None),
+    ("g11", "gh issue create --help -R good-11/r", False, None),
+    ("g12", 'gh issue list -R good-12/r --search "is:open"', False, None),
+    ("g13", "gh release list -R anjor/gandalf --limit 3", False, None),
+    ("g14", "gh gist view good-14", False, None),
+    ("g15", "gh pr merge 7 -R anjor/gandalf --squash --match-head-commit abcdef1", False, None),
+    ("g16", "uv run --directory %s gh pr create --title good-16 --body-file f.md" % wt, False, None),
+    ("g17", "uv run --directory studies/04-phase-space-helicity gh issue create --title good-17 --body-file f.md", False, None),
+    ("g18", "gh repo clone good-18/r studies/04-phase-space-helicity/data/scratch/good-18", False, None),
+    ("g19", 'uv run bash -c "gh pr list -R good-19/r"', False, None),
+    ("g20", "gh pr view 3 -R good-20/r --json title -q .title", False, None),
+    ("g21", "gh auth status -h github.com", False, None),
+    ("g22", "gh issue create -R good-22/r --title t -h", False, None),
+    ("g23", "uv run gh api repos/anjor/gandalf/pulls/5", False, None),
+    ("g24", "gh search issues --repo good-24/r crash", False, None),
+    ("g25", "git commit -m 'about $(gh issue create -R good-25/r)'", False, None),
+    ("g26", "cat <<'END'\n$(gh issue create -R good-26/r)\nEND", False, None),
+    ("g27", "gh pr list", False, None),
+]
+with open(sys.argv[1], "w") as fh:
+    for cid, cmd, denied, parent in calls:
+        use = {"type": "tool_use", "id": cid, "name": "Bash", "input": {"command": cmd}}
+        fh.write(json.dumps({"type": "assistant", "message": {"content": [use]}, "parent_tool_use_id": parent}) + "\n")
+        if denied:
+            fh.write(json.dumps({"type": "system", "subtype": "permission_denied", "tool_use_id": cid}) + "\n")
+            text = "Permission to use Bash with command %s has been denied." % cmd
+        else:
+            text = "ok"
+        fh.write(json.dumps({"type": "user", "message": {"content": [
+            {"type": "tool_result", "tool_use_id": cid, "content": text, "is_error": denied}]},
+            "parent_tool_use_id": parent}) + "\n")
+EOF
+  out=$(gp transcript-check --transcript "$t" --checks T5 --worktree "$WORK/gandalf-wt")
+  rc=$?
+  [ "$rc" = 1 ] || fail "transcript-check T5 exit $rc, expected 1"
+  for n in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 18 19 20 21 22 23 24 25 26; do
+    printf '%s\n' "$out" | grep -qF " on bad-$n/r, outside the two repos" || fail "T5 missed bad-$n: $out"
+  done
+  printf '%s\n' "$out" | grep -qF "a gh gist create: a gist is outside the two repos" || fail "T5 missed the gist"
+  printf '%s\n' "$out" | grep -qF "a gh release create: a release reaches users outside the two repos" || fail "T5 missed the release"
+  printf '%s\n' "$out" | grep -qF "a gh secret set for an organization or user" || fail "T5 missed the org secret"
+  for n in 1 2 3; do
+    printf '%s\n' "$out" | grep -F -- "--title c$n" | grep -qF "run in $other, which is neither the loop's clone nor the GANDALF worktree" \
+      || fail "T5 missed c$n, run in another checkout: $out"
+  done
+  printf '%s\n' "$out" | grep -F -- "--title c4" | grep -qF "another git repository inside" || fail "T5 missed c4, a nested repository: $out"
+  printf '%s\n' "$out" | grep -F -- "--title c5" | grep -qF "with GIT_DIR set" || fail "T5 missed c5, GIT_DIR: $out"
+  printf '%s\n' "$out" | grep -F -- "--title c6" | grep -qF "a directory that its command line does not spell out" \
+    || fail "T5 missed c6, an unknown directory: $out"
+  printf '%s\n' "$out" | grep -qF "a gh alias set: an alias changes what later gh calls run" || fail "T5 missed the alias: $out"
+  printf '%s\n' "$out" | grep -qF "a gh api graphql call" || fail "T5 missed the graphql call: $out"
+  printf '%s\n' "$out" | grep -qF "gh frobnicate: not a gh command the runner knows" || fail "T5 missed the unknown command: $out"
+  printf '%s\n' "$out" | grep -qF "a gh api POST user/repos: a write outside the two repos" || fail "T5 missed the api write: $out"
+  printf '%s\n' "$out" | grep -qF "a gh repo fork: a new repository is outside the two repos" || fail "T5 missed the fork: $out"
+  printf '%s\n' "$out" | grep -qF "a gh codespace create: a codespace runs outside the two repos" || fail "T5 missed the codespace: $out"
+  printf '%s\n' "$out" | grep -qF "a gh repo delete: it changes a repository's settings or existence" || fail "T5 missed the repo delete: $out"
+  printf '%s\n' "$out" | grep -qF "a gh repo edit: it changes a repository's settings or existence" || fail "T5 missed the repo edit: $out"
+  printf '%s\n' "$out" | grep -q "good-" && fail "T5 flagged a read, a call to the two repos, a denied call or quoted text: $(printf '%s\n' "$out" | grep good-)"
+  finish_case
+}
+
 # ---------------------------------------------------------------------------
 # Run. One function, so that bash has read the whole file before any case runs: a file
 # edited while the self-test runs cannot change what it does.
@@ -1603,6 +2226,7 @@ run_all() {
   want leftover_process && case_leftover_process
   want marker_isolation && case_marker_isolation
   want stop_present && case_stop_present
+  want pause_resume_clone && case_pause_resume_clone
   want wait_time && case_wait_time
   want stale_lock && case_stale_lock
   want stale_lock_race && case_stale_lock_race
@@ -1642,6 +2266,15 @@ run_all() {
   want guard_t1_gate_mixed && guard_case gate_mixed "T1" "returned REFUTED" "is not about Gate 1"
   want guard_t1_gate_after && guard_case gate_after "T1" "before the commit"
   want guard_t1_gate_odd_name && guard_case gate_odd_name "T1" "is not named G<n>_"
+  want guard_t1_report_form && guard_case gate_bad_form "T1 report form: $STUDY_REL/gate_reports/G2_" \
+    "the Coded check line is 'Coded check: FAIL', not 'Coded check: PASS'" "not 'Kill criteria: none met'"
+  want guard_t1_report_fixed && guard_case gate_form_fixed_later "T1 report form: $STUDY_REL/gate_reports/G1_" \
+    "as committed in" "the Coded check line is 'Coded check: FAIL'"
+  want t1_check_unavailable && case_t1_check_unavailable
+  want guard_t5_gh_outside && guard_case gh_outside "T5 a gh issue create on jax-ml/jax, outside the two repos"
+  want allowed_t5_gh && allowed_case gh_allowed
+  want records && case_records
+  want gandalf_refs && case_gandalf_refs
   want guard_t2_merge_unchecked && guard_case merge_unchecked "T2 a GANDALF merge ran without --match-head-commit"
   want guard_t2_merge_exception && guard_case merge_exception "T2 merge of abcdef123456" "Existing tests changed"
   want guard_t2_merge_two && guard_case merge_two "T2 a GANDALF merge ran without --match-head-commit <sha>: gh pr merge 8"
@@ -1677,6 +2310,8 @@ run_all() {
   want dirty_log_edit && case_dirty_log_edit
   want wait_uncommitted && case_wait_uncommitted
   want app_check_postponed && case_app_check_postponed
+  want app_check_overdue && case_app_check_overdue
+  want dead_runner_window && case_dead_runner_window
   want predirty && case_predirty
   want data_link && case_data_link
   want stash_pop_conflict && case_stash_pop_conflict
@@ -1705,6 +2340,11 @@ run_all() {
   want guards_log_merge_order && case_guards_log_merge_order
   want guards_frozen_duplicate && case_guards_frozen_duplicate
   want guards_questions_clean && case_guards_questions_clean
+  want guards_records && case_guards_records
+  want guards_gate4 && case_guards_gate4
+  want guards_t5_forms && case_guards_t5_forms
+  want guards_gandalf_refs && case_guards_gandalf_refs
+  want guards_shell_forms && case_guards_shell_forms
 
   echo
   echo "selftest: $PASSED passed, $FAILED failed in $(( $(date +%s) - T_START ))s"

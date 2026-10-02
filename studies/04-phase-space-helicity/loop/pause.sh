@@ -6,7 +6,10 @@
 # running finishes its block first; to end it at once, stop run_forever.sh on the Mac
 # (Ctrl-C), which kills the session and still saves its work.
 #
-# Uses your own git identity. Resume with loop/resume.sh.
+# Uses your own git identity. Resume with loop/resume.sh. It refuses to run in the loop's
+# clone (git config s04.loopclone is 'true' there): a commit made there carries the loop's
+# name, so it would count as the loop's own work, not as Anjor's input. config.env is read as
+# KEY=VALUE text and never run.
 
 set -u
 
@@ -14,12 +17,41 @@ LOOP_DIR=$(cd "$(dirname "$0")" && pwd -P) || exit 2
 REPO=$(cd "$LOOP_DIR/../../.." && pwd -P) || exit 2
 STUDY_REL="studies/04-phase-space-helicity"
 STUDY="$REPO/$STUDY_REL"
-PYTHON_BIN=""
-if [ -f "$LOOP_DIR/config.env" ]; then
-  # shellcheck disable=SC1091
-  . "$LOOP_DIR/config.env"
+
+if [ "$(git -C "$REPO" config --local --get s04.loopclone 2>/dev/null)" = true ]; then
+  echo "pause.sh: run this in your own checkout, not the loop clone ($REPO)" >&2
+  exit 2
 fi
-PYTHON_BIN="${S04_PYTHON_BIN:-${PYTHON_BIN:-$REPO/.venv/bin/python}}"
+
+trim() {  # trim TEXT: without leading and trailing whitespace
+  local s="$1"
+  s="${s#"${s%%[![:space:]]*}"}"
+  s="${s%"${s##*[![:space:]]}"}"
+  printf '%s' "$s"
+}
+
+config_value() {  # config_value KEY: KEY's value in loop/config.env, read as text as the runner reads it
+  local line key val out=""
+  [ -f "$LOOP_DIR/config.env" ] || return 0
+  while IFS= read -r line || [ -n "$line" ]; do
+    line=$(trim "$line")
+    case "$line" in ''|'#'*) continue ;; esac
+    case "$line" in 'export '*) line=$(trim "${line#export }") ;; esac
+    key=$(trim "${line%%=*}")
+    { [ "$key" = "$1" ] && [ "$key" != "$line" ]; } || continue
+    val=$(trim "${line#*=}")
+    case "$val" in
+      \"*\") val="${val#\"}"; val="${val%\"}" ;;
+      \'*\') val="${val#\'}"; val="${val%\'}" ;;
+      *) val=$(trim "${val%%[[:space:]]#*}") ;;
+    esac
+    out="$val"
+  done < "$LOOP_DIR/config.env"
+  printf '%s' "$out"
+}
+
+PYTHON_BIN="${S04_PYTHON_BIN:-$(config_value PYTHON_BIN)}"
+PYTHON_BIN="${PYTHON_BIN:-$REPO/.venv/bin/python}"
 case "$PYTHON_BIN" in "~/"*) PYTHON_BIN="$HOME/${PYTHON_BIN#\~/}" ;; esac
 
 cd "$REPO" || exit 2

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 from pathlib import Path
@@ -260,24 +261,34 @@ def verify_ledger(ledger: Any, require_integrity: bool = True) -> List[str]:
     seen_launch, seen_run = set(), set()
     for launch in ledger.get("launches", []):
         lid = launch.get("launch_id")
+        if not isinstance(lid, str):
+            problems.append(f"launch_id {lid!r} is not a string")
+            lid = repr(lid)
         if lid in seen_launch:
             problems.append(f"duplicate launch_id {lid}")
         seen_launch.add(lid)
-        if launch.get("state") not in LAUNCH_STATES:
+        if not isinstance(launch.get("state"), str) or launch.get("state") not in LAUNCH_STATES:
             problems.append(f"{lid}: bad state {launch.get('state')!r}")
         for run in launch.get("runs", []):
             rid = run.get("run_id")
+            if not isinstance(rid, str):
+                problems.append(f"{lid}: run_id {rid!r} is not a string")
+                rid = repr(rid)
             if rid in seen_run:
                 problems.append(f"duplicate run_id {rid}")
             seen_run.add(rid)
-            if run.get("status") not in RUN_STATUSES:
+            if not isinstance(run.get("status"), str) or run.get("status") not in RUN_STATUSES:
                 problems.append(f"{rid}: bad status {run.get('status')!r}")
             try:
-                if float(run.get("reserved_hours", 0)) < 0:
+                reserved = float(run.get("reserved_hours", 0))
+                charged = None if run.get("charged_hours") is None else float(run["charged_hours"])
+                if not math.isfinite(reserved) or (charged is not None and not math.isfinite(charged)):
+                    problems.append(f"{rid}: hours are not finite")
+                elif reserved < 0:
                     problems.append(f"{rid}: negative reservation")
-                if run.get("charged_hours") is not None and float(run["charged_hours"]) < 0:
+                elif charged is not None and charged < 0:
                     problems.append(f"{rid}: negative charge")
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 problems.append(f"{rid}: non-numeric hours")
     return problems
 
@@ -337,9 +348,22 @@ def ledger_extends(prev: Dict[str, Any], cur: Dict[str, Any]) -> List[str]:
             try:
                 if float(b.get("reserved_hours") or 0.0) < float(a.get("reserved_hours") or 0.0) - 1e-9:
                     problems.append(f"{rid}: reservation lowered")
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 problems.append(f"{rid}: non-numeric reservation")
     return problems
+
+
+def _hours_or_inf(value: Any) -> float:
+    """Hours as a float; a value that cannot be read counts as infinite.
+
+    verify_ledger reports such a ledger as broken. Counting the value as infinite keeps
+    the totals from crashing and makes every cap check fail, which is the safe side.
+    """
+    try:
+        hours = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return math.inf
+    return hours if math.isfinite(hours) else math.inf
 
 
 def ledger_totals(ledger: Dict[str, Any]) -> Dict[str, float]:
@@ -350,9 +374,9 @@ def ledger_totals(ledger: Dict[str, Any]) -> Dict[str, float]:
     for launch in ledger.get("launches", []):
         for run in launch.get("runs", []):
             if run.get("charged_hours") is not None:
-                used += float(run["charged_hours"])
+                used += _hours_or_inf(run["charged_hours"])
             elif run.get("status") != "not_launched":
-                reserved += float(run.get("reserved_hours", 0.0))
+                reserved += _hours_or_inf(run.get("reserved_hours", 0.0))
                 in_flight += 1
     return {
         "used": used,

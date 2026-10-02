@@ -26,8 +26,11 @@ so a quoted or non-ASCII path cannot slip past a path rule.
 
 Transcript. The checks read the stream-json transcript: each tool call, its result, and the
 timestamps of both, which order them against commit times. Shell command lines are read as
-the shell reads them (quotes, operators, here-documents, comments, ``bash -c``), so text in a
-quoted argument such as a commit message is never taken for a command.
+the shell reads them (quotes, operators, here-documents, comments, ``bash -c`` and ``eval``,
+command substitutions in and out of double quotes, backticks, wrappers such as ``env`` and
+``uv run`` at any depth, and the variables and working directory a line sets), so text in a
+single-quoted or plain double-quoted argument such as a commit message is never taken for a
+command, while a command inside ``uv run bash -c "..."`` or ``"$(...)"`` is.
 
 Subcommands (each accepts ``--repo DIR``; the default is the repo this file sits in):
 
@@ -41,8 +44,11 @@ Subcommands (each accepts ``--repo DIR``; the default is the repo this file sits
   frozen-check                  are the frozen sections unchanged and unambiguous?
   ledger-verify                 ledger integrity, structure, and hours against the cap
   commit-guards ...             inspect the commits a session made
-  transcript-check ...          T1 gate passes, T2 GANDALF merges, T3 Modal outside the launcher, T4 ledger commits
+  transcript-check ...          T1 gate passes, T2 GANDALF merges, T3 Modal outside the launcher, T4 ledger
+                                commits, T5 gh calls outside the two repos
   transcript-seal ...           record a finished transcript's sha256 (T2 trusts only sealed ones)
+  gandalf-refs --worktree W     GANDALF's local branches (not study04/) and tags, for the runner's record
+  gandalf-refs-check ...        have those branches or tags, or origin's tags, changed since the record?
   apps-check ...                Modal apps that the ledger does not account for
   ignore-check                  are .loop/ and data/ ignored by a .gitignore rule?
   clone-check                   files in the clone that change what a session loads or runs
@@ -56,6 +62,7 @@ Subcommands (each accepts ``--repo DIR``; the default is the repo this file sits
 from __future__ import annotations
 
 import argparse
+import ast
 import datetime as dt
 import difflib
 import hashlib
@@ -63,10 +70,13 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
+import tempfile
 import textwrap
 import time
+from collections import Counter
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
@@ -135,6 +145,25 @@ GATE_FILE_RE = re.compile(r"^G(?:(?P<n>[123])|4_(?P<set>[A-Za-z0-9]+)|(?P<base>b
 RESULT_PASS_RE = re.compile(r"^(?:final\s+)?result\b[^:\n]*:[\s`*_\"']*pass\b", re.IGNORECASE)
 CRITIC_LABEL_RE = re.compile(r"^critic\b", re.IGNORECASE)
 CRITIC_FILE_RE = re.compile(r"((?:[\w.-]+/)*critic_[\w.-]+\.md)")
+# The launcher's 'Result:' label (modal_launch._VERDICT_LABELS), matched on the lower-case line
+# after Markdown decoration: what modal_launch._result_lines counts as a Result line.
+RESULT_LABEL_RE = re.compile(r"^(?:final\s+)?result\b")
+# A Gate 4 report of set <S>: G4_<S>_<anything>.md. Looser than GATE_FILE_RE on purpose, so
+# that an evaluation under an odd name still counts as one.
+G4_FILE_RE = re.compile(r"^G4_(?P<set>[A-Za-z0-9]+)_.*\.md$")
+UNDECIDED_RESULT = ["Result: NOT DECIDED"]
+# Seconds the launcher's report check may take (it reads files and runs git, no network).
+LAUNCHER_CHECK_TIMEOUT_SEC = 120
+
+# Records that are never edited (LOOP.md sections 7 and 8): the rows of decisions.md, Anjor's
+# ANSWER: and VETO: lines in QUESTIONS.md, and the text of a claim in claims.md.
+DECISIONS_REL = lc.STUDY_REL + "/decisions.md"
+CLAIMS_REL = lc.STUDY_REL + "/claims.md"
+RECORD_PATHS = (DECISIONS_REL, lc.QUESTIONS_REL, CLAIMS_REL)
+# LOOP.md section 8's pattern for Anjor's lines: optional whitespace, '>', '*' or '-', then the word.
+ANSWER_LINE_RE = re.compile(r"^[\s>*-]*(?:ANSWER|VETO):")
+ANSWER_LEAD_RE = re.compile(r"^[\s>*-]*")
+SEPARATOR_CELL_RE = re.compile(r"^:?-+:?$")
 
 CRITIC = "study04-critic"
 REVIEWER = "gandalf-reviewer"
@@ -814,17 +843,23 @@ class Ancestry:
 
 def judge_commit(repo: Path, c: Commit, loop: str, manifest: Dict[str, str],
                  log_baseline: Callable[[str, str], Optional[bytes]], reported: Set[str],
-                 start_launches: Set[str], start_reports: Set[str]) -> List[str]:
+                 start_launches: Set[str], start_reports: Set[str],
+                 changes: Optional[List[Tuple[str, str]]] = None,
+                 gate4: Optional["Gate4History"] = None) -> List[str]:
     """Every rule for one loop commit.
 
-    ``log_baseline(path, sha)`` gives the log's baseline; ``start_launches`` holds the launch
-    IDs the ledger had when the session started, ``start_reports`` the files then under
-    gate_reports/.
+    ``log_baseline(path, sha)`` gives the baseline of a log file or a record file
+    (decisions.md, QUESTIONS.md, claims.md): its version when the session started, or Anjor's
+    newer version that the commit descends from. ``start_launches`` holds the launch IDs the
+    ledger had when the session started, ``start_reports`` the files then under
+    gate_reports/. ``changes`` is the commit's changed_paths, if already known; ``gate4`` the
+    Gate 4 reports of the range so far, for the gate4-repeat rule.
     """
     problems: List[str] = []
     short = c.sha[:12]
     subject = short_text(c.subject, 100)
-    changes = changed_paths(repo, c.sha, c.parents)
+    if changes is None:
+        changes = changed_paths(repo, c.sha, c.parents)
     paths = [p for _, p in changes]
     first_parent = c.parents[0] if c.parents else EMPTY_TREE
     if c.author != loop:
@@ -840,6 +875,10 @@ def judge_commit(repo: Path, c: Commit, loop: str, manifest: Dict[str, str],
         if path in start_reports and status in ("M", "D", "T"):
             problems.append(f"{short} report-edit: {path} ({status}) in '{subject}'; a committed gate or critic "
                             "report is never edited or deleted, a new evaluation gets a new file")
+        if status == "A" and path.startswith(GATE_REPORTS_REL):
+            bad_name = report_name_problem(path)
+            if bad_name:
+                problems.append(f"{short} report-name: {path} in '{subject}': {bad_name}")
         if under_log(path):
             base = log_baseline(path, c.sha)
             new = None if status == "D" else blob_at(repo, c.sha, path)
@@ -867,9 +906,276 @@ def judge_commit(repo: Path, c: Commit, loop: str, manifest: Dict[str, str],
         status_of = {path: status for status, path in changes}
         problems.extend(ledger_commit_problems(repo, c, status_of[lc.LEDGER_REL], paths, start_launches))
     problems.extend(frozen_commit_problems(repo, c, manifest, set(paths), reported))
+    problems.extend(record_problems(repo, c, set(paths), log_baseline, reported))
+    if gate4 is not None:
+        problems.extend(gate4.problems(c, changes))
     if len(c.parents) > 1:
         problems.extend(merge_discard_problems(repo, c))
     return problems
+
+
+# ---------------------------------------------------------------------------
+# Records that are never edited: decisions.md rows, Anjor's ANSWER and VETO lines, claim texts
+# ---------------------------------------------------------------------------
+
+def table_cells(line: str) -> List[str]:
+    """The cells of a Markdown table row ('| a | b |'), split at unescaped '|', each with its
+    whitespace collapsed, so that realigning a table changes no cell."""
+    body = line.strip()
+    if body.startswith("|"):
+        body = body[1:]
+    if body.endswith("|") and not body.endswith("\\|"):
+        body = body[:-1]
+    return [" ".join(cell.split()) for cell in re.split(r"(?<!\\)\|", body)]
+
+
+def is_table_row(line: str) -> bool:
+    """A line that starts with '|' (after indentation): a row of a Markdown table."""
+    return line.lstrip().startswith("|")
+
+
+def is_separator(cells: Sequence[str]) -> bool:
+    """True for a table's '|---|:---:|' line."""
+    return any(cells) and all(SEPARATOR_CELL_RE.match(cell) for cell in cells if cell)
+
+
+def decision_rows(text: str) -> Counter:
+    """Every table row of decisions.md, as its cells joined by '|' (a multiset). A '|---|'
+    line holds no decision and is left out, so that widening its dashes or changing its
+    alignment, as a Markdown formatter does, is not an edit; the header row still counts."""
+    rows: Counter = Counter()
+    for line in text.splitlines():
+        if is_table_row(line):
+            cells = table_cells(line)
+            if not is_separator(cells):
+                rows["|".join(cells)] += 1
+    return rows
+
+
+def answer_lines(text: str) -> Counter:
+    """Anjor's ANSWER: and VETO: lines of QUESTIONS.md, without their leading whitespace, '>',
+    '*' or '-' and with whitespace collapsed, so that moving an item between sections or
+    quoting it changes none of his words (a multiset)."""
+    return Counter(" ".join(line[ANSWER_LEAD_RE.match(line).end():].split())  # type: ignore[union-attr]
+                   for line in text.splitlines() if ANSWER_LINE_RE.match(line))
+
+
+def claim_texts(text: str) -> Dict[str, Counter]:
+    """{claim ID: multiset of claim texts} from the table rows of claims.md: the first cell is
+    the ID, the second the claim's text. A table's header row and its '|---|' line are not
+    claims."""
+    lines = text.splitlines()
+    out: Dict[str, Counter] = {}
+    for i, line in enumerate(lines):
+        if not is_table_row(line):
+            continue
+        cells = table_cells(line)
+        if is_separator(cells) or len(cells) < 2:
+            continue
+        following = lines[i + 1] if i + 1 < len(lines) else ""
+        if is_table_row(following) and is_separator(table_cells(following)):
+            continue  # the header row
+        ident = cells[0].strip("*_` ")
+        if ident:
+            out.setdefault(ident, Counter())[cells[1]] += 1
+    return out
+
+
+def record_losses(rel: str, base: Optional[bytes], new: Optional[bytes]) -> List[Tuple[str, str]]:
+    """(key, finding) for each record of ``base`` that ``new`` no longer holds unchanged.
+
+    decisions.md: every table row of ``base`` (rule decisions-edit); a later row that
+    supersedes one is an added row and fine. QUESTIONS.md: every ANSWER: or VETO: line of
+    ``base`` (answer-edit); lines added below it, a Handled note say, and moving it to another
+    section are fine. claims.md: the text cell of every claim ID of ``base`` (claim-edit); its
+    status, evidence and verdict cells may change. ``new`` None means the file was deleted.
+    """
+    if not base:
+        return []
+    old_text = base.decode("utf-8", errors="replace")
+    new_text = (new or b"").decode("utf-8", errors="replace")
+    out: List[Tuple[str, str]] = []
+    if rel == DECISIONS_REL:
+        for row in sorted(decision_rows(old_text) - decision_rows(new_text)):
+            out.append((f"decisions-edit\0{row}",
+                        f"decisions-edit: {rel} lost or changed the row {short_text(row, 100)!r}; a decisions.md row "
+                        "is never edited, a later row supersedes it"))
+    elif rel == lc.QUESTIONS_REL:
+        for line in sorted(answer_lines(old_text) - answer_lines(new_text)):
+            out.append((f"answer-edit\0{line}",
+                        f"answer-edit: {rel} lost or changed Anjor's line {short_text(line, 100)!r}; his ANSWER: and "
+                        "VETO: lines are never changed (a Handled note goes on a line below)"))
+    elif rel == CLAIMS_REL:
+        old, cur = claim_texts(old_text), claim_texts(new_text)
+        for ident in sorted(old):
+            for claim in sorted(old[ident] - cur.get(ident, Counter())):
+                what = "row is gone" if ident not in cur else "text changed"
+                out.append((f"claim-edit\0{ident}\0{claim}",
+                            f"claim-edit: {rel}: the {what} for claim {ident} (was {short_text(claim, 80)!r}); the "
+                            "text of a claim is fixed once written, and a changed claim gets a new ID"))
+    return out
+
+
+def record_problems(repo: Path, c: Commit, touched: Set[str], baseline: Callable[[str, str], Optional[bytes]],
+                    reported: Set[str]) -> List[str]:
+    """Rules decisions-edit, answer-edit and claim-edit for one loop commit.
+
+    The commit's version of each record file is compared with its baseline: the version at
+    the session's start, or Anjor's newer version that the commit descends from, so that his
+    own changes are his and his new lines are protected too. A commit with one parent that
+    leaves the file alone has its parent's version, which was checked already; a merge is
+    always checked, because a merge can drop a side's lines without touching the file
+    relative to the other side. Each lost record is reported once.
+    """
+    out: List[str] = []
+    for rel in RECORD_PATHS:
+        if len(c.parents) == 1 and rel not in touched:
+            continue
+        for key, text in record_losses(rel, baseline(rel, c.sha), blob_at(repo, c.sha, rel)):
+            if key in reported:
+                continue
+            reported.add(key)
+            out.append(f"{c.sha[:12]} {text} in '{short_text(c.subject, 100)}'")
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Gate 4 is decided once per run set
+# ---------------------------------------------------------------------------
+
+def launcher_run_sets() -> Tuple[str, ...]:
+    """The run sets of the launcher copy next to this file (its RUN_SETS line), or the plan's
+    three if that cannot be read."""
+    try:
+        text = (HERE / "modal_launch.py").read_text(encoding="utf-8", errors="replace")
+        m = re.search(r"^RUN_SETS\s*=\s*(\([^)]*\))", text, re.M)
+        sets = ast.literal_eval(m.group(1)) if m else None
+        if isinstance(sets, tuple) and sets and all(isinstance(x, str) for x in sets):
+            return sets
+    except (OSError, ValueError, SyntaxError):
+        pass
+    return ("base", "A", "B")
+
+
+def report_name_problem(path: str) -> Optional[str]:
+    """Why a file under gate_reports/ is not named as LOOP.md section 5 has it, or None.
+
+    Allowed: a gate report (G1_, G2_, G3_<iteration id>.md, Gbase_<iteration id>.md, and
+    G4_<S>_<iteration id>.md for a set S of the launcher other than base), a critic report
+    (critic_*) and the record of a local smoke test (local_*). Rule report-name: a loop
+    commit adds any other file there. A Gate 4 evaluation under another name (g4_A_...,
+    G4_setA_...) would be seen neither by the launcher nor by gate4-repeat, which read reports
+    by name and set, so a later evaluation of the set could stand as its first.
+    """
+    name = path.rsplit("/", 1)[-1]
+    if name.startswith(("critic_", "local_")):
+        return None
+    m = GATE_FILE_RE.match(name)
+    if not m:
+        return ("gate_reports/ holds only gate reports named G1_, G2_ or G3_<iteration id>.md, "
+                "Gbase_<iteration id>.md or G4_<S>_<iteration id>.md, and critic_* and local_* files, so that "
+                "the launcher and the runner see every evaluation")
+    sets = [x for x in launcher_run_sets() if x != "base"]
+    if m.group("set") and m.group("set") not in sets:
+        return (f"a Gate 4 report of set {m.group('set')}, which is not a run set of the launcher with a Gate 4 "
+                f"({', '.join(sets)}); a set's Gate 4 report is G4_<S>_<iteration id>.md with S exactly as the "
+                "launcher spells it")
+    return None
+
+
+def g4_set(path: str) -> Optional[str]:
+    """The run set of a Gate 4 report under gate_reports/ (G4_<S>_<anything>.md), else None."""
+    if not path.startswith(GATE_REPORTS_REL):
+        return None
+    m = G4_FILE_RE.match(path.rsplit("/", 1)[-1])
+    return m.group("set") if m else None
+
+
+def result_lines(text: str) -> List[str]:
+    """Every line of a report that the launcher reads as a 'Result:' line, as it reads them
+    (modal_launch._result_lines): the label after Markdown decoration, in any case, so that
+    'Final result: X' and '**Result**: X' count too."""
+    return [line.rstrip() for line in text.splitlines() if RESULT_LABEL_RE.match(label_key(line).lower())]
+
+
+def said(lines: Sequence[str]) -> str:
+    """A report's Result lines on one short line."""
+    return short_text("; ".join(lines) or "no Result line", 80)
+
+
+class Gate4History:
+    """Gate 4 reports, for the rule that a set's Gate 4 decision is made once (LOOP.md section 5).
+
+    The launcher refuses set B while another G4_A report says anything but 'Result: NOT
+    DECIDED'; nothing launches after set B, and nothing at all after set A fails, so a second
+    evaluation would go unchecked. Rule gate4-repeat: a loop commit that adds a G4_<S> report
+    while an earlier G4_<S> report has Result lines other than exactly ['Result: NOT
+    DECIDED']. Earlier means: in the tree of a parent of the commit, added or changed by an
+    ancestor in the range (so a report deleted and written again still counts), or added in
+    the same commit. A loop commit that changes the Result lines of a G4 report whose Result
+    was decided breaks the rule too. A report that has no Result line yet may get one, and
+    one that says exactly 'Result: NOT DECIDED' may be decided, in place: that finishes one
+    evaluation. As the launcher reads it, an earlier report without a Result line counts as
+    decided when a new report of its set is added.
+    """
+
+    def __init__(self, repo: Path, ancestry: Ancestry) -> None:
+        self.repo = repo
+        self.ancestry = ancestry
+        self.versions: List[Tuple[str, str, str, bytes]] = []  # (commit, path, set, content)
+        self.trees: Dict[str, List[str]] = {}
+
+    def record(self, c: Commit, changes: Sequence[Tuple[str, str]]) -> None:
+        """Remember the G4 report versions a commit of the range added or changed."""
+        for status, path in changes:
+            s = g4_set(path)
+            if s and status != "D":
+                self.versions.append((c.sha, path, s, blob_at(self.repo, c.sha, path) or b""))
+
+    def reports_at(self, rev: str) -> List[str]:
+        """The G4 reports in the tree of ``rev``."""
+        if rev not in self.trees:
+            listing = git(self.repo, "ls-tree", "-r", "-z", "--name-only", rev, "--", GATE_REPORTS_REL)
+            self.trees[rev] = [p for p in split_z(listing.stdout) if g4_set(p)]
+        return self.trees[rev]
+
+    def problems(self, c: Commit, changes: Sequence[Tuple[str, str]]) -> List[str]:
+        """gate4-repeat findings for one loop commit."""
+        short, subject = c.sha[:12], short_text(c.subject, 100)
+        added = [(p, g4_set(p)) for status, p in changes if status == "A" and g4_set(p)]
+        out: List[str] = []
+        for path, s in added:
+            earlier: Dict[Tuple[str, bytes], str] = {}
+            for parent in c.parents:
+                for rel in self.reports_at(parent):
+                    if g4_set(rel) == s:
+                        earlier.setdefault((rel, blob_at(self.repo, parent, rel) or b""), f"in {parent[:12]}")
+            for sha, rel, s2, blob in self.versions:
+                if s2 == s and sha != c.sha and self.ancestry.is_ancestor(sha, c.sha):
+                    earlier.setdefault((rel, blob), f"committed in {sha[:12]}")
+            for other, s2 in added:
+                if other != path and s2 == s:
+                    earlier.setdefault((other, blob_at(self.repo, c.sha, other) or b""), "added in the same commit")
+            for (rel, blob), where in sorted(earlier.items()):
+                lines = result_lines(blob.decode("utf-8", errors="replace"))
+                if lines != UNDECIDED_RESULT:
+                    out.append(f"{short} gate4-repeat: {path} is a new Gate 4 evaluation of set {s}, but {rel} ({where}) "
+                               f"already says {said(lines)!r}; the first evaluation that is not NOT DECIDED is the "
+                               f"set's decision and is never repeated, in '{subject}'")
+                    break
+        for status, path in changes:
+            s = g4_set(path)
+            if not s or status not in ("M", "T") or not c.parents:
+                continue
+            old = result_lines((blob_at(self.repo, c.parents[0], path) or b"").decode("utf-8", errors="replace"))
+            new = result_lines((blob_at(self.repo, c.sha, path) or b"").decode("utf-8", errors="replace"))
+            # A report without a Result line yet is an evaluation that is not finished: the gate
+            # code writes it down to the Coded check line, and adds Critic, Kill criteria and
+            # Result after the critic's review (LOOP.md section 5). Finishing it is not a repeat.
+            if old not in ([], UNDECIDED_RESULT) and new != old:
+                out.append(f"{short} gate4-repeat: {path} changes the Result of a Gate 4 evaluation of set {s} from "
+                           f"{said(old)!r} to {said(new)!r}; the set's decision is never repeated, in '{subject}'")
+        return out
 
 
 def _hours(value: Any) -> Optional[float]:
@@ -1157,10 +1463,18 @@ def cmd_commit_guards(args: argparse.Namespace) -> int:
       other-study   touches another study's folder or another paper
       frozen        a frozen item changed or became ambiguous in a commit, even if later reverted
       merge-discard a loop merge drops a side's change to a guarded path, STOP or the ledger
+      decisions-edit  a table row of decisions.md is gone or changed
+      answer-edit   one of Anjor's ANSWER: or VETO: lines in QUESTIONS.md is gone or changed
+      claim-edit    the text cell of an existing claim in claims.md changed, or its row is gone
+      gate4-repeat  a new G4_<S> report while an earlier one decided set <S>, or a decided
+                    G4 report's Result lines changed
+      report-name   a new file under gate_reports/ that is not named as a gate report
+                    (G<n>_, Gbase_, G4_<S>_<iteration id>.md with S a set of the launcher),
+                    critic_* or local_*
       provenance    (with --session-start) a commit with another committer made in the clone
       history       the session's starting commit is not an ancestor of the end
-    Commits by anyone else are not judged; their changes to the log become the baseline of
-    the loop commits that descend from them.
+    Commits by anyone else are not judged; their changes to the log and to the record files
+    become the baseline of the loop commits that descend from them, so Anjor's edits are his.
     """
     repo = Path(args.repo)
     loop = args.loop_committer
@@ -1184,7 +1498,7 @@ def cmd_commit_guards(args: argparse.Namespace) -> int:
     base_cache: Dict[str, Optional[bytes]] = {}
 
     def log_baseline(path: str, sha: str) -> Optional[bytes]:
-        """The log file as the loop commit ``sha`` must extend: BEFORE, or Anjor's newer version it descends from."""
+        """A log or record file as the loop commit ``sha`` must keep it: BEFORE, or Anjor's newer version it descends from."""
         for other, p, blob in reversed(nonloop_logs):
             if p == path and ancestry.is_ancestor(other, sha):
                 return blob
@@ -1196,16 +1510,19 @@ def cmd_commit_guards(args: argparse.Namespace) -> int:
     start_launches = ledger_launch_ids(repo, before)
     start_reports = set(split_z(git(repo, "ls-tree", "-r", "-z", "--name-only", before, "--",
                                     GATE_REPORTS_REL).stdout))
+    gate4 = Gate4History(repo, ancestry)
     others: List[Commit] = []
     for c in list_commits(repo, before, after):
+        changes = changed_paths(repo, c.sha, c.parents)
         if c.committer != loop:
             others.append(c)
-            for status, path in changed_paths(repo, c.sha, c.parents):
-                if under_log(path):
+            for status, path in changes:
+                if under_log(path) or path in RECORD_PATHS:
                     nonloop_logs.append((c.sha, path, None if status == "D" else blob_at(repo, c.sha, path)))
-            continue
-        problems.extend(judge_commit(repo, c, loop, manifest, log_baseline, reported, start_launches,
-                                     start_reports))
+        else:
+            problems.extend(judge_commit(repo, c, loop, manifest, log_baseline, reported, start_launches,
+                                         start_reports, changes=changes, gate4=gate4))
+        gate4.record(c, changes)
     if args.session_start:
         try:
             since = float(args.session_start)
@@ -1435,47 +1752,78 @@ def read_manifest(path: Optional[Path]) -> Dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
-# Shell command lines, read as the shell reads them (T2, T3, T4)
+# Shell command lines, read as the shell reads them (T2, T3, T4, T5)
 # ---------------------------------------------------------------------------
 
 OPERATOR_CHARS = ";&|\n<>()"
 SHELL_NAMES = ("bash", "sh", "zsh", "dash", "ksh")
 HEREDOC_RE = re.compile(r"<<(-?)[ \t]*(['\"]?)([^\s'\"<>;&|()]+)\2")
 ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
-# Wrappers that run the command after them, with their options that take a value.
+# Wrappers that run the command after them, with their options that take a value. 'uv run'
+# is one too (uv_run_parts).
 WRAPPERS = {
-    "env": {"-u", "-C", "-S", "-P", "--unset", "--chdir", "--split-string"},
+    "env": {"-u", "-C", "-S", "-P", "-L", "--unset", "--chdir", "--split-string"},
     "command": set(), "builtin": set(), "exec": {"-a"}, "nohup": set(), "time": set(),
     "nice": {"-n"}, "stdbuf": {"-i", "-o", "-e"}, "caffeinate": {"-t", "-w"},
     "xargs": {"-n", "-I", "-L", "-P", "-s", "-E", "-d", "-a", "-J", "-R", "-S"},
 }
-UV_VALUE_OPTS = {"--directory", "--project", "--with", "--with-editable", "--with-requirements",
-                 "--python", "-p", "--group", "--extra", "--env-file", "--index", "--default-index",
-                 "--package", "--only-group", "--no-group", "--index-url", "--extra-index-url",
-                 "--config-file", "--cache-dir", "--color", "--exclude-newer", "--prerelease",
-                 "--resolution", "--link-mode", "--refresh-package", "--reinstall-package",
-                 "--upgrade-package", "--no-binary-package", "--no-build-package", "--find-links",
-                 "-f", "--keyring-provider", "--index-strategy", "--python-platform"}
+# Options of uv, before 'run' and after it, that take a value ('uv run --help', uv 0.11).
+UV_VALUE_OPTS = {"--directory", "--project", "--with", "-w", "--with-editable", "--with-requirements",
+                 "--python", "-p", "--group", "--no-group", "--only-group", "--extra", "--no-extra",
+                 "--env-file", "--index", "--default-index", "--index-url", "-i", "--extra-index-url",
+                 "--find-links", "-f", "--package", "--config-file", "--cache-dir", "--color",
+                 "--exclude-newer", "--exclude-newer-package", "--prerelease", "--resolution", "--fork-strategy",
+                 "--link-mode", "--refresh-package", "--reinstall-package", "--upgrade-package", "-P",
+                 "--no-binary-package", "--no-build-package", "--no-build-isolation-package",
+                 "--no-sources-package", "--config-setting", "-C", "--config-settings-package",
+                 "--keyring-provider", "--index-strategy", "--python-platform", "--allow-insecure-host"}
 PY_VALUE_OPTS = {"-W", "-X", "--check-hash-based-pycs"}
+# A working directory that a line changes to, but that cannot be read from the line ('cd -',
+# 'cd $DIR'): whatever needs to know it counts it as unknown.
+UNKNOWN_DIR = "\0unknown"
 
 
 class SimpleCommand:
-    """One simple command of a command line: its words, redirections removed, and its stdin file."""
+    """One simple command of a command line, as the shell would run it.
 
-    __slots__ = ("argv", "stdin")
+    ``argv`` is the command it runs, without VAR=value prefixes, wrappers (env, command, exec,
+    nohup, time, nice, stdbuf, caffeinate, xargs) and 'uv [options] run [options]'; it is
+    empty for a command of assignments only, and for 'uv run -m <module>' (``module``).
+    ``raw`` keeps every word as written. ``env`` holds the variables the line sets for it:
+    prefixes, 'env NAME=value', and an earlier 'export NAME=value' or 'NAME=value' of the
+    same line or of the line whose shell runs it. ``cwd`` is the working directory the line
+    gives it ('uv run --directory', 'env -C', an earlier 'cd'), relative to the session's
+    directory unless absolute; None if the line leaves it alone, UNKNOWN_DIR if the line
+    changes it to something that cannot be read from it. ``shell_cwd`` is the directory of
+    the shell itself, where it opens a redirection: 'uv run --directory' and 'env -C' change
+    only the command's. ``uv`` is True when it runs under 'uv run', directly or in a shell
+    that 'uv run' started.
+    """
 
-    def __init__(self, argv: List[str], stdin: Optional[str]) -> None:
+    __slots__ = ("argv", "stdin", "raw", "env", "cwd", "shell_cwd", "uv", "module")
+
+    def __init__(self, argv: List[str], stdin: Optional[str], raw: Optional[List[str]] = None,
+                 env: Optional[Dict[str, str]] = None, cwd: Optional[str] = None, uv: bool = False,
+                 module: Optional[str] = None, shell_cwd: Optional[str] = None) -> None:
         self.argv = argv
         self.stdin = stdin
+        self.raw = list(argv) if raw is None else raw
+        self.env = dict(env or {})
+        self.cwd = cwd
+        self.shell_cwd = shell_cwd
+        self.uv = uv
+        self.module = module
 
 
-def shell_text(cmd: str) -> str:
+def shell_text(cmd: str, heredocs: Optional[List[str]] = None) -> str:
     """``cmd`` without what the shell does not run as commands: here-document bodies, comments
-    and backslash-newline continuations. Quoted text is kept exactly."""
+    and backslash-newline continuations. Quoted text is kept exactly. The bodies of here-
+    documents whose delimiter is not quoted, where the shell still runs command
+    substitutions, are added to ``heredocs`` if given."""
     out: List[str] = []
     i, n = 0, len(cmd)
     quote = ""
-    pending: List[Tuple[str, bool]] = []
+    pending: List[Tuple[str, bool, bool]] = []
     word_start = True
     while i < n:
         ch = cmd[i]
@@ -1515,7 +1863,7 @@ def shell_text(cmd: str) -> str:
         if cmd.startswith("<<", i) and not cmd.startswith("<<<", i):
             m = HEREDOC_RE.match(cmd, i)
             if m:
-                pending.append((m.group(3), m.group(1) == "-"))
+                pending.append((m.group(3), m.group(1) == "-", m.group(2) == ""))
                 out.append(" << " + m.group(3) + " ")
                 i = m.end()
                 word_start = True
@@ -1523,13 +1871,17 @@ def shell_text(cmd: str) -> str:
         if ch == "\n" and pending:
             out.append("\n")
             i += 1
-            for word, tabs in pending:
+            for word, tabs, expands in pending:
+                body: List[str] = []
                 while i < n:
                     j = cmd.find("\n", i)
                     line = cmd[i:] if j < 0 else cmd[i:j]
                     i = n if j < 0 else j + 1
                     if (line.lstrip("\t") if tabs else line) == word:
                         break
+                    body.append(line)
+                if expands and heredocs is not None:
+                    heredocs.append("\n".join(body))
             pending = []
             word_start = True
             continue
@@ -1548,67 +1900,253 @@ def shell_tokens(text: str) -> List[str]:
     return list(lex)
 
 
-def unwrap(argv: List[str]) -> List[str]:
-    """The command a simple command runs, without VAR=value prefixes and wrappers (env,
-    command, exec, nohup, time, nice, stdbuf, caffeinate, xargs) and their options."""
-    i = 0
-    while i < len(argv):
-        word = argv[i]
-        if ASSIGNMENT_RE.match(word):
+def _closing_paren(text: str, k: int) -> int:
+    """Index of the ')' that closes the '(' at ``k`` (quotes and escapes respected), or len(text)."""
+    depth, i, n, quote = 1, k + 1, len(text), ""
+    while i < n:
+        ch = text[i]
+        if quote == "'":
+            if ch == "'":
+                quote = ""
+        elif quote == '"':
+            if ch == "\\":
+                i += 1
+            elif ch == '"':
+                quote = ""
+        elif ch == "\\":
             i += 1
+        elif ch in "'\"":
+            quote = ch
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return n
+
+
+def substitutions(text: str, in_heredoc: bool = False) -> List[str]:
+    """Bodies of the command substitutions in ``text`` that shell_tokens does not split out:
+    '$(...)' inside double quotes (or anywhere in a here-document body) and '`...`' anywhere
+    outside single quotes. The shell runs them, quoted or not. An unquoted '$(...)' is split
+    out by its operator characters already."""
+    out: List[str] = []
+    i, n = 0, len(text)
+    quote = ""
+    while i < n:
+        ch = text[i]
+        if quote == "'":
+            if ch == "'":
+                quote = ""
+            i += 1
+            continue
+        if ch == "\\" and i + 1 < n:
+            i += 2
+            continue
+        if not in_heredoc and ch in "'\"":
+            if ch == "'" and quote == "":
+                quote = "'"
+            elif ch == '"':
+                quote = "" if quote == '"' else '"'
+            i += 1
+            continue
+        if ch == "`":
+            j = i + 1
+            while j < n and text[j] != "`":
+                j += 2 if text[j] == "\\" else 1
+            out.append(text[i + 1:j].replace("\\`", "`"))
+            i = j + 1
+            continue
+        if (quote == '"' or in_heredoc) and text.startswith("$(", i) and not text.startswith("$((", i):
+            end = _closing_paren(text, i + 1)
+            out.append(text[i + 2:end])
+            i = end + 1
+            continue
+        i += 1
+    return out
+
+
+def join_dir(cwd: Optional[str], target: str) -> str:
+    """The directory that 'cd TARGET' (or 'uv run --directory TARGET', 'env -C TARGET') leads
+    to from ``cwd``: UNKNOWN_DIR for one the line does not spell out."""
+    if cwd == UNKNOWN_DIR or not target or target == "-" or "$" in target or "`" in target:
+        return UNKNOWN_DIR
+    if target.startswith("~"):
+        return target  # the shell expands it to the session user's home, as expanduser does
+    return os.path.join(cwd, target) if cwd else target
+
+
+def uv_run_parts(words: List[str]) -> Optional[Tuple[List[str], Optional[str], Optional[str]]]:
+    """For 'uv [options] run [options] <command...>': (the command's words, the --directory,
+    the module of 'uv run -m'). None for anything that is not 'uv run'."""
+    if not words or os.path.basename(words[0]) != "uv":
+        return None
+    i, directory, seen_run, module_flag = 1, None, False, False
+    while i < len(words):
+        word = words[i]
+        if not seen_run and word == "run":
+            seen_run = True
+            i += 1
+            continue
+        if not word.startswith("-") or word == "-":
+            break
+        opt, eq, inline = word.partition("=")
+        if opt == "--":
+            i += 1
+            break
+        if seen_run and opt in ("-m", "--module"):
+            if eq:
+                return [], directory, inline
+            module_flag = True
+            i += 1
+            continue
+        if opt == "--directory":
+            directory = inline if eq else (words[i + 1] if i + 1 < len(words) else None)
+        i += 1 if (eq or opt not in UV_VALUE_OPTS) else 2
+    if not seen_run:
+        return None
+    if module_flag:
+        return [], directory, words[i] if i < len(words) else ""
+    return words[i:], directory, None
+
+
+def resolve_command(argv: List[str], env: Dict[str, str], cwd: Optional[str],
+                    uv: bool) -> Tuple[List[str], Dict[str, str], Optional[str], bool, Optional[str]]:
+    """What a simple command runs: (its words without prefixes, wrappers and 'uv run'; the
+    variables set for it; its working directory; whether it runs under uv run; the module
+    of 'uv run -m'). See SimpleCommand."""
+    env = dict(env)
+    words = list(argv)
+    i = 0
+    while i < len(words):
+        word = words[i]
+        if ASSIGNMENT_RE.match(word):
+            name, _, value = word.partition("=")
+            env[name] = value
+            i += 1
+            continue
+        parts = uv_run_parts(words[i:])
+        if parts is not None:
+            rest, directory, module = parts
+            uv = True
+            if directory is not None:
+                cwd = join_dir(cwd, directory)
+            if module is not None:
+                return [], env, cwd, uv, module
+            words, i = list(rest), 0
             continue
         name = os.path.basename(word)
         if name not in WRAPPERS:
             break
         takes = WRAPPERS[name]
         i += 1
-        while i < len(argv) and (argv[i].startswith("-") or (name == "env" and ASSIGNMENT_RE.match(argv[i]))):
-            if argv[i] == "--":
+        while i < len(words):
+            w = words[i]
+            if name == "env" and ASSIGNMENT_RE.match(w):
+                key, _, value = w.partition("=")
+                env[key] = value
+                i += 1
+                continue
+            if not w.startswith("-"):
+                break
+            if w == "--":
                 i += 1
                 break
-            i += 2 if argv[i] in takes else 1
-    return argv[i:]
+            if name == "env":
+                opt, eq, inline = w.partition("=")
+                value = inline if eq else (words[i + 1] if i + 1 < len(words) else "")
+                step = 1 if eq else 2
+                if w == "-" or opt in ("-i", "--ignore-environment"):
+                    env = {}
+                    i += 1
+                    continue
+                if opt in ("-u", "--unset"):
+                    env.pop(value, None)
+                    i += step
+                    continue
+                if opt in ("-C", "--chdir"):
+                    cwd = join_dir(cwd, value)
+                    i += step
+                    continue
+                if opt in ("-S", "--split-string"):
+                    try:
+                        split = shlex.split(value)
+                    except ValueError:
+                        split = value.split()
+                    words = words[:i] + split + words[i + step:]
+                    continue
+            i += 2 if w in takes else 1
+    return words[i:], env, cwd, uv, None
 
 
-def simple_commands(cmd: str, depth: int = 0) -> List[SimpleCommand]:
+def simple_commands(cmd: str, depth: int = 0, env: Optional[Dict[str, str]] = None,
+                    cwd: Optional[str] = None, uv: bool = False) -> List[SimpleCommand]:
     """The simple commands a shell would run for ``cmd``: split at unquoted operators, with
-    those inside unquoted command substitutions, ``bash -c`` (and other shells) and ``eval``.
+    those inside command substitutions (unquoted, in double quotes, in backticks and in
+    here-documents), 'bash -c' (and other shells, also behind 'uv run') and 'eval'.
 
-    Text inside quotes is never split, so a commit message that mentions a command is not
-    that command. Returns [] for a line that does not parse (the shell would refuse it too).
+    Text inside single quotes, and double-quoted text outside a substitution, is never
+    split, so a commit message that mentions a command is not that command. Each command
+    carries the variables, the working directory and the 'uv run' that the line gives it
+    (SimpleCommand). Returns [] for a line that does not parse (the shell would refuse it too).
     """
+    heredocs: List[str] = []
     try:
-        tokens = shell_tokens(shell_text(cmd))
+        text = shell_text(cmd, heredocs)
+        tokens = shell_tokens(text)
     except ValueError:
         return []
     out: List[SimpleCommand] = []
+    line_env: Dict[str, str] = dict(env or {})
+    start_cwd = cwd
     argv: List[str] = []
     stdin: Optional[str] = None
     redirect = ""
 
     def flush() -> None:
-        nonlocal argv, stdin
-        words = unwrap(argv)
-        if words:
-            prog = os.path.basename(words[0])
-            if prog in SHELL_NAMES and depth < 3:
-                for k in range(1, len(words) - 1):
-                    flag = words[k]
-                    if flag.startswith("-") and not flag.startswith("--") and "c" in flag[1:]:
-                        out.extend(simple_commands(words[k + 1], depth + 1))
-                        break
-            elif prog == "eval" and depth < 3:
-                out.extend(simple_commands(" ".join(words[1:]), depth + 1))
-            out.append(SimpleCommand(words, stdin))
+        nonlocal argv, stdin, cwd
+        if not argv:
+            stdin = None
+            return
+        shell_cwd = cwd
+        words, cenv, ccwd, cuv, module = resolve_command(argv, line_env, cwd, uv)
+        prog = os.path.basename(words[0]) if words else ""
+        if not words and module is None:
+            for word in argv:  # assignments only, such as GH_REPO=x: variables for the rest of the line
+                if ASSIGNMENT_RE.match(word):
+                    key, _, value = word.partition("=")
+                    line_env[key] = value
+        elif prog in ("export", "declare", "typeset", "readonly", "local"):
+            for word in words[1:]:
+                if ASSIGNMENT_RE.match(word):
+                    key, _, value = word.partition("=")
+                    line_env[key] = value
+        elif prog == "unset":
+            for word in words[1:]:
+                line_env.pop(word, None)
+        elif prog in ("cd", "pushd", "chdir"):
+            target = next((w for w in words[1:] if w == "-" or not w.startswith("-")), "~")
+            cwd = join_dir(ccwd, target)
+        elif prog in SHELL_NAMES and depth < 4:
+            for k in range(1, len(words) - 1):
+                flag = words[k]
+                if flag.startswith("-") and not flag.startswith("--") and "c" in flag[1:]:
+                    out.extend(simple_commands(words[k + 1], depth + 1, cenv, ccwd, cuv))
+                    break
+        elif prog == "eval" and depth < 4:
+            out.extend(simple_commands(" ".join(words[1:]), depth + 1, cenv, ccwd, cuv))
+        out.append(SimpleCommand(words, stdin, argv, cenv, ccwd, cuv, module, shell_cwd))
         argv, stdin = [], None
 
     for tok in tokens:
         if tok and all(ch in OPERATOR_CHARS for ch in tok):
-            if "<" in tok or ">" in tok:
-                redirect = tok
-            else:
-                flush()
+            if "(" in tok or not ("<" in tok or ">" in tok):
+                flush()  # an operator, a subshell, or a process or command substitution
                 redirect = ""
+            else:
+                redirect = tok
             continue
         if redirect:
             if redirect == "<":
@@ -1617,61 +2155,29 @@ def simple_commands(cmd: str, depth: int = 0) -> List[SimpleCommand]:
             continue
         argv.append(tok)
     flush()
+    if depth < 4:
+        bodies = substitutions(text) + [b for h in heredocs for b in substitutions(h, in_heredoc=True)]
+        for body in bodies:
+            out.extend(simple_commands(body, depth + 1, dict(env or {}), start_cwd, uv))
     return out
 
 
-def after_uv_run(words: List[str]) -> Tuple[Optional[List[str]], Optional[str], Optional[str]]:
-    """For 'uv run [options] <command...>': (the command's words, the --directory, the module
-    of 'uv run -m'). (None, None, None) for anything else."""
-    if len(words) < 2 or os.path.basename(words[0]) != "uv" or words[1] != "run":
-        return None, None, None
-    i, directory = 2, None
-    while i < len(words) and words[i].startswith("-"):
-        opt, eq, inline = words[i].partition("=")
-        if opt in ("-m", "--module"):
-            return [], directory, inline if eq else (words[i + 1] if i + 1 < len(words) else "")
-        if opt == "--":
-            i += 1
-            break
-        if opt == "--directory":
-            directory = inline if eq else (words[i + 1] if i + 1 < len(words) else None)
-        i += 1 if (eq or opt not in UV_VALUE_OPTS) else 2
-    return words[i:], directory, None
-
-
-def gh_pr_merges(cmd: str) -> List[List[str]]:
-    """The words of each 'gh pr merge' that ``cmd`` runs (directly, behind wrappers, through
-    uv run, bash -c or eval). '--help' is not a merge, nor is a grep for the words."""
-    found = []
-    for sc in simple_commands(cmd):
-        words = sc.argv
-        inner, _directory, _module = after_uv_run(words)
-        if inner is not None:
-            words = unwrap(inner)
-        if not words or os.path.basename(words[0]) != "gh":
-            continue
-        rest = words[1:]
-        if len(rest) < 2 or rest[0] != "pr" or rest[1] != "merge" or "--help" in rest or "-h" in rest:
-            continue
-        found.append(words)
-    return found
-
-
 def python_runs(cmd: str) -> List[Tuple[Optional[str], str, str, List[str]]]:
-    """Each Python run through 'uv run' in ``cmd``: (directory, kind, target, arguments).
+    """Each Python run in ``cmd``: (directory, kind, target, arguments).
 
     kind is 'script' (target a file), 'module' (target a module name, from -m), 'code'
-    (target the -c code) or 'stdin' (target the file redirected to stdin, '' if none).
+    (target the -c code) or 'stdin' (target the file redirected to stdin, '' if none). A
+    Python run is 'uv run -m', a 'python' command (directly, behind 'uv run', or in a shell
+    that 'uv run' started), a '.py' file run as a command, or any command given as a path
+    (an executable script). The directory is the one the line gives it (SimpleCommand.cwd).
     """
     found: List[Tuple[Optional[str], str, str, List[str]]] = []
     for sc in simple_commands(cmd):
-        inner, directory, module = after_uv_run(sc.argv)
-        if inner is None:
+        directory = sc.cwd
+        if sc.module is not None:
+            found.append((directory, "module", sc.module, []))
             continue
-        if module is not None:
-            found.append((directory, "module", module, []))
-            continue
-        words = unwrap(inner)
+        words = sc.argv
         if not words:
             continue
         if re.match(r"^python[0-9.]*$", os.path.basename(words[0])):
@@ -1687,18 +2193,22 @@ def python_runs(cmd: str) -> List[Tuple[Optional[str], str, str, List[str]]]:
             if special is not None:
                 found.append((directory, special[0], special[1], special[2]))
             elif i >= len(words) or words[i] == "-":
-                found.append((directory, "stdin", sc.stdin or "", words[i + 1:]))
+                # The shell opens the redirection, in its own directory.
+                found.append((sc.shell_cwd, "stdin", sc.stdin or "", words[i + 1:]))
             else:
                 found.append((directory, "script", words[i], words[i + 1:]))
-        elif words[0].endswith((".py", ".pyw")):
+        elif words[0].endswith((".py", ".pyw")) or (sc.uv and "/" in words[0]):
             found.append((directory, "script", words[0], words[1:]))
     return found
 
 
 def run_candidates(repo: Path, directory: Optional[str], kind: str, target: str) -> List[Path]:
-    """Files a Python run would execute; for a module, each place it could be found."""
+    """Files a Python run would execute; for a module, each place it could be found. [] if
+    the run's directory cannot be read from its line (UNKNOWN_DIR)."""
     root = Path(repo)
     base = root
+    if directory == UNKNOWN_DIR:
+        return []
     if directory:
         d = Path(directory).expanduser()
         base = d if d.is_absolute() else root / d
@@ -1708,8 +2218,7 @@ def run_candidates(repo: Path, directory: Optional[str], kind: str, target: str)
         p = Path(target).expanduser()
         if p.is_absolute():
             return [p]
-        # A redirect is opened by the shell, in the repo; a script by uv, in --directory.
-        return [(base if kind == "script" else root) / p]
+        return [base / p]
     if kind == "module":
         parts = [x for x in target.split(".") if x]
         if not parts:
@@ -1754,19 +2263,25 @@ def claims_pass(text: str) -> bool:
 
 
 def gate_matchers(name: str) -> Optional[Tuple[str, List[Any]]]:
-    """(the gate's name, patterns a critic request about it matches) from a report file name."""
+    """(the gate's name, patterns a critic request about it matches) from a report file name.
+
+    The names LOOP.md section 6 gives: 'Gate 1' to 'Gate 3' (in any case, with a space, '_',
+    '-' or nothing before the number), 'base-state gate' or 'Gbase' (and '7a.base'), and
+    'Gate 4' together with 'set <S>' or '7a.<S>'. A bare 'G1' or 'g1' does not count: g_0 and
+    g_1 are Hermite moments in this study, and the scripts name arrays g0, g1.
+    """
     m = GATE_FILE_RE.match(name)
     if not m:
         return None
     if m.group("n"):
         n = m.group("n")
-        return f"Gate {n}", [re.compile(rf"\b(?:gate[\s_-]*{n}|G{n})\b", re.IGNORECASE)]
+        return f"Gate {n}", [re.compile(rf"\bgate[\s_-]*{n}\b", re.IGNORECASE)]
     if m.group("base"):
         return "the base-state gate", [re.compile(r"\bbase[\s_-]*state[\s_-]*gate\b|\bgate[\s_-]*base\b|\bGbase\b|\b7a\.base\b",
                                                   re.IGNORECASE)]
     s = re.escape(m.group("set"))
     return (f"Gate 4, set {m.group('set')}",
-            [re.compile(r"\b(?:gate[\s_-]*4|G4)\b", re.IGNORECASE), re.compile(rf"\b(?:[Ss]et[\s_-]*{s}|7a\.{s})\b")])
+            [re.compile(r"\bgate[\s_-]*4\b", re.IGNORECASE), re.compile(rf"\b(?:[Ss]et[\s_-]*{s}|7a\.{s})\b")])
 
 
 def critic_file_named(repo_text: str) -> Optional[str]:
@@ -1835,6 +2350,89 @@ def pass_reports(repo: Path, before: str, after: str, loop: str) -> List[Tuple[C
     return found
 
 
+def launcher_report_check(repo: Path, target: str) -> Tuple[Optional[int], List[str]]:
+    """Run the launcher's own report check: 'modal_launch.py check-report TARGET'.
+
+    The launcher is the copy next to this file, which the runner takes from the commit the
+    session started from, so a session cannot weaken the check it is judged by. It runs
+    under this interpreter with -I -S (nothing from the clone's environment), with S04_REPO
+    set to the repo and the repo as its working directory, and needs no network and no
+    Modal. Returns (its exit code, or None if it could not run; its output lines).
+    """
+    launcher = HERE / "modal_launch.py"
+    if not launcher.is_file():
+        return None, [f"the launcher's copy {launcher} is missing"]
+    if not sys.executable:
+        return None, ["no Python interpreter to run it with"]
+    env = dict(os.environ)
+    env["S04_REPO"] = str(repo)
+    try:
+        proc = subprocess.run([sys.executable, "-I", "-S", "-B", str(launcher), "check-report", target],
+                              cwd=str(repo), env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                              timeout=LAUNCHER_CHECK_TIMEOUT_SEC)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return None, [f"it did not finish: {exc}"]
+    lines = [line.strip() for line in proc.stdout.decode("utf-8", errors="replace").splitlines() if line.strip()]
+    if any(line.startswith("Traceback (most recent call last)") for line in lines):
+        return None, [f"it crashed (exit {proc.returncode}): {lines[-1]}"]
+    return proc.returncode, lines
+
+
+def report_form_problems(repo: Path, found: Sequence[Tuple[Commit, str, str]]) -> List[str]:
+    """T1 report form: the launcher's check of every report a loop commit made say PASS.
+
+    A report is checked as it stands at the end of the session, by its repo path, so that
+    its form, its name, its title and the critic report it names are judged as a launch
+    would judge them. A version that a loop commit made say PASS and that differs from the
+    end state (changed again later in the session) is checked too, from a copy, for its form
+    alone: a PASS written over a failed coded check and corrected afterwards still counts.
+    Exit code 1 is a finding; any other failure to run the check is a finding as well.
+    """
+    problems: List[str] = []
+    by_path: Dict[str, List[Tuple[Commit, str]]] = {}
+    for c, path, text in found:
+        by_path.setdefault(path, []).append((c, text))
+
+    def check(target: str, where: str) -> List[str]:
+        rc, lines = launcher_report_check(repo, target)
+        if rc == 0:
+            return []
+        if rc == 1:
+            out = []
+            for line in lines:
+                if line.startswith(target + ": "):
+                    line = line[len(target) + 2:]
+                if line.startswith("note: "):
+                    continue  # 'not under gate_reports/': a copy is checked for its form only
+                out.append(f"T1 report form: {where}: {line}")
+            return out[:8] or [f"T1 report form: {where}: the launcher's report check refused it"]
+        return [f"T1 report form: the launcher's report check could not run on {where}"
+                f"{'' if rc is None else f' (exit {rc})'}: {' | '.join(lines[:3]) or 'no output'}"]
+
+    scratch: Optional[str] = None
+    try:
+        for path, versions in sorted(by_path.items()):
+            current = Path(repo) / path
+            final = current.read_bytes().decode("utf-8", errors="replace") if current.is_file() else None
+            if final is None:
+                problems.append(f"T1 report form: {path} said 'Result: PASS' in {versions[-1][0].sha[:12]}, but it is "
+                                "gone at the end of the session; a committed report is never deleted")
+            elif claims_pass(final):
+                problems.extend(check(path, path))
+            for c, text in versions:
+                if text == final:
+                    continue
+                if scratch is None:
+                    scratch = tempfile.mkdtemp(prefix="s04-report-")
+                copy = Path(scratch) / f"{c.sha[:12]}-{path.rsplit('/', 1)[-1]}"
+                copy.write_text(text, encoding="utf-8")
+                problems.extend(check(str(copy), f"{path} as committed in {c.sha[:12]}"))
+    finally:
+        if scratch is not None:
+            shutil.rmtree(scratch, ignore_errors=True)
+    return problems
+
+
 def check_t1(repo: Path, tr: Transcript, before: str, after: str, loop: str) -> List[str]:
     """T1: a gate report that says PASS needs its own SUPPORTED critic review, from this session.
 
@@ -1844,11 +2442,14 @@ def check_t1(repo: Path, tr: Transcript, before: str, after: str, loop: str) -> 
       finished before the commit, which returned SUPPORTED and whose request (or the saved
       report's title) names the gate;
     - every study04-critic review of this session that finished before the commit and whose
-      request names the gate returned SUPPORTED: asked twice, the worse verdict counts.
+      request names the gate returned SUPPORTED: asked twice, the worse verdict counts;
+    - the launcher's own report check accepts it (report_form_problems): 'Coded check: PASS',
+      'Kill criteria: none met', the exact Critic line, passing table rows, and the rest.
     """
     problems: List[str] = []
     critics = subagent_calls(tr, CRITIC)
-    for c, path, text in pass_reports(repo, before, after, loop):
+    found = pass_reports(repo, before, after, loop)
+    for c, path, text in found:
         short = f"T1 {c.sha[:12]} {path}"
         name = path.rsplit("/", 1)[-1]
         gate = gate_matchers(name)
@@ -1901,6 +2502,7 @@ def check_t1(repo: Path, tr: Transcript, before: str, after: str, loop: str) -> 
             if verdict != "SUPPORTED":
                 problems.append(f"{short} says 'Result: PASS', but a {CRITIC} review of {label} in this session "
                                 f"returned {verdict or 'no verdict'}; asked twice, the worse verdict counts")
+    problems.extend(report_form_problems(repo, found))
     return problems
 
 
@@ -2032,16 +2634,16 @@ MODAL_CLI_ACTIONS = ("run", "deploy", "serve", "shell", "launch")
 
 
 def modal_cli_runs(cmd: str) -> List[str]:
-    """Each Modal CLI command in ``cmd`` that starts an app: 'modal run|deploy|serve|shell'
-    (directly or through uv run) and 'python -m modal ...'."""
+    """Each Modal CLI command in ``cmd`` that starts an app: 'modal run|deploy|serve|shell|
+    launch' (directly, through uv run, or in a shell) and 'python -m modal ...' or
+    'uv run -m modal ...'."""
     found = []
     for sc in simple_commands(cmd):
-        inner, _directory, module = after_uv_run(sc.argv)
-        if module is not None:
-            if module == "modal" or module.startswith("modal."):
-                found.append(" ".join(sc.argv))
+        if sc.module is not None:
+            if sc.module == "modal" or sc.module.startswith("modal."):
+                found.append(" ".join(sc.raw))
             continue
-        words = unwrap(inner) if inner is not None else sc.argv
+        words = sc.argv
         if not words:
             continue
         prog = os.path.basename(words[0])
@@ -2053,10 +2655,16 @@ def modal_cli_runs(cmd: str) -> List[str]:
     return found
 
 
+# A file larger than this is not a Python script that T3 reads (a binary run by its path, say).
+T3_MAX_SCRIPT_BYTES = 4 * 1024 * 1024
+
+
 def check_t3(repo: Path, tr: Transcript) -> List[str]:
-    """T3: a call ran the Modal CLI (modal run, deploy, serve or shell, or python -m modal), or
-    a 'uv run' call ran Python outside loop/ that imports Modal (a script, a module with -m, a
-    file on stdin, or -c code). Denied calls do not count; failed ones do."""
+    """T3: a call ran the Modal CLI (modal run, deploy, serve, shell or launch, or python -m
+    modal), or ran Python outside loop/ that imports Modal (a script, a module with -m, a file
+    on stdin, or -c code), with uv run or in a shell that uv run started. Denied calls do not
+    count; failed ones do. A Python run in a directory that its line does not spell out ('cd
+    $DIR') cannot be checked, and counts as a finding."""
     problems: List[str] = []
     loop_dir = str((Path(repo) / lc.LOOP_REL).resolve()) + os.sep
     seen: Set[str] = set()
@@ -2072,11 +2680,19 @@ def check_t3(repo: Path, tr: Transcript) -> List[str]:
                     problems.append(f"T3 the session ran Python code that imports Modal with uv run: "
                                     f"{short_text(' '.join(target.split()), 80)!r}")
                 continue
+            if directory == UNKNOWN_DIR and target and not Path(target).expanduser().is_absolute():
+                text = f"T3 the session ran {target} in a directory that its command line does not spell out, " \
+                       "so the runner cannot check it for Modal"
+                if text not in problems:
+                    problems.append(text)
+                continue
             for path in run_candidates(repo, directory, kind, target):
                 try:
                     resolved = path.resolve()
                     if not resolved.is_file():
                         continue
+                    if resolved.stat().st_size > T3_MAX_SCRIPT_BYTES:
+                        break
                     text = resolved.read_text(encoding="utf-8", errors="replace")
                 except OSError:
                     continue
@@ -2119,12 +2735,371 @@ def check_t4(repo: Path, tr: Transcript, before: str, after: str, loop: str) -> 
     return problems
 
 
+# ---------------------------------------------------------------------------
+# T5: gh calls that reach a repository outside the two
+# ---------------------------------------------------------------------------
+
+OWN_REPOS = ("anjor/gandalf", "anjor/krmhd-research")
+# gh's commands (gh 2.89 'gh help reference'), its aliases for them, and 'gh co'.
+GH_GROUPS = {"agent-task", "alias", "api", "attestation", "auth", "browse", "cache", "codespace", "completion",
+             "config", "copilot", "extension", "gist", "gpg-key", "issue", "label", "licenses", "org", "pr",
+             "preview", "project", "release", "repo", "ruleset", "run", "search", "secret", "ssh-key", "status",
+             "variable", "workflow", "help", "version"}
+GH_GROUP_ALIASES = {"agent-tasks": "agent-task", "agent": "agent-task", "agents": "agent-task", "at": "attestation",
+                    "cs": "codespace", "ext": "extension", "extensions": "extension", "rs": "ruleset"}
+# Commands that act on a repository: -R/--repo, GH_REPO, a URL, or the repository of the
+# working directory says which.
+GH_REPO_GROUPS = ("issue", "pr", "run", "release", "repo", "workflow", "label", "secret", "variable", "api", "cache",
+                  "ruleset", "attestation", "agent-task", "codespace")
+# What may run on another repository: reads. Any other action there is a write.
+GH_READS = {
+    "repo": ("view", "clone", "list", "ls"),
+    "pr": ("view", "list", "ls", "checks", "diff", "status", "checkout"),
+    "issue": ("view", "list", "ls", "status"),
+    "run": ("view", "list", "ls", "watch", "download"),
+    "workflow": ("view", "list", "ls"),
+    "release": ("view", "list", "ls", "download"),
+    "label": ("list", "ls"),
+    "cache": ("list", "ls"),
+    "ruleset": ("view", "list", "ls", "check"),
+    "attestation": ("verify", "download", "trusted-root"),
+    "secret": ("list", "ls"),
+    "variable": ("list", "ls", "get"),
+    "agent-task": ("list", "ls", "view"),
+    "codespace": ("list", "ls", "view", "logs"),
+}
+# Commands that reach outside every repository, or change gh itself or Anjor's account,
+# wherever they run: (the actions that may run, why the others may not).
+GH_OUTSIDE = {
+    "gist": (("view", "list", "ls"), "a gist is outside the two repos"),
+    "release": (("view", "list", "ls", "download"), "a release reaches users outside the two repos"),
+    "alias": (("list", "ls"), "an alias changes what later gh calls run, where the runner cannot see it"),
+    "extension": (("list", "ls", "search", "browse"), "an extension runs code the runner cannot check"),
+    "copilot": ((), "it runs GitHub's agent outside the loop's checks"),
+    "agent-task": (("list", "ls", "view"), "it sets GitHub's agent to work"),
+    "codespace": (("list", "ls", "view", "logs"), "a codespace runs outside the two repos and costs money"),
+    "project": (("list", "ls", "view", "field-list", "item-list"), "a GitHub project is outside the two repos"),
+    "ssh-key": (("list", "ls"), "it changes Anjor's GitHub account"),
+    "gpg-key": (("list", "ls"), "it changes Anjor's GitHub account"),
+    "org": (("list", "ls"), "an organization is outside the two repos"),
+    "auth": (("status",), "it uses or changes gh's login"),
+    "config": (("get", "list", "ls"), "it changes Anjor's gh configuration"),
+}
+# 'gh repo' actions that change a repository's settings or existence, on any repository: the
+# permission rules deny them, and one run behind 'uv run' could delete or publish one of the two.
+GH_REPO_ADMIN = ("delete", "archive", "unarchive", "rename", "edit", "deploy-key", "autolink")
+# Long gh flags that take a value (gh 2.89 'gh help reference', and the inherited ones), and
+# short ones that take a value in some command; so that a value is never read as a command
+# word. -R and --repo are read separately (gh_repo_flags).
+GH_VALUE_FLAGS = {
+    "-t", "--title", "-b", "--body", "-F", "--body-file", "-l", "--label", "-a", "--assignee", "-m",
+    "--milestone", "-p", "--project", "-r", "--reviewer", "-B", "--base", "-H", "--head", "-q", "--jq",
+    "-T", "--template", "--json", "-S", "--search", "-s", "--state", "-L", "--limit", "-A", "--author",
+    "--app", "--mention", "--add-label", "--remove-label", "--add-assignee", "--remove-assignee",
+    "--add-reviewer", "--remove-reviewer", "--add-project", "--remove-project", "--branch", "-u", "--user",
+    "-e", "--event", "-w", "--workflow", "-c", "--commit", "-j", "--job", "--attempt", "--subject",
+    "--match-head-commit", "--author-email", "-f", "--raw-field", "--field", "--ref", "-X", "--method",
+    "--header", "--hostname", "--input", "--cache", "-n", "--notes", "--notes-file", "--target",
+    "--description", "--color", "--env", "-o", "--org", "-v", "--visibility", "--repos", "--env-file",
+    "--source", "--remote", "--clone", "--homepage", "--team", "--license", "--gitignore", "--duration",
+    "--status", "--created", "--assignee-search", "--recover", "--fork-name", "--default-branch",
+    "--add-topic", "--remove-topic", "--archive", "--author-date", "--author-name", "--body-file", "--bundle",
+    "--checks", "--closed", "--codespace", "--comment", "--commenter", "--comments", "--committer",
+    "--committer-date", "--committer-email", "--committer-name", "--custom-agent", "--date", "--days",
+    "--desc", "--dir", "--discussion-category", "--display-name", "--duplicate-of", "--exclude", "--extension",
+    "--filename", "--filter", "--format", "--from-file", "--git-protocol", "--host", "--id", "--idle-timeout",
+    "--interval", "--involves", "--key", "--language", "--location", "--machine", "--match", "--mentions",
+    "--merged-at", "--name", "--notes-start-tag", "--number", "--order", "--output", "--owner", "--parent",
+    "--pattern", "--profile", "--query", "--readme", "--reason", "--remote-name", "--remove", "--retention-period",
+    "--review", "--review-requested", "--reviewed-by", "--scopes", "--server-port", "--shell", "--size", "--sort",
+    "--squash-merge-commit-message", "--stars", "--tag", "--text", "--topic", "--type", "--updated", "--url",
+    "-D", "-g", "-k", "-O",
+}
+# Short gh flags that take no value in at least one command (gh 2.89): in a cluster such as
+# '-dR', each of these may stand before the R of --repo. Any other letter takes the rest of
+# the cluster, or the next word, as its value.
+GH_SHORT_BOOL = set("acdefhilmnprstuvwy")
+GH_URL_RE = re.compile(r"^(?:https?://)?(?:www\.)?github\.com/[^/\s]+/[^/\s?#]+", re.IGNORECASE)
+GH_SLUG_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+GH_API_REPO_RE = re.compile(r"^/?repos/([^/\s?#]+)/([^/\s?#]+)")
+GH_API_WRITE_METHODS = ("POST", "PUT", "PATCH", "DELETE")
+
+
+def gh_repo_name(value: str) -> str:
+    """'owner/repo', lower case, from a -R value, a URL or HOST/OWNER/REPO. A host other than
+    github.com stays in the name, so it can never equal one of the two repos."""
+    v = value.strip()
+    v = re.sub(r"^[A-Za-z][A-Za-z0-9+.-]*://", "", v)  # a scheme
+    v = re.sub(r"^[^@/\s]+@", "", v)  # a user, as in git@github.com:owner/repo
+    v = re.sub(r"^([^/:\s]+):", r"\1/", v)  # host:owner/repo
+    parts = [p for p in v.split("/") if p]
+    if parts and parts[0].lower() in ("github.com", "www.github.com"):
+        parts = parts[1:]
+    elif len(parts) >= 3:
+        return "/".join(parts[:3]).lower()
+    if len(parts) >= 2:
+        return f"{parts[0]}/{re.sub(r'[.]git$', '', parts[1], flags=re.IGNORECASE)}".lower()
+    return v.lower()
+
+
+def gh_help(rest: Sequence[str]) -> bool:
+    """True if gh only prints help: a '-h' or '--help' word before any '--' that is not the
+    value of the flag before it. A word after a flag that may take a value ('--title -h') is
+    that value, so the call runs."""
+    for i, word in enumerate(rest):
+        if word == "--":
+            return False
+        if word in ("-h", "--help"):
+            prev = rest[i - 1] if i else ""
+            if not prev.startswith("-") or "=" in prev:
+                return True
+    return False
+
+
+def gh_cluster_value(word: str) -> Optional[Tuple[str, str]]:
+    """For a cluster of short flags ('-dR', '-dRx', '-dR=x', '-tTitle'): (the letter that takes
+    a value, the value written in the word, '' if it is the next word). None if every
+    letter is a flag without a value."""
+    cluster = word[1:]
+    for k, ch in enumerate(cluster):
+        if ch == "R" or ch not in GH_SHORT_BOOL:
+            value = cluster[k + 1:]
+            return ch, value[1:] if value.startswith("=") else value
+    return None
+
+
+def gh_repo_flags(rest: Sequence[str]) -> List[str]:
+    """Every value given to -R/--repo, wherever it stands, so that no flag read as taking a
+    value can hide one: '-R x', '--repo x', '--repo=x', '-Rx', '-R=x', and a cluster of short
+    flags with R in it ('-dR x', '-dRx')."""
+    found: List[str] = []
+    for i, word in enumerate(rest):
+        nxt = rest[i + 1] if i + 1 < len(rest) else ""
+        if word in ("-R", "--repo"):
+            if nxt:
+                found.append(nxt)
+        elif word.startswith("--repo="):
+            found.append(word[len("--repo="):])
+        elif word.startswith("-") and not word.startswith("--") and len(word) > 2:
+            hit = gh_cluster_value(word)
+            if hit is not None and hit[0] == "R":
+                if hit[1] or nxt:
+                    found.append(hit[1] or nxt)
+    return found
+
+
+def gh_command_words(rest: Sequence[str]) -> Tuple[List[str], Dict[str, str]]:
+    """(the command words and arguments of a gh call, without flags and their values; the
+    flags it was given, by name, with their values: '' for one without a value)."""
+    positional: List[str] = []
+    flags: Dict[str, str] = {}
+    i = 0
+    while i < len(rest):
+        word = rest[i]
+        nxt = rest[i + 1] if i + 1 < len(rest) else ""
+        if word == "--":
+            positional.extend(rest[i + 1:])
+            break
+        if word.startswith("--"):
+            name, eq, value = word.partition("=")
+            if eq:
+                flags[name] = value
+            elif name in GH_VALUE_FLAGS or name == "--repo":
+                flags[name] = nxt
+                i += 2
+                continue
+            else:
+                flags.setdefault(name, "")
+            i += 1
+            continue
+        if word.startswith("-") and len(word) > 1:
+            hit = gh_cluster_value(word) if len(word) > 2 else None
+            if len(word) == 2:
+                if word in GH_VALUE_FLAGS or word == "-R":
+                    flags[word] = nxt
+                    i += 2
+                    continue
+                flags.setdefault(word, "")
+            elif hit is not None:
+                for ch in word[1:word.index(hit[0], 1)]:
+                    flags.setdefault("-" + ch, "")
+                flags["-" + hit[0]] = hit[1] or nxt
+                if not hit[1]:
+                    i += 2
+                    continue
+            else:
+                for ch in word[1:]:
+                    flags.setdefault("-" + ch, "")
+            i += 1
+            continue
+        positional.append(word)
+        i += 1
+    return positional, flags
+
+
+def gh_runs(cmd: str) -> List[SimpleCommand]:
+    """Each gh command that ``cmd`` runs (directly, behind wrappers, through uv run, in a
+    shell, eval or a command substitution), with the variables and the working directory
+    that its line gives it (SimpleCommand)."""
+    return [sc for sc in simple_commands(cmd) if sc.argv and os.path.basename(sc.argv[0]) == "gh"]
+
+
+def gh_pr_merges(cmd: str) -> List[List[str]]:
+    """The words of each 'gh pr merge' that ``cmd`` runs (directly, behind wrappers, through
+    uv run, in a shell, eval or a command substitution). Help ('--help', '-h' as a flag) is
+    not a merge, nor is a grep for the words."""
+    found = []
+    for sc in gh_runs(cmd):
+        rest = sc.argv[1:]
+        positional, _flags = gh_command_words(rest)
+        if positional[:2] == ["pr", "merge"] and not gh_help(rest):
+            found.append(sc.argv)
+    return found
+
+
+def gh_cwd_problem(env: Dict[str, str], cwd: Optional[str], repo: Path, worktree: Optional[Path]) -> Optional[str]:
+    """Why the repository of a gh call's working directory may not be one of the two, or None.
+
+    gh takes the repository from the git repository it runs in: the session's own directory
+    (the clone), or one that the line set with 'uv run --directory', 'env -C' or 'cd'. That
+    must be the clone or the GANDALF worktree, or a folder inside one that is not itself
+    inside another git repository. GIT_DIR or GIT_WORK_TREE on the line point git elsewhere.
+    """
+    for var in ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR"):
+        if var in env:
+            return f"with {var} set"
+    if cwd is None:
+        return None
+    if cwd == UNKNOWN_DIR:
+        return "in a directory that its command line does not spell out"
+    path = Path(os.path.expanduser(cwd))
+    if not path.is_absolute():
+        path = Path(repo) / path
+    try:
+        real = path.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return f"in {cwd}, which does not exist now"
+    for root in [Path(repo)] + ([worktree] if worktree else []):
+        try:
+            top = root.resolve(strict=True)
+        except (OSError, RuntimeError):
+            continue
+        if real == top or top in real.parents:
+            probe = real
+            while probe != top:
+                if (probe / ".git").exists():
+                    return f"in {cwd}, another git repository inside {top}"
+                probe = probe.parent
+            return None
+    return f"in {cwd}, which is neither the loop's clone nor the GANDALF worktree"
+
+
+def gh_outside(sc: SimpleCommand, repo: Path, worktree: Optional[Path] = None) -> List[str]:
+    """Why one gh command reaches outside the two repos (empty if it does not).
+
+    It names another repository, with -R/--repo (also --repo=X, -RX and a cluster such as
+    -dR X), through GH_REPO, as a github.com URL argument, as the repository of 'gh repo
+    <action> <repo>', as the destination of 'gh issue transfer', or as the repos/<owner>/<repo>
+    endpoint of 'gh api', and it is not one of the reads GH_READS lists. Or it names none, is
+    not a read, and runs where its repository may be another (gh_cwd_problem). Also, on any
+    repository: what GH_OUTSIDE lists (a gist, a release, an alias, an extension, a codespace,
+    ...), 'gh repo create' and 'gh repo fork', the 'gh repo' actions GH_REPO_ADMIN lists
+    (delete, archive, rename, edit, ...), an organization or user secret or variable, a
+    'gh api graphql' call, a 'gh api' write to an endpoint outside a repository, and a gh
+    command that gh does not have (an alias or an extension). Help is not a call.
+    """
+    words = sc.argv
+    rest = list(words[1:])
+    if not rest or gh_help(rest):
+        return []
+    flagged = gh_repo_flags(rest)
+    positional, flags = gh_command_words(rest)
+    if positional[:1] == ["co"]:
+        positional = ["pr", "checkout"] + positional[1:]
+    if not positional:
+        return []
+    group = GH_GROUP_ALIASES.get(positional[0], positional[0])
+    action = positional[1] if len(positional) > 1 else ""
+    if group not in GH_GROUPS:
+        return [f"gh {short_text(positional[0], 40)}: not a gh command the runner knows (an alias or an extension?), "
+                "so it cannot tell what it reaches"]
+    why: List[str] = []
+    if group in GH_OUTSIDE:
+        allowed, reason = GH_OUTSIDE[group]
+        if action not in allowed:
+            why.append(f"a gh {group} {action or 'call'}: {reason}")
+    if group in ("secret", "variable") and any(f in flags for f in ("-o", "--org", "-u", "--user")):
+        why.append(f"a gh {group} {action or 'call'} for an organization or user, outside the two repos")
+    if group == "repo" and action in ("create", "fork"):
+        why.append(f"a gh repo {action}: a new repository is outside the two repos")
+    if group == "repo" and action in GH_REPO_ADMIN and not (
+            action in ("deploy-key", "autolink") and positional[2:3] in (["list"], ["ls"], ["view"])):
+        why.append(f"a gh repo {action}: it changes a repository's settings or existence, which only Anjor does")
+    if group not in GH_REPO_GROUPS:
+        return why
+    named = [v for v in flagged if v.strip()]
+    if not named and sc.env.get("GH_REPO", "").strip():
+        named = [sc.env["GH_REPO"]]
+    named.extend(w for w in positional[2:] if GH_URL_RE.match(w))
+    if group == "repo" and len(positional) > 2 and GH_SLUG_RE.match(positional[2]):
+        named.append(positional[2])
+    if group == "issue" and action == "transfer" and len(positional) > 3:
+        named.append(positional[3])
+    placeholder = False
+    if group == "api":
+        # The endpoint is the first argument; any word that reads as one counts too, so that a
+        # flag misread as taking a value cannot hide it.
+        endpoint = action
+        method = (flags.get("-X") or flags.get("--method") or "").upper()
+        if not method and any(f in flags for f in ("-f", "-F", "--field", "--raw-field", "--input")):
+            method = "POST"
+        repos = [m for m in (GH_API_REPO_RE.match(w) for w in [endpoint] + rest) if m]
+        named.extend(f"{m.group(1)}/{m.group(2)}" for m in repos)
+        if endpoint.lstrip("/") == "graphql" or "graphql" in rest:
+            why.append("a gh api graphql call: the runner cannot tell which repository it reaches")
+        elif repos:
+            pass
+        elif "{owner}" in endpoint or "{repo}" in endpoint:
+            placeholder = True
+        elif method in GH_API_WRITE_METHODS:
+            why.append(f"a gh api {method} {short_text(endpoint, 60)}: a write outside the two repos")
+    outside = sorted({gh_repo_name(v) for v in named} - set(OWN_REPOS))
+    reads = GH_READS.get(group, ())
+    if outside and action not in reads:
+        why.append(f"a gh {group} {action or 'call'} on {', '.join(outside)}, outside the two repos")
+    if not named and action not in reads and (group != "api" or placeholder):
+        where = gh_cwd_problem(sc.env, sc.cwd, repo, worktree)
+        if where:
+            why.append(f"a gh {group} {action or 'call'} that names no repository, run {where}, so it may "
+                       "reach a repository outside the two")
+    return why
+
+
+def check_t5(tr: Transcript, repo: Path, worktree: Optional[Path] = None) -> List[str]:
+    """T5: a gh call that reaches outside the two repos (gh_outside), in the session or in its
+    subagents, inside 'bash -c', command substitutions and chains, and behind 'uv run', too.
+    Only a call the permission rules denied does not count; a failed call does."""
+    problems: List[str] = []
+    for c in tr.calls:
+        if c.name != "Bash" or c.denied:
+            continue
+        for sc in gh_runs(c.command()):
+            for why in gh_outside(sc, repo, worktree):
+                text = f"T5 {why}: {short_text(' '.join(sc.argv), 120)}"
+                if text not in problems:
+                    problems.append(text)
+    return problems
+
+
 def cmd_transcript_check(args: argparse.Namespace) -> int:
     """Checks on what the session did, read from its transcript. 0 ok, 1 violations, 2 unreadable.
 
     T1 and T4 need --before, --after and --loop-committer. T2 reads earlier transcripts from
     --transcripts-dir and trusts only those sealed in --manifest (default: transcripts.sha256
-    next to that folder). T3 reads the scripts from disk, so the runner runs it before it stashes.
+    next to that folder). T3 reads the scripts from disk, so the runner runs it before it
+    stashes. T5 reads the transcript, and the folders a gh call ran in: the clone (--repo)
+    and the GANDALF worktree (--worktree) are the two whose repository gh may take. T1 also
+    runs the launcher's report check from the copy of modal_launch.py next to this file.
     """
     repo = Path(args.repo)
     path = Path(args.transcript)
@@ -2157,6 +3132,8 @@ def cmd_transcript_check(args: argparse.Namespace) -> int:
         problems.extend(check_t2(tr, tdir, path, manifest))
     if "T3" in checks:
         problems.extend(check_t3(repo, tr))
+    if "T5" in checks:
+        problems.extend(check_t5(tr, repo, Path(args.worktree) if args.worktree else None))
     print_lines(problems)
     return 1 if problems else 0
 
@@ -2182,6 +3159,216 @@ def cmd_transcript_seal(args: argparse.Namespace) -> int:
     os.replace(str(tmp), str(manifest))
     print(digest)
     return 0
+
+
+# ---------------------------------------------------------------------------
+# GANDALF's own branches and tags
+# ---------------------------------------------------------------------------
+
+LOOP_BRANCH_PREFIX = "refs/heads/study04/"
+ZERO_SHA_RE = re.compile(r"^0+$")
+# One reflog line: old and new object, the identity that wrote it, its time, its message.
+REFLOG_ENTRY_RE = re.compile(r"^([0-9a-f]{40,64}) ([0-9a-f]{40,64}) (.*?) (\d+) ([+-]\d{4})(?:\t(.*))?$")
+# Seconds by which a reflog entry may predate the record and still be read as written after it
+# (a reflog time is in whole seconds).
+REFLOG_SLACK_SEC = 2
+IDENTITY_VARS = ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL",
+                 "GIT_AUTHOR_DATE", "GIT_COMMITTER_DATE")
+
+
+def gandalf_refs(worktree: Path) -> Optional[Dict[str, str]]:
+    """{refname: object} of the GANDALF repo's local branches outside study04/, and its tags.
+
+    The loop's worktree is a linked worktree of Anjor's checkout and shares its refs, so these
+    are his: the loop touches only study04/ branches and never makes, moves or deletes a tag
+    (LOOP.md sections 2 and 10). None if git cannot list them.
+    """
+    proc = git(worktree, "for-each-ref", "--format=%(refname)%09%(objectname)", "refs/heads", "refs/tags")
+    if proc.returncode != 0:
+        return None
+    refs: Dict[str, str] = {}
+    for line in proc.stdout.decode("utf-8", errors="replace").splitlines():
+        name, _, obj = line.partition("\t")
+        if name and not name.startswith(LOOP_BRANCH_PREFIX):
+            refs[name] = obj.strip()
+    return refs
+
+
+def own_git_identity(worktree: Path) -> Optional[str]:
+    """'Name <email>' that git gives a command in the GANDALF repo when no identity variable is
+    set: Anjor's, from his git config. The runner exports the loop's identity, so it is taken
+    out for this call. None if git cannot tell."""
+    env = {k: v for k, v in os.environ.items() if k not in IDENTITY_VARS}
+    try:
+        proc = subprocess.run(["git", "-C", str(worktree)] + list(GIT_SAFE) + ["var", "GIT_COMMITTER_IDENT"],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    m = re.match(r"^(.*?) (\d+) ([+-]\d{4})$", proc.stdout.decode("utf-8", errors="replace").strip())
+    return m.group(1) if proc.returncode == 0 and m else None
+
+
+def read_refs_record(path: Path) -> Tuple[Dict[str, str], Optional[float], Optional[str]]:
+    """(refs, time, Anjor's identity) from the record cmd_gandalf_refs wrote. A record in the
+    older form, 'refname<TAB>object' lines, has no time and no identity. OSError if unreadable."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    try:
+        data = json.loads(text)
+    except ValueError:
+        data = None
+    if isinstance(data, dict) and isinstance(data.get("refs"), dict):
+        refs = {str(k): str(v) for k, v in data["refs"].items()}
+        when = data.get("time")
+        ident = data.get("ident")
+        return (refs, float(when) if isinstance(when, (int, float)) else None,
+                ident if isinstance(ident, str) and ident else None)
+    refs = {}
+    for line in text.splitlines():
+        name, _, obj = line.partition("\t")
+        if name.strip():
+            refs[name.strip()] = obj.strip()
+    return refs, None, None
+
+
+def read_tag_listing(path: str) -> Optional[Dict[str, str]]:
+    """{refs/tags/<name>: object} from 'git ls-remote --tags' output (peeled lines left out),
+    or None if there is no such file."""
+    if not path or not Path(path).is_file():
+        return None
+    tags: Dict[str, str] = {}
+    for line in Path(path).read_text(encoding="utf-8", errors="replace").splitlines():
+        obj, _, name = line.partition("\t")
+        name = name.strip()
+        if name.startswith("refs/tags/") and not name.endswith("^{}"):
+            tags[name] = obj.strip()
+    return tags
+
+
+def branch_move_owner(worktree: Path, refname: str, old: Optional[str], new: str, since: Optional[float],
+                      ident: Optional[str]) -> Optional[str]:
+    """None if the reflog of ``refname`` shows that Anjor (``ident``) made the change from
+    ``old`` (None: the branch did not exist) to ``new``, after ``since``; otherwise why not.
+
+    The entries must form an unbroken chain from the old tip to the new one, every one of them
+    written after the record and by Anjor's identity. A move that the reflog does not record
+    (a ref written by hand, a reflog rewritten), or one written under another identity (the
+    loop's), counts against the session. A deleted branch has no reflog any more, so a
+    deletion can never be shown to be Anjor's.
+    """
+    if since is None or ident is None:
+        return "the runner could not record who may change it"
+    proc = git(worktree, "rev-parse", "--git-path", f"logs/{refname}")
+    rel = proc.stdout.decode("utf-8", errors="replace").strip()
+    if proc.returncode != 0 or not rel:
+        return "its reflog cannot be found"
+    log = Path(rel) if os.path.isabs(rel) else Path(worktree) / rel
+    try:
+        lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return "no reflog entry records it"
+    expected = new
+    for line in reversed(lines):
+        m = REFLOG_ENTRY_RE.match(line)
+        if not m or m.group(2) != expected:
+            break
+        who, when = m.group(3), int(m.group(4))
+        if when < since - REFLOG_SLACK_SEC:
+            break
+        if who != ident:
+            return f"by {who}"
+        expected = m.group(1)
+        if (old is None and ZERO_SHA_RE.match(expected)) or expected == old:
+            return None
+    return "no reflog entry records it"
+
+
+def cmd_gandalf_refs(args: argparse.Namespace) -> int:
+    """Print the record of GANDALF's branches and tags (gandalf_refs) as JSON: the refs, the
+    time of the record, and the git identity Anjor's commands there carry (own_git_identity)."""
+    worktree = Path(args.worktree)
+    when = time.time()
+    refs = gandalf_refs(worktree)
+    if refs is None:
+        print(f"cannot list the branches and tags of {args.worktree}", file=sys.stderr)
+        return 2
+    ident = own_git_identity(worktree)
+    loop_name = config_value(Path(args.repo), "LOOP_GIT_NAME", "krmhd-loop")
+    loop_email = config_value(Path(args.repo), "LOOP_GIT_EMAIL", "")
+    if ident and (ident.split(" <", 1)[0] == loop_name or (loop_email and f"<{loop_email}>" in ident)):
+        ident = None  # the loop's own identity would make its moves look like Anjor's
+    print(json.dumps({"version": 2, "time": when, "ident": ident, "refs": refs}, indent=1, sort_keys=True))
+    return 0
+
+
+def cmd_gandalf_refs_check(args: argparse.Namespace) -> int:
+    """Compare GANDALF's branches and tags with the record taken before the session.
+
+    Rule gandalf-refs:
+    - a local branch outside study04/ that was deleted; or created or moved, unless its
+      reflog shows that Anjor did it, after the record and under his own git identity
+      (branch_move_owner), as a 'git pull' or a commit in his checkout does;
+    - a local tag that was created, moved or deleted, except a tag that origin already had,
+      with the same object, before the session (--origin-tags: 'git ls-remote --tags origin'
+      output taken then): that came from a fetch of a tag Anjor pushed earlier;
+    - a tag that origin gained, lost or moved during the session (--origin-tags against
+      --origin-tags-after, taken after it): a tag pushed with a refspec leaves no local tag,
+      and a pushed v*.*.* tag starts GANDALF's release workflows.
+    Exit 0 none, 1 some, 2 if the record or the refs cannot be read.
+    """
+    worktree = Path(args.worktree)
+    try:
+        before, since, ident = read_refs_record(Path(args.before))
+    except OSError as exc:
+        print(f"cannot read the record of GANDALF's refs: {exc}")
+        return 2
+    now = gandalf_refs(worktree)
+    if now is None:
+        print(f"cannot list the branches and tags of {args.worktree}")
+        return 2
+    origin_before = read_tag_listing(args.origin_tags)
+    origin_after = read_tag_listing(args.origin_tags_after)
+    origin = origin_before or {}
+    findings: List[str] = []
+    for name in sorted(set(before) | set(now)):
+        old, new = before.get(name), now.get(name)
+        if old == new:
+            continue
+        if name.startswith("refs/heads/"):
+            kind, short = "branch", name[len("refs/heads/"):]
+            if new is not None:
+                owner = branch_move_owner(worktree, name, old, new, since, ident)
+                if owner is None:
+                    continue  # Anjor's own work in his checkout during the session
+                what = (f"a new branch {short} at {new[:12]}" if old is None else
+                        f"the branch {short} moved from {old[:12]} to {new[:12]}")
+                findings.append(f"gandalf-refs: {what} ({owner})")
+                continue
+        else:
+            kind, short = "tag", name[len("refs/tags/"):]
+            if new is not None and origin.get(name) == new:
+                continue  # fetched: origin had this tag, with this object, before the session
+        if new is None:
+            findings.append(f"gandalf-refs: the {kind} {short} was deleted (it pointed at {(old or '')[:12]})")
+        elif old is None:
+            findings.append(f"gandalf-refs: a new {kind} {short} at {new[:12]}")
+        else:
+            findings.append(f"gandalf-refs: the {kind} {short} moved from {old[:12]} to {new[:12]}")
+    if origin_before is not None and origin_after is not None:
+        for name in sorted(set(origin_before) | set(origin_after)):
+            old, new = origin_before.get(name), origin_after.get(name)
+            short = name[len("refs/tags/"):]
+            if old == new:
+                continue
+            if old is None:
+                findings.append(f"gandalf-refs: origin gained the tag {short} at {(new or '')[:12]} during the session")
+            elif new is None:
+                findings.append(f"gandalf-refs: origin lost the tag {short} during the session (it pointed at "
+                                f"{old[:12]})")
+            else:
+                findings.append(f"gandalf-refs: the tag {short} on origin moved from {old[:12]} to {new[:12]} during "
+                                "the session")
+    print_lines(findings)
+    return 1 if findings else 0
 
 
 # ---------------------------------------------------------------------------
@@ -2722,18 +3909,30 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("transcript-check", parents=[common])
     p.add_argument("--transcript", required=True)
-    p.add_argument("--checks", default="T1,T2,T3,T4")
+    p.add_argument("--checks", default="T1,T2,T3,T4,T5")
     p.add_argument("--before", default="")
     p.add_argument("--after", default="")
     p.add_argument("--loop-committer", default="")
     p.add_argument("--transcripts-dir", default="")
     p.add_argument("--manifest", default="", help="sealed transcripts (default: transcripts.sha256 next to the folder)")
+    p.add_argument("--worktree", default="", help="the GANDALF worktree, where gh may take its repository from (T5)")
     p.set_defaults(func=cmd_transcript_check)
 
     p = sub.add_parser("transcript-seal", parents=[common])
     p.add_argument("--transcript", required=True)
     p.add_argument("--manifest", required=True)
     p.set_defaults(func=cmd_transcript_seal)
+
+    p = sub.add_parser("gandalf-refs", parents=[common])
+    p.add_argument("--worktree", required=True)
+    p.set_defaults(func=cmd_gandalf_refs)
+
+    p = sub.add_parser("gandalf-refs-check", parents=[common])
+    p.add_argument("--worktree", required=True)
+    p.add_argument("--before", required=True, help="the record gandalf-refs printed before the session")
+    p.add_argument("--origin-tags", default="", help="'git ls-remote --tags origin' output from before the session")
+    p.add_argument("--origin-tags-after", default="", help="the same, taken after the session")
+    p.set_defaults(func=cmd_gandalf_refs_check)
 
     p = sub.add_parser("apps-check", parents=[common])
     p.add_argument("--apps-json", required=True)

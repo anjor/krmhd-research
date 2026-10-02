@@ -3,7 +3,9 @@
 #
 # Shows STOP, then commits and pushes its removal. Answer the question behind the stop first:
 # put an ANSWER: (or VETO:) line in QUESTIONS.md and push it, before or with this. The loop
-# reads only pushed commits.
+# reads only pushed commits. It refuses to run in the loop's clone (git config s04.loopclone
+# is 'true' there): a removal of STOP committed there carries the loop's name, so it would not
+# count as Anjor resuming the loop.
 
 set -u
 
@@ -11,6 +13,11 @@ LOOP_DIR=$(cd "$(dirname "$0")" && pwd -P) || exit 2
 REPO=$(cd "$LOOP_DIR/../../.." && pwd -P) || exit 2
 STUDY_REL="studies/04-phase-space-helicity"
 STUDY="$REPO/$STUDY_REL"
+
+if [ "$(git -C "$REPO" config --local --get s04.loopclone 2>/dev/null)" = true ]; then
+  echo "resume.sh: run this in your own checkout, not the loop clone ($REPO)" >&2
+  exit 2
+fi
 
 cd "$REPO" || exit 2
 if [ "$(git symbolic-ref -q --short HEAD)" != main ]; then

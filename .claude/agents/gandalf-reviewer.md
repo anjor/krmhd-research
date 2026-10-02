@@ -20,7 +20,7 @@ You review one change to GANDALF, the JAX Fourier–Hermite KRMHD solver on GitH
    - Tests. New behaviour has tests that would fail without the change. No existing test is deleted, skipped, loosened or has its expected values changed. If any is, say so prominently: the loop must not merge such a PR itself.
    - Anything under `.github/`, any version bump, tag or release step. Flag it prominently.
    - Numerics: float32 and float64 paths, JIT compatibility (no Python control flow on traced values), no Python loops over grid points, memory at 128³ with M = 128.
-5. Run the full test suite: `uv run --directory <worktree> --frozen pytest tests/ -q --ignore=tests/test_performance.py` (about three minutes on the loop's Mac). Run the tests the change adds on their own as well. Report the counts and every failure.
+5. Run the full test suite: `uv run --directory <worktree> --frozen pytest tests/ -q --ignore=tests/test_performance.py`. It takes about three minutes on the loop's Mac, longer than the Bash tool's default limit, so give that call a timeout of 600000 ms. Run the tests the change adds on their own as well. Report the counts and every failure.
 
 ## Verdict
 
