@@ -12,9 +12,12 @@ file, so that no number and no verdict is typed by hand:
 
 Gate 1 (PLAN.md §4, Phase 0): the invariant mapping and SPEC.md are accepted.
 Its coded check (`gate1_check`) reruns every Phase 0 derivation script on the
-pinned GANDALF, applies each script's own pass criterion, checks that the
-installed GANDALF is the commit pinned in uv.lock, and checks that every claim
-the mapping and SPEC.md rest on is supported with a SUPPORTED critic verdict.
+pinned GANDALF, applies each script's own pass criterion (and, for D02 and
+critic_as2018.py, the criteria below that turn the SPEC.md and claim text into
+numbers), checks that the installed GANDALF is the commit pinned in uv.lock,
+and checks that every claim the mapping and SPEC.md rest on is supported with a
+SUPPORTED critic verdict. It hashes SPEC.md and docs/rediscovery.md so that the
+report names what was accepted. `gates.py gate1` refuses to run on a dirty tree.
 
 Usage (from the repo root):
 
@@ -55,22 +58,50 @@ CRITIC_FILE_RE = re.compile(r"critic_(it-\d{8}-\d{4})_(\d+)\.md")
 
 # Each Phase 0 derivation script and the rule its output must meet:
 #   "all-checks":     exit code 0, a line "ALL CHECKS PASSED", no line "FAILED..."
+#   "d02":            "all-checks", plus the line "Gamma^odd (echo model) distinguishable
+#                     from zero: False" (SPEC.md §2, claim C10), plus the rerun
+#                     reference_profiles.npz reproduces the committed one (D02 is seeded)
 #   "claim-verdicts": exit code 0 and exactly GATE1_CRITIC_CLAIMS lines
 #                     "Claim <n> ...: SUPPORTED|REFUTED", every one SUPPORTED
-#   "exit-zero":      exit code 0 (the script prints measurements, not a verdict;
-#                     its numbers are the critic's to judge)
+#   "as2018":         exit code 0 and the numeric criteria below, from the text of C11
 GATE1_SCRIPTS: tuple[tuple[str, str], ...] = (
     ("01_invariant_mapping.py", "all-checks"),
-    ("02_reference_profiles.py", "all-checks"),
+    ("02_reference_profiles.py", "d02"),
     ("blind_invariants.py", "all-checks"),
     ("critic_invariants.py", "claim-verdicts"),
-    ("critic_as2018.py", "exit-zero"),
+    ("critic_as2018.py", "as2018"),
 )
 GATE1_CRITIC_CLAIMS = 3
-# Claims the invariant mapping and SPEC.md §1–§2 rest on. C7 (H_ph-sp, decision 4)
-# and C8 (the study's question) are open by design; C9's GANDALF part is a Phase 1
-# check. None of those three is a Gate 1 input.
-GATE1_CLAIMS: tuple[str, ...] = ("C1", "C2", "C3", "C4", "C5", "C6", "C10", "C11")
+GATE1_D02_ODD_LINE = "Gamma^odd (echo model) distinguishable from zero: False"
+GATE1_D02_NPZ = "reference_profiles.npz"
+GATE1_D02_RTOL = 1e-8  # rerun vs committed npz; seeded NumPy, so only round-off may differ
+# critic_as2018.py criteria, each a reading of a phrase of claim C11 (not of its numbers):
+#   section 1, "not antisymmetric": raising-only ratio > AS_RAISE_ASYM_MIN;
+#              antisymmetrised ratio < AS_ANTISYM_MAX (antisymmetric to round-off)
+#   section 2, "exponentially unstable": gamma > 0 in every raising-only row
+#   section 2, "independent of dt": Ito gamma(dt=1e-3)/gamma(dt=3e-4) in AS_DT_RATIO_BAND
+#   section 2, "growth rate ≈ ½ M S": Ito gamma/(M S) within a factor 2 of ½
+#   section 3, "conserves W ... in the Stratonovich sense": Heun |gamma|/(M S) < AS_HEUN_MAX
+AS_RAISE_ASYM_MIN = 0.1
+AS_ANTISYM_MAX = 1e-12
+AS_DT_RATIO_BAND = (0.8, 1.25)
+AS_GROWTH_BAND = (0.25, 1.0)
+AS_HEUN_MAX = 0.05
+AS_ROWS_PER_SECTION = 24  # M in (16, 32) x 2 dt x 3 kappa x (Ito, Heun)
+# Claims the invariant mapping and SPEC.md §1–§2 rest on. C7 (H_ph-sp, decision 4) and
+# C8 (the study's question) are open by design; C9 is superseded by C12 (its analytic
+# part, a Gate 1 input) and C13 (its GANDALF part, a Phase 1 check on the new base state).
+GATE1_CLAIMS: tuple[str, ...] = ("C1", "C2", "C3", "C4", "C5", "C6", "C10", "C11", "C12")
+# Critic verdicts recorded in Phase 0, before the loop saved critic reports. A newest
+# verdict that names no report passes only as an exact copy of one of these. C11's Phase 0
+# verdict is hedged ("the hyper-collision statement not tested"), so it is not listed.
+GATE1_PHASE0_VERDICTS: dict[str, str] = {
+    "C1": "SUPPORTED (critic, 60 cases, worst 7.5e-18)",
+    "C3": "SUPPORTED (critic, worst 1.4e-17; unweighted control 1.5e-3)",
+    "C5": "SUPPORTED (critic, worst 8.0e-18; generic closure breaks it, 9e-4)",
+}
+# Files Gate 1 accepts as written, hashed in the report so that it names what was accepted.
+GATE1_ACCEPTED_FILES: tuple[str, ...] = ("SPEC.md", "docs/rediscovery.md")
 GATE1_SCRIPT_TIMEOUT_S = 1800.0
 
 
@@ -186,19 +217,25 @@ def write_report(result: GateResult, iteration: str, out_dir: Path = GATE_REPORT
 
 
 def critic_verdict_line(text: str) -> str | None:
-    """The first line after `Report:` in a saved critic review (LOOP.md §6), or None."""
+    """The first non-empty line after the `Report:` line of a saved critic review
+    (LOOP.md §6), or None.
+
+    The file must have exactly one line that reads exactly `Report:`, so that a request
+    quoting such a line cannot be mistaken for the report. The verdict line must start
+    `VERDICT:`.
+    """
     lines = text.splitlines()
-    for i, line in enumerate(lines):
-        key = line.strip().lstrip("#>*-| ")
-        if not key.lower().startswith("report:"):
-            continue
-        for candidate in [key[len("report:"):]] + lines[i + 1:]:
-            if candidate.strip().startswith("```"):
-                continue
-            value = candidate.strip().strip("`*_>").strip()
-            if value:
-                return value if value.startswith("VERDICT:") else None
+    marks = [i for i, line in enumerate(lines) if line.rstrip() == "Report:"]
+    if len(marks) != 1:
+        return None
+    for candidate in lines[marks[0] + 1:]:
+        value = candidate.strip().strip("`").strip()
+        if value:
+            return value if value.startswith("VERDICT:") else None
     return None
+
+
+KILL_MET_RE = re.compile(r"^Kill criterion [12] met: \S")
 
 
 def decide_result(coded_pass: bool, verdict: str | None, kill: str) -> str:
@@ -207,10 +244,16 @@ def decide_result(coded_pass: bool, verdict: str | None, kill: str) -> str:
     PASS: coded check passed, verdict is `VERDICT: SUPPORTED` and no kill criterion met.
     FAIL: a kill criterion is met, or the coded check failed under a SUPPORTED verdict.
     NOT DECIDED: anything else.
+
+    `kill` must be exactly `none met` or `Kill criterion <1|2> met: <evidence>` (PLAN.md §7;
+    kill criterion 3 is not a gate stop). Any other text raises, so that a typo cannot
+    decide a gate.
     """
+    if kill != "none met" and not KILL_MET_RE.match(kill):
+        raise ValueError(f"kill statement {kill!r} is neither 'none met' nor "
+                         "'Kill criterion <1|2> met: <evidence>'")
     supported = verdict == "VERDICT: SUPPORTED"
-    kill_met = kill.strip() != "none met"
-    if kill_met:
+    if kill != "none met":
         return "FAIL"
     if supported:
         return "PASS" if coded_pass else "FAIL"
@@ -233,6 +276,10 @@ def finish_report(report: Path, critic_report: Path, kill: str) -> str:
     m = CRITIC_FILE_RE.fullmatch(critic_report.name)
     if not m:
         raise ValueError(f"{critic_report.name} is not critic_<iteration id>_<k>.md")
+    report_iteration = re.search(r"(it-\d{8}-\d{4})\.md$", report.name)
+    if not report_iteration or report_iteration.group(1) != m.group(1):
+        raise ValueError(f"{critic_report.name} is not from the iteration of {report.name}; "
+                         "the gate's critic review must come from the same session (LOOP.md §6)")
     verdict = critic_verdict_line(critic_report.read_text(encoding="utf-8"))
     if verdict is None:
         raise ValueError(f"{critic_report} has no VERDICT line after Report:")
@@ -272,18 +319,26 @@ def installed_gandalf_commit() -> str:
         return "unknown"
 
 
-def judge_script(rule: str, returncode: int, stdout: str) -> tuple[bool, str]:
+def judge_script(rule: str, returncode: int, stdout: str,
+                 npz_new: Path | None = None, npz_ref: Path | None = None) -> tuple[bool, str]:
     """Apply a script's pass rule (GATE1_SCRIPTS) to its exit code and output.
 
-    Returns (passed, what was seen).
+    `npz_new` and `npz_ref` are the rerun and the committed reference_profiles.npz, used
+    by the "d02" rule only. Returns (passed, what was seen).
     """
     lines = [ln.strip() for ln in stdout.splitlines()]
-    if rule == "all-checks":
+    if rule in ("all-checks", "d02"):
         has_pass = "ALL CHECKS PASSED" in lines
         failed = any(ln.startswith("FAILED") for ln in lines)
+        ok = returncode == 0 and has_pass and not failed
         seen = f"exit {returncode}; ALL CHECKS PASSED {'present' if has_pass else 'absent'}; " \
                f"FAILED line {'present' if failed else 'absent'}"
-        return returncode == 0 and has_pass and not failed, seen
+        if rule == "d02":
+            odd_ok = lines.count(GATE1_D02_ODD_LINE) == 1
+            npz_ok, npz_seen = compare_npz(npz_new, npz_ref, GATE1_D02_RTOL)
+            ok = ok and odd_ok and npz_ok
+            seen += f"; Gamma^odd line {'False' if odd_ok else 'not False or missing'}; {npz_seen}"
+        return ok, seen
     if rule == "claim-verdicts":
         verdicts = [m.group(1) for ln in lines
                     if (m := re.match(r"^Claim \d+\b.*:\s*(SUPPORTED|REFUTED)$", ln))]
@@ -291,9 +346,120 @@ def judge_script(rule: str, returncode: int, stdout: str) -> tuple[bool, str]:
         seen = f"exit {returncode}; {len(verdicts)} Claim verdict lines, {n_sup} SUPPORTED"
         ok = returncode == 0 and len(verdicts) == GATE1_CRITIC_CLAIMS and n_sup == GATE1_CRITIC_CLAIMS
         return ok, seen
-    if rule == "exit-zero":
-        return returncode == 0, f"exit {returncode}"
+    if rule == "as2018":
+        ok, seen = judge_as2018(stdout)
+        return returncode == 0 and ok, f"exit {returncode}; {seen}"
     raise ValueError(f"unknown rule {rule!r}")
+
+
+def compare_npz(new: Path | None, ref: Path | None, rtol: float) -> tuple[bool, str]:
+    """Whether a rerun .npz reproduces a committed one: same keys, shapes and dtypes kinds,
+    numeric arrays allclose (rtol, NaN padding equal, atol = rtol x the array's max |value|),
+    other arrays equal. Returns (passed, what was seen)."""
+    import numpy as np  # local import: the report machinery itself needs only the stdlib
+
+    if new is None or ref is None or not new.is_file() or not ref.is_file():
+        return False, "npz missing"
+    with np.load(new, allow_pickle=False) as a, np.load(ref, allow_pickle=False) as b:
+        if sorted(a.files) != sorted(b.files):
+            return False, f"npz keys differ ({len(a.files)} vs {len(b.files)})"
+        worst, bad = 0.0, []
+        for key in b.files:
+            x, y = a[key], b[key]
+            if x.shape != y.shape:
+                bad.append(key)
+                continue
+            if np.issubdtype(y.dtype, np.number) and np.issubdtype(x.dtype, np.number):
+                scale = float(np.nanmax(np.abs(y))) if y.size and np.isfinite(y).any() else 0.0
+                if not np.allclose(x, y, rtol=rtol, atol=rtol * scale, equal_nan=True):
+                    bad.append(key)
+                fin = np.isfinite(y) & np.isfinite(x)
+                if fin.any() and scale > 0:
+                    worst = max(worst, float(np.max(np.abs(x[fin] - y[fin]))) / scale)
+            elif not np.array_equal(x, y):
+                bad.append(key)
+    if bad:
+        return False, f"npz differs in {len(bad)} arrays: {', '.join(sorted(bad)[:5])}"
+    return True, f"npz reproduces committed copy ({len(b.files)} arrays, worst diff/max {worst:.1e})"
+
+
+_AS_ROW_RE = re.compile(
+    r"^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(Ito|Heun)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*$")
+_AS_SEC1_RE = re.compile(r"^\s*(AS2018 raising-only|antisymmetrised d_v)\s*:.*=\s*(\S+)\s*$")
+
+
+def parse_as2018(stdout: str) -> dict:
+    """Parse critic_as2018.py output into its section 1 ratios and section 2 and 3 rows.
+
+    Rows are dicts with M, dt, kappa, interp, gamma and ratio (= gamma/(M S)).
+    """
+    sec1: dict[str, float] = {}
+    rows: dict[str, list[dict]] = {"2": [], "3": []}
+    section = None
+    for line in stdout.splitlines():
+        head = re.match(r"^=== (\w+)\.", line)
+        if head:
+            section = head.group(1)
+            continue
+        if section == "1" and (m := _AS_SEC1_RE.match(line)):
+            sec1[m.group(1)] = float(m.group(2))
+        elif section in rows and (m := _AS_ROW_RE.match(line)):
+            rows[section].append({"M": int(m.group(1)), "dt": float(m.group(2)),
+                                  "kappa": float(m.group(4)), "interp": m.group(5),
+                                  "gamma": float(m.group(6)), "ratio": float(m.group(10))})
+    return {"sec1": sec1, "raise": rows["2"], "antisym": rows["3"]}
+
+
+def judge_as2018(stdout: str) -> tuple[bool, str]:
+    """The critic_as2018.py criteria (see AS_* constants). Returns (passed, what was seen)."""
+    try:
+        p = parse_as2018(stdout)
+    except ValueError as exc:
+        return False, f"unparseable output ({exc})"
+    raise_r, anti_r, sec1 = p["raise"], p["antisym"], p["sec1"]
+    if (len(raise_r) != AS_ROWS_PER_SECTION or len(anti_r) != AS_ROWS_PER_SECTION
+            or set(sec1) != {"AS2018 raising-only", "antisymmetrised d_v"}):
+        return False, (f"output incomplete: {len(sec1)} section-1 ratios, {len(raise_r)} and "
+                       f"{len(anti_r)} rows (expected 2, {AS_ROWS_PER_SECTION}, {AS_ROWS_PER_SECTION})")
+    checks: list[tuple[str, bool]] = []
+    checks.append((f"raising-only asym {sec1['AS2018 raising-only']:.2e} > {AS_RAISE_ASYM_MIN}",
+                   sec1["AS2018 raising-only"] > AS_RAISE_ASYM_MIN))
+    checks.append((f"antisym asym {sec1['antisymmetrised d_v']:.1e} < {AS_ANTISYM_MAX:.0e}",
+                   sec1["antisymmetrised d_v"] < AS_ANTISYM_MAX))
+    gmin = min(r["gamma"] for r in raise_r)
+    checks.append((f"raising-only min gamma {gmin:.3f} > 0", gmin > 0))
+    ito = {(r["M"], r["kappa"], r["dt"]): r for r in raise_r if r["interp"] == "Ito"}
+    dts = sorted({k[2] for k in ito})
+    ratios = []
+    if len(dts) == 2:
+        for (M, kap, dt) in ito:
+            if dt == dts[1]:
+                lo = ito.get((M, kap, dts[0]))
+                if lo is None or lo["gamma"] == 0:
+                    ratios.append(float("nan"))
+                else:
+                    ratios.append(ito[(M, kap, dt)]["gamma"] / lo["gamma"])
+    lo_b, hi_b = AS_DT_RATIO_BAND
+    dt_ok = len(ratios) == AS_ROWS_PER_SECTION // 4 and all(lo_b <= x <= hi_b for x in ratios)
+    checks.append((f"Ito dt ratios {_span(ratios)} in [{lo_b}, {hi_b}]", dt_ok))
+    growth = [r["ratio"] for r in ito.values()]
+    lo_g, hi_g = AS_GROWTH_BAND
+    checks.append((f"Ito gamma/(M S) {_span(growth)} in [{lo_g}, {hi_g}]",
+                   bool(growth) and all(lo_g <= x <= hi_g for x in growth)))
+    heun = [abs(r["ratio"]) for r in anti_r if r["interp"] == "Heun"]
+    heun_max = max(heun) if heun else float("nan")
+    checks.append((f"antisym Heun max |gamma|/(M S) {heun_max:.4f} < {AS_HEUN_MAX}",
+                   len(heun) == AS_ROWS_PER_SECTION // 2 and heun_max < AS_HEUN_MAX))
+    failed = [text for text, ok in checks if not ok]
+    seen = "; ".join(text for text, _ in checks)
+    return not failed, seen
+
+
+def _span(values: list[float]) -> str:
+    """'lo–hi' of a list, for the report."""
+    if not values:
+        return "none"
+    return f"{min(values):.3f}–{max(values):.3f}"
 
 
 def claims_table(path: Path) -> dict[str, tuple[str, str]]:
@@ -311,13 +477,25 @@ def claims_table(path: Path) -> dict[str, tuple[str, str]]:
     return out
 
 
-def judge_claim(claim: str, table: dict[str, tuple[str, str]], reports_dir: Path) -> tuple[bool, str]:
+LOOP_VERDICT_RE = re.compile(
+    r"^VERDICT: SUPPORTED \((it-\d{8}-\d{4}), (?:`?(?:gate_reports/)?)(critic_(it-\d{8}-\d{4})_\d+\.md)`?\)$")
+
+
+def judge_claim(claim: str, table: dict[str, tuple[str, str]], reports_dir: Path,
+                phase0: dict[str, str] | None = None) -> tuple[bool, str]:
     """A Gate 1 claim passes when its status is exactly `supported` and its newest critic
-    verdict (first `<br>`-separated entry) starts with SUPPORTED or `VERDICT: SUPPORTED`.
-    If that verdict names a saved critic report, the report must exist and its Report
-    section must start `VERDICT: SUPPORTED`. A verdict that names no report is a Phase 0
-    critic verdict recorded before the loop saved reports.
+    verdict (first `<br>`-separated entry) is one of:
+
+    - a loop verdict, exactly `VERDICT: SUPPORTED (<iteration id>, <critic report>)` in the
+      form of LOOP.md §6, where the report is `critic_<same iteration id>_<k>.md`, exists in
+      `reports_dir`, has `VERDICT: SUPPORTED` as the first line of its Report, and names the
+      claim ID in its title line;
+    - a Phase 0 verdict, recorded before the loop saved critic reports, that is an exact
+      copy of the text in `phase0` (GATE1_PHASE0_VERDICTS) for that claim.
+
+    Anything else, hedged text included, fails.
     """
+    phase0 = GATE1_PHASE0_VERDICTS if phase0 is None else phase0
     if claim not in table:
         return False, "no row in claims.md"
     verdict_cell, status = table[claim]
@@ -325,15 +503,22 @@ def judge_claim(claim: str, table: dict[str, tuple[str, str]], reports_dir: Path
     seen = f"status {status!r}; newest verdict {newest[:70]!r}"
     if status != "supported":
         return False, seen
-    if not re.match(r"^(VERDICT: )?SUPPORTED\b", newest):
-        return False, seen
-    named = CRITIC_FILE_RE.search(newest)
-    if named:
-        path = reports_dir / named.group(0)
-        if not path.is_file():
-            return False, seen + f"; {named.group(0)} missing"
-        if critic_verdict_line(path.read_text(encoding="utf-8")) != "VERDICT: SUPPORTED":
-            return False, seen + f"; {named.group(0)} does not say VERDICT: SUPPORTED"
+    if claim in phase0 and newest == phase0[claim]:
+        return True, seen + " (Phase 0 verdict)"
+    m = LOOP_VERDICT_RE.match(newest)
+    if not m:
+        return False, seen + "; not a recognised SUPPORTED verdict"
+    if m.group(1) != m.group(3):
+        return False, seen + "; report file is from another iteration"
+    path = reports_dir / m.group(2)
+    if not path.is_file():
+        return False, seen + f"; {m.group(2)} missing"
+    text = path.read_text(encoding="utf-8")
+    if critic_verdict_line(text) != "VERDICT: SUPPORTED":
+        return False, seen + f"; {m.group(2)} does not say VERDICT: SUPPORTED"
+    title = text.splitlines()[0] if text else ""
+    if not re.search(rf"\b{re.escape(claim)}\b", title):
+        return False, seen + f"; {m.group(2)} title does not name {claim}"
     return True, seen
 
 
@@ -353,7 +538,9 @@ def gate1_check(iteration: str,
                 claims: tuple[str, ...] = GATE1_CLAIMS,
                 installed: str | None = None,
                 timeout_s: float = GATE1_SCRIPT_TIMEOUT_S,
-                python: str = sys.executable) -> GateResult:
+                python: str = sys.executable,
+                study: Path = STUDY,
+                accepted: tuple[str, ...] = GATE1_ACCEPTED_FILES) -> GateResult:
     """Gate 1 coded check (PLAN.md §4 Phase 0; SPEC.md §1–§2).
 
     Each derivation script is copied into `scratch/gate1_<iteration>/` and run there, so
@@ -388,9 +575,18 @@ def gate1_check(iteration: str,
             log = work / f"{Path(name).stem}.{suffix}"
             log.write_text(text, encoding="utf-8")
             data_files.append((_rel_or_name(log), sha256_file(log)))
-        ok, seen = judge_script(rule, rc, out)
+        npz_new = npz_ref = None
+        if rule == "d02":
+            npz_new, npz_ref = work / GATE1_D02_NPZ, derivations / GATE1_D02_NPZ
+            for npz in (npz_ref, npz_new):
+                if npz.is_file():
+                    data_files.append((_rel_or_name(npz), sha256_file(npz)))
+        ok, seen = judge_script(rule, rc, out, npz_new=npz_new, npz_ref=npz_ref)
         rows.append(Row(f"derivations/{name}", seen, _RULE_TEXT[rule], ok))
 
+    for rel in accepted:
+        path = study / rel
+        data_files.append((_rel_or_name(path), sha256_file(path)))
     data_files.append((_rel_or_name(claims_path), sha256_file(claims_path)))
     table = claims_table(claims_path)
     for claim in claims:
@@ -414,9 +610,21 @@ def gate1_check(iteration: str,
 
 _RULE_TEXT = {
     "all-checks": "exit 0; ALL CHECKS PASSED present; no FAILED line",
+    "d02": ("exit 0; ALL CHECKS PASSED present; no FAILED line; Gamma^odd line False; "
+            f"npz reproduces committed copy (rtol {GATE1_D02_RTOL:.0e})"),
     "claim-verdicts": f"exit 0; {GATE1_CRITIC_CLAIMS} Claim verdict lines, all SUPPORTED",
-    "exit-zero": "exit 0",
+    "as2018": (f"exit 0; raising-only asym > {AS_RAISE_ASYM_MIN}; antisym asym < {AS_ANTISYM_MAX:.0e}; "
+               f"raising-only gamma > 0; Ito dt ratio in [{AS_DT_RATIO_BAND[0]}, {AS_DT_RATIO_BAND[1]}]; "
+               f"Ito gamma/(M S) in [{AS_GROWTH_BAND[0]}, {AS_GROWTH_BAND[1]}]; "
+               f"antisym Heun |gamma|/(M S) < {AS_HEUN_MAX}"),
 }
+
+
+def tree_is_clean(repo: Path = REPO) -> bool:
+    """True when `git status --porcelain` prints nothing (untracked files count)."""
+    out = subprocess.run(["git", "-C", str(repo), "status", "--porcelain"], check=True,
+                         capture_output=True, text=True).stdout
+    return out.strip() == ""
 
 
 def _rel_or_name(path: Path) -> str:
@@ -450,6 +658,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.cmd == "gate1":
+        if not tree_is_clean():
+            print("Refusing: the working tree is not clean, so the report could not name the "
+                  "commit that produced it. Commit first.", file=sys.stderr)
+            return 2
         result = gate1_check(args.iteration)
         path = write_report(result, args.iteration)
         print(path.read_text(encoding="utf-8"), end="")
