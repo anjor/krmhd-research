@@ -8,7 +8,11 @@ file, so that no number and no verdict is typed by hand:
 1. `write_report` writes everything down to the `Coded check` line.
 2. `finish_report` appends the `Critic`, `Kill criteria` and `Result` lines,
    copying the critic's VERDICT line from its saved report
-   (`gate_reports/critic_<iteration id>_<k>.md`).
+   (`gate_reports/critic_<iteration id>_<k>.md`). That review must be from the same
+   iteration, name the gate and the report's file name in its title, and quote in its
+   request the repo commit and every data-file sha256 the report states.
+
+The writer refuses a head the launcher would misread (`head_form_problems`).
 
 Gate 1 (PLAN.md §4, Phase 0): the invariant mapping and SPEC.md are accepted.
 Its coded check (`gate1_check`) reruns every Phase 0 derivation script on the
@@ -61,6 +65,24 @@ GANDALF_PACKAGE = "gandalf-krmhd"
 
 ITERATION_RE = re.compile(r"^it-\d{8}-\d{4}$")
 CRITIC_FILE_RE = re.compile(r"critic_(it-\d{8}-\d{4})_(\d+)\.md")
+REPORT_FILE_RE = re.compile(
+    r"G(?:(?P<n>[123])|4_(?P<set>[A-Za-z0-9]+)|(?P<base>base))_(?P<iter>it-\d{8}-\d{4})\.md")
+
+# How the launcher reads a gate report (loop/modal_launch.py, LOOP.md §5 "Gate reports"),
+# mirrored here so that the writer cannot produce a line the launcher would count twice.
+# A line's label is the line without leading Markdown decoration, in lower case.
+LINE_DECORATION = " \t>*-+#|_`"
+VERDICT_LABEL_RES = (re.compile(r"^(?:final\s+)?result\b"), re.compile(r"^coded\s+checks?\b"),
+                     re.compile(r"^critic\b"), re.compile(r"^kill\s+criteri"))
+HEADER_KEYS = ("gate", "evaluated:", "command:", "runs:", "left out:", "frozen", "coded check:",
+               "critic:", "kill criteria:", "result:")
+TEMPLATE_PLACEHOLDERS = (
+    "PASS | FAIL", "<n>", "<S>", "<iteration id>", "<name, with PLAN.md and SPEC.md references>",
+    "<UTC time>", "<sha>", "<the exact command line>", "<run IDs, and where each ran>",
+    "<run IDs and why>", "<path>", "<hash>", "<freeze key>", "<Lnnn>",
+    "<its VERDICT line, verbatim>", "<critic report file>", "<which, with the evidence>",
+)
+PLACEHOLDER_RE = re.compile(r"<[A-Za-z][^<>\n]{0,80}>")
 
 # ---------------------------------------------------------------------------
 # Gate 1 criteria. Fixed before the gate is evaluated (LOOP.md §5); change them
@@ -208,6 +230,37 @@ def report_title(gate_number: str, iteration: str, run_set: str | None = None) -
     return f"# Gate {gate_number} report: {iteration}"
 
 
+def parse_report_name(name: str) -> tuple[str, str | None, str]:
+    """(gate number, run set or None, iteration id) from a gate report's file name, the
+    inverse of `report_name`. Raises ValueError for any other name."""
+    m = REPORT_FILE_RE.fullmatch(name)
+    if not m:
+        raise ValueError(f"{name} is not G<n>_, Gbase_ or G4_<S>_<iteration id>.md")
+    gate = m.group("n") or ("4" if m.group("set") else "base")
+    return gate, m.group("set"), m.group("iter")
+
+
+def label_key(line: str) -> str:
+    """A report line without leading Markdown decoration, in lower case (the launcher's key)."""
+    return line.strip().lstrip(LINE_DECORATION).lower()
+
+
+def head_form_problems(lines: list[str]) -> list[str]:
+    """Lines of a report head (everything above `Coded check`) that the launcher would
+    misread: a line it would count as a `Result`, `Coded check`, `Critic` or `Kill criteria`
+    line, and unfilled template text."""
+    problems = []
+    for line in lines:
+        key = label_key(line)
+        if any(p.match(key) for p in VERDICT_LABEL_RES):
+            problems.append(f"line reads as a verdict line: {line!r}")
+        if key.startswith(HEADER_KEYS) and PLACEHOLDER_RE.search(line):
+            problems.append(f"placeholder on a header line: {line!r}")
+    text = "\n".join(lines)
+    problems += [f"template text {p!r}" for p in TEMPLATE_PLACEHOLDERS if p in text]
+    return problems
+
+
 def render_report_head(result: GateResult, iteration: str) -> str:
     """The report text from its title down to and including the `Coded check` line."""
     lines = [report_title(result.gate_number, iteration, result.run_set), ""]
@@ -226,6 +279,9 @@ def render_report_head(result: GateResult, iteration: str) -> str:
         mark = "-" if row.passed is None else ("yes" if row.passed else "no")
         threshold = "-" if row.passed is None else row.threshold
         lines.append(f"| {_cell(row.quantity)} | {_cell(row.value)} | {_cell(threshold)} | {mark} |")
+    problems = head_form_problems(lines)
+    if problems:
+        raise ValueError("the report head would be misread by the launcher: " + "; ".join(problems))
     lines += ["", f"Coded check: {'PASS' if result.coded_pass else 'FAIL'}"]
     return "\n".join(lines) + "\n"
 
@@ -244,13 +300,15 @@ def critic_verdict_line(text: str) -> str | None:
     """The first non-empty line after the `Report:` line of a saved critic review
     (LOOP.md §6), or None.
 
-    The file must have exactly one line that reads exactly `Report:`, so that a request
-    quoting such a line cannot be mistaken for the report. The verdict line must start
+    The file must have exactly one line whose label (`label_key`) starts `report:`, and that
+    line must read exactly `Report:`. So a request quoting such a line cannot be mistaken for
+    the report, and this reader and the launcher's, which takes the first line labelled
+    `report:` (decorated or not), find the same verdict line. The verdict line must start
     `VERDICT:`.
     """
     lines = text.splitlines()
-    marks = [i for i, line in enumerate(lines) if line.rstrip() == "Report:"]
-    if len(marks) != 1:
+    marks = [i for i, line in enumerate(lines) if label_key(line).startswith("report:")]
+    if len(marks) != 1 or lines[marks[0]].rstrip() != "Report:":
         return None
     for candidate in lines[marks[0] + 1:]:
         value = candidate.strip().strip("`").strip()
@@ -259,10 +317,30 @@ def critic_verdict_line(text: str) -> str | None:
     return None
 
 
-KILL_MET_RE = re.compile(r"^Kill criterion [12] met: \S")
+def critic_request_text(text: str) -> str | None:
+    """The `Request:` section of a saved critic review (LOOP.md §6): the lines between its one
+    line that reads exactly `Request:` and its one `Report:` line, or None."""
+    lines = text.splitlines()
+    starts = [i for i, line in enumerate(lines) if line.rstrip() == "Request:"]
+    ends = [i for i, line in enumerate(lines) if label_key(line).startswith("report:")]
+    if len(starts) != 1 or len(ends) != 1 or not starts[0] < ends[0]:
+        return None
+    return "\n".join(lines[starts[0] + 1:ends[0]])
 
 
-def decide_result(coded_pass: bool, verdict: str | None, kill: str) -> str:
+def report_evidence(text: str) -> tuple[str | None, list[str]]:
+    """(repo commit, data-file sha256 list) that a report head states on its `Evaluated` line
+    and under `Data files:`; the commit is None unless it is a full 40-hex sha."""
+    m = re.search(r"(?m)^Evaluated: .*?, repo commit ([0-9a-f]{40}),", text)
+    hashes = re.findall(r"(?m)^- \S.* sha256 ([0-9a-f]{64})$", text)
+    return (m.group(1) if m else None), hashes
+
+
+KILL_MET_RE = re.compile(r"^Kill criterion ([12]) met: \S")
+KILL_GATE = {"1": "2", "2": "3"}  # PLAN.md §7: criterion 1 after Phase 1 (Gate 2), 2 after Phase 2 (Gate 3)
+
+
+def decide_result(coded_pass: bool, verdict: str | None, kill: str, gate: str | None = None) -> str:
     """`Result:` value from LOOP.md §5.
 
     PASS: coded check passed, verdict is `VERDICT: SUPPORTED` and no kill criterion met.
@@ -271,11 +349,16 @@ def decide_result(coded_pass: bool, verdict: str | None, kill: str) -> str:
 
     `kill` must be exactly `none met` or `Kill criterion <1|2> met: <evidence>` (PLAN.md §7;
     kill criterion 3 is not a gate stop). Any other text raises, so that a typo cannot
-    decide a gate.
+    decide a gate. With `gate` given, criterion 1 is accepted only for Gate 2 and criterion 2
+    only for Gate 3, the gates that judge them (LOOP.md §5).
     """
-    if kill != "none met" and not KILL_MET_RE.match(kill):
+    met = KILL_MET_RE.match(kill)
+    if kill != "none met" and not met:
         raise ValueError(f"kill statement {kill!r} is neither 'none met' nor "
                          "'Kill criterion <1|2> met: <evidence>'")
+    if met and gate is not None and KILL_GATE[met.group(1)] != gate:
+        raise ValueError(f"kill criterion {met.group(1)} is judged by Gate {KILL_GATE[met.group(1)]}, "
+                         f"not Gate {gate}")
     supported = verdict == "VERDICT: SUPPORTED"
     if kill != "none met":
         return "FAIL"
@@ -290,18 +373,30 @@ def finish_report(report: Path, critic_report: Path, kill: str) -> str:
     `critic_report` is the saved `gate_reports/critic_<iteration id>_<k>.md`; its VERDICT
     line is copied verbatim. `kill` is "none met" or a statement of which kill criterion is
     met, with the evidence. Returns the result (PASS, FAIL or NOT DECIDED).
+
+    Refuses (ValueError, report unchanged) unless: the report's file name is a gate report
+    name and its title is the one that name gives; it has one `Coded check` line, as its last
+    line, and no verdict line yet; the critic report is from the same iteration, its title
+    matches its file name and names the gate and the report's file name; and its `Request:`
+    section quotes the repo commit of the report's `Evaluated` line and every sha256 under
+    `Data files:`, so that the review is bound to the outputs this evaluation hashed.
     """
     text = report.read_text(encoding="utf-8")
-    if re.search(r"(?mi)^\W*(critic|kill criteria|result)\s*:", text):
+    gate, run_set, report_iteration = parse_report_name(report.name)
+    lines = text.splitlines()
+    if not lines or lines[0] != report_title(gate, report_iteration, run_set):
+        raise ValueError(f"{report.name}: title is not {report_title(gate, report_iteration, run_set)!r}")
+    result_re, coded_re, critic_re, kill_re = VERDICT_LABEL_RES
+    if any(p.match(label_key(ln)) for ln in lines for p in (result_re, critic_re, kill_re)):
         raise ValueError(f"{report} is already finished")
     coded = re.findall(r"(?m)^Coded check: (PASS|FAIL)$", text)
-    if len(coded) != 1:
-        raise ValueError(f"{report} has no single Coded check line")
+    coded_lines = [ln for ln in lines if coded_re.match(label_key(ln))]
+    if len(coded) != 1 or len(coded_lines) != 1 or lines[-1] != coded_lines[0]:
+        raise ValueError(f"{report} has no single Coded check line as its last line")
     m = CRITIC_FILE_RE.fullmatch(critic_report.name)
     if not m:
         raise ValueError(f"{critic_report.name} is not critic_<iteration id>_<k>.md")
-    report_iteration = re.search(r"(it-\d{8}-\d{4})\.md$", report.name)
-    if not report_iteration or report_iteration.group(1) != m.group(1):
+    if report_iteration != m.group(1):
         raise ValueError(f"{critic_report.name} is not from the iteration of {report.name}; "
                          "the gate's critic review must come from the same session (LOOP.md §6)")
     critic_text = critic_report.read_text(encoding="utf-8")
@@ -315,11 +410,22 @@ def finish_report(report: Path, critic_report: Path, kill: str) -> str:
         # earlier step of the same iteration cannot name a report that did not exist yet.
         raise ValueError(f"{critic_report.name}: title does not name the gate report {report.name}, "
                          "so it is not the review of this evaluation")
+    request = critic_request_text(critic_text)
+    if request is None:
+        raise ValueError(f"{critic_report.name} has no single Request: section before Report:")
+    commit, hashes = report_evidence(text)
+    if commit is None:
+        raise ValueError(f"{report.name}: the Evaluated line names no full repo commit")
+    missing = [h for h in [commit] + hashes if h not in request]
+    if missing:
+        raise ValueError(f"{critic_report.name}: the request does not quote {len(missing)} of the "
+                         f"report's commit and data-file hashes (first {missing[0][:12]}), so the "
+                         "review is not bound to the outputs of this evaluation")
     verdict = critic_verdict_line(critic_text)
     if verdict is None:
         raise ValueError(f"{critic_report} has no VERDICT line after Report:")
     kill = " ".join(kill.split())
-    result = decide_result(coded[0] == "PASS", verdict, kill)
+    result = decide_result(coded[0] == "PASS", verdict, kill, gate=gate)
     tail = (f"Critic: {verdict}, {m.group(1)}, {critic_report.name}\n"
             f"Kill criteria: {kill}\n"
             f"Result: {result}\n")

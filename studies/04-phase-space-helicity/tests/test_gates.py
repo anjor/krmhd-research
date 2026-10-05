@@ -404,13 +404,16 @@ class ReportTests(unittest.TestCase):
     """The report form of LOOP.md §5, as the launcher reads it."""
 
     LABELS = ("result", "coded check", "critic", "kill criteria")
+    EVIDENCE = f"repo commit {'1' * 40}; studies/x/derivations/critic_invariants.py sha256 {'0' * 64}\n"
 
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp())
         gate1 = f": Gate 1 evaluation, G1_{ITER}.md\n"
-        self.critic_ok = write(self.tmp / "critic_it-20261002-0916_1.md", CRITIC_OK.replace(": test\n", gate1))
+        bound_ok = CRITIC_OK.replace("something\n", self.EVIDENCE)
+        self.critic_ok = write(self.tmp / "critic_it-20261002-0916_1.md", bound_ok.replace(": test\n", gate1))
         self.critic_bad = write(self.tmp / "critic_it-20261002-0916_2.md",
-                                CRITIC_BAD.replace("0916_1: test\n", "0916_2" + gate1))
+                                bound_ok.replace("VERDICT: SUPPORTED", "VERDICT: INCONCLUSIVE")
+                                .replace("0916_1: test\n", "0916_2" + gate1))
 
     def make(self, passed: bool) -> gates.GateResult:
         return gates.GateResult(
@@ -506,6 +509,101 @@ class ReportTests(unittest.TestCase):
         self.assertFalse(gates.gate_label_re("# Gate 4 report, set A: x").search("set A, Gate 3"))
         with self.assertRaises(ValueError):
             gates.gate_label_re("# Gate 4 report: x")
+
+    def test_finish_refuses_unbound_request(self) -> None:
+        path = gates.write_report(self.make(True), ITER, self.tmp)
+        ok = self.critic_ok.read_text()
+        cases = {
+            "commit not quoted": ok.replace("1" * 40, "1" * 12),
+            "data hash not quoted": ok.replace("0" * 64, "0" * 63 + "f"),
+            "no Request line": ok.replace("Request:\n", "Asked:\n"),
+            "two Request lines": ok.replace("Request:\n", "Request:\nRequest:\n"),
+        }
+        for k, (name, text) in enumerate(cases.items(), start=3):
+            with self.subTest(name), self.assertRaises(ValueError):
+                gates.finish_report(path, write(self.tmp / f"critic_{ITER}_{k}.md",
+                                                text.replace(f"{ITER}_1:", f"{ITER}_{k}:")), "none met")
+        self.assertNotIn("Result:", path.read_text())
+
+    def test_finish_refuses_report_without_full_commit(self) -> None:
+        result = self.make(True)
+        result.repo_commit = "unknown"
+        path = gates.write_report(result, ITER, self.tmp)
+        with self.assertRaises(ValueError):
+            gates.finish_report(path, self.critic_ok, "none met")
+
+    def test_finish_refuses_wrong_title_or_tail(self) -> None:
+        path = gates.write_report(self.make(True), ITER, self.tmp)
+        head = path.read_text()
+        for name, text in (("title of another gate", head.replace("# Gate 1 report", "# Gate 2 report")),
+                           ("title with another iteration", head.replace(f"report: {ITER}", "report: it-20260101-0000")),
+                           ("text after Coded check", head + "note\n"),
+                           ("decorated Result line", head.replace("Left out: none", "**Result**: PASS")),
+                           ("second Coded check", head.replace("Left out: none", "- coded check (dt fit): PASS"))):
+            with self.subTest(name):
+                path.write_text(text)
+                with self.assertRaises(ValueError):
+                    gates.finish_report(path, self.critic_ok, "none met")
+                self.assertEqual(path.read_text(), text)
+        bad_name = write(self.tmp / f"G1-{ITER}.md", head)
+        with self.assertRaises(ValueError):
+            gates.finish_report(bad_name, self.critic_ok, "none met")
+
+    def test_parse_report_name(self) -> None:
+        self.assertEqual(gates.parse_report_name(f"G1_{ITER}.md"), ("1", None, ITER))
+        self.assertEqual(gates.parse_report_name(f"Gbase_{ITER}.md"), ("base", None, ITER))
+        self.assertEqual(gates.parse_report_name(f"G4_B_{ITER}.md"), ("4", "B", ITER))
+        for bad in (f"G5_{ITER}.md", f"G4_{ITER}.md", f"g1_{ITER}.md", f"G1_{ITER}.md.bak", "README.md"):
+            with self.subTest(bad), self.assertRaises(ValueError):
+                gates.parse_report_name(bad)
+
+    def test_head_refuses_lines_the_launcher_would_misread(self) -> None:
+        cases = {
+            "row named like a Result line": dict(rows=[gates.Row("Result of fit", "1", "1", True)]),
+            "row named like a Critic line": dict(rows=[gates.Row("critic review", "1", "1", True)]),
+            "row named like a Kill line": dict(rows=[gates.Row("Kill criterion check", "1", "1", True)]),
+            "row named like a Coded check line": dict(rows=[gates.Row("coded checks", "1", "1", True)]),
+            "data file named results": dict(data_files=[("result/x.npz", "0" * 64)]),
+            "placeholder on Runs": dict(runs="<run IDs, and where each ran>"),
+            "angle-bracket word on Left out": dict(left_out="<pending>"),
+            "template PASS | FAIL": dict(command="echo 'PASS | FAIL'"),
+        }
+        for name, kw in cases.items():
+            with self.subTest(name):
+                result = self.make(True)
+                for key, value in kw.items():
+                    setattr(result, key, value)
+                with self.assertRaises(ValueError):
+                    gates.render_report_head(result, ITER)
+                self.assertFalse((self.tmp / f"G1_{ITER}.md").exists())
+        fine = self.make(True)
+        fine.rows.append(gates.Row("derivations/critic_as2018.py", "gamma < 0.05 M S", "x < y", True))
+        gates.render_report_head(fine, ITER)
+
+    def test_verdict_line_agrees_with_launcher_reader(self) -> None:
+        for name, extra in (("bold report label", "**Report:** see below\n"),
+                            ("list item report label", "- report: draft\n"),
+                            ("lower-case label", "report:\n")):
+            with self.subTest(name):
+                text = CRITIC_OK.replace("something\n", extra)
+                self.assertIsNone(gates.critic_verdict_line(text))
+                self.assertIsNone(gates.critic_request_text(text))
+        self.assertEqual(gates.critic_request_text(CRITIC_OK), "something\n")
+
+    def test_kill_criterion_belongs_to_its_gate(self) -> None:
+        sup = "VERDICT: SUPPORTED"
+        self.assertEqual(gates.decide_result(True, sup, "Kill criterion 1 met: flat", gate="2"), "FAIL")
+        self.assertEqual(gates.decide_result(True, sup, "Kill criterion 2 met: tied", gate="3"), "FAIL")
+        self.assertEqual(gates.decide_result(True, sup, "none met", gate="1"), "PASS")
+        for kill, gate in (("Kill criterion 1 met: x", "1"), ("Kill criterion 1 met: x", "3"),
+                           ("Kill criterion 2 met: x", "2"), ("Kill criterion 2 met: x", "base"),
+                           ("Kill criterion 1 met: x", "4")):
+            with self.subTest(kill=kill, gate=gate), self.assertRaises(ValueError):
+                gates.decide_result(True, sup, kill, gate=gate)
+        path = gates.write_report(self.make(True), ITER, self.tmp)
+        with self.assertRaises(ValueError):
+            gates.finish_report(path, self.critic_ok, "Kill criterion 1 met: residual flat")
+        self.assertNotIn("Result:", path.read_text())
 
     def test_finish_refuses_critic_of_other_iteration(self) -> None:
         path = gates.write_report(self.make(True), ITER, self.tmp)
