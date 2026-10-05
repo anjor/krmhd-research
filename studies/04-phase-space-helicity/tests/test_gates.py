@@ -141,6 +141,20 @@ class JudgeScriptTests(unittest.TestCase):
                 self.assertFalse(gates.judge_script("as2018", 0, as2018_output(**kw))[0])
         self.assertFalse(gates.judge_script("as2018", 0, "")[0])
 
+    def test_as2018_nan_anywhere_fails(self) -> None:
+        good = as2018_output().splitlines()
+        rows = [i for i, ln in enumerate(good) if re.match(r"^\s*\d+\s", ln)]
+        self.assertEqual(len(rows), 48)
+        for i in rows:
+            with self.subTest(row=i):
+                bad = list(good)
+                fields = bad[i].split()
+                fields[5] = fields[-1] = "nan"
+                bad[i] = " ".join(fields)
+                self.assertFalse(gates.judge_script("as2018", 0, "\n".join(bad) + "\n")[0])
+        nan_sec1 = as2018_output().replace("= 1.000e+00", "= nan")
+        self.assertFalse(gates.judge_script("as2018", 0, nan_sec1)[0])
+
     def test_d02(self) -> None:
         import numpy as np
         tmp = Path(tempfile.mkdtemp())
@@ -274,7 +288,8 @@ class Gate1CheckTests(unittest.TestCase):
         write(self.tmp / "SPEC.md", "# SPEC\n")
         self.lock = write(self.tmp / "uv.lock", LOCK)
         self.reports = self.tmp / "gate_reports"
-        write(self.reports / "critic_it-20261002-0916_1.md", CRITIC_OK.replace(": test\n", ": C1, C2\n"))
+        write(self.reports / "critic_it-20261002-0916_1.md",
+              CRITIC_OK.replace(": test\n", ": claim C1, claim C2\n"))
         row = "| {c} | a | agent | b | c | VERDICT: SUPPORTED (it-20261002-0916, critic_it-20261002-0916_1.md) | supported |"
         self.claims = write(self.tmp / "claims.md",
                             CLAIMS_HEADER + "\n".join(row.format(c=c) for c in ("C1", "C2")) + "\n")
@@ -345,8 +360,10 @@ class ReportTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp())
-        self.critic_ok = write(self.tmp / "critic_it-20261002-0916_1.md", CRITIC_OK)
-        self.critic_bad = write(self.tmp / "critic_it-20261002-0916_2.md", CRITIC_BAD)
+        gate1 = ": Gate 1 evaluation\n"
+        self.critic_ok = write(self.tmp / "critic_it-20261002-0916_1.md", CRITIC_OK.replace(": test\n", gate1))
+        self.critic_bad = write(self.tmp / "critic_it-20261002-0916_2.md",
+                                CRITIC_BAD.replace("0916_1: test\n", "0916_2" + gate1))
 
     def make(self, passed: bool) -> gates.GateResult:
         return gates.GateResult(
@@ -419,9 +436,25 @@ class ReportTests(unittest.TestCase):
         self.assertIsNone(gates.critic_verdict_line(quoted))
         self.assertIsNone(gates.critic_verdict_line(CRITIC_OK.replace("Report:\n", "Report: \n#")))
 
+    def test_finish_refuses_critic_not_naming_gate(self) -> None:
+        path = gates.write_report(self.make(True), ITER, self.tmp)
+        for name, text in (("critic_it-20261002-0916_3.md", CRITIC_OK.replace("0916_1: test", "0916_3: claim C1")),
+                           ("critic_it-20261002-0916_4.md", CRITIC_OK.replace("0916_1: test", "0916_4: Gate 2")),
+                           ("critic_it-20261002-0916_5.md", CRITIC_OK.replace(": test", ": Gate 1"))):
+            with self.subTest(name), self.assertRaises(ValueError):
+                gates.finish_report(path, write(self.tmp / name, text), "none met")
+        self.assertNotIn("Result:", path.read_text())
+
+    def test_gate_label(self) -> None:
+        self.assertTrue(gates.gate_label_re("# Gate 1 report: x").search("review of gate_1 criteria"))
+        self.assertFalse(gates.gate_label_re("# Gate 1 report: x").search("Gate 10"))
+        self.assertTrue(gates.gate_label_re("# Gate base report: x").search("the base-state gate"))
+        self.assertTrue(gates.gate_label_re("# Gate 4 report, set A: x").search("Gate 4, set A"))
+
     def test_finish_refuses_critic_of_other_iteration(self) -> None:
         path = gates.write_report(self.make(True), ITER, self.tmp)
-        other = write(self.tmp / "critic_it-20260101-0000_1.md", CRITIC_OK)
+        other = write(self.tmp / "critic_it-20260101-0000_1.md",
+                      CRITIC_OK.replace("it-20261002-0916_1: test", "it-20260101-0000_1: Gate 1"))
         with self.assertRaises(ValueError):
             gates.finish_report(path, other, "none met")
         with self.assertRaises(ValueError):

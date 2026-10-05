@@ -14,6 +14,10 @@ None.
 
 The loop proceeds on its recommendation. If Anjor answers differently, the loop adapts and logs the rework.
 
+### Q8. The Study 2 data link is outside the loop session's readable folders (it-20261005-1416)
+
+`studies/02-collisionality-scan/data` in the loop's clone links to the data in Anjor's checkout `~/repos/anjor/krmhd-research`. A loop session may only list and read inside the clone and the GANDALF worktree, so listing `hermite128_nu3_imex/checkpoints/` through the link was denied in it-20261005-1416. Phase 1 task 5 (the ν-scan checkpoint analysis, a pipeline test under decision 5) and the Gate 2 checkpoint budgets need to read those files. Options: (a) Anjor adds the Study 2 data folder to the session's readable folders (a change to the loop's settings, which only he makes); (b) the loop reads the checkpoints from the cloud volume instead, through the launcher's `fetch`, which today fetches only the loop's own runs; (c) Anjor copies the ν = 3 checkpoints (t = 2180, 2190, 2200) and its `diagnostics_timeseries.npz` into `studies/04-phase-space-helicity/data/v050_nu3/` in the loop's clone, which git ignores. Recommendation: (c), because it touches no guard and the pipeline test needs only ν = 3. Not blocking now: Gate 1 and the Phase 1 local tests do not need the checkpoints. The loop will not read through the link until this is settled.
+
 ### Q4. Collaborator paragraph (Gate 1, 2026-10-01)
 
 **Collaborator paragraph** (draft below). To Chandran, Mallet and Meyrand, or to Alex first?

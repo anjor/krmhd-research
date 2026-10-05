@@ -32,6 +32,7 @@ import argparse
 import hashlib
 import importlib.metadata
 import json
+import math
 import re
 import shutil
 import subprocess
@@ -59,7 +60,7 @@ CRITIC_FILE_RE = re.compile(r"critic_(it-\d{8}-\d{4})_(\d+)\.md")
 # Each Phase 0 derivation script and the rule its output must meet:
 #   "all-checks":     exit code 0, a line "ALL CHECKS PASSED", no line "FAILED..."
 #   "d02":            "all-checks", plus the line "Gamma^odd (echo model) distinguishable
-#                     from zero: False" (SPEC.md §2, claim C10), plus the rerun
+#                     from zero: False" (SPEC.md §2; not C10, whose text has no k-odd part), plus the rerun
 #                     reference_profiles.npz reproduces the committed one (D02 is seeded)
 #   "claim-verdicts": exit code 0 and exactly GATE1_CRITIC_CLAIMS lines
 #                     "Claim <n> ...: SUPPORTED|REFUTED", every one SUPPORTED
@@ -89,9 +90,10 @@ AS_GROWTH_BAND = (0.25, 1.0)
 AS_HEUN_MAX = 0.05
 AS_ROWS_PER_SECTION = 24  # M in (16, 32) x 2 dt x 3 kappa x (Ito, Heun)
 # Claims the invariant mapping and SPEC.md §1–§2 rest on. C7 (H_ph-sp, decision 4) and
-# C8 (the study's question) are open by design; C9 is superseded by C12 (its analytic
-# part, a Gate 1 input) and C13 (its GANDALF part, a Phase 1 check on the new base state).
-GATE1_CLAIMS: tuple[str, ...] = ("C1", "C2", "C3", "C4", "C5", "C6", "C10", "C11", "C12")
+# C8 (the study's question) are open by design; C9 is superseded by C12, itself superseded
+# by C14 (its analytic part, a Gate 1 input), and C13 (its GANDALF part, a Phase 1 check
+# on the new base state).
+GATE1_CLAIMS: tuple[str, ...] = ("C1", "C2", "C3", "C4", "C5", "C6", "C10", "C11", "C14")
 # Critic verdicts recorded in Phase 0, before the loop saved critic reports. A newest
 # verdict that names no report passes only as an exact copy of one of these. C11's Phase 0
 # verdict is hedged ("the hyper-collision statement not tested"), so it is not listed.
@@ -280,7 +282,13 @@ def finish_report(report: Path, critic_report: Path, kill: str) -> str:
     if not report_iteration or report_iteration.group(1) != m.group(1):
         raise ValueError(f"{critic_report.name} is not from the iteration of {report.name}; "
                          "the gate's critic review must come from the same session (LOOP.md §6)")
-    verdict = critic_verdict_line(critic_report.read_text(encoding="utf-8"))
+    critic_text = critic_report.read_text(encoding="utf-8")
+    critic_title = critic_text.splitlines()[0] if critic_text else ""
+    if not critic_title_ok(critic_title, critic_report.name):
+        raise ValueError(f"{critic_report.name}: title does not match the file name")
+    if not gate_label_re(text.splitlines()[0]).search(critic_title):
+        raise ValueError(f"{critic_report.name}: title does not name the gate of {report.name}")
+    verdict = critic_verdict_line(critic_text)
     if verdict is None:
         raise ValueError(f"{critic_report} has no VERDICT line after Report:")
     kill = " ".join(kill.split())
@@ -422,12 +430,18 @@ def judge_as2018(stdout: str) -> tuple[bool, str]:
         return False, (f"output incomplete: {len(sec1)} section-1 ratios, {len(raise_r)} and "
                        f"{len(anti_r)} rows (expected 2, {AS_ROWS_PER_SECTION}, {AS_ROWS_PER_SECTION})")
     checks: list[tuple[str, bool]] = []
+    n_bad = sum(1 for r in raise_r + anti_r
+                if not (math.isfinite(r["gamma"]) and math.isfinite(r["ratio"])))
+    checks.append((f"{n_bad} rows with a non-finite gamma", n_bad == 0))
     checks.append((f"raising-only asym {sec1['AS2018 raising-only']:.2e} > {AS_RAISE_ASYM_MIN}",
-                   sec1["AS2018 raising-only"] > AS_RAISE_ASYM_MIN))
+                   math.isfinite(sec1["AS2018 raising-only"])
+                   and sec1["AS2018 raising-only"] > AS_RAISE_ASYM_MIN))
     checks.append((f"antisym asym {sec1['antisymmetrised d_v']:.1e} < {AS_ANTISYM_MAX:.0e}",
-                   sec1["antisymmetrised d_v"] < AS_ANTISYM_MAX))
-    gmin = min(r["gamma"] for r in raise_r)
-    checks.append((f"raising-only min gamma {gmin:.3f} > 0", gmin > 0))
+                   math.isfinite(sec1["antisymmetrised d_v"])
+                   and sec1["antisymmetrised d_v"] < AS_ANTISYM_MAX))
+    gammas = [r["gamma"] for r in raise_r]
+    checks.append((f"raising-only gamma {_span(gammas)} > 0",
+                   all(math.isfinite(g) and g > 0 for g in gammas)))
     ito = {(r["M"], r["kappa"], r["dt"]): r for r in raise_r if r["interp"] == "Ito"}
     dts = sorted({k[2] for k in ito})
     ratios = []
@@ -447,19 +461,22 @@ def judge_as2018(stdout: str) -> tuple[bool, str]:
     checks.append((f"Ito gamma/(M S) {_span(growth)} in [{lo_g}, {hi_g}]",
                    bool(growth) and all(lo_g <= x <= hi_g for x in growth)))
     heun = [abs(r["ratio"]) for r in anti_r if r["interp"] == "Heun"]
-    heun_max = max(heun) if heun else float("nan")
-    checks.append((f"antisym Heun max |gamma|/(M S) {heun_max:.4f} < {AS_HEUN_MAX}",
-                   len(heun) == AS_ROWS_PER_SECTION // 2 and heun_max < AS_HEUN_MAX))
+    checks.append((f"antisym Heun |gamma|/(M S) {_span(heun)} < {AS_HEUN_MAX}",
+                   len(heun) == AS_ROWS_PER_SECTION // 2
+                   and all(math.isfinite(h) and h < AS_HEUN_MAX for h in heun)))
     failed = [text for text, ok in checks if not ok]
     seen = "; ".join(text for text, _ in checks)
     return not failed, seen
 
 
 def _span(values: list[float]) -> str:
-    """'lo–hi' of a list, for the report."""
-    if not values:
-        return "none"
-    return f"{min(values):.3f}–{max(values):.3f}"
+    """'lo–hi' of a list, for the report, with the count of non-finite values if any."""
+    finite = [v for v in values if math.isfinite(v)]
+    bad = len(values) - len(finite)
+    if not finite:
+        return f"none finite ({bad} non-finite)" if bad else "none"
+    text = f"{min(finite):.3f}–{max(finite):.3f}"
+    return text + (f" ({bad} non-finite)" if bad else "")
 
 
 def claims_table(path: Path) -> dict[str, tuple[str, str]]:
@@ -517,9 +534,30 @@ def judge_claim(claim: str, table: dict[str, tuple[str, str]], reports_dir: Path
     if critic_verdict_line(text) != "VERDICT: SUPPORTED":
         return False, seen + f"; {m.group(2)} does not say VERDICT: SUPPORTED"
     title = text.splitlines()[0] if text else ""
-    if not re.search(rf"\b{re.escape(claim)}\b", title):
-        return False, seen + f"; {m.group(2)} title does not name {claim}"
+    if not critic_title_ok(title, path.name):
+        return False, seen + f"; {m.group(2)} title does not match its file name"
+    if re.search(r"(?i)\bgate", title) or not re.search(rf"\bclaim {re.escape(claim)}\b", title):
+        return False, seen + f"; {m.group(2)} title is not a review of claim {claim}"
     return True, seen
+
+
+def critic_title_ok(title: str, file_name: str) -> bool:
+    """Whether a saved critic report's title is `# Critic report <id>_<k>: ...` with the
+    `<id>_<k>` of its file name `critic_<id>_<k>.md` (LOOP.md §6)."""
+    m = CRITIC_FILE_RE.fullmatch(file_name)
+    return bool(m) and title.startswith(f"# Critic report {m.group(1)}_{m.group(2)}: ")
+
+
+def gate_label_re(report_title: str) -> re.Pattern:
+    """Pattern the critic report's title must match to name the gate of a gate report title
+    (`# Gate <n> report...`), in the spellings LOOP.md §6 lists."""
+    m = re.match(r"^# Gate (\w+) report", report_title)
+    if not m:
+        raise ValueError(f"not a gate report title: {report_title!r}")
+    gate = m.group(1)
+    if gate == "base":
+        return re.compile(r"(?i)base-state gate|gbase|7a\.base")
+    return re.compile(rf"(?i)gate[ _-]?{gate}\b")
 
 
 def git_head(repo: Path = REPO) -> str:
@@ -547,6 +585,9 @@ def gate1_check(iteration: str,
     that a script that writes beside itself (D02 writes reference_profiles.npz) leaves
     the committed copy alone. Its stdout and stderr are saved beside it and hashed.
     """
+    if not ITERATION_RE.match(iteration):
+        raise ValueError(f"iteration id {iteration!r} is not of the form it-YYYYMMDD-HHMM")
+    head = _safe_head()  # read before the scripts run, so the report names what ran
     work = scratch / f"gate1_{iteration}"
     if work.exists():
         shutil.rmtree(work)
@@ -598,7 +639,7 @@ def gate1_check(iteration: str,
         gate_number="1",
         gate_name="Gate 1, invariant mapping and SPEC.md accepted (PLAN.md §4 Phase 0; SPEC.md §1–§2)",
         command=f"uv run python {STUDY_REL}/analysis/gates.py gate1 --iteration {iteration}",
-        repo_commit=_safe_head(),
+        repo_commit=head,
         gandalf_commit=have,
         runs="none; Gate 1 reruns the Phase 0 derivation scripts listed under Data files",
         left_out="none",
@@ -663,6 +704,10 @@ def main(argv: list[str] | None = None) -> int:
                   "commit that produced it. Commit first.", file=sys.stderr)
             return 2
         result = gate1_check(args.iteration)
+        if not tree_is_clean() or _safe_head() != result.repo_commit:
+            print("Refusing: the tree or HEAD changed while the gate ran; no report written.",
+                  file=sys.stderr)
+            return 2
         path = write_report(result, args.iteration)
         print(path.read_text(encoding="utf-8"), end="")
         print(f"Wrote {repo_rel(path)}")
