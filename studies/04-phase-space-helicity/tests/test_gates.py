@@ -63,27 +63,34 @@ ITER = "it-20261002-0916"
 
 
 def as2018_output(asym_raise: float = 1.0, asym_anti: float = 1e-16, growth: float = 0.5,
-                  dt_ratio: float = 1.0, heun: float = 0.001, drop_row: bool = False) -> str:
+                  dt_ratio: float = 1.0, heun_growth: float = 0.6, heun_dt_ratio: float = 1.0,
+                  pm_rel: float = 0.02, heun: float = 0.001, anti_pm_ms: float = 0.001,
+                  ens: int | None = 6, drop_row: bool = False) -> str:
     """Stand-in stdout in the format of derivations/critic_as2018.py (not its numbers).
 
-    Section 2 rows have gamma/(M S) = `growth` at dt = 3e-4 and `growth * dt_ratio` at
-    dt = 1e-3; section 3 Heun rows have gamma/(M S) = `heun`.
+    Section 2 Ito rows have gamma/(M S) = `growth` at dt = 3e-4 and `growth * dt_ratio` at
+    dt = 1e-3, Heun rows the same with `heun_growth` and `heun_dt_ratio`; their spread `+-`
+    is `pm_rel` x |gamma|. Section 3 Heun rows have gamma/(M S) = `heun` and spread
+    `anti_pm_ms` x M S. `ens=None` leaves out the ensemble-size header.
     """
     hdr = f"{'M':>3} {'dt':>7} {'T':>5} {'kappa':>8} {'interp':>6} {'gamma':>9} {'+-':>7} " \
           f"{'gamma_m':>9} {'M*S':>8} {'gamma/(M S)':>12}"
     out = ["=== 1. Antisymmetry of the nonlinear operator N_p (dense matrix, N=8, M=6) ===",
            f"  {'AS2018 raising-only':22s}: max_p ||N_p^dag + N_{{-p}}|| / ||N_p|| = {asym_raise:.3e}",
            f"  {'antisymmetrised d_v':22s}: max_p ||N_p^dag + N_{{-p}}|| / ||N_p|| = {asym_anti:.3e}",
-           "", "=== 2. AS2018 raising-only nonlinearity, nu = 0, no forcing, W(t) growth rates ===",
-           "    S = sum_p p^2 kappa_p", hdr]
+           "", "=== 2. AS2018 raising-only nonlinearity, nu = 0, no forcing, W(t) growth rates ==="]
+    if ens is not None:
+        out.append("    gamma = d<lnW>/dt (ensemble mean +- std over %d realisations), "
+                   "gamma_m = d ln<W>/dt," % ens)
+    out += ["    S = sum_p p^2 kappa_p", hdr]
     for M in (16, 32):
         for dt, T in ((1e-3, 3.0), (3e-4, 1.2)):
             for kap in (1e-4, 4e-4, 1.6e-3):
                 MS = M * 40 * 9.8696 * kap
-                for interp in ("Ito", "Heun"):
-                    ratio = growth * (dt_ratio if dt == 1e-3 else 1.0)
+                for interp, base, dtr in (("Ito", growth, dt_ratio), ("Heun", heun_growth, heun_dt_ratio)):
+                    ratio = base * (dtr if dt == 1e-3 else 1.0)
                     out.append(f"{M:3d} {dt:7.0e} {T:5.1f} {kap:8.1e} {interp:>6} {ratio * MS:9.3f} "
-                               f"{0.01:7.3f} {ratio * MS:9.3f} {MS:8.3f} {ratio:12.3f}")
+                               f"{pm_rel * abs(ratio * MS):7.3f} {ratio * MS:9.3f} {MS:8.3f} {ratio:12.3f}")
     if drop_row:
         out.pop()
     out += ["  [elapsed 1.0 s]", "", "=== 2b. Scaling summary (Ito, dt=1e-3): gamma ratios ===",
@@ -94,7 +101,7 @@ def as2018_output(asym_raise: float = 1.0, asym_anti: float = 1e-16, growth: flo
                 MS = M * 40 * 9.8696 * kap
                 for interp, ratio in (("Ito", 0.2), ("Heun", heun)):
                     out.append(f"{M:3d} {dt:7.0e} {T:5.1f} {kap:8.1e} {interp:>6} {ratio * MS:9.4f} "
-                               f"{0.01:7.4f} {ratio * MS:9.4f} {MS:8.3f} {ratio:12.4f}")
+                               f"{anti_pm_ms * MS:7.4f} {ratio * MS:9.4f} {MS:8.3f} {ratio:12.4f}")
     out.append("  [elapsed 1.0 s]")
     return "\n".join(out) + "\n"
 
@@ -129,17 +136,33 @@ class JudgeScriptTests(unittest.TestCase):
         cases = {
             "raising-only operator antisymmetric": dict(asym_raise=1e-3),
             "antisymmetrised operator not antisymmetric": dict(asym_anti=1e-9),
-            "no growth": dict(growth=-0.1),
-            "growth too small for ½ M S": dict(growth=0.2),
-            "growth too large for ½ M S": dict(growth=1.1),
-            "dt dependence": dict(dt_ratio=1.4),
+            "no Ito growth": dict(growth=-0.1),
+            "no Heun growth": dict(heun_growth=0.0),
+            "Ito growth not significant": dict(growth=0.05, pm_rel=1.0),
+            "Ito growth above the M S bound": dict(growth=1.2),
+            "Ito dt dependence": dict(dt_ratio=1.4),
+            "Heun dt dependence": dict(heun_dt_ratio=1.4),
             "Heun does not conserve W": dict(heun=0.08),
+            "Heun conserves W on average but not per realisation": dict(heun=0.04, anti_pm_ms=0.005),
             "missing row": dict(drop_row=True),
+            "missing ensemble size": dict(ens=None),
         }
         for name, kw in cases.items():
             with self.subTest(name):
                 self.assertFalse(gates.judge_script("as2018", 0, as2018_output(**kw))[0])
         self.assertFalse(gates.judge_script("as2018", 0, "")[0])
+
+    def test_as2018_passes_what_c16_does_not_exclude(self) -> None:
+        cases = {
+            "Ito rate at the bound": dict(growth=1.0),
+            "small Ito rate, significant": dict(growth=0.05),
+            "Heun rate above M S (C16 gives no Heun bound)": dict(heun_growth=3.0),
+            "dt difference within noise": dict(dt_ratio=1.4, pm_rel=0.3),
+        }
+        for name, kw in cases.items():
+            with self.subTest(name):
+                ok, seen = gates.judge_script("as2018", 0, as2018_output(**kw))
+                self.assertTrue(ok, seen)
 
     def test_as2018_nan_anywhere_fails(self) -> None:
         good = as2018_output().splitlines()
@@ -152,6 +175,11 @@ class JudgeScriptTests(unittest.TestCase):
                 fields[5] = fields[-1] = "nan"
                 bad[i] = " ".join(fields)
                 self.assertFalse(gates.judge_script("as2018", 0, "\n".join(bad) + "\n")[0])
+                spread = list(good)
+                fields = spread[i].split()
+                fields[6] = "nan"
+                spread[i] = " ".join(fields)
+                self.assertFalse(gates.judge_script("as2018", 0, "\n".join(spread) + "\n")[0])
         nan_sec1 = as2018_output().replace("= 1.000e+00", "= nan")
         self.assertFalse(gates.judge_script("as2018", 0, nan_sec1)[0])
 
@@ -249,8 +277,19 @@ class ClaimTests(unittest.TestCase):
         self.assertTrue(gates.judge_claim("C3", table, self.reports, {})[0])
 
     def test_real_phase0_list(self) -> None:
-        self.assertEqual(sorted(gates.GATE1_PHASE0_VERDICTS), ["C1", "C3", "C5"])
+        self.assertEqual(sorted(gates.GATE1_PHASE0_VERDICTS), ["C3", "C5"])
         self.assertNotIn("C11", gates.GATE1_PHASE0_VERDICTS)
+        for superseded in ("C1", "C9", "C11", "C12"):
+            self.assertNotIn(superseded, gates.GATE1_CLAIMS)
+        for successor in ("C14", "C16", "C17", "C18"):
+            self.assertIn(successor, gates.GATE1_CLAIMS)
+
+    def test_real_claims_rows_exist_with_status(self) -> None:
+        table = gates.claims_table(gates.STUDY / "claims.md")
+        for claim in gates.GATE1_CLAIMS:
+            with self.subTest(claim=claim):
+                self.assertIn(claim, table)
+                self.assertIn(table[claim][1].split()[0], ("open", "supported", "refuted"))
 
 
 class DecideResultTests(unittest.TestCase):
@@ -450,6 +489,12 @@ class ReportTests(unittest.TestCase):
         self.assertFalse(gates.gate_label_re("# Gate 1 report: x").search("Gate 10"))
         self.assertTrue(gates.gate_label_re("# Gate base report: x").search("the base-state gate"))
         self.assertTrue(gates.gate_label_re("# Gate 4 report, set A: x").search("Gate 4, set A"))
+        self.assertTrue(gates.gate_label_re("# Gate 4 report, set A: x").search("SPEC 7a.A for gate_4"))
+        self.assertFalse(gates.gate_label_re("# Gate 4 report, set A: x").search("Gate 4 criteria"))
+        self.assertFalse(gates.gate_label_re("# Gate 4 report, set A: x").search("Gate 4, set B"))
+        self.assertFalse(gates.gate_label_re("# Gate 4 report, set A: x").search("set A, Gate 3"))
+        with self.assertRaises(ValueError):
+            gates.gate_label_re("# Gate 4 report: x")
 
     def test_finish_refuses_critic_of_other_iteration(self) -> None:
         path = gates.write_report(self.make(True), ITER, self.tmp)

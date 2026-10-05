@@ -19,6 +19,14 @@ and checks that every claim the mapping and SPEC.md rest on is supported with a
 SUPPORTED critic verdict. It hashes SPEC.md and docs/rediscovery.md so that the
 report names what was accepted. `gates.py gate1` refuses to run on a dirty tree.
 
+Scope. The statements of SPEC.md §1, §2, §3 and §6 are tested: §1–§2 by D01,
+D02, the blind test and the claims, §1, §3 and §6 against the installed GANDALF
+by D03 (`03_spec_solver.py`). §4 (domain and run classes), §5 (forcing) and §8
+(the v0.5.0 checkpoint inventory) are plans and an inventory, accepted as the
+plan of record and tested later: §5's pair forcing by Gate 3, the base drive and
+the base-state parameters by the base-state gate, and §8 when Phase 1 reads the
+checkpoints. §7 holds the frozen tolerances of Gates 2 to 4; §9 lists gaps.
+
 Usage (from the repo root):
 
     uv run python studies/04-phase-space-helicity/analysis/gates.py gate1 --iteration <id>
@@ -60,14 +68,16 @@ CRITIC_FILE_RE = re.compile(r"critic_(it-\d{8}-\d{4})_(\d+)\.md")
 # Each Phase 0 derivation script and the rule its output must meet:
 #   "all-checks":     exit code 0, a line "ALL CHECKS PASSED", no line "FAILED..."
 #   "d02":            "all-checks", plus the line "Gamma^odd (echo model) distinguishable
-#                     from zero: False" (SPEC.md §2; not C10, whose text has no k-odd part), plus the rerun
-#                     reference_profiles.npz reproduces the committed one (D02 is seeded)
+#                     from zero: False" (SPEC.md §2 and C18: zero in the mean by symmetry, so a
+#                     consistency check), plus the rerun reference_profiles.npz reproduces the
+#                     committed one (D02 is seeded)
 #   "claim-verdicts": exit code 0 and exactly GATE1_CRITIC_CLAIMS lines
 #                     "Claim <n> ...: SUPPORTED|REFUTED", every one SUPPORTED
-#   "as2018":         exit code 0 and the numeric criteria below, from the text of C11
+#   "as2018":         exit code 0 and the numeric criteria below, from the text of C16
 GATE1_SCRIPTS: tuple[tuple[str, str], ...] = (
     ("01_invariant_mapping.py", "all-checks"),
     ("02_reference_profiles.py", "d02"),
+    ("03_spec_solver.py", "all-checks"),
     ("blind_invariants.py", "all-checks"),
     ("critic_invariants.py", "claim-verdicts"),
     ("critic_as2018.py", "as2018"),
@@ -76,29 +86,39 @@ GATE1_CRITIC_CLAIMS = 3
 GATE1_D02_ODD_LINE = "Gamma^odd (echo model) distinguishable from zero: False"
 GATE1_D02_NPZ = "reference_profiles.npz"
 GATE1_D02_RTOL = 1e-8  # rerun vs committed npz; seeded NumPy, so only round-off may differ
-# critic_as2018.py criteria, each a reading of a phrase of claim C11 (not of its numbers):
-#   section 1, "not antisymmetric": raising-only ratio > AS_RAISE_ASYM_MIN;
-#              antisymmetrised ratio < AS_ANTISYM_MAX (antisymmetric to round-off)
-#   section 2, "exponentially unstable": gamma > 0 in every raising-only row
-#   section 2, "independent of dt": Ito gamma(dt=1e-3)/gamma(dt=3e-4) in AS_DT_RATIO_BAND
-#   section 2, "growth rate ≈ ½ M S": Ito gamma/(M S) within a factor 2 of ½
-#   section 3, "conserves W ... in the Stratonovich sense": Heun |gamma|/(M S) < AS_HEUN_MAX
+# critic_as2018.py criteria, each a reading of a phrase of claim C16 (whose text quotes no
+# fitted coefficient). Each row prints the ensemble mean rate gamma and its spread `+-`
+# (numpy std, ddof 0) over E realisations, E read from the section 2 header; the standard
+# error is se = (+-)/sqrt(E - 1).
+#   section 1, "strictly lower-triangular, so not antisymmetric": raising-only ratio
+#              > AS_RAISE_ASYM_MIN; antisymmetrised ratio < AS_ANTISYM_MAX (round-off)
+#   section 2, "exponentially unstable under both the Ito and the Stratonovich reading":
+#              gamma > AS_NSIGMA se in every raising-only row, Ito and Heun
+#   section 2, "under the Ito reading gamma <= M S": gamma/(M S) <= 1 + AS_NSIGMA se/(M S)
+#              in every Ito raising-only row (the bound is analytic; the margin is noise)
+#   section 2, "does not depend on the time step, under both readings": for each
+#              (M, kappa, reading), gamma(dt=1e-3)/gamma(dt=3e-4) in AS_DT_RATIO_BAND, or the
+#              two rates within AS_NSIGMA combined standard errors
+#   section 3, "antisymmetrised, Heun: |gamma| < AS_HEUN_MAX M S in every realisation":
+#              |gamma| + AS_NSIGMA (+-) < AS_HEUN_MAX M S in every Heun row; with ddof 0,
+#              max_i |gamma_i - mean| <= sqrt(E - 1) (+-) < 3 (+-) for E = 6
 AS_RAISE_ASYM_MIN = 0.1
 AS_ANTISYM_MAX = 1e-12
+AS_NSIGMA = 3.0
 AS_DT_RATIO_BAND = (0.8, 1.25)
-AS_GROWTH_BAND = (0.25, 1.0)
 AS_HEUN_MAX = 0.05
 AS_ROWS_PER_SECTION = 24  # M in (16, 32) x 2 dt x 3 kappa x (Ito, Heun)
 # Claims the invariant mapping and SPEC.md §1–§2 rest on. C7 (H_ph-sp, decision 4) and
 # C8 (the study's question) are open by design; C9 is superseded by C12, itself superseded
 # by C14 (its analytic part, a Gate 1 input), and C13 (its GANDALF part, a Phase 1 check
-# on the new base state).
-GATE1_CLAIMS: tuple[str, ...] = ("C1", "C2", "C3", "C4", "C5", "C6", "C10", "C11", "C14")
+# on the new base state). C1 is superseded by C17 (m = 0 correlator), C11 by C16 (no
+# coefficient). C18 is the conjugation symmetry of the D02 echo model.
+GATE1_CLAIMS: tuple[str, ...] = ("C2", "C3", "C4", "C5", "C6", "C10", "C14", "C16", "C17", "C18")
 # Critic verdicts recorded in Phase 0, before the loop saved critic reports. A newest
 # verdict that names no report passes only as an exact copy of one of these. C11's Phase 0
-# verdict is hedged ("the hyper-collision statement not tested"), so it is not listed.
+# verdict is hedged ("the hyper-collision statement not tested"), so it is not listed;
+# C1 and C11 are superseded and not Gate 1 claims.
 GATE1_PHASE0_VERDICTS: dict[str, str] = {
-    "C1": "SUPPORTED (critic, 60 cases, worst 7.5e-18)",
     "C3": "SUPPORTED (critic, worst 1.4e-17; unweighted control 1.5e-3)",
     "C5": "SUPPORTED (critic, worst 8.0e-18; generic closure breaks it, 9e-4)",
 }
@@ -394,15 +414,19 @@ def compare_npz(new: Path | None, ref: Path | None, rtol: float) -> tuple[bool, 
 _AS_ROW_RE = re.compile(
     r"^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(Ito|Heun)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*$")
 _AS_SEC1_RE = re.compile(r"^\s*(AS2018 raising-only|antisymmetrised d_v)\s*:.*=\s*(\S+)\s*$")
+_AS_ENS_RE = re.compile(r"ensemble mean \+- std over (\d+) realisations")
 
 
 def parse_as2018(stdout: str) -> dict:
-    """Parse critic_as2018.py output into its section 1 ratios and section 2 and 3 rows.
+    """Parse critic_as2018.py output into its section 1 ratios, its ensemble size and its
+    section 2 and 3 rows.
 
-    Rows are dicts with M, dt, kappa, interp, gamma and ratio (= gamma/(M S)).
+    Rows are dicts with M, dt, kappa, interp, gamma, pm (the `+-` spread), MS (= M S) and
+    ratio (= gamma/(M S)). `ens` is the E of the section 2 header, or None.
     """
     sec1: dict[str, float] = {}
     rows: dict[str, list[dict]] = {"2": [], "3": []}
+    ens: list[int] = []
     section = None
     for line in stdout.splitlines():
         head = re.match(r"^=== (\w+)\.", line)
@@ -411,11 +435,20 @@ def parse_as2018(stdout: str) -> dict:
             continue
         if section == "1" and (m := _AS_SEC1_RE.match(line)):
             sec1[m.group(1)] = float(m.group(2))
+        elif section == "2" and (m := _AS_ENS_RE.search(line)):
+            ens.append(int(m.group(1)))
         elif section in rows and (m := _AS_ROW_RE.match(line)):
             rows[section].append({"M": int(m.group(1)), "dt": float(m.group(2)),
                                   "kappa": float(m.group(4)), "interp": m.group(5),
-                                  "gamma": float(m.group(6)), "ratio": float(m.group(10))})
-    return {"sec1": sec1, "raise": rows["2"], "antisym": rows["3"]}
+                                  "gamma": float(m.group(6)), "pm": float(m.group(7)),
+                                  "MS": float(m.group(9)), "ratio": float(m.group(10))})
+    return {"sec1": sec1, "raise": rows["2"], "antisym": rows["3"],
+            "ens": ens[0] if len(ens) == 1 else None}
+
+
+def _se(row: dict, ens: int) -> float:
+    """Standard error of a row's mean rate from its ddof-0 spread over `ens` realisations."""
+    return row["pm"] / math.sqrt(ens - 1)
 
 
 def judge_as2018(stdout: str) -> tuple[bool, str]:
@@ -424,46 +457,53 @@ def judge_as2018(stdout: str) -> tuple[bool, str]:
         p = parse_as2018(stdout)
     except ValueError as exc:
         return False, f"unparseable output ({exc})"
-    raise_r, anti_r, sec1 = p["raise"], p["antisym"], p["sec1"]
+    raise_r, anti_r, sec1, ens = p["raise"], p["antisym"], p["sec1"], p["ens"]
     if (len(raise_r) != AS_ROWS_PER_SECTION or len(anti_r) != AS_ROWS_PER_SECTION
-            or set(sec1) != {"AS2018 raising-only", "antisymmetrised d_v"}):
+            or set(sec1) != {"AS2018 raising-only", "antisymmetrised d_v"}
+            or ens is None or ens < 2):
         return False, (f"output incomplete: {len(sec1)} section-1 ratios, {len(raise_r)} and "
-                       f"{len(anti_r)} rows (expected 2, {AS_ROWS_PER_SECTION}, {AS_ROWS_PER_SECTION})")
+                       f"{len(anti_r)} rows, ensemble size {ens} (expected 2, "
+                       f"{AS_ROWS_PER_SECTION}, {AS_ROWS_PER_SECTION}, >= 2)")
     checks: list[tuple[str, bool]] = []
     n_bad = sum(1 for r in raise_r + anti_r
-                if not (math.isfinite(r["gamma"]) and math.isfinite(r["ratio"])))
-    checks.append((f"{n_bad} rows with a non-finite gamma", n_bad == 0))
+                if not all(math.isfinite(r[key]) for key in ("gamma", "pm", "MS", "ratio"))
+                or r["MS"] <= 0 or r["pm"] < 0)
+    checks.append((f"{n_bad} rows with a non-finite or invalid gamma, +-, M S or ratio", n_bad == 0))
+    if n_bad:
+        return False, "; ".join(text for text, _ in checks)
     checks.append((f"raising-only asym {sec1['AS2018 raising-only']:.2e} > {AS_RAISE_ASYM_MIN}",
                    math.isfinite(sec1["AS2018 raising-only"])
                    and sec1["AS2018 raising-only"] > AS_RAISE_ASYM_MIN))
     checks.append((f"antisym asym {sec1['antisymmetrised d_v']:.1e} < {AS_ANTISYM_MAX:.0e}",
                    math.isfinite(sec1["antisymmetrised d_v"])
                    and sec1["antisymmetrised d_v"] < AS_ANTISYM_MAX))
-    gammas = [r["gamma"] for r in raise_r]
-    checks.append((f"raising-only gamma {_span(gammas)} > 0",
-                   all(math.isfinite(g) and g > 0 for g in gammas)))
-    ito = {(r["M"], r["kappa"], r["dt"]): r for r in raise_r if r["interp"] == "Ito"}
-    dts = sorted({k[2] for k in ito})
-    ratios = []
-    if len(dts) == 2:
-        for (M, kap, dt) in ito:
-            if dt == dts[1]:
-                lo = ito.get((M, kap, dts[0]))
-                if lo is None or lo["gamma"] == 0:
-                    ratios.append(float("nan"))
-                else:
-                    ratios.append(ito[(M, kap, dt)]["gamma"] / lo["gamma"])
+    signif = [r["gamma"] / _se(r, ens) if _se(r, ens) > 0 else math.inf for r in raise_r]
+    checks.append((f"raising-only gamma/se {_span(signif)} > {AS_NSIGMA:g} (Ito and Heun)",
+                   all(r["gamma"] > AS_NSIGMA * _se(r, ens) and r["gamma"] > 0 for r in raise_r)))
+    ito = [r for r in raise_r if r["interp"] == "Ito"]
+    bound_ok = all(r["gamma"] <= r["MS"] + AS_NSIGMA * _se(r, ens) for r in ito)
+    checks.append((f"Ito gamma/(M S) {_span([r['ratio'] for r in ito])} <= 1 + "
+                   f"{AS_NSIGMA:g} se/(M S)", len(ito) == AS_ROWS_PER_SECTION // 2 and bound_ok))
+    by_key: dict[tuple, dict[float, dict]] = {}
+    for r in raise_r:
+        by_key.setdefault((r["M"], r["kappa"], r["interp"]), {})[r["dt"]] = r
     lo_b, hi_b = AS_DT_RATIO_BAND
-    dt_ok = len(ratios) == AS_ROWS_PER_SECTION // 4 and all(lo_b <= x <= hi_b for x in ratios)
-    checks.append((f"Ito dt ratios {_span(ratios)} in [{lo_b}, {hi_b}]", dt_ok))
-    growth = [r["ratio"] for r in ito.values()]
-    lo_g, hi_g = AS_GROWTH_BAND
-    checks.append((f"Ito gamma/(M S) {_span(growth)} in [{lo_g}, {hi_g}]",
-                   bool(growth) and all(lo_g <= x <= hi_g for x in growth)))
-    heun = [abs(r["ratio"]) for r in anti_r if r["interp"] == "Heun"]
-    checks.append((f"antisym Heun |gamma|/(M S) {_span(heun)} < {AS_HEUN_MAX}",
-                   len(heun) == AS_ROWS_PER_SECTION // 2
-                   and all(math.isfinite(h) and h < AS_HEUN_MAX for h in heun)))
+    ratios, dt_ok = [], len(by_key) == AS_ROWS_PER_SECTION // 2
+    for pair in by_key.values():
+        if len(pair) != 2:
+            dt_ok = False
+            continue
+        a, b = (pair[dt] for dt in sorted(pair, reverse=True))  # a: larger dt
+        ratio = a["gamma"] / b["gamma"] if b["gamma"] != 0 else math.nan
+        ratios.append(ratio)
+        close = abs(a["gamma"] - b["gamma"]) <= AS_NSIGMA * math.hypot(_se(a, ens), _se(b, ens))
+        dt_ok = dt_ok and ((math.isfinite(ratio) and lo_b <= ratio <= hi_b) or close)
+    checks.append((f"dt ratios {_span(ratios)} in [{lo_b}, {hi_b}] or within {AS_NSIGMA:g} "
+                   "combined se (Ito and Heun)", dt_ok))
+    heun = [r for r in anti_r if r["interp"] == "Heun"]
+    worst = [(abs(r["gamma"]) + AS_NSIGMA * r["pm"]) / r["MS"] for r in heun]
+    checks.append((f"antisym Heun (|gamma| + {AS_NSIGMA:g} (+-))/(M S) {_span(worst)} < {AS_HEUN_MAX}",
+                   len(heun) == AS_ROWS_PER_SECTION // 2 and all(w < AS_HEUN_MAX for w in worst)))
     failed = [text for text, ok in checks if not ok]
     seen = "; ".join(text for text, _ in checks)
     return not failed, seen
@@ -550,13 +590,20 @@ def critic_title_ok(title: str, file_name: str) -> bool:
 
 def gate_label_re(report_title: str) -> re.Pattern:
     """Pattern the critic report's title must match to name the gate of a gate report title
-    (`# Gate <n> report...`), in the spellings LOOP.md §6 lists."""
+    (`# Gate <n> report...`), in the spellings LOOP.md §6 lists. For Gate 4 the title must
+    also name the set, as `set <S>` or `7a.<S>`."""
     m = re.match(r"^# Gate (\w+) report", report_title)
     if not m:
         raise ValueError(f"not a gate report title: {report_title!r}")
     gate = m.group(1)
     if gate == "base":
         return re.compile(r"(?i)base-state gate|gbase|7a\.base")
+    if gate == "4":
+        s = re.match(r"^# Gate 4 report, set ([A-Za-z0-9]+): ", report_title)
+        if not s:
+            raise ValueError(f"Gate 4 report title names no set: {report_title!r}")
+        run_set = re.escape(s.group(1))
+        return re.compile(rf"(?i)^(?=.*gate[ _-]?4\b)(?=.*(?:\bset {run_set}\b|7a\.{run_set}\b))")
     return re.compile(rf"(?i)gate[ _-]?{gate}\b")
 
 
@@ -637,7 +684,8 @@ def gate1_check(iteration: str,
 
     return GateResult(
         gate_number="1",
-        gate_name="Gate 1, invariant mapping and SPEC.md accepted (PLAN.md §4 Phase 0; SPEC.md §1–§2)",
+        gate_name=("Gate 1, invariant mapping and SPEC.md accepted (PLAN.md §4 Phase 0; SPEC.md "
+                   "§1–§3 and §6 tested, §4, §5 and §8 accepted as the plan of record)"),
         command=f"uv run python {STUDY_REL}/analysis/gates.py gate1 --iteration {iteration}",
         repo_commit=head,
         gandalf_commit=have,
@@ -655,9 +703,9 @@ _RULE_TEXT = {
             f"npz reproduces committed copy (rtol {GATE1_D02_RTOL:.0e})"),
     "claim-verdicts": f"exit 0; {GATE1_CRITIC_CLAIMS} Claim verdict lines, all SUPPORTED",
     "as2018": (f"exit 0; raising-only asym > {AS_RAISE_ASYM_MIN}; antisym asym < {AS_ANTISYM_MAX:.0e}; "
-               f"raising-only gamma > 0; Ito dt ratio in [{AS_DT_RATIO_BAND[0]}, {AS_DT_RATIO_BAND[1]}]; "
-               f"Ito gamma/(M S) in [{AS_GROWTH_BAND[0]}, {AS_GROWTH_BAND[1]}]; "
-               f"antisym Heun |gamma|/(M S) < {AS_HEUN_MAX}"),
+               f"raising-only gamma > {AS_NSIGMA:g} se (Ito and Heun); Ito gamma <= M S + {AS_NSIGMA:g} se; "
+               f"dt ratio in [{AS_DT_RATIO_BAND[0]}, {AS_DT_RATIO_BAND[1]}] or within {AS_NSIGMA:g} "
+               f"combined se (Ito and Heun); antisym Heun |gamma| + {AS_NSIGMA:g} (+-) < {AS_HEUN_MAX} M S"),
 }
 
 

@@ -15,8 +15,9 @@ Per wavenumber the observables are (SPEC.md section 6)
     Pi_m    = -k sqrt(2(m+1)) Im[g_{m+1} g_m^*]       Hermite free-energy flux
     Gamma_m = c_m Re[g_{m+1} g_m^*],   c_0 = sqrt2 (1 - 1/Lambda), c_m = sqrt(2(m+1))
 
-so that Gamma_m and -Pi_m/k are the real and imaginary parts of one complex
-neighbour correlator.  Units: v_th = v_A = 1, k in units of 2 pi / L with L = 1,
+so that for m >= 1 Gamma_m and -Pi_m/k are the real and imaginary parts of one
+complex neighbour correlator; at m = 0 the prefactors differ by the factor
+(1 - 1/Lambda) (claim C17).  Units: v_th = v_A = 1, k in units of 2 pi / L with L = 1,
 time in L/v_th.
 
 Part A -- linear phase mixing at a single k (reference profile a)
@@ -79,10 +80,8 @@ Two forms of J are implemented, selected on the command line (--nl):
     v^2 < m (the WKB regime g_{m-2} ~ -g_m that AS2018 assume in their 3.19-3.21)
     and a source for v^2 > m.  Kicks pump energy into those tail modes at the
     rate m S; nothing damps them, and the Hermite truncation puts the fastest
-    at m ~ M.  Measured growth rate of W: 9 per unit time at S = 0.158 and 1.7
-    at S = 0.040 (about M S), independent of dt (9e-4 vs 3e-4), with Ito,
-    explicit-drift Stratonovich and Heun stepping alike, with or without the
-    k = 0 column.  Lenard-Bernstein collisions nu m beat it only for
+    at m ~ M.  The growth of W, its bound and its independence of dt are
+    claim C16, tested by critic_as2018.py.  Lenard-Bernstein collisions nu m beat it only for
     nu > S/2, which puts the collisional cutoff (1.5 k sqrt2 / nu)^{2/3} below
     the nonlinear crossover: no echo range survives.  This form is kept for
     reference and is not run by default.
@@ -129,9 +128,19 @@ The map sends Gamma_{k,m} = c_m Re[g_{k,m+1} g_{k,m}^*] ->
 c_m Re[(-1)^{2m+1} g_{-k,m+1} g_{-k,m}^*] = -Gamma_{-k,m}, hence
 <Gamma_{k,m}> = -<Gamma_{-k,m}>, <Gamma_{0,m}> = 0 and sum_k <Gamma_{k,m}> = 0
 exactly.  The same map gives Pi_{k,m} -> +Pi_{-k,m}: the flux is k-even and
-Gamma is k-odd.  The k-odd part Gamma^odd_m = sum_{k>0}[Gamma_{k,m} -
-Gamma_{-k,m}] is not constrained by any symmetry of the model and is reported
-with its noise level.  Both forms of J obey this symmetry.
+Gamma is k-odd.  Both forms of J obey this symmetry.
+
+Conjugation symmetry (claim C18).  The map T: g_{k,m} -> (-1)^m g_{k,m}^*,
+phi_p -> phi_p^*, f_k -> f_k^* also sends the model to itself: conjugation
+turns -ik into +ik and -ip phi_p into +ip phi_p^*, and the factor (-1)^m
+restores both signs because the ladder and J couple m only to m +- 1; the
+collision and drift terms are real and parity-preserving.  The laws of phi and
+f (circular complex Gaussian, kappa_p = kappa_{-p}) are invariant under T, and
+T sends Gamma_{k,m} -> c_m Re[(-1)^{2m+1} g_{k,m+1}^* g_{k,m}] = -Gamma_{k,m}.
+So <Gamma_{k,m}> = 0 at every k in the stationary ensemble, and the k-odd part
+Gamma^odd_m = sum_{k>0}[Gamma_{k,m} - Gamma_{-k,m}] has zero mean.  The check
+that Gamma^odd is indistinguishable from zero, reported with its noise level,
+is therefore a consistency check of the code, not evidence about echo physics.
 
 Flux suppression.  In a statistically steady state the k-summed net flux
 through any m is fixed by the energy budget, sum_k Pi_m = injection -
