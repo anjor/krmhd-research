@@ -61,13 +61,18 @@ from pathlib import Path
 
 import numpy as np
 
+SPEC_REL = "studies/04-phase-space-helicity/SPEC.md"
+
+
 def find_spec(start: Path) -> Path:
-    """The study's SPEC.md: the first SPEC.md in a folder above this file. The Gate 1
-    check runs a copy of this script under data/scratch/, three levels below the study."""
-    for folder in start.resolve().parents:
-        if (folder / "SPEC.md").is_file():
-            return folder / "SPEC.md"
-    raise FileNotFoundError("no SPEC.md above " + str(start))
+    """The study's tracked SPEC.md, at a fixed path below the root of the git repository
+    that holds this file. The Gate 1 check runs a copy of this script under the ignored
+    data/scratch/, so a search upwards could find a stray untracked copy instead."""
+    import subprocess
+
+    top = subprocess.run(["git", "-C", str(start.resolve().parent), "rev-parse", "--show-toplevel"],
+                         check=True, capture_output=True, text=True).stdout.strip()
+    return Path(top) / SPEC_REL
 
 
 SPEC = find_spec(Path(__file__))

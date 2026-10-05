@@ -19,9 +19,11 @@ and checks that every claim the mapping and SPEC.md rest on is supported with a
 SUPPORTED critic verdict. It hashes SPEC.md and docs/rediscovery.md so that the
 report names what was accepted. `gates.py gate1` refuses to run on a dirty tree.
 
-Scope. The statements of SPEC.md §1, §2, §3 and §6 are tested: §1–§2 by D01,
-D02, the blind test and the claims, §1, §3 and §6 against the installed GANDALF
-by D03 (`03_spec_solver.py`). §4 (domain and run classes), §5 (forcing) and §8
+Scope. Statements of SPEC.md §1, §2, §3 and §6 are checked where a script or a
+claim covers them: §1–§2 by D01, D02, the blind test and the claims, and the
+parts of §1, §3 and §6 that D03 (`03_spec_solver.py`) names in its docstring
+against the installed GANDALF. Other statements of those sections are accepted
+as written (critic_it-20261005-1446_1.md lists them). §4 (domain and run classes), §5 (forcing) and §8
 (the v0.5.0 checkpoint inventory) are plans and an inventory, accepted as the
 plan of record and tested later: §5's pair forcing by Gate 3, the base drive and
 the base-state parameters by the base-state gate, and §8 when Phase 1 reads the
@@ -308,6 +310,11 @@ def finish_report(report: Path, critic_report: Path, kill: str) -> str:
         raise ValueError(f"{critic_report.name}: title does not match the file name")
     if not gate_label_re(text.splitlines()[0]).search(critic_title):
         raise ValueError(f"{critic_report.name}: title does not name the gate of {report.name}")
+    if report.name not in critic_title:
+        # Binds the review to this evaluation: a review of the criteria, of a claim or of an
+        # earlier step of the same iteration cannot name a report that did not exist yet.
+        raise ValueError(f"{critic_report.name}: title does not name the gate report {report.name}, "
+                         "so it is not the review of this evaluation")
     verdict = critic_verdict_line(critic_text)
     if verdict is None:
         raise ValueError(f"{critic_report} has no VERDICT line after Report:")
@@ -345,6 +352,29 @@ def installed_gandalf_commit() -> str:
         return json.loads(raw or "{}").get("vcs_info", {}).get("commit_id", "unknown")
     except (importlib.metadata.PackageNotFoundError, ValueError):
         return "unknown"
+
+
+def installed_gandalf_intact() -> tuple[bool, str]:
+    """Whether every installed GANDALF file with a RECORD hash still has that sha256, so that
+    an edit of the installed package cannot pass as the pinned commit. Returns (ok, seen)."""
+    import base64
+
+    try:
+        dist = importlib.metadata.distribution(GANDALF_PACKAGE)
+    except importlib.metadata.PackageNotFoundError:
+        return False, "not installed"
+    hashed = [f for f in (dist.files or []) if f.hash and f.hash.mode == "sha256"]
+    changed = []
+    for f in hashed:
+        path = Path(f.locate())
+        digest = (base64.urlsafe_b64encode(hashlib.sha256(path.read_bytes()).digest())
+                  .rstrip(b"=").decode() if path.is_file() else "missing")
+        if digest != f.hash.value:
+            changed.append(str(f))
+    seen = f"{len(hashed)} files with RECORD hashes, {len(changed)} changed"
+    if changed:
+        seen += ": " + ", ".join(changed[:3])
+    return bool(hashed) and not changed, seen
 
 
 def judge_script(rule: str, returncode: int, stdout: str,
@@ -622,6 +652,7 @@ def gate1_check(iteration: str,
                 scripts: tuple[tuple[str, str], ...] = GATE1_SCRIPTS,
                 claims: tuple[str, ...] = GATE1_CLAIMS,
                 installed: str | None = None,
+                intact: tuple[bool, str] | None = None,
                 timeout_s: float = GATE1_SCRIPT_TIMEOUT_S,
                 python: str = sys.executable,
                 study: Path = STUDY,
@@ -645,6 +676,8 @@ def gate1_check(iteration: str,
     pin = uv_lock_pin(lock)
     have = installed if installed is not None else installed_gandalf_commit()
     rows.append(Row("installed GANDALF commit", have, f"uv.lock pin {pin}", have == pin))
+    intact_ok, intact_seen = intact if intact is not None else installed_gandalf_intact()
+    rows.append(Row("installed GANDALF files", intact_seen, "every RECORD sha256 unchanged", intact_ok))
 
     for name, rule in scripts:
         src = derivations / name
@@ -685,7 +718,8 @@ def gate1_check(iteration: str,
     return GateResult(
         gate_number="1",
         gate_name=("Gate 1, invariant mapping and SPEC.md accepted (PLAN.md §4 Phase 0; SPEC.md "
-                   "§1–§3 and §6 tested, §4, §5 and §8 accepted as the plan of record)"),
+                   "§1–§3 and §6 checked where D01–D03 or a claim covers them, §4, §5 and §8 "
+                   "accepted as the plan of record)"),
         command=f"uv run python {STUDY_REL}/analysis/gates.py gate1 --iteration {iteration}",
         repo_commit=head,
         gandalf_commit=have,

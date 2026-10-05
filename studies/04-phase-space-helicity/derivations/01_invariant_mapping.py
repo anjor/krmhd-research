@@ -24,8 +24,9 @@ Claims checked here (SPEC.md §2, claims C1 and C3 in claims.md):
 
    Gamma = sum_k sum_{m=0}^{M-1} p_m Re[g_{m+1} g_m^*].  The normalisation of
    p_m for m >= 1 matches the prefactor of krmhd.diagnostics.hermite_flux,
-   Pi_m = -k_par sqrt(2(m+1)) Im[g_{m+1} g_m^*], so Gamma_m and Pi_m / (-k_par)
-   are the real and imaginary parts of one correlator.
+   Pi_m = -k_par sqrt(2(m+1)) Im[g_{m+1} g_m^*], so for m >= 1 Gamma_m and
+   Pi_m / (-k_par) are the real and imaginary parts of one correlator; at m = 0
+   hermite_flux uses sqrt(2), a factor (1 - 1/Lambda) away from p_0 (claim C17).
 
 3. Zero truncation leaves no boundary term: the (M+1)x(M+1) truncation of A
    satisfies the symmetry condition exactly.  The copy closure

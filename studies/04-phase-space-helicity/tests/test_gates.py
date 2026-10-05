@@ -338,7 +338,7 @@ class Gate1CheckTests(unittest.TestCase):
     def run_check(self, **kw) -> gates.GateResult:
         args = dict(derivations=self.deriv, claims_path=self.claims, reports_dir=self.reports,
                     scratch=self.tmp / "scratch", lock=self.lock, scripts=self.scripts,
-                    claims=("C1", "C2"), installed=PIN, timeout_s=60, study=self.tmp,
+                    claims=("C1", "C2"), installed=PIN, intact=(True, "test"), timeout_s=60, study=self.tmp,
                     accepted=("SPEC.md",))
         args.update(kw)
         return gates.gate1_check(ITER, **args)
@@ -346,7 +346,7 @@ class Gate1CheckTests(unittest.TestCase):
     def test_pass(self) -> None:
         result = self.run_check()
         self.assertTrue(result.coded_pass, [r for r in result.rows if not r.passed])
-        self.assertEqual(len(result.rows), 1 + 5 + 2)
+        self.assertEqual(len(result.rows), 2 + 5 + 2)
         # scripts that write beside themselves wrote into the scratch copy
         self.assertFalse((self.deriv / "out.npz").exists())
         self.assertTrue((self.tmp / "scratch" / f"gate1_{ITER}" / "out.npz").exists())
@@ -370,6 +370,14 @@ class Gate1CheckTests(unittest.TestCase):
         result = self.run_check(scripts=self.scripts + (("bad.py", "all-checks"),))
         self.assertFalse(result.coded_pass)
         self.assertEqual([r.quantity for r in result.rows if not r.passed], ["derivations/bad.py"])
+
+    def test_installed_files_changed(self) -> None:
+        result = self.run_check(intact=(False, "1 changed"))
+        self.assertFalse(result.coded_pass)
+
+    def test_real_install_intact(self) -> None:
+        ok, seen = gates.installed_gandalf_intact()
+        self.assertTrue(ok, seen)
 
     def test_wrong_pin(self) -> None:
         result = self.run_check(installed="b" * 40)
@@ -399,7 +407,7 @@ class ReportTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp())
-        gate1 = ": Gate 1 evaluation\n"
+        gate1 = f": Gate 1 evaluation, G1_{ITER}.md\n"
         self.critic_ok = write(self.tmp / "critic_it-20261002-0916_1.md", CRITIC_OK.replace(": test\n", gate1))
         self.critic_bad = write(self.tmp / "critic_it-20261002-0916_2.md",
                                 CRITIC_BAD.replace("0916_1: test\n", "0916_2" + gate1))
@@ -479,7 +487,10 @@ class ReportTests(unittest.TestCase):
         path = gates.write_report(self.make(True), ITER, self.tmp)
         for name, text in (("critic_it-20261002-0916_3.md", CRITIC_OK.replace("0916_1: test", "0916_3: claim C1")),
                            ("critic_it-20261002-0916_4.md", CRITIC_OK.replace("0916_1: test", "0916_4: Gate 2")),
-                           ("critic_it-20261002-0916_5.md", CRITIC_OK.replace(": test", ": Gate 1"))):
+                           ("critic_it-20261002-0916_5.md", CRITIC_OK.replace(": test", ": Gate 1")),
+                           # names the gate but not this report: a review of the criteria, say
+                           ("critic_it-20261002-0916_6.md",
+                            CRITIC_OK.replace("0916_1: test", "0916_6: Gate 1 criteria, before evaluation"))):
             with self.subTest(name), self.assertRaises(ValueError):
                 gates.finish_report(path, write(self.tmp / name, text), "none met")
         self.assertNotIn("Result:", path.read_text())
