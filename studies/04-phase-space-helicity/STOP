@@ -1,0 +1,7 @@
+STOP
+Written by: runner (it-20261006-1454), 2026-10-06T14:55:38Z
+Reason: WIP streak (runner checks after iteration it-20261006-1454):
+  streak: 6 iterations in a row ended WIP or as a stub (limit 6): it-20261006-1454 it-20261005-2234 it-20261005-1519 it-20261005-1446 it-20261005-1416 it-20261002-0916
+Decision needed from Anjor: The loop is not finishing its blocks. Read the last log entries, then change the approach or the next block, and resume.
+To resume: answer in QUESTIONS.md, delete this file, commit and push
+(or run studies/04-phase-space-helicity/loop/resume.sh in your checkout).
