@@ -356,6 +356,11 @@ def decide_result(coded_pass: bool, verdict: str | None, kill: str, gate: str | 
     §7). Any other text raises, so that a typo cannot decide a gate. A met criterion needs
     `gate` (and for criterion 3 `run_set`) and is accepted only for the gate that judges it:
     criterion 1 for Gate 2, criterion 2 for Gate 3, criterion 3 for Gate 4 of set B.
+
+    As LOOP.md §5 states the rule, a met criterion gives FAIL whatever the verdict. Whether a
+    criterion is met is counted under LOOP.md §5 "Kill criteria 1 and 2", where an evaluation
+    the critic REFUTED does not count, so the loop states a met criterion only after that
+    count; this function does not count evaluations.
     """
     met = KILL_MET_RE.match(kill)
     if kill != "none met" and not met:
@@ -428,9 +433,16 @@ def finish_report(report: Path, critic_report: Path, kill: str,
     - its verdict line is read the same way by this writer, the launcher and the runner
       (`critic_verdict_line`).
 
-    What it cannot see: whether the critic was in fact given those files, and whether the
-    iteration ID is the current session's; those rest on LOOP.md §6 and on the runner (T1).
+    - neither file is a symbolic link, so the `Critic` line names the file that was read.
+
+    What it cannot see: whether the critic was in fact given those files, whether the
+    iteration ID is the current session's, and whether another review of the same session
+    that names the gate returned something other than SUPPORTED; those rest on LOOP.md §6 and
+    on the runner (T1).
     """
+    links = [p for p in (report, critic_report) if p.is_symlink()]
+    if links:
+        raise ValueError(f"{links[0]} is a symbolic link; finish the files themselves")
     raw = report.read_bytes()
     text = raw.decode("utf-8")
     gate, run_set, report_iteration = parse_report_name(report.name)

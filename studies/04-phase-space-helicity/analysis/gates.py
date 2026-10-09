@@ -206,6 +206,27 @@ def installed_gandalf_intact() -> tuple[bool, str]:
     return bool(package) and not changed, seen
 
 
+def installed_gandalf_location() -> tuple[bool, str]:
+    """Whether the GANDALF distribution and the `krmhd` package that `import krmhd` finds both
+    lie in this interpreter's own site-packages (`sysconfig` purelib), so that a distribution
+    or a package in the script's folder, or anywhere else on `sys.path`, cannot answer for the
+    installed one. Matters at `finish`, when the tree is not clean. Returns (ok, seen)."""
+    import importlib.util
+    import sysconfig
+
+    purelib = Path(sysconfig.get_paths()["purelib"]).resolve()
+    try:
+        dist_dir = Path(importlib.metadata.distribution(GANDALF_PACKAGE).locate_file("")).resolve()
+        spec = importlib.util.find_spec("krmhd")
+    except (importlib.metadata.PackageNotFoundError, ImportError, ValueError):
+        return False, "GANDALF distribution or krmhd not found"
+    origin = Path(spec.origin).resolve() if spec is not None and spec.origin else None
+    dist_ok = dist_dir == purelib
+    pkg_ok = origin is not None and origin.is_relative_to(purelib)
+    return dist_ok and pkg_ok, (f"distribution {'in' if dist_ok else 'outside'} site-packages, "
+                                f"krmhd {'in' if pkg_ok else 'outside'} site-packages")
+
+
 def isolated_install_info(python: str = sys.executable) -> tuple[str, bool, str]:
     """(installed GANDALF commit, intact, what was seen), computed in a fresh interpreter
     started with `-E -s`, as the derivation scripts are, so that a GANDALF distribution
@@ -463,7 +484,8 @@ def gate1_judge(work: Path, pin: str, installed: str, intact: tuple[bool, str],
     """Gate 1 rows and data files from the outputs `gate1_check` saved in `work`: each
     script's stdout and exit code, D02's rerun npz and the copy of claims.md."""
     rows = [Row("installed GANDALF commit", installed, f"uv.lock pin {pin}", installed == pin),
-            Row("installed GANDALF files", intact[1], "every RECORD sha256 unchanged", intact[0])]
+            Row("installed GANDALF files", intact[1],
+                "every RECORD sha256 unchanged; distribution and krmhd in site-packages", intact[0])]
     data_files: list[tuple[str, str]] = []
 
     def saved(path: Path) -> Path:
@@ -498,11 +520,27 @@ def gate1_judge(work: Path, pin: str, installed: str, intact: tuple[bool, str],
 def gate1_rejudge(stated: GateResult, iteration: str, scratch: Path = SCRATCH,
                   lock: Path = REPO / "uv.lock", **kw) -> GateResult:
     """The Gate 1 result rebuilt from the outputs saved in `scratch/gate1_<iteration>/`, with
-    the install checked again, for `finish_report` to compare with the head it finishes."""
+    the install checked again, for `finish_report` to compare with the head it finishes.
+    Every field is rebuilt except the repo commit and the evaluated time, which no saved
+    output records; the critic's request quotes both (`finish_report`)."""
     pin = uv_lock_pin(lock)
     info = kw.pop("install_info", None) or isolated_install_info()
     rows, data_files = gate1_judge(scratch / f"gate1_{iteration}", pin, info[0], info[1:], **kw)
-    return GateResult(**{**stated.__dict__, "rows": rows, "data_files": data_files})
+    return GateResult(**{**stated.__dict__, **gate1_fixed_fields(iteration), "gandalf_commit": info[0],
+                         "rows": rows, "data_files": data_files, "run_set": None, "frozen": []})
+
+
+def gate1_fixed_fields(iteration: str) -> dict[str, str]:
+    """The `Gate`, `Command`, `Runs` and `Left out` fields of every Gate 1 report."""
+    return dict(
+        gate_number="1",
+        gate_name=("Gate 1, invariant mapping and SPEC.md accepted (PLAN.md §4 Phase 0; SPEC.md "
+                   "§1–§3 and §6 checked where D01–D03 or a claim covers them, §4, §5 and §8 "
+                   "accepted as the plan of record)"),
+        command=f"uv run python {STUDY_REL}/analysis/gates.py gate1 --iteration {iteration}",
+        runs="none; Gate 1 reruns the Phase 0 derivation scripts listed under Data files",
+        left_out="none",
+    )
 
 
 def git_head(repo: Path = REPO) -> str:
@@ -566,15 +604,9 @@ def gate1_check(iteration: str,
                                    reports_dir=reports_dir, scripts=scripts, claims=claims,
                                    study=study, accepted=accepted)
     return GateResult(
-        gate_number="1",
-        gate_name=("Gate 1, invariant mapping and SPEC.md accepted (PLAN.md §4 Phase 0; SPEC.md "
-                   "§1–§3 and §6 checked where D01–D03 or a claim covers them, §4, §5 and §8 "
-                   "accepted as the plan of record)"),
-        command=f"uv run python {STUDY_REL}/analysis/gates.py gate1 --iteration {iteration}",
+        **gate1_fixed_fields(iteration),
         repo_commit=head,
         gandalf_commit=installed,
-        runs="none; Gate 1 reruns the Phase 0 derivation scripts listed under Data files",
-        left_out="none",
         data_files=data_files,
         rows=rows,
         evaluated_utc=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -653,7 +685,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "install-info":
         ok, seen = installed_gandalf_intact()
-        print(json.dumps({"commit": installed_gandalf_commit(), "intact": ok, "seen": seen}))
+        where_ok, where = installed_gandalf_location()
+        print(json.dumps({"commit": installed_gandalf_commit(), "intact": ok and where_ok,
+                          "seen": f"{seen}; {where}"}))
         return 0
     if args.cmd == "gate1":
         if not tree_is_clean():

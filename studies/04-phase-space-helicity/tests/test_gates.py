@@ -400,6 +400,13 @@ class Gate1CheckTests(unittest.TestCase):
         self.assertTrue(edited.coded_pass)
         self.assertNotEqual(gates.render_report_head(rejudge(edited, ITER), ITER),
                             gates.render_report_head(edited, ITER))
+        # head fields other than the commit and the time are rebuilt too
+        for name, value in (("gandalf_commit", "b" * 40), ("command", "uv run python other.py"),
+                            ("gate_name", "Gate 1 (other)"), ("runs", "x"), ("left_out", "x")):
+            with self.subTest(field=name):
+                edited = gates.GateResult(**{**result.__dict__, name: value})
+                self.assertNotEqual(gates.render_report_head(rejudge(edited, ITER), ITER),
+                                    gates.render_report_head(edited, ITER))
         # an output changed after the evaluation
         stdout = self.tmp / "scratch" / f"gate1_{ITER}" / "bad.stdout"
         stdout.write_text("ALL CHECKS PASSED\n")
@@ -1042,6 +1049,39 @@ class MachineryTests(unittest.TestCase):
         self.assertFalse(set_a.search("gate 4 set a"))
         self.assertTrue(set_a.search("Gate 4 set A"))
         self.assertTrue(set_a.search("gate-4, Set A"))
+
+    def test_finish_refuses_symlinks(self) -> None:
+        r = self.result()
+        folder = self.tmp / "gate_reports"
+        path = gates.write_report(r, ITER, folder)
+        crit = self.critic(f"critic_{ITER}_2.md", f"Gate 1 evaluation G1_{ITER}.md", self.evidence(r),
+                           folder=folder)
+        # a link named _1 to the review saved as _2: the Critic line would name a file not read
+        link = folder / f"critic_{ITER}_1.md"
+        link.symlink_to(crit.name)
+        with self.assertRaises(ValueError):
+            finish(path, link, "none met", reports_dir=folder)
+        other = self.tmp / "elsewhere" / path.name
+        other.parent.mkdir()
+        other.symlink_to(path)
+        with self.assertRaises(ValueError):
+            finish(other, crit, "none met", reports_dir=folder)
+        self.assertNotIn("Result:", path.read_text())
+        self.assertEqual(finish(path, crit, "none met", reports_dir=folder), "PASS")
+
+    def test_installed_gandalf_location(self) -> None:
+        from types import SimpleNamespace
+        from unittest import mock
+        ok, seen = gates.installed_gandalf_location()
+        self.assertTrue(ok, seen)
+        shadow = SimpleNamespace(locate_file=lambda _: str(self.tmp))  # a dist-info outside site-packages
+        with mock.patch.object(gates.importlib.metadata, "distribution", return_value=shadow):
+            self.assertEqual(gates.installed_gandalf_location()[0], False)
+        import importlib.util
+        local = SimpleNamespace(origin=str(write(self.tmp / "krmhd" / "__init__.py", "")))
+        with mock.patch.object(importlib.util, "find_spec", return_value=local):
+            self.assertEqual(gates.installed_gandalf_location(), (False, "distribution in site-packages, "
+                                                                         "krmhd outside site-packages"))
 
 
 if __name__ == "__main__":
