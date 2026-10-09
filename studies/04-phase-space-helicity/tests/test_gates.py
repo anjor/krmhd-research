@@ -1017,6 +1017,23 @@ class MachineryTests(unittest.TestCase):
             finish(path, crit, "none met", rejudge=flipped)
         self.assertNotIn("Result:", path.read_text())
 
+    def test_report_module_is_importable_by_a_frozen_evaluation(self) -> None:
+        # The launcher's rule for what a frozen evaluation may import (LOOP.md §5, item 2):
+        # the standard library, numpy, h5py, yaml and study files; no loader module and no
+        # bare call of __import__, compile, eval or exec.
+        import ast
+        tree = ast.parse((gates.STUDY / "analysis" / "gate_report.py").read_text(encoding="utf-8"))
+        allowed = set(sys.stdlib_module_names) | {"numpy", "h5py", "yaml"}
+        loaders = {"importlib", "imp", "pkgutil", "runpy", "zipimport"}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                self.assertNotIn(node.func.id, ("__import__", "compile", "eval", "exec"))
+            tops = ([a.name.split(".")[0] for a in node.names] if isinstance(node, ast.Import) else
+                    [(node.module or "").split(".")[0]] if isinstance(node, ast.ImportFrom) else [])
+            for top in tops:
+                self.assertIn(top, allowed - loaders)
+        self.assertIs(gates.finish_report, __import__("gate_report").finish_report)
+
     def test_gate_names_as_the_runner_reads_them(self) -> None:
         base = gates.gate_label_re(f"# Gate base report: {ITER}")
         self.assertFalse(base.search(f"evaluation Gbase_{ITER}.md"))
