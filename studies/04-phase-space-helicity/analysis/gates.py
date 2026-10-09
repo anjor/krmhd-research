@@ -12,7 +12,9 @@ file, so that no number and no verdict is typed by hand:
    iteration, name the gate and the report's file name in its title, and quote in its
    request the repo commit and every data-file sha256 the report states.
 
-The writer refuses a head the launcher would misread (`head_form_problems`).
+The writer refuses a field that would break a line (`head_field_problems`) and a head the
+launcher would misread (`head_form_problems`). `finish_report` accepts only a head that the
+writer itself produced, by parsing it and rendering it again.
 
 Gate 1 (PLAN.md §4, Phase 0): the invariant mapping and SPEC.md are accepted.
 Its coded check (`gate1_check`) reruns every Phase 0 derivation script on the
@@ -63,7 +65,9 @@ GATE_REPORTS = STUDY / "gate_reports"
 SCRATCH = STUDY / "data" / "scratch"
 GANDALF_PACKAGE = "gandalf-krmhd"
 
-ITERATION_RE = re.compile(r"^it-\d{8}-\d{4}$")
+ITERATION_RE = re.compile(r"it-\d{8}-\d{4}")  # always used with fullmatch
+UTC_STAMP_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
+FROZEN_ITEM_RE = re.compile(r"\S+ sha256 [0-9a-f]{64}, launch L\d{3,}")  # LOOP.md §5 template
 CRITIC_FILE_RE = re.compile(r"critic_(it-\d{8}-\d{4})_(\d+)\.md")
 REPORT_FILE_RE = re.compile(
     r"G(?:(?P<n>[123])|4_(?P<set>[A-Za-z0-9]+)|(?P<base>base))_(?P<iter>it-\d{8}-\d{4})\.md")
@@ -210,7 +214,7 @@ def _cell(text: str) -> str:
 
 def report_name(gate_number: str, iteration: str, run_set: str | None = None) -> str:
     """File name LOOP.md §5 gives a gate report."""
-    if not ITERATION_RE.match(iteration):
+    if not ITERATION_RE.fullmatch(iteration):
         raise ValueError(f"iteration id {iteration!r} is not of the form it-YYYYMMDD-HHMM")
     if gate_number == "base":
         return f"Gbase_{iteration}.md"
@@ -261,8 +265,47 @@ def head_form_problems(lines: list[str]) -> list[str]:
     return problems
 
 
+def _one_line(text: str) -> bool:
+    """True when `text` holds no line break of any kind `str.splitlines` knows."""
+    return len((str(text) + "x").splitlines()) == 1
+
+
+def head_field_problems(result: GateResult) -> list[str]:
+    """Fields of a GateResult that cannot go into a head as written: a line break in a field
+    that becomes a whole line (it would start a line of its own), a repo commit that is not
+    a full 40-hex sha, a data-file digest that is not 64 lower-case hex, or no data file."""
+    problems = []
+    fields = {"gate_name": result.gate_name, "evaluated_utc": result.evaluated_utc,
+              "repo_commit": result.repo_commit, "gandalf_commit": result.gandalf_commit,
+              "command": result.command, "runs": result.runs, "left_out": result.left_out}
+    fields.update({f"data file {i}": f"{p} {d}" for i, (p, d) in enumerate(result.data_files)})
+    fields.update({f"frozen {i}": item for i, item in enumerate(result.frozen)})
+    problems += [f"{name} holds a line break" for name, value in fields.items() if not _one_line(value)]
+    if not re.fullmatch(r"[0-9a-f]{40}", result.repo_commit):
+        problems.append(f"repo commit {result.repo_commit!r} is not a full sha")
+    if not result.data_files:
+        problems.append("no data file, so the review cannot be bound to the evaluated outputs")
+    problems += [f"data file {path!r} digest is not 64 lower-case hex" for path, digest in result.data_files
+                 if not re.fullmatch(r"[0-9a-f]{64}", digest) or not path or " sha256 " in path]
+    if not UTC_STAMP_RE.fullmatch(result.evaluated_utc):
+        problems.append(f"evaluated time {result.evaluated_utc!r} is not of the form YYYY-MM-DDTHH:MM:SSZ")
+    problems += [f"frozen item {item!r} is not '<key> sha256 <64 hex>, launch L<nnn>'"
+                 for item in result.frozen if not FROZEN_ITEM_RE.fullmatch(item)]
+    if not result.rows:
+        problems.append("no results row (the launcher refuses a table without rows)")
+    return problems
+
+
 def render_report_head(result: GateResult, iteration: str) -> str:
-    """The report text from its title down to and including the `Coded check` line."""
+    """The report text from its title down to and including the `Coded check` line.
+
+    Raises ValueError, writing nothing, if a field cannot be written as one line
+    (`head_field_problems`) or if a line of the head would be misread by the launcher
+    (`head_form_problems`, applied to the lines as they will be read)."""
+    report_name(result.gate_number, iteration, result.run_set)  # validates gate, set, iteration
+    problems = head_field_problems(result)
+    if problems:
+        raise ValueError("the report head cannot be written: " + "; ".join(problems))
     lines = [report_title(result.gate_number, iteration, result.run_set), ""]
     lines.append(f"Gate: {result.gate_name}")
     lines.append(f"Evaluated: {result.evaluated_utc}, repo commit {result.repo_commit}, "
@@ -279,11 +322,57 @@ def render_report_head(result: GateResult, iteration: str) -> str:
         mark = "-" if row.passed is None else ("yes" if row.passed else "no")
         threshold = "-" if row.passed is None else row.threshold
         lines.append(f"| {_cell(row.quantity)} | {_cell(row.value)} | {_cell(threshold)} | {mark} |")
-    problems = head_form_problems(lines)
+    problems = head_form_problems("\n".join(lines).splitlines())
     if problems:
         raise ValueError("the report head would be misread by the launcher: " + "; ".join(problems))
     lines += ["", f"Coded check: {'PASS' if result.coded_pass else 'FAIL'}"]
     return "\n".join(lines) + "\n"
+
+
+def parse_report_head(text: str, name: str) -> GateResult:
+    """The GateResult that a head in the writer's form states, the inverse of
+    `render_report_head` for the report file `name`. Raises ValueError at the first line
+    that is not in that form. `finish_report` re-renders the result and compares, so a head
+    the writer did not produce, or one edited since, is refused."""
+    gate, run_set, _ = parse_report_name(name)
+    lines = text.split("\n")
+    pos = 2  # title and blank line; the title is compared by the re-render
+
+    def take(pattern: str) -> re.Match:
+        nonlocal pos
+        m = re.fullmatch(pattern, lines[pos]) if pos < len(lines) else None
+        if not m:
+            got = lines[pos] if pos < len(lines) else "end of file"
+            raise ValueError(f"{name}: line {pos + 1} is not in the writer's form: {got[:80]!r}")
+        pos += 1
+        return m
+
+    gate_name = take(r"Gate: (.*)").group(1)
+    ev = take(r"Evaluated: (.*?), repo commit (\S*), GANDALF commit (.*)")
+    command = take(r"Command: (.*)").group(1)
+    runs = take(r"Runs: (.*)").group(1)
+    left_out = take(r"Left out: (.*)").group(1)
+    take(r"Data files:")
+    data_files: list[tuple[str, str]] = []
+    while pos < len(lines) and lines[pos].startswith("- "):
+        m = take(r"- (.+) sha256 ([0-9a-f]{64})")
+        data_files.append((m.group(1), m.group(2)))
+    frozen: list[str] = []
+    while pos < len(lines) and lines[pos].startswith("Frozen: "):
+        frozen.append(take(r"Frozen: (.*)").group(1))
+    take(r"")
+    take(r"\| Quantity \| Value \| Threshold \| Pass \|")
+    take(r"\|---\|---\|---\|---\|")
+    rows: list[Row] = []
+    while pos < len(lines) and lines[pos].startswith("| "):
+        cells = take(r"\| (.*) \|").group(1).split(" | ")
+        if len(cells) != 4 or cells[3] not in ("yes", "no", "-"):
+            raise ValueError(f"{name}: line {pos} is not a results row of the writer's form")
+        rows.append(Row(cells[0], cells[1], cells[2], {"yes": True, "no": False, "-": None}[cells[3]]))
+    return GateResult(gate_number=gate, gate_name=gate_name, command=command,
+                      repo_commit=ev.group(2), gandalf_commit=ev.group(3), runs=runs,
+                      left_out=left_out, data_files=data_files, rows=rows, run_set=run_set,
+                      frozen=frozen, evaluated_utc=ev.group(1))
 
 
 def write_report(result: GateResult, iteration: str, out_dir: Path = GATE_REPORTS) -> Path:
@@ -296,69 +385,90 @@ def write_report(result: GateResult, iteration: str, out_dir: Path = GATE_REPORT
     return path
 
 
-def critic_verdict_line(text: str) -> str | None:
-    """The first non-empty line after the `Report:` line of a saved critic review
-    (LOOP.md §6), or None.
+VERDICT_LINE_RE = re.compile(r"VERDICT: [A-Z]+")
 
-    The file must have exactly one line whose label (`label_key`) starts `report:`, and that
-    line must read exactly `Report:`. So a request quoting such a line cannot be mistaken for
-    the report, and this reader and the launcher's, which takes the first line labelled
-    `report:` (decorated or not), find the same verdict line. The verdict line must start
-    `VERDICT:`.
+
+def _first_report_mark(lines: list[str]) -> int | None:
+    """Index of the first line labelled `report:` (after Markdown decoration, in any case),
+    the line the launcher and the runner start from; None if there is none."""
+    return next((i for i, line in enumerate(lines) if label_key(line).startswith("report:")), None)
+
+
+def critic_verdict_line(text: str) -> str | None:
+    """The VERDICT line of a saved critic review (LOOP.md §6), or None.
+
+    The launcher (`critic_verdict`) and the runner (`saved_verdict`) take the first line
+    labelled `report:`, skip blank lines and fence lines, strip Markdown decoration, and read
+    the first line left. This reader accepts only the case in which no skipping or stripping
+    happens: the first `report:`-labelled line reads exactly `Report:`, and the first
+    non-blank line after it reads exactly `VERDICT: <WORD>`, without fence, backtick, bold or
+    quote marks. Then all three readers return the same line; in every other case this one
+    returns None, so the writer refuses rather than risk reading a different verdict.
+    A later line labelled `report:` is allowed (a finding may start that way) unless it, or
+    the first non-blank line after it, starts with `VERDICT` after decoration: then the file
+    holds two verdict sections, as when a request quotes a report, and which one is the
+    critic's cannot be told from the text, so this returns None.
     """
     lines = text.splitlines()
-    marks = [i for i, line in enumerate(lines) if label_key(line).startswith("report:")]
-    if len(marks) != 1 or lines[marks[0]].rstrip() != "Report:":
+    mark = _first_report_mark(lines)
+    if mark is None or lines[mark] != "Report:":
         return None
-    for candidate in lines[marks[0] + 1:]:
-        value = candidate.strip().strip("`").strip()
-        if value:
-            return value if value.startswith("VERDICT:") else None
+    for later in range(mark + 1, len(lines)):
+        if not label_key(lines[later]).startswith("report:"):
+            continue
+        rest = [label_key(lines[later])[len("report:"):]] + lines[later + 1:]
+        first = next((label_key(c) for c in rest if label_key(c)), "")
+        if first.startswith("verdict"):
+            return None
+    for candidate in lines[mark + 1:]:
+        if candidate.strip():
+            return candidate if VERDICT_LINE_RE.fullmatch(candidate) else None
     return None
 
 
 def critic_request_text(text: str) -> str | None:
     """The `Request:` section of a saved critic review (LOOP.md §6): the lines between its one
-    line that reads exactly `Request:` and its one `Report:` line, or None."""
+    line that reads exactly `Request:` and the first line labelled `report:`, which must read
+    exactly `Report:` and come after it; None otherwise. A request that quotes a line starting
+    `Report:` cuts the section short there, and `critic_verdict_line` then finds two verdict
+    sections and refuses, because the launcher would read the verdict from the quoted line."""
     lines = text.splitlines()
-    starts = [i for i, line in enumerate(lines) if line.rstrip() == "Request:"]
-    ends = [i for i, line in enumerate(lines) if label_key(line).startswith("report:")]
-    if len(starts) != 1 or len(ends) != 1 or not starts[0] < ends[0]:
+    starts = [i for i, line in enumerate(lines) if line == "Request:"]
+    end = _first_report_mark(lines)
+    if len(starts) != 1 or end is None or lines[end] != "Report:" or not starts[0] < end:
         return None
-    return "\n".join(lines[starts[0] + 1:ends[0]])
+    return "\n".join(lines[starts[0] + 1:end])
 
 
-def report_evidence(text: str) -> tuple[str | None, list[str]]:
-    """(repo commit, data-file sha256 list) that a report head states on its `Evaluated` line
-    and under `Data files:`; the commit is None unless it is a full 40-hex sha."""
-    m = re.search(r"(?m)^Evaluated: .*?, repo commit ([0-9a-f]{40}),", text)
-    hashes = re.findall(r"(?m)^- \S.* sha256 ([0-9a-f]{64})$", text)
-    return (m.group(1) if m else None), hashes
+KILL_MET_RE = re.compile(r"^Kill criterion ([123]) met: \S")
+# PLAN.md §7: criterion 1 after Phase 1 (Gate 2), 2 after Phase 2 (Gate 3), 3 after Phase 3
+# (Gate 4 of set B, the set with two resolutions; LOOP.md §5 "Set B").
+KILL_GATE = {"1": ("2", None), "2": ("3", None), "3": ("4", "B")}
 
 
-KILL_MET_RE = re.compile(r"^Kill criterion ([12]) met: \S")
-KILL_GATE = {"1": "2", "2": "3"}  # PLAN.md §7: criterion 1 after Phase 1 (Gate 2), 2 after Phase 2 (Gate 3)
-
-
-def decide_result(coded_pass: bool, verdict: str | None, kill: str, gate: str | None = None) -> str:
+def decide_result(coded_pass: bool, verdict: str | None, kill: str, gate: str | None = None,
+                  run_set: str | None = None) -> str:
     """`Result:` value from LOOP.md §5.
 
     PASS: coded check passed, verdict is `VERDICT: SUPPORTED` and no kill criterion met.
     FAIL: a kill criterion is met, or the coded check failed under a SUPPORTED verdict.
     NOT DECIDED: anything else.
 
-    `kill` must be exactly `none met` or `Kill criterion <1|2> met: <evidence>` (PLAN.md §7;
-    kill criterion 3 is not a gate stop). Any other text raises, so that a typo cannot
-    decide a gate. With `gate` given, criterion 1 is accepted only for Gate 2 and criterion 2
-    only for Gate 3, the gates that judge them (LOOP.md §5).
+    `kill` must be exactly `none met` or `Kill criterion <1|2|3> met: <evidence>` (PLAN.md
+    §7). Any other text raises, so that a typo cannot decide a gate. A met criterion needs
+    `gate` (and for criterion 3 `run_set`) and is accepted only for the gate that judges it:
+    criterion 1 for Gate 2, criterion 2 for Gate 3, criterion 3 for Gate 4 of set B.
     """
     met = KILL_MET_RE.match(kill)
     if kill != "none met" and not met:
         raise ValueError(f"kill statement {kill!r} is neither 'none met' nor "
-                         "'Kill criterion <1|2> met: <evidence>'")
-    if met and gate is not None and KILL_GATE[met.group(1)] != gate:
-        raise ValueError(f"kill criterion {met.group(1)} is judged by Gate {KILL_GATE[met.group(1)]}, "
-                         f"not Gate {gate}")
+                         "'Kill criterion <1|2|3> met: <evidence>'")
+    if met:
+        want_gate, want_set = KILL_GATE[met.group(1)]
+        if gate != want_gate or (want_set is not None and run_set != want_set):
+            where = f"Gate {want_gate}" + (f" set {want_set}" if want_set else "")
+            raise ValueError(f"kill criterion {met.group(1)} is judged by {where}, "
+                             f"not Gate {gate}" + (f" set {run_set}" if run_set else ""))
     supported = verdict == "VERDICT: SUPPORTED"
     if kill != "none met":
         return "FAIL"
@@ -367,32 +477,72 @@ def decide_result(coded_pass: bool, verdict: str | None, kill: str, gate: str | 
     return "NOT DECIDED"
 
 
-def finish_report(report: Path, critic_report: Path, kill: str) -> str:
+def report_history_problems(report: Path, iteration: str, repo: Path = REPO) -> list[str]:
+    """Commits that touched a gate report and are not of its own iteration. A report that git
+    tracks may be finished only if every commit that touched it has a subject starting
+    `Study 04 [<its iteration id>]` (LOOP.md §12: a head committed earlier in the same
+    session may get its last three lines; a report committed before the session never
+    changes). A file outside the repo has no history and gives no problem."""
+    try:
+        rel = report.resolve().relative_to(repo.resolve()).as_posix()
+    except ValueError:
+        return []
+    has_head = subprocess.run(["git", "-C", str(repo), "rev-parse", "--verify", "-q", "HEAD"],
+                              capture_output=True, text=True).returncode == 0
+    if not has_head:
+        return []  # a repo without commits (tests)
+    out = subprocess.run(["git", "-C", str(repo), "log", "--format=%h %s", "--", rel],
+                         check=True, capture_output=True, text=True).stdout
+    own = f"Study 04 [{iteration}]"
+    return [f"commit {line.split(' ', 1)[0]} touched {rel} and is not of {iteration}"
+            for line in out.splitlines() if not line.split(" ", 1)[-1].startswith(own)]
+
+
+def finish_report(report: Path, critic_report: Path, kill: str,
+                  reports_dir: Path | None = None) -> str:
     """Append the `Critic`, `Kill criteria` and `Result` lines to a gate report.
 
     `critic_report` is the saved `gate_reports/critic_<iteration id>_<k>.md`; its VERDICT
     line is copied verbatim. `kill` is "none met" or a statement of which kill criterion is
     met, with the evidence. Returns the result (PASS, FAIL or NOT DECIDED).
 
-    Refuses (ValueError, report unchanged) unless: the report's file name is a gate report
-    name and its title is the one that name gives; it has one `Coded check` line, as its last
-    line, and no verdict line yet; the critic report is from the same iteration, its title
-    matches its file name and names the gate and the report's file name; and its `Request:`
-    section quotes the repo commit of the report's `Evaluated` line and every sha256 under
-    `Data files:`, so that the review is bound to the outputs this evaluation hashed.
+    Refuses (ValueError, report unchanged) unless:
+    - the report's file name is a gate report name, and the head is exactly what
+      `render_report_head` writes for the result it states (`parse_report_head`, then
+      re-render and compare byte for byte), so the title, the table, the final newline and
+      the `Coded check` line, recomputed from the rows, are the writer's own;
+    - the report and the critic report sit in the same folder, `reports_dir` if given (the
+      command line gives `gate_reports/`), and no commit of another iteration touched the
+      report (`report_history_problems`);
+    - the critic report is from the same iteration, its title matches its file name and
+      names the gate and the report's file name;
+    - its `Request:` section quotes the repo commit and the evaluated time of the report's
+      `Evaluated` line, every sha256 under `Data files:` and every sha256 on a `Frozen` line,
+      so that the review is bound to the outputs this evaluation hashed;
+    - its verdict line is read the same way by this writer, the launcher and the runner
+      (`critic_verdict_line`).
+
+    What it cannot see: whether the critic was in fact given those files, and whether the
+    iteration ID is the current session's; those rest on LOOP.md §6 and on the runner (T1).
     """
     text = report.read_text(encoding="utf-8")
     gate, run_set, report_iteration = parse_report_name(report.name)
     lines = text.splitlines()
-    if not lines or lines[0] != report_title(gate, report_iteration, run_set):
-        raise ValueError(f"{report.name}: title is not {report_title(gate, report_iteration, run_set)!r}")
     result_re, coded_re, critic_re, kill_re = VERDICT_LABEL_RES
     if any(p.match(label_key(ln)) for ln in lines for p in (result_re, critic_re, kill_re)):
         raise ValueError(f"{report} is already finished")
-    coded = re.findall(r"(?m)^Coded check: (PASS|FAIL)$", text)
-    coded_lines = [ln for ln in lines if coded_re.match(label_key(ln))]
-    if len(coded) != 1 or len(coded_lines) != 1 or lines[-1] != coded_lines[0]:
-        raise ValueError(f"{report} has no single Coded check line as its last line")
+    stated = parse_report_head(text, report.name)
+    if render_report_head(stated, report_iteration) != text:
+        raise ValueError(f"{report.name}: the head is not exactly what the writer produces for the "
+                         "result it states (title, table, Coded check line or final newline differ)")
+    folder = report.resolve().parent
+    if critic_report.resolve().parent != folder or (
+            reports_dir is not None and reports_dir.resolve() != folder):
+        raise ValueError(f"{critic_report} and {report} must both sit in "
+                         f"{reports_dir if reports_dir is not None else 'the same folder'}")
+    history = report_history_problems(report, report_iteration)
+    if history:
+        raise ValueError(f"{report.name} may not be finished: " + "; ".join(history))
     m = CRITIC_FILE_RE.fullmatch(critic_report.name)
     if not m:
         raise ValueError(f"{critic_report.name} is not critic_<iteration id>_<k>.md")
@@ -413,19 +563,20 @@ def finish_report(report: Path, critic_report: Path, kill: str) -> str:
     request = critic_request_text(critic_text)
     if request is None:
         raise ValueError(f"{critic_report.name} has no single Request: section before Report:")
-    commit, hashes = report_evidence(text)
-    if commit is None:
-        raise ValueError(f"{report.name}: the Evaluated line names no full repo commit")
-    missing = [h for h in [commit] + hashes if h not in request]
+    frozen_hashes = [h for item in stated.frozen for h in re.findall(r"sha256 ([0-9a-f]{64})", item)]
+    evidence = ([stated.repo_commit, stated.evaluated_utc]
+                + [digest for _, digest in stated.data_files] + frozen_hashes)
+    missing = [h for h in evidence if h not in request]
     if missing:
         raise ValueError(f"{critic_report.name}: the request does not quote {len(missing)} of the "
-                         f"report's commit and data-file hashes (first {missing[0][:12]}), so the "
-                         "review is not bound to the outputs of this evaluation")
+                         f"report's commit, evaluated time and hashes (first {missing[0][:12]}), so "
+                         "the review is not bound to the outputs of this evaluation")
     verdict = critic_verdict_line(critic_text)
     if verdict is None:
-        raise ValueError(f"{critic_report} has no VERDICT line after Report:")
+        raise ValueError(f"{critic_report} has no VERDICT line that the writer, the launcher and "
+                         "the runner would all read the same way")
     kill = " ".join(kill.split())
-    result = decide_result(coded[0] == "PASS", verdict, kill, gate=gate)
+    result = decide_result(stated.coded_pass, verdict, kill, gate=gate, run_set=run_set)
     tail = (f"Critic: {verdict}, {m.group(1)}, {critic_report.name}\n"
             f"Kill criteria: {kill}\n"
             f"Result: {result}\n")
@@ -462,7 +613,12 @@ def installed_gandalf_commit() -> str:
 
 def installed_gandalf_intact() -> tuple[bool, str]:
     """Whether every installed GANDALF file with a RECORD hash still has that sha256, so that
-    an edit of the installed package cannot pass as the pinned commit. Returns (ok, seen)."""
+    an edit of the installed package cannot pass as the pinned commit. Returns (ok, seen).
+
+    Limits: RECORD itself carries no hash, so an edit of a file together with its RECORD line
+    passes; files RECORD does not list (`.pth` files, `sitecustomize`, stale `.pyc`) are not
+    checked. The derivation scripts run with `-E -s`, which closes `PYTHONPATH` and the user
+    site, not a `.pth` file in the environment's own site-packages."""
     import base64
 
     try:
@@ -769,7 +925,7 @@ def gate1_check(iteration: str,
     that a script that writes beside itself (D02 writes reference_profiles.npz) leaves
     the committed copy alone. Its stdout and stderr are saved beside it and hashed.
     """
-    if not ITERATION_RE.match(iteration):
+    if not ITERATION_RE.fullmatch(iteration):
         raise ValueError(f"iteration id {iteration!r} is not of the form it-YYYYMMDD-HHMM")
     head = _safe_head()  # read before the scripts run, so the report names what ran
     work = scratch / f"gate1_{iteration}"
@@ -791,7 +947,9 @@ def gate1_check(iteration: str,
         dst = work / name
         shutil.copy2(src, dst)
         try:
-            proc = subprocess.run([python, name], cwd=work, capture_output=True, text=True,
+            # -E -s: no PYTHON* variables and no user site, so `import krmhd` resolves to the
+            # installed, RECORD-checked package and not to a folder named in the environment
+            proc = subprocess.run([python, "-E", "-s", name], cwd=work, capture_output=True, text=True,
                                   timeout=timeout_s)
             rc, out, err = proc.returncode, proc.stdout, proc.stderr
         except subprocess.TimeoutExpired as exc:
@@ -849,11 +1007,26 @@ _RULE_TEXT = {
 }
 
 
-def tree_is_clean(repo: Path = REPO) -> bool:
-    """True when `git status --porcelain` prints nothing (untracked files count)."""
-    out = subprocess.run(["git", "-C", str(repo), "status", "--porcelain"], check=True,
-                         capture_output=True, text=True).stdout
-    return out.strip() == ""
+CLEAN_TREE_PATHS = (STUDY_REL, "shared")  # where a hidden index bit is refused, as by the launcher
+
+
+def hidden_index_bits(ls_files_v: str) -> list[str]:
+    """Files that `git ls-files -v` marks skip-worktree (`S`) or assume-unchanged (a lower-case
+    tag): `git status` does not show a change to them."""
+    return [line[2:] for line in ls_files_v.splitlines()
+            if len(line) > 2 and (line[0] == "S" or line[0].islower())]
+
+
+def tree_is_clean(repo: Path = REPO, paths: tuple[str, ...] = CLEAN_TREE_PATHS) -> bool:
+    """True when `git status --porcelain --untracked-files=all` prints nothing (untracked files
+    count, whatever `status.showUntrackedFiles` says) and no tracked file under `paths` has a
+    skip-worktree or assume-unchanged bit. The bit is checked only there, because the runner
+    sets skip-worktree on another study's data link (LOOP.md §2)."""
+    out = subprocess.run(["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=all"],
+                         check=True, capture_output=True, text=True).stdout
+    bits = subprocess.run(["git", "-C", str(repo), "ls-files", "-v", "--", *paths], check=True,
+                          capture_output=True, text=True).stdout
+    return out.strip() == "" and not hidden_index_bits(bits)
 
 
 def _rel_or_name(path: Path) -> str:
@@ -892,6 +1065,7 @@ def main(argv: list[str] | None = None) -> int:
                   "commit that produced it. Commit first.", file=sys.stderr)
             return 2
         result = gate1_check(args.iteration)
+        # Limit: a change made and undone between the two checks is not seen.
         if not tree_is_clean() or _safe_head() != result.repo_commit:
             print("Refusing: the tree or HEAD changed while the gate ran; no report written.",
                   file=sys.stderr)
@@ -900,7 +1074,7 @@ def main(argv: list[str] | None = None) -> int:
         print(path.read_text(encoding="utf-8"), end="")
         print(f"Wrote {repo_rel(path)}")
         return 0 if result.coded_pass else 1
-    result_line = finish_report(args.report, args.critic, args.kill)
+    result_line = finish_report(args.report, args.critic, args.kill, reports_dir=GATE_REPORTS)
     print(f"Result: {result_line}")
     return 0
 

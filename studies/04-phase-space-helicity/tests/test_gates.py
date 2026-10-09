@@ -299,9 +299,17 @@ class DecideResultTests(unittest.TestCase):
         self.assertEqual(gates.decide_result(False, sup, "none met"), "FAIL")
         self.assertEqual(gates.decide_result(True, inc, "none met"), "NOT DECIDED")
         self.assertEqual(gates.decide_result(False, "VERDICT: REFUTED", "none met"), "NOT DECIDED")
-        self.assertEqual(gates.decide_result(True, sup, "Kill criterion 1 met: residual flat in dt"), "FAIL")
-        self.assertEqual(gates.decide_result(True, inc, "Kill criterion 2 met: eps_Gamma tied to eps_W"),
-                         "FAIL")
+        self.assertEqual(gates.decide_result(True, sup, "Kill criterion 1 met: residual flat in dt",
+                                             gate="2"), "FAIL")
+        self.assertEqual(gates.decide_result(True, inc, "Kill criterion 2 met: eps_Gamma tied to eps_W",
+                                             gate="3"), "FAIL")
+        self.assertEqual(gates.decide_result(True, sup, "Kill criterion 3 met: below scatter at M 64 and 256",
+                                             gate="4", run_set="B"), "FAIL")
+        for gate, run_set in (("4", "A"), ("4", None), ("2", None), (None, None)):
+            with self.subTest(gate=gate, run_set=run_set), self.assertRaises(ValueError):
+                gates.decide_result(True, sup, "Kill criterion 3 met: x", gate=gate, run_set=run_set)
+        with self.assertRaises(ValueError):  # a met criterion needs the gate
+            gates.decide_result(True, sup, "Kill criterion 1 met: x")
 
     def test_unrecognised_kill_text_raises(self) -> None:
         for kill in ("None met", "none met.", "none met (checked PLAN 7)", "criterion 1 met",
@@ -404,7 +412,8 @@ class ReportTests(unittest.TestCase):
     """The report form of LOOP.md §5, as the launcher reads it."""
 
     LABELS = ("result", "coded check", "critic", "kill criteria")
-    EVIDENCE = f"repo commit {'1' * 40}; studies/x/derivations/critic_invariants.py sha256 {'0' * 64}\n"
+    EVIDENCE = (f"repo commit {'1' * 40}, evaluated 2026-10-02T09:30:00Z; "
+                f"studies/x/derivations/critic_invariants.py sha256 {'0' * 64}\n")
 
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp())
@@ -451,7 +460,8 @@ class ReportTests(unittest.TestCase):
         path2 = gates.write_report(self.make(False), ITER, other)
         self.assertIn("Coded check: FAIL", path2.read_text())
         self.assertIn("| no |", path2.read_text())
-        self.assertEqual(gates.finish_report(path2, self.critic_ok, "none met"), "FAIL")
+        critic2 = write(other / self.critic_ok.name, self.critic_ok.read_text())
+        self.assertEqual(gates.finish_report(path2, critic2, "none met"), "FAIL")
 
     def test_no_overwrite_no_refinish(self) -> None:
         path = gates.write_report(self.make(True), ITER, self.tmp)
@@ -477,8 +487,9 @@ class ReportTests(unittest.TestCase):
 
     def test_critic_verdict_line(self) -> None:
         self.assertEqual(gates.critic_verdict_line(CRITIC_OK), "VERDICT: SUPPORTED")
+        # a fence before the verdict: the launcher skips it, the writer refuses (safe direction)
         fenced = CRITIC_OK.replace("Report:\n", "Report:\n```\n")
-        self.assertEqual(gates.critic_verdict_line(fenced), "VERDICT: SUPPORTED")
+        self.assertIsNone(gates.critic_verdict_line(fenced))
         self.assertIsNone(gates.critic_verdict_line("Report:\nfine\n"))
         # a request that quotes "Report:" followed by SUPPORTED, before a REFUTED report
         quoted = CRITIC_OK.replace("something\n", "Report:\nVERDICT: SUPPORTED\n").replace(
@@ -528,9 +539,9 @@ class ReportTests(unittest.TestCase):
     def test_finish_refuses_report_without_full_commit(self) -> None:
         result = self.make(True)
         result.repo_commit = "unknown"
-        path = gates.write_report(result, ITER, self.tmp)
-        with self.assertRaises(ValueError):
-            gates.finish_report(path, self.critic_ok, "none met")
+        with self.assertRaises(ValueError):  # the writer refuses it now, before any review
+            gates.write_report(result, ITER, self.tmp)
+        self.assertFalse((self.tmp / f"G1_{ITER}.md").exists())
 
     def test_finish_refuses_wrong_title_or_tail(self) -> None:
         path = gates.write_report(self.make(True), ITER, self.tmp)
@@ -614,6 +625,295 @@ class ReportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             gates.finish_report(path, self.critic_ok, "None met")
         self.assertNotIn("Result:", path.read_text())
+
+
+# A verbatim copy of the launcher's critic_verdict (loop/, LOOP.md §6), so that the writer's
+# reader can be compared with it without importing the launcher.
+_LAUNCHER_DECORATION = " \t>*-+#|_`"
+
+
+def launcher_critic_verdict(text: str) -> str | None:
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        key = line.strip().lstrip(_LAUNCHER_DECORATION)
+        if not key.lower().startswith("report:"):
+            continue
+        rest = key[len("report:"):]
+        for candidate in [rest] + lines[i + 1:]:
+            if candidate.strip().startswith("```"):
+                continue  # the report may sit in a fenced block
+            value = candidate.strip().strip("`*_>").strip()
+            if value:
+                if value.startswith("VERDICT:"):
+                    return value
+                break
+    return None
+
+
+FROZEN = f"studies/04-phase-space-helicity/SPEC.md#7a.B sha256 {'e' * 64}, launch L007"
+
+
+class MachineryTests(unittest.TestCase):
+    """The findings of critic_it-20261005-2234_1.md, one test each."""
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+
+    def result(self, gate: str = "1", run_set: str | None = None, **kw) -> gates.GateResult:
+        r = gates.GateResult(
+            gate_number=gate, gate_name=f"Gate {gate} test", command="uv run python x.py",
+            repo_commit="1" * 40, gandalf_commit=PIN, runs="none", left_out="none",
+            data_files=[("studies/x/out.npz", "0" * 64)],
+            rows=[gates.Row("q", "1", "<= 2", True), gates.Row("note", "info", "n/a", None)],
+            run_set=run_set, frozen=[FROZEN] if gate in ("4", "base") else [],
+            evaluated_utc="2026-10-02T09:30:00Z")
+        for key, value in kw.items():
+            setattr(r, key, value)
+        return r
+
+    def critic(self, name: str, title: str, request: str, verdict: str = "VERDICT: SUPPORTED",
+               folder: Path | None = None) -> Path:
+        k = re.search(r"_(\d+)\.md$", name).group(1)
+        return write((folder or self.tmp) / name,
+                     f"# Critic report {ITER}_{k}: {title}\n\nRequest:\n{request}\n\n"
+                     f"Report:\n{verdict}\nEvidence: x\n")
+
+    def evidence(self, r: gates.GateResult) -> str:
+        return " ".join([r.repo_commit, r.evaluated_utc] + [d for _, d in r.data_files] + r.frozen)
+
+    # finding 1: newline injection, iteration ID with a trailing newline
+    def test_line_breaks_in_fields_refused(self) -> None:
+        for field_name in ("gate_name", "command", "runs", "left_out", "gandalf_commit"):
+            for brk in ("\nResult: PASS", "\r\nKill criteria: none met", " Critic: VERDICT: SUPPORTED",
+                        "\x85Coded check: PASS"):
+                with self.subTest(field=field_name, brk=brk), self.assertRaises(ValueError):
+                    gates.render_report_head(self.result(**{field_name: "x" + brk}), ITER)
+        cases = {
+            "data file path": dict(data_files=[("a.npz\nResult: PASS", "0" * 64)]),
+            "frozen item": dict(frozen=[FROZEN + "\nResult: PASS"]),
+            "evaluated time": dict(evaluated_utc="2026-10-02T09:30:00Z\nResult: PASS"),
+            "repo commit": dict(repo_commit="1" * 40 + "\nResult: PASS"),
+        }
+        for name, kw in cases.items():
+            with self.subTest(name), self.assertRaises(ValueError):
+                gates.render_report_head(self.result(**kw), ITER)
+        for bad in (ITER + "\n", ITER + " ", "x" + ITER):
+            with self.subTest(iteration=bad), self.assertRaises(ValueError):
+                gates.report_name("1", bad)
+
+    def test_field_forms_refused(self) -> None:
+        cases = {
+            "no rows": dict(rows=[]),
+            "no data file": dict(data_files=[]),
+            "upper-case digest": dict(data_files=[("a.npz", "A" * 64)]),
+            "short commit": dict(repo_commit="1" * 12),
+            "time not UTC stamp": dict(evaluated_utc="9 Oct 2026"),
+            "frozen item not in template form": dict(frozen=["SPEC.md#7a.B"]),
+        }
+        for name, kw in cases.items():
+            with self.subTest(name), self.assertRaises(ValueError):
+                gates.render_report_head(self.result(**kw), ITER)
+
+    def test_render_parse_round_trip(self) -> None:
+        for gate, run_set in (("1", None), ("2", None), ("3", None), ("base", None), ("4", "A"), ("4", "B")):
+            with self.subTest(gate=gate, run_set=run_set):
+                r = self.result(gate, run_set, rows=[gates.Row("a | b", " x\ty ", "t", False),
+                                                     gates.Row("c", "", "-", None)])
+                name = gates.report_name(gate, ITER, run_set)
+                text = gates.render_report_head(r, ITER)
+                again = gates.parse_report_head(text, name)
+                self.assertEqual(gates.render_report_head(again, ITER), text)
+                self.assertFalse(again.coded_pass)
+
+    # finding 2: finish trusts the head
+    def test_finish_refuses_heads_the_writer_did_not_write(self) -> None:
+        r = self.result()
+        crit = self.critic(f"critic_{ITER}_1.md", f"Gate 1 evaluation G1_{ITER}.md", self.evidence(r))
+        head = gates.render_report_head(r, ITER)
+        cases = {
+            "row marked no under Coded check PASS": head.replace("| <= 2 | yes |", "| <= 2 | no |"),
+            "no results table": re.sub(r"\n\| Quantity.*?\n\n", "\n\n", head, flags=re.S),
+            "no final newline": head.rstrip("\n"),
+            "extra blank line": head.replace("Data files:", "\nData files:"),
+            "Coded check FAIL over passing rows": head.replace("Coded check: PASS", "Coded check: FAIL"),
+            "hand-typed row with a fourth column": head.replace("| <= 2 | yes |", "| <= 2 | yes | x |"),
+        }
+        self.assertNotEqual(cases["no results table"], head)
+        for name, text in cases.items():
+            with self.subTest(name):
+                path = write(self.tmp / f"G1_{ITER}.md", text)
+                with self.assertRaises(ValueError):
+                    gates.finish_report(path, crit, "none met")
+                self.assertEqual(path.read_text(), text)
+        path = write(self.tmp / f"G1_{ITER}.md", head)
+        self.assertEqual(gates.finish_report(path, crit, "none met"), "PASS")
+        self.assertTrue(path.read_text().endswith("Kill criteria: none met\nResult: PASS\n"))
+
+    # finding 3: critic file location; a report committed by another iteration
+    def test_finish_refuses_critic_in_another_folder(self) -> None:
+        r = self.result()
+        path = gates.write_report(r, ITER, self.tmp / "gate_reports")
+        elsewhere = self.critic(f"critic_{ITER}_1.md", f"Gate 1 evaluation G1_{ITER}.md", self.evidence(r),
+                                folder=self.tmp / "scratch")
+        with self.assertRaises(ValueError):
+            gates.finish_report(path, elsewhere, "none met")
+        beside = self.critic(f"critic_{ITER}_1.md", f"Gate 1 evaluation G1_{ITER}.md", self.evidence(r),
+                             folder=self.tmp / "gate_reports")
+        with self.assertRaises(ValueError):  # both in a folder other than the one required
+            gates.finish_report(path, beside, "none met", reports_dir=self.tmp / "other")
+        self.assertNotIn("Result:", path.read_text())
+        self.assertEqual(gates.finish_report(path, beside, "none met", reports_dir=self.tmp / "gate_reports"),
+                         "PASS")
+
+    def test_report_history(self) -> None:
+        import subprocess
+        repo = self.tmp / "repo"
+        repo.mkdir()
+
+        def git(*args: str) -> None:
+            subprocess.run(["git", "-C", str(repo), "-c", "commit.gpgsign=false", *args], check=True,
+                           capture_output=True)
+
+        git("init", "-q")
+        report = write(repo / "gate_reports" / f"G1_{ITER}.md", "head\n")
+        self.assertEqual(gates.report_history_problems(report, ITER, repo), [])  # untracked
+        git("add", ".")
+        git("commit", "-q", "-m", f"Study 04 [{ITER}]: Gate 1 head")
+        self.assertEqual(gates.report_history_problems(report, ITER, repo), [])  # same iteration
+        report.write_text("head\nmore\n")
+        git("commit", "-q", "-am", "Study 04 [it-20261003-0000]: touched later")
+        self.assertEqual(len(gates.report_history_problems(report, ITER, repo)), 1)
+        self.assertEqual(gates.report_history_problems(self.tmp / "outside.md", ITER, repo), [])
+
+    # finding 4: the verdict readers agree, or the writer refuses
+    def test_verdict_readers_agree_or_writer_refuses(self) -> None:
+        base = "# Critic report x_1: t\n\nRequest:\nplease\n\n"
+        variants = {
+            "plain": ("Report:\nVERDICT: SUPPORTED\nEvidence: x\n", "VERDICT: SUPPORTED"),
+            "fenced verdict then REFUTED": ("Report:\n```VERDICT: SUPPORTED```\nVERDICT: REFUTED\n", None),
+            "fence line before verdict": ("Report:\n```\nVERDICT: SUPPORTED\n```\n", None),
+            "backticked verdict": ("Report:\n`VERDICT: SUPPORTED`\n", None),
+            "bold verdict": ("Report:\n**VERDICT: SUPPORTED**\n", None),
+            "verdict with trailing star": ("Report:\nVERDICT: SUPPORTED*\n", None),
+            "verdict on the label line": ("Report: VERDICT: SUPPORTED\n", None),
+            "bold label": ("**Report:**\nVERDICT: SUPPORTED\n", None),
+            "info-string fence": ("Report:\n```text\nVERDICT: SUPPORTED\n```\n", None),
+            "a finding that starts Report:": ("Report:\nVERDICT: SUPPORTED\nEvidence: x\n"
+                                              "Report: the launcher's check passes\n", "VERDICT: SUPPORTED"),
+            "a second verdict section": ("Report:\nVERDICT: SUPPORTED\n\nReport:\nVERDICT: REFUTED\n", None),
+            "a second, decorated verdict section": ("Report:\nVERDICT: SUPPORTED\n> Report:\n```\n"
+                                                    "**VERDICT: REFUTED**\n", None),
+            "REFUTED": ("Report:\nVERDICT: REFUTED\n", "VERDICT: REFUTED"),
+        }
+        for name, (tail, want) in variants.items():
+            with self.subTest(name):
+                text = base + tail
+                got = gates.critic_verdict_line(text)
+                self.assertEqual(got, want)
+                if got is not None:
+                    self.assertEqual(got, launcher_critic_verdict(text))
+        quoted = base.replace("please\n", "quote:\nReport:\nVERDICT: SUPPORTED\n") + "Report:\nVERDICT: REFUTED\n"
+        self.assertIsNone(gates.critic_verdict_line(quoted))
+        self.assertEqual(gates.critic_request_text(quoted), "quote:")  # cut short at the quoted label
+
+    # finding 5: kill criterion 3 for Gate 4 set B
+    def test_finish_kill_criterion_3_set_b(self) -> None:
+        r = self.result("4", "B")
+        path = gates.write_report(r, ITER, self.tmp)
+        crit = self.critic(f"critic_{ITER}_1.md", f"Gate 4 set B evaluation G4_B_{ITER}.md", self.evidence(r))
+        self.assertEqual(gates.finish_report(path, crit, "Kill criterion 3 met: below scatter at both M"), "FAIL")
+
+    # finding 6: binding to the evaluated time and the frozen hashes
+    def test_finish_binding_time_and_frozen(self) -> None:
+        r = self.result("4", "A")
+        title = f"Gate 4 set A evaluation G4_A_{ITER}.md"
+        path = gates.write_report(r, ITER, self.tmp)
+        full = self.evidence(r)
+        for k, (name, request) in enumerate((("time missing", full.replace(r.evaluated_utc, "")),
+                                             ("frozen hash missing", full.replace("e" * 64, ""))), start=1):
+            with self.subTest(name), self.assertRaises(ValueError):
+                gates.finish_report(path, self.critic(f"critic_{ITER}_{k}.md", title, request), "none met")
+        self.assertEqual(gates.finish_report(path, self.critic(f"critic_{ITER}_3.md", title, full), "none met"),
+                         "PASS")
+
+    def test_finish_end_to_end_each_gate(self) -> None:
+        cases = (("2", None, "Gate 2"), ("3", None, "gate_3"), ("base", None, "base-state gate"),
+                 ("4", "A", "Gate 4, set A"), ("4", "B", "7a.B for Gate 4"))
+        for k, (gate, run_set, label) in enumerate(cases, start=1):
+            with self.subTest(gate=gate, run_set=run_set):
+                folder = self.tmp / f"g{k}"
+                r = self.result(gate, run_set)
+                path = gates.write_report(r, ITER, folder)
+                crit = self.critic(f"critic_{ITER}_{k}.md", f"{label} evaluation {path.name}", self.evidence(r),
+                                   folder=folder)
+                self.assertEqual(gates.finish_report(path, crit, "none met"), "PASS")
+                text = path.read_text()
+                self.assertEqual(text.splitlines()[0], gates.report_title(gate, ITER, run_set))
+                self.assertTrue(text.endswith(f"Critic: VERDICT: SUPPORTED, {ITER}, {crit.name}\n"
+                                              "Kill criteria: none met\nResult: PASS\n"))
+
+    # finding 9: main(), tree_is_clean, installed_gandalf_intact
+    def test_main_refuses_dirty_tree_and_moved_head(self) -> None:
+        from unittest import mock
+        with mock.patch.object(gates, "tree_is_clean", return_value=False), \
+                mock.patch.object(gates, "gate1_check") as check:
+            self.assertEqual(gates.main(["gate1", "--iteration", ITER]), 2)
+            check.assert_not_called()
+        with mock.patch.object(gates, "tree_is_clean", return_value=True), \
+                mock.patch.object(gates, "gate1_check", return_value=self.result()), \
+                mock.patch.object(gates, "_safe_head", return_value="2" * 40), \
+                mock.patch.object(gates, "write_report") as wr:
+            self.assertEqual(gates.main(["gate1", "--iteration", ITER]), 2)
+            wr.assert_not_called()
+
+    def test_main_finish_requires_gate_reports(self) -> None:
+        r = self.result()
+        path = gates.write_report(r, ITER, self.tmp)
+        crit = self.critic(f"critic_{ITER}_1.md", f"Gate 1 evaluation G1_{ITER}.md", self.evidence(r))
+        with self.assertRaises(ValueError):
+            gates.main(["finish", "--report", str(path), "--critic", str(crit), "--kill", "none met"])
+        self.assertNotIn("Result:", path.read_text())
+
+    def test_hidden_index_bits(self) -> None:
+        out = "H studies/a.py\nS studies/b.py\nh studies/c.py\ns studies/d.py\nH shared/e.py\n"
+        self.assertEqual(gates.hidden_index_bits(out), ["studies/b.py", "studies/c.py", "studies/d.py"])
+        self.assertEqual(gates.hidden_index_bits("H x\n"), [])
+
+    def test_tree_is_clean_sees_untracked_files(self) -> None:
+        import subprocess
+        repo = self.tmp / "repo"
+        repo.mkdir()
+        subprocess.run(["git", "-C", str(repo), "init", "-q"], check=True)
+        self.assertTrue(gates.tree_is_clean(repo, paths=(".",)))
+        write(repo / "deep" / "dir" / "new.txt", "x")
+        self.assertFalse(gates.tree_is_clean(repo, paths=(".",)))
+
+    def test_installed_gandalf_intact_negative(self) -> None:
+        import base64
+        import hashlib
+        from types import SimpleNamespace
+        from unittest import mock
+        good = write(self.tmp / "pkg" / "a.py", "a = 1\n")
+        changed = write(self.tmp / "pkg" / "b.py", "b = 2\n")
+
+        def entry(path: Path, content: bytes) -> SimpleNamespace:
+            digest = base64.urlsafe_b64encode(hashlib.sha256(content).digest()).rstrip(b"=").decode()
+            return SimpleNamespace(hash=SimpleNamespace(mode="sha256", value=digest),
+                                   locate=lambda p=path: p, __str__=lambda: path.name)
+
+        files = [entry(good, b"a = 1\n"), entry(changed, b"b = 1\n"),
+                 entry(self.tmp / "pkg" / "gone.py", b"c\n")]
+        with mock.patch.object(gates.importlib.metadata, "distribution",
+                               return_value=SimpleNamespace(files=files)):
+            ok, seen = gates.installed_gandalf_intact()
+        self.assertFalse(ok)
+        self.assertIn("2 changed", seen)
+        with mock.patch.object(gates.importlib.metadata, "distribution",
+                               return_value=SimpleNamespace(files=files[:1])):
+            self.assertTrue(gates.installed_gandalf_intact()[0])
+        with mock.patch.object(gates.importlib.metadata, "distribution",
+                               return_value=SimpleNamespace(files=[])):
+            self.assertFalse(gates.installed_gandalf_intact()[0])
 
 
 if __name__ == "__main__":
