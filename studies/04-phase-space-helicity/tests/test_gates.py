@@ -112,6 +112,24 @@ def write(path: Path, text: str) -> Path:
     return path
 
 
+def same(stated: gates.GateResult, iteration: str) -> gates.GateResult:
+    """A re-judge that rebuilds exactly what the head states, for tests of the machinery
+    that are not about re-judging."""
+    return stated
+
+
+def finish(*args, **kw) -> str:
+    """finish_report with the identity re-judge unless a test gives its own."""
+    kw.setdefault("rejudge", same)
+    return gates.finish_report(*args, **kw)
+
+
+def head_sha(result: gates.GateResult) -> str:
+    """sha256 of the head the writer renders for `result`."""
+    import hashlib
+    return hashlib.sha256(gates.render_report_head(result, ITER).encode("utf-8")).hexdigest()
+
+
 class JudgeScriptTests(unittest.TestCase):
     def test_all_checks(self) -> None:
         self.assertTrue(gates.judge_script("all-checks", 0, "x\n\nALL CHECKS PASSED\n")[0])
@@ -359,8 +377,33 @@ class Gate1CheckTests(unittest.TestCase):
         self.assertFalse((self.deriv / "out.npz").exists())
         self.assertTrue((self.tmp / "scratch" / f"gate1_{ITER}" / "out.npz").exists())
         # every script and its two logs, both npz files, SPEC.md and claims.md are hashed
-        self.assertEqual(len(result.data_files), 5 * 3 + 2 + 1 + 1)
+        self.assertEqual(len(result.data_files), 5 * 4 + 2 + 1 + 1)
         self.assertTrue(all(re.fullmatch(r"[0-9a-f]{64}", h) for _, h in result.data_files))
+
+    def test_rejudge_rebuilds_and_catches_edits(self) -> None:
+        result = self.run_check(scripts=self.scripts + (("bad.py", "all-checks"),))
+        self.assertFalse(result.coded_pass)
+        kw = dict(scratch=self.tmp / "scratch", lock=self.lock, install_info=(PIN, True, "test"),
+                  derivations=self.deriv, reports_dir=self.reports,
+                  scripts=self.scripts + (("bad.py", "all-checks"),), claims=("C1", "C2"),
+                  study=self.tmp, accepted=("SPEC.md",))
+
+        def rejudge(stated: gates.GateResult, iteration: str) -> gates.GateResult:
+            return gates.gate1_rejudge(stated, iteration, **dict(kw))
+
+        head = gates.render_report_head(result, ITER)
+        self.assertEqual(gates.render_report_head(rejudge(result, ITER), ITER), head)
+        # a consistent hand edit: the failing row marked yes and the coded check PASS
+        edited = gates.GateResult(**{**result.__dict__, "rows": [
+            gates.Row(r.quantity, r.value, r.threshold, True if r.passed is False else r.passed)
+            for r in result.rows]})
+        self.assertTrue(edited.coded_pass)
+        self.assertNotEqual(gates.render_report_head(rejudge(edited, ITER), ITER),
+                            gates.render_report_head(edited, ITER))
+        # an output changed after the evaluation
+        stdout = self.tmp / "scratch" / f"gate1_{ITER}" / "bad.stdout"
+        stdout.write_text("ALL CHECKS PASSED\n")
+        self.assertNotEqual(gates.render_report_head(rejudge(result, ITER), ITER), head)
 
     def test_d02_npz_mismatch(self) -> None:
         import numpy as np
@@ -418,7 +461,8 @@ class ReportTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp())
         gate1 = f": Gate 1 evaluation, G1_{ITER}.md\n"
-        bound_ok = CRITIC_OK.replace("something\n", self.EVIDENCE)
+        heads = f"head sha256 {head_sha(self.make(True))} or {head_sha(self.make(False))}\n"
+        bound_ok = CRITIC_OK.replace("something\n", self.EVIDENCE + heads)
         self.critic_ok = write(self.tmp / "critic_it-20261002-0916_1.md", bound_ok.replace(": test\n", gate1))
         self.critic_bad = write(self.tmp / "critic_it-20261002-0916_2.md",
                                 bound_ok.replace("VERDICT: SUPPORTED", "VERDICT: INCONCLUSIVE")
@@ -441,7 +485,7 @@ class ReportTests(unittest.TestCase):
         path = gates.write_report(self.make(True), ITER, self.tmp)
         self.assertEqual(path.name, f"G1_{ITER}.md")
         self.assertEqual(path.read_text().splitlines()[0], f"# Gate 1 report: {ITER}")
-        self.assertEqual(gates.finish_report(path, self.critic_ok, "none met"), "PASS")
+        self.assertEqual(finish(path, self.critic_ok, "none met"), "PASS")
         text = path.read_text()
         for label in self.LABELS:
             self.assertEqual(len(self.label_lines(text, label)), 1, label)
@@ -455,21 +499,21 @@ class ReportTests(unittest.TestCase):
 
     def test_finish_not_decided_and_fail(self) -> None:
         path = gates.write_report(self.make(True), ITER, self.tmp)
-        self.assertEqual(gates.finish_report(path, self.critic_bad, "none met"), "NOT DECIDED")
+        self.assertEqual(finish(path, self.critic_bad, "none met"), "NOT DECIDED")
         other = self.tmp / "other"
         path2 = gates.write_report(self.make(False), ITER, other)
         self.assertIn("Coded check: FAIL", path2.read_text())
         self.assertIn("| no |", path2.read_text())
         critic2 = write(other / self.critic_ok.name, self.critic_ok.read_text())
-        self.assertEqual(gates.finish_report(path2, critic2, "none met"), "FAIL")
+        self.assertEqual(finish(path2, critic2, "none met"), "FAIL")
 
     def test_no_overwrite_no_refinish(self) -> None:
         path = gates.write_report(self.make(True), ITER, self.tmp)
         with self.assertRaises(FileExistsError):
             gates.write_report(self.make(True), ITER, self.tmp)
-        gates.finish_report(path, self.critic_ok, "none met")
+        finish(path, self.critic_ok, "none met")
         with self.assertRaises(ValueError):
-            gates.finish_report(path, self.critic_ok, "none met")
+            finish(path, self.critic_ok, "none met")
 
     def test_no_decisive_row_fails(self) -> None:
         result = self.make(True)
@@ -506,7 +550,7 @@ class ReportTests(unittest.TestCase):
                            ("critic_it-20261002-0916_6.md",
                             CRITIC_OK.replace("0916_1: test", "0916_6: Gate 1 criteria, before evaluation"))):
             with self.subTest(name), self.assertRaises(ValueError):
-                gates.finish_report(path, write(self.tmp / name, text), "none met")
+                finish(path, write(self.tmp / name, text), "none met")
         self.assertNotIn("Result:", path.read_text())
 
     def test_gate_label(self) -> None:
@@ -532,7 +576,7 @@ class ReportTests(unittest.TestCase):
         }
         for k, (name, text) in enumerate(cases.items(), start=3):
             with self.subTest(name), self.assertRaises(ValueError):
-                gates.finish_report(path, write(self.tmp / f"critic_{ITER}_{k}.md",
+                finish(path, write(self.tmp / f"critic_{ITER}_{k}.md",
                                                 text.replace(f"{ITER}_1:", f"{ITER}_{k}:")), "none met")
         self.assertNotIn("Result:", path.read_text())
 
@@ -554,11 +598,11 @@ class ReportTests(unittest.TestCase):
             with self.subTest(name):
                 path.write_text(text)
                 with self.assertRaises(ValueError):
-                    gates.finish_report(path, self.critic_ok, "none met")
+                    finish(path, self.critic_ok, "none met")
                 self.assertEqual(path.read_text(), text)
         bad_name = write(self.tmp / f"G1-{ITER}.md", head)
         with self.assertRaises(ValueError):
-            gates.finish_report(bad_name, self.critic_ok, "none met")
+            finish(bad_name, self.critic_ok, "none met")
 
     def test_parse_report_name(self) -> None:
         self.assertEqual(gates.parse_report_name(f"G1_{ITER}.md"), ("1", None, ITER))
@@ -613,7 +657,7 @@ class ReportTests(unittest.TestCase):
                 gates.decide_result(True, sup, kill, gate=gate)
         path = gates.write_report(self.make(True), ITER, self.tmp)
         with self.assertRaises(ValueError):
-            gates.finish_report(path, self.critic_ok, "Kill criterion 1 met: residual flat")
+            finish(path, self.critic_ok, "Kill criterion 1 met: residual flat")
         self.assertNotIn("Result:", path.read_text())
 
     def test_finish_refuses_critic_of_other_iteration(self) -> None:
@@ -621,9 +665,9 @@ class ReportTests(unittest.TestCase):
         other = write(self.tmp / "critic_it-20260101-0000_1.md",
                       CRITIC_OK.replace("it-20261002-0916_1: test", "it-20260101-0000_1: Gate 1"))
         with self.assertRaises(ValueError):
-            gates.finish_report(path, other, "none met")
+            finish(path, other, "none met")
         with self.assertRaises(ValueError):
-            gates.finish_report(path, self.critic_ok, "None met")
+            finish(path, self.critic_ok, "None met")
         self.assertNotIn("Result:", path.read_text())
 
 
@@ -679,7 +723,7 @@ class MachineryTests(unittest.TestCase):
                      f"Report:\n{verdict}\nEvidence: x\n")
 
     def evidence(self, r: gates.GateResult) -> str:
-        return " ".join([r.repo_commit, r.evaluated_utc] + [d for _, d in r.data_files] + r.frozen)
+        return " ".join([head_sha(r), r.repo_commit, r.evaluated_utc] + [d for _, d in r.data_files] + r.frozen)
 
     # finding 1: newline injection, iteration ID with a trailing newline
     def test_line_breaks_in_fields_refused(self) -> None:
@@ -743,10 +787,10 @@ class MachineryTests(unittest.TestCase):
             with self.subTest(name):
                 path = write(self.tmp / f"G1_{ITER}.md", text)
                 with self.assertRaises(ValueError):
-                    gates.finish_report(path, crit, "none met")
+                    finish(path, crit, "none met")
                 self.assertEqual(path.read_text(), text)
         path = write(self.tmp / f"G1_{ITER}.md", head)
-        self.assertEqual(gates.finish_report(path, crit, "none met"), "PASS")
+        self.assertEqual(finish(path, crit, "none met"), "PASS")
         self.assertTrue(path.read_text().endswith("Kill criteria: none met\nResult: PASS\n"))
 
     # finding 3: critic file location; a report committed by another iteration
@@ -756,13 +800,13 @@ class MachineryTests(unittest.TestCase):
         elsewhere = self.critic(f"critic_{ITER}_1.md", f"Gate 1 evaluation G1_{ITER}.md", self.evidence(r),
                                 folder=self.tmp / "scratch")
         with self.assertRaises(ValueError):
-            gates.finish_report(path, elsewhere, "none met")
+            finish(path, elsewhere, "none met")
         beside = self.critic(f"critic_{ITER}_1.md", f"Gate 1 evaluation G1_{ITER}.md", self.evidence(r),
                              folder=self.tmp / "gate_reports")
         with self.assertRaises(ValueError):  # both in a folder other than the one required
-            gates.finish_report(path, beside, "none met", reports_dir=self.tmp / "other")
+            finish(path, beside, "none met", reports_dir=self.tmp / "other")
         self.assertNotIn("Result:", path.read_text())
-        self.assertEqual(gates.finish_report(path, beside, "none met", reports_dir=self.tmp / "gate_reports"),
+        self.assertEqual(finish(path, beside, "none met", reports_dir=self.tmp / "gate_reports"),
                          "PASS")
 
     def test_report_history(self) -> None:
@@ -821,7 +865,7 @@ class MachineryTests(unittest.TestCase):
         r = self.result("4", "B")
         path = gates.write_report(r, ITER, self.tmp)
         crit = self.critic(f"critic_{ITER}_1.md", f"Gate 4 set B evaluation G4_B_{ITER}.md", self.evidence(r))
-        self.assertEqual(gates.finish_report(path, crit, "Kill criterion 3 met: below scatter at both M"), "FAIL")
+        self.assertEqual(finish(path, crit, "Kill criterion 3 met: below scatter at both M"), "FAIL")
 
     # finding 6: binding to the evaluated time and the frozen hashes
     def test_finish_binding_time_and_frozen(self) -> None:
@@ -832,8 +876,8 @@ class MachineryTests(unittest.TestCase):
         for k, (name, request) in enumerate((("time missing", full.replace(r.evaluated_utc, "")),
                                              ("frozen hash missing", full.replace("e" * 64, ""))), start=1):
             with self.subTest(name), self.assertRaises(ValueError):
-                gates.finish_report(path, self.critic(f"critic_{ITER}_{k}.md", title, request), "none met")
-        self.assertEqual(gates.finish_report(path, self.critic(f"critic_{ITER}_3.md", title, full), "none met"),
+                finish(path, self.critic(f"critic_{ITER}_{k}.md", title, request), "none met")
+        self.assertEqual(finish(path, self.critic(f"critic_{ITER}_3.md", title, full), "none met"),
                          "PASS")
 
     def test_finish_end_to_end_each_gate(self) -> None:
@@ -846,7 +890,7 @@ class MachineryTests(unittest.TestCase):
                 path = gates.write_report(r, ITER, folder)
                 crit = self.critic(f"critic_{ITER}_{k}.md", f"{label} evaluation {path.name}", self.evidence(r),
                                    folder=folder)
-                self.assertEqual(gates.finish_report(path, crit, "none met"), "PASS")
+                self.assertEqual(finish(path, crit, "none met"), "PASS")
                 text = path.read_text()
                 self.assertEqual(text.splitlines()[0], gates.report_title(gate, ITER, run_set))
                 self.assertTrue(text.endswith(f"Critic: VERDICT: SUPPORTED, {ITER}, {crit.name}\n"
@@ -893,16 +937,24 @@ class MachineryTests(unittest.TestCase):
         import hashlib
         from types import SimpleNamespace
         from unittest import mock
-        good = write(self.tmp / "pkg" / "a.py", "a = 1\n")
-        changed = write(self.tmp / "pkg" / "b.py", "b = 2\n")
+        good = write(self.tmp / "krmhd" / "a.py", "a = 1\n")
+        changed = write(self.tmp / "krmhd" / "b.py", "b = 2\n")
+        meta = write(self.tmp / "gandalf_krmhd.dist-info" / "METADATA", "m\n")
 
-        def entry(path: Path, content: bytes) -> SimpleNamespace:
-            digest = base64.urlsafe_b64encode(hashlib.sha256(content).digest()).rstrip(b"=").decode()
-            return SimpleNamespace(hash=SimpleNamespace(mode="sha256", value=digest),
-                                   locate=lambda p=path: p, __str__=lambda: path.name)
+        class Entry:
+            def __init__(self, path: Path, content: bytes) -> None:
+                digest = base64.urlsafe_b64encode(hashlib.sha256(content).digest()).rstrip(b"=").decode()
+                self.hash = SimpleNamespace(mode="sha256", value=digest)
+                self.path = path
 
-        files = [entry(good, b"a = 1\n"), entry(changed, b"b = 1\n"),
-                 entry(self.tmp / "pkg" / "gone.py", b"c\n")]
+            def locate(self) -> Path:
+                return self.path
+
+            def __str__(self) -> str:
+                return self.path.relative_to(self.path.parents[1]).as_posix()
+
+        files = [Entry(good, b"a = 1\n"), Entry(changed, b"b = 1\n"),
+                 Entry(self.tmp / "krmhd" / "gone.py", b"c\n")]
         with mock.patch.object(gates.importlib.metadata, "distribution",
                                return_value=SimpleNamespace(files=files)):
             ok, seen = gates.installed_gandalf_intact()
@@ -914,6 +966,65 @@ class MachineryTests(unittest.TestCase):
         with mock.patch.object(gates.importlib.metadata, "distribution",
                                return_value=SimpleNamespace(files=[])):
             self.assertFalse(gates.installed_gandalf_intact()[0])
+        # hashed files that are not the package itself do not count
+        with mock.patch.object(gates.importlib.metadata, "distribution",
+                               return_value=SimpleNamespace(files=[Entry(meta, b"m\n")])):
+            self.assertFalse(gates.installed_gandalf_intact()[0])
+
+    def test_isolated_install_info(self) -> None:
+        commit, ok, seen = gates.isolated_install_info()
+        self.assertEqual(commit, gates.uv_lock_pin(gates.REPO / "uv.lock"))
+        self.assertTrue(ok, seen)
+        # an interpreter that prints nothing usable gives 'unknown' and not intact
+        self.assertEqual(gates.isolated_install_info(python="/usr/bin/true"),
+                         ("unknown", False, "install check failed (exit 0)"))
+
+    def test_frozen_lines_by_gate(self) -> None:
+        with self.assertRaises(ValueError):
+            gates.render_report_head(self.result("4", "A", frozen=[]), ITER)
+        with self.assertRaises(ValueError):
+            gates.render_report_head(self.result("base", frozen=[]), ITER)
+        with self.assertRaises(ValueError):
+            gates.render_report_head(self.result("2", frozen=[FROZEN]), ITER)
+        with self.assertRaises(ValueError):
+            gates.report_name("4", ITER, "Å")
+
+    def test_finish_reads_bytes(self) -> None:
+        r = self.result()
+        path = gates.write_report(r, ITER, self.tmp)
+        crit = self.critic(f"critic_{ITER}_1.md", f"Gate 1 evaluation G1_{ITER}.md", self.evidence(r))
+        path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+        with self.assertRaises(ValueError):
+            finish(path, crit, "none met")
+
+    def test_finish_needs_head_sha_and_rejudge(self) -> None:
+        r = self.result()
+        path = gates.write_report(r, ITER, self.tmp)
+        title = f"Gate 1 evaluation G1_{ITER}.md"
+        no_sha = self.critic(f"critic_{ITER}_1.md", title, self.evidence(r).replace(head_sha(r), ""))
+        with self.assertRaises(ValueError):
+            finish(path, no_sha, "none met")
+        crit = self.critic(f"critic_{ITER}_2.md", title, self.evidence(r))
+        with self.assertRaises(ValueError):  # no re-judge given
+            gates.finish_report(path, crit, "none met")
+
+        def flipped(stated: gates.GateResult, iteration: str) -> gates.GateResult:
+            rows = [gates.Row(x.quantity, x.value, x.threshold, False if x.passed else x.passed)
+                    for x in stated.rows]
+            return gates.GateResult(**{**stated.__dict__, "rows": rows})
+
+        with self.assertRaises(ValueError):  # the outputs say the row failed
+            finish(path, crit, "none met", rejudge=flipped)
+        self.assertNotIn("Result:", path.read_text())
+
+    def test_gate_names_as_the_runner_reads_them(self) -> None:
+        base = gates.gate_label_re(f"# Gate base report: {ITER}")
+        self.assertFalse(base.search(f"evaluation Gbase_{ITER}.md"))
+        self.assertTrue(base.search(f"Gbase evaluation Gbase_{ITER}.md"))
+        set_a = gates.gate_label_re(f"# Gate 4 report, set A: {ITER}")
+        self.assertFalse(set_a.search("gate 4 set a"))
+        self.assertTrue(set_a.search("Gate 4 set A"))
+        self.assertTrue(set_a.search("gate-4, Set A"))
 
 
 if __name__ == "__main__":
