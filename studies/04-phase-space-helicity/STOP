@@ -1,0 +1,6 @@
+STOP
+Written by: agent (it-20261009-2146), 2026-10-09T22:04:52Z
+Reason: Gate 1 criteria part (a), the shared report machinery, was refuted a third time since the approach changed (critic_it-20261009-2146_1.md: the git checks run with the inherited environment, so git environment variables can make a report name another repository's HEAD and pass the clean-tree check; the runner reads head lines with case folding that the writer does not mirror). LOOP.md section 4: three failed entries on the changed approach, so the loop cannot make progress on Gate 1.
+Decision needed from Anjor: How Gate 1 goes on: (a) the loop fixes these findings and asks the critic once more; (b) you accept the report machinery with its remaining limits stated, and the loop moves to part (b); or (c) you change how Gate 1 is decided. See Q9 in QUESTIONS.md.
+To resume: answer in QUESTIONS.md, delete this file, commit and push
+(or run studies/04-phase-space-helicity/loop/resume.sh in your checkout).

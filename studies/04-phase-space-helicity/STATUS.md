@@ -4,15 +4,13 @@ Front page of the autonomous loop. `LOOP.md` is the protocol. The log is in `log
 
 ## Next block
 
-**Gate 1 criteria part (a), the report machinery, third submission of the changed approach: the last before a hard stop** (PLAN.md §4 Phase 0; LOOP.md §4 and §5). Since the approach changed, part (a) has had two REFUTED reviews: `critic_it-20261005-2234_1.md` and `critic_it-20261009-2116_1.md` (claim C15). LOOP.md §4: if this third entry fails too, declare the hard stop (the loop cannot make progress on Gate 1).
-What remains: one critic review of part (a) on the code at 232e9a0 or later, named as a Gate 1 review. New since the last review, not yet reviewed:
-- 79762e7: `finish_report` re-judges the rows from the saved outputs, with no default (Gate 1: `gate1_rejudge`; a gate without a re-judge cannot be finished), needs the head's sha256 in the request, and reads and writes bytes. Frozen lines are required for the base-state gate and Gate 4 and refused for Gates 1–3. Run sets are ASCII only. Gate names are matched with the runner's own `gate_matchers` patterns. Gate 1 saves exit codes and a copy of claims.md. The install check runs in an `-E -s` interpreter and needs hashed files under `krmhd/`. `pyproject.toml` may not name another GANDALF commit than `uv.lock`. Hidden index bits are refused on `uv.lock` and `pyproject.toml` too.
-- 232e9a0: the machinery moved unchanged to `analysis/gate_report.py`, standard library only, so a frozen evaluation can import it.
-Open in that review and not changed:
-- Finding 9 is a tension in LOOP.md, not a code fault: a stated kill criterion gives FAIL whatever the verdict. The loop's rule is to state a kill criterion only on an evaluation the critic did not refute.
-- The history check reads commit subjects only; it is a stated limit.
-- RECORD carries no hash; it is a stated limit.
-The request must give the head's sha256 for gate evaluations; it never needs to for a criteria review. If part (a) passes: part (b), then (c), then the claim reviews, then the Gate 1 evaluation.
+**Hard stop (it-20261009-2146): waits for Anjor's answer to QUESTIONS.md Q9.** Gate 1 criteria part (a), the report machinery, was refuted for the third time since the approach changed: `critic_it-20261005-2234_1.md`, `critic_it-20261009-2116_1.md` and `critic_it-20261009-2146_1.md` (claim C15). LOOP.md §4 then makes it a hard stop.
+What remains after Anjor's answer, for options (a) and (b) of Q9, against the code at a64d2e2:
+1. Run git with every `GIT_*` variable removed (and `-c core.fsmonitor=false`) in `git_head`, `tree_is_clean`, `main` and `report_history_problems`, and check that `rev-parse --show-toplevel` and `--git-dir` are the repo's.
+2. Make the writer refuse any head line that the runner's case-insensitive readers (guards.py `RESULT_PASS_RE`, `CRITIC_LABEL_RE`, `claims_pass`) would take as a verdict or Critic line, including through Unicode case folding.
+3. State these limits in the docstrings: a stale `.pyc` in `analysis/__pycache__/`; the scripts' shared scratch folder on `sys.path`; JAX and XLA variables that `-E` keeps; `finish` does not check the gate code against the named commit; a forged saved critic file is caught only by the runner; and the shared, ignored scratch outputs that the re-judge reads.
+4. Tests: the git environment, the runner's case-folding reading, the history refusal and `gate1_rejudge` through `finish_report`, and `main finish` reaching `REJUDGE`.
+Questions 2 to 6 of the review held up. If part (a) passes: part (b), then (c), then the claim reviews, then the Gate 1 evaluation.
 The changed approach (it-20261005-1446) stands:
 1. Split the review into three narrower critic reviews, each needing SUPPORTED before the next: (a) the shared report machinery (now `analysis/gate_report.py`, plus the environment checks and the command line in `gates.py`); (b) the script rules and D03; (c) the claim rules (`judge_claim`, `GATE1_CLAIMS`). Name Gate 1 in each request.
 2. Take the numeric `as2018` thresholds out of the coded check: keep its exit code and section 1 (algebraic antisymmetry). The instability goes into a successor of C16 (C19) judged by its own claim review. C19 must say that `critic_as2018.py` tests the plain Λ → ∞ ∂_v, and that D02's operator is J = A_low − A_up with the (1, 0) entry c_Λ, antisymmetric only with the weight P (check D02's own check of that). The dt comparison in `critic_as2018.py` also changes run length and fit window (T = 3.0 vs 1.2), so it does not isolate dt; say so in C19 or fix the script.
@@ -36,6 +34,7 @@ Compute cap 200.0 A100-h: used 0.00, reserved 0.00, left 200.00 (launches 1, run
 
 ## Iterations, newest first
 
+- it-20261009-2146 — hard stop: Gate 1 criteria part (a), third submission. Self-probe fixes first (a64d2e2: symlinks refused at finish, an install location check, Gate 1 re-judge rebuilds every head field except the commit and the time). Critic REFUTED (`critic_it-20261009-2146_1.md`: git runs with the inherited environment; the runner's case-folding reader of heads). That is three failed entries on the changed approach, so STOP was written and Q9 asked.
 - it-20261009-2116 — WIP: Gate 1 criteria part (a), second submission. Recovered the stash of it-20261005-2234 and handled Anjor's answer to the WIP-streak stop. Fixed the findings of `critic_it-20261005-2234_1.md`. Critic REFUTED again (`critic_it-20261009-2116_1.md`: a consistently edited head still finished as PASS). Fixed after the review: re-judge from saved outputs, head hash binding, Frozen lines, the runner's gate names, isolated install check, and the machinery split into `gate_report.py`. Not yet reviewed.
 - it-20261006-1454 — stub (Anjor ended the session); the runner wrote STOP for the WIP streak, and Anjor resumed the loop on 2026-10-09.
 - it-20261005-2234 — stub (Anjor ended the session after 14.5 min): Gate 1 criteria part (a), first submission; critic REFUTED (`critic_it-20261005-2234_1.md`); its fix was recovered from its stash by it-20261009-2116.

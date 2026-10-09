@@ -8,7 +8,26 @@ How Anjor answers: add a line that starts with `ANSWER:` under a question, commi
 
 Questions the loop cannot get past without Anjor. While this section has an item, `STOP` exists in the study folder and the loop does not run. Answer the question, delete `STOP` (or run `loop/resume.sh`), commit and push.
 
-None.
+- **STOP 2026-10-09 (agent)**: Gate 1 criteria part (a), the shared report machinery, was refuted a third time since the approach changed (critic_it-20261009-2146_1.md: the git checks run with the inherited environment, so git environment variables can make a report name another repository's HEAD and pass the clean-tree check; the runner reads head lines with case folding that the writer does not mirror). LOOP.md section 4: ... See `STOP`.
+
+### Q9. Gate 1 report machinery refuted three times since the approach changed: how should Gate 1 go on? (it-20261009-2146)
+
+Since it-20261005-1446 split the Gate 1 criteria review into parts (a), (b) and (c), part (a) has been refuted three times: `critic_it-20261005-2234_1.md`, `critic_it-20261009-2116_1.md` and `critic_it-20261009-2146_1.md` (claim C15). LOOP.md §4 makes three failed entries on one approach a hard stop.
+
+The third review found that most of the machinery now holds. Questions 2 to 6 held up: re-judge from saved outputs, binding to this evaluation, agreement between the writer, the launcher and the runner on the verdict, the Result rule, and importability by a frozen evaluation. The launcher's form check passed on writer-made reports for every gate. What it refuted:
+1. `git_head`, `tree_is_clean` and `report_history_problems` run git with the inherited environment, so `GIT_DIR` and `GIT_WORK_TREE` (or a global git config) can make a report name another repository's HEAD and pass the clean-tree check.
+2. Limits that are true but not stated in the docstrings: a stale `.pyc` in the ignored `analysis/__pycache__/`; the derivation scripts' shared folder on `sys.path`; JAX and XLA variables that `-E` keeps; and `finish` does not check that the gate code at finish equals the code at the named commit.
+3. The runner's reader of a head uses case-insensitive regexes on keys it does not lower-case, so Unicode case folding (ſ, ı, the Kelvin sign) lets the writer emit a table row that the runner reads as `Result: PASS` or as the Critic line. The review found no path to a false PASS; the risk is a spurious runner STOP.
+4. Test gaps: none for the git environment or the runner's case-insensitive reading, and the history refusal and the re-judge are never exercised through `finish_report`.
+
+Each review has found new edge cases. They are less about whether the report is right and more about an adversary who controls the environment, which no review can close for good.
+
+Options:
+- (a) The loop fixes 1 to 4 and asks the critic once more, as a fresh allowance: git with `GIT_*` removed and the toplevel checked against the repo, the writer refusing anything the runner's case-insensitive reading would take as a verdict or Critic line, the limits stated, and the tests added.
+- (b) As (a), but you also fix a threat model for the gate code, for example: "the machinery guards against mistakes and against a head edited after the fact, not against a session that sets git or Python environment variables or plants ignored files". The critic then judges against it, so the review can converge.
+- (c) You review the report machinery yourself and accept it, recorded as your decision, and the loop goes on to part (b).
+
+Recommendation: (b). The fixes in (a) are cheap, about one iteration. Without a stated threat model, a fourth review is likely to find a fifth class of environmental edge case. The runner already checks the session for the threats in it (T1 and the git config guards).
 
 ## Open, not blocking
 
