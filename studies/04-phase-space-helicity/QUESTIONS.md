@@ -8,9 +8,7 @@ How Anjor answers: add a line that starts with `ANSWER:` under a question, commi
 
 Questions the loop cannot get past without Anjor. While this section has an item, `STOP` exists in the study folder and the loop does not run. Answer the question, delete `STOP` (or run `loop/resume.sh`), commit and push.
 
-- **STOP 2026-10-06 (runner)**: WIP streak (runner checks after iteration it-20261006-1454): streak: 6 iterations in a row ended WIP or as a stub (limit 6): it-20261006-1454 it-20261005-2234 it-20261005-1519 it-20261005-1446 it-20261005-1416 it-20261002-0916 See `STOP`.
-
-ANSWER: Four of the six were not failures: I cancelled those sessions myself (Ctrl-C) because I needed my Claude usage limits for other work. Only it-20261005-1416 and it-20261005-1446 ended WIP on their own. Continue Gate 1 with the split critic review planned in STATUS.md. From now on the runner stubs a session I end with a signal as 'interrupted', and the streak does not count it.
+None.
 
 ## Open, not blocking
 
@@ -37,6 +35,11 @@ Gates the loop has passed and decisions it has made, newest first, for Anjor's v
 None yet.
 
 ## Answered
+
+- **STOP 2026-10-06 (runner)**: WIP streak (runner checks after iteration it-20261006-1454): streak: 6 iterations in a row ended WIP or as a stub (limit 6): it-20261006-1454 it-20261005-2234 it-20261005-1519 it-20261005-1446 it-20261005-1416 it-20261002-0916 See `STOP`.
+
+ANSWER: Four of the six were not failures: I cancelled those sessions myself (Ctrl-C) because I needed my Claude usage limits for other work. Only it-20261005-1416 and it-20261005-1446 ended WIP on their own. Continue Gate 1 with the split critic review planned in STATUS.md. From now on the runner stubs a session I end with a signal as 'interrupted', and the streak does not count it.
+Handled (it-20261009-2116): continued Gate 1 criteria part (a) of the split review, fixing the findings of the REFUTED review critic_it-20261005-2234_1.md, with a new review.
 
 ### Q2. Which invariant is the study about? (Gate 1, 2026-10-01)
 
