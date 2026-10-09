@@ -10,6 +10,8 @@ Questions the loop cannot get past without Anjor. While this section has an item
 
 - **STOP 2026-10-06 (runner)**: WIP streak (runner checks after iteration it-20261006-1454): streak: 6 iterations in a row ended WIP or as a stub (limit 6): it-20261006-1454 it-20261005-2234 it-20261005-1519 it-20261005-1446 it-20261005-1416 it-20261002-0916 See `STOP`.
 
+ANSWER: Four of the six were not failures: I cancelled those sessions myself (Ctrl-C) because I needed my Claude usage limits for other work. Only it-20261005-1416 and it-20261005-1446 ended WIP on their own. Continue Gate 1 with the split critic review planned in STATUS.md. From now on the runner stubs a session I end with a signal as 'interrupted', and the streak does not count it.
+
 ## Open, not blocking
 
 The loop proceeds on its recommendation. If Anjor answers differently, the loop adapts and logs the rework.

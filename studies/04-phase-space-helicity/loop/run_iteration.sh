@@ -1106,8 +1106,12 @@ finish_iteration() {  # finish_iteration ID BEFORE EXIT_CODE DURATION_SEC NOTE T
     title="runner stub (work left uncommitted)"
   fi
   if [ -n "$title" ]; then
+    # A session Anjor ended with a signal is stubbed as 'interrupted', which the streak skips.
+    stub_outcome=stub
+    [ "$INTERRUPTED" = 1 ] && stub_outcome=interrupted
     if guard append-stub --iter "$id" --exit-code "$rc" --duration-sec "$dur" --before "$before" \
-         --after "$(g rev-parse HEAD)" --stash "$STASH_REF" --note "$why$RESCUE_NOTES" --title "$title" >/dev/null \
+         --after "$(g rev-parse HEAD)" --stash "$STASH_REF" --note "$why$RESCUE_NOTES" --title "$title" \
+         --outcome "$stub_outcome" >/dev/null \
        && g add -- "$STUDY_REL/log" \
        && g commit -q -m "Study 04 [$id]: $title" -- "$STUDY_REL/log" >/dev/null 2>&1; then
       note stub appended

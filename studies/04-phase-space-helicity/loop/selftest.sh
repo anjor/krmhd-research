@@ -1650,6 +1650,43 @@ case_dead_runner_window() {  # a dead runner recorded no session start: its wind
 # Cases: guards.py on its own, in a scratch clone
 # ---------------------------------------------------------------------------
 
+case_guards_streak_interrupted() {
+  local f out
+  new_case guards_streak_interrupted
+  f="$CL/$STUDY_REL/log/2026-10-03.md"
+  cat > "$f" <<'EOF2'
+# Study 04 loop log — 2026-10-03
+
+## it-20261003-0001: a finished block
+- End: 2026-10-03T01:00:00Z, outcome: done
+
+## it-20261003-0002: real work left unfinished
+- End: 2026-10-03T02:00:00Z, outcome: WIP
+
+## it-20261003-0003: runner stub (log entry not closed)
+- Runner: exit code 143, note interrupted: the runner got a signal and killed the session
+- End: 2026-10-03T03:00:00Z, outcome: interrupted
+
+## it-20261003-0004: an agent that claims to be interrupted
+- End: 2026-10-03T04:00:00Z, outcome: interrupted
+
+## it-20261003-0005: runner stub (log entry not closed)
+- End: 2026-10-03T05:00:00Z, outcome: interrupted
+
+## it-20261003-0006: a timeout stub
+- End: 2026-10-03T06:00:00Z, outcome: stub
+EOF2
+  [ "$(gp outcome --iter it-20261003-0003)" = interrupted ] || fail "a runner stub's 'interrupted' is not read"
+  [ "$(gp outcome --iter it-20261003-0004)" = unknown ] || fail "an agent entry may not claim 'interrupted'"
+  out=$(gp streak)
+  [ "$(printf '%s\n' "$out" | head -1)" = 3 ] || fail "streak should be 3 (0006, 0004, 0002), got: $out"
+  printf '%s\n' "$out" | sed -n 2p | grep -q "it-20261003-0003\|it-20261003-0005" && fail "interrupted stubs were counted: $out"
+  gp append-stub --iter it-20261003-0007 --exit-code 143 --duration-sec 60 --outcome interrupted >/dev/null \
+    || fail "append-stub --outcome interrupted failed"
+  [ "$(gp outcome --iter it-20261003-0007)" = interrupted ] || fail "append-stub did not write 'outcome: interrupted'"
+  finish_case
+}
+
 case_guards_log_parsing() {
   local f out
   new_case guards_log_parsing
@@ -2334,6 +2371,7 @@ run_all() {
   want run_forever_signal && case_run_forever_signal
   want preflight_stubs && case_preflight_stubs
   want guards_log_parsing && case_guards_log_parsing
+  want guards_streak_interrupted && case_guards_streak_interrupted
   want guards_modal_rule && case_guards_modal_rule
   want guards_instruction_files && case_guards_instruction_files
   want guards_apps_format && case_guards_apps_format

@@ -35,7 +35,7 @@ command, while a command inside ``uv run bash -c "..."`` or ``"$(...)"`` is.
 Subcommands (each accepts ``--repo DIR``; the default is the repo this file sits in):
 
   entry-closed --iter ID        log entry closed? exit 0 closed, 1 open, 2 missing
-  outcome --iter ID             done | WIP | waiting | hard stop | stub | missing | unknown
+  outcome --iter ID             done | WIP | waiting | hard stop | stub | interrupted | missing | unknown
   append-stub ...               close an iteration's log with a runner stub entry
   streak                        iterations in a row (newest first) that ended WIP or as a stub
   iter-count --day YYYYMMDD     iterations in the log: that day's count, then the total
@@ -362,7 +362,10 @@ def entry_closed(entry: Entry) -> bool:
 
 
 def entry_outcome(entry: Entry) -> str:
-    """Outcome from the entry's last End line: done, WIP, waiting, hard stop, stub or unknown."""
+    """Outcome from the entry's last End line: done, WIP, waiting, hard stop, stub, interrupted
+    or unknown. 'interrupted' counts only in a runner stub (heading '... runner stub ...'),
+    because only the runner knows that Anjor's signal ended the session; in an agent's own
+    entry it reads as unknown, which the streak counts like WIP."""
     ends = [line for line in entry.live if END_RE.match(line)]
     if not ends:
         return "unknown"
@@ -377,6 +380,9 @@ def entry_outcome(entry: Entry) -> str:
                           ("wait", "waiting"), ("stub", "stub")):
         if text.startswith(prefix):
             return label
+    if text.startswith("interrupted"):
+        heading = next((line for line in entry.lines if line.startswith("## ")), "")
+        return "interrupted" if "runner stub" in heading else "unknown"
     return "unknown"
 
 
@@ -433,7 +439,7 @@ def cmd_append_stub(args: argparse.Namespace) -> int:
         f"\n## {args.iter}: {title}\n"
         f"- Runner: exit code {args.exit_code}, duration {minutes}, commits {before}..{after}, "
         f"stash {args.stash or 'none'}, note {note}\n"
-        f"- End: {utc_iso()}, outcome: stub\n"
+        f"- End: {utc_iso()}, outcome: {args.outcome}\n"
     )
     path.write_text(text + stub, encoding="utf-8")
     try:
@@ -458,7 +464,9 @@ def last_resume_epoch(repo: Path, loop_name: str) -> Optional[int]:
 def cmd_streak(args: argparse.Namespace) -> int:
     """Print N, the run of iterations (newest first) that ended WIP or as a stub.
 
-    A waiting iteration is skipped; a done or hard-stop iteration ends the run. An entry with
+    A waiting iteration is skipped, and so is one the runner stubbed as interrupted (Anjor
+    stopped it with a signal, which says nothing about the loop's progress); a done or
+    hard-stop iteration ends the run. An entry with
     no parseable outcome counts like WIP. Only iterations that started after Anjor's last
     resume (a commit by someone other than the loop deleting STOP) count, so that resuming
     gives the loop a fresh allowance. Line 2 lists the IDs counted.
@@ -477,7 +485,7 @@ def cmd_streak(args: argparse.Namespace) -> int:
             if start is not None and start + 60 <= since:
                 break
         outcome = latest[ident]
-        if outcome == "waiting":
+        if outcome in ("waiting", "interrupted"):
             continue
         if outcome in ("done", "hard stop"):
             break
@@ -3875,6 +3883,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--stash", default="none")
     p.add_argument("--note", default="")
     p.add_argument("--title", default="")
+    p.add_argument("--outcome", choices=("stub", "interrupted"), default="stub")
     p.set_defaults(func=cmd_append_stub)
 
     p = sub.add_parser("streak", parents=[common])
