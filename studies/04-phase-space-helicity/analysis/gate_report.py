@@ -24,24 +24,34 @@ of the defence, and this module does not repeat their checks: the runner's T1 ch
 report that says PASS unless a `study04-critic` review of that gate from the same session
 returned SUPPORTED, every review naming the gate did, and the saved critic file holds that
 review verbatim, and it runs the launcher's report check on the report; its commit guards
-refuse a change to a committed report (`report-edit`) and a second Gate 4 decision; the
-launcher's `check-report`, which every launch applies, refuses a report whose form it would
-misread (a second `Result` line, template text, a table row that fails).
+refuse a change to a report committed before the session (`report-edit`) and a second Gate 4
+decision; the launcher's `check-report`, which every launch applies, refuses a report whose
+form it would misread (a second `Result` line, template text, a table row that fails).
 
 What this module checks:
 - the head at finish is byte for byte the head that the gate's `rebuild` makes from the saved
-  outputs, which include the evaluation's repo commit and UTC time (Gate 1: the record that
-  `gate1_check` saves), so a head edited after it was written, a report already finished, or
-  outputs changed since are refused;
-- the critic file is `critic_<the report's iteration id>_<k>.md` and its title names the
-  report's file name, so that a review of the criteria or of a claim is not taken for the
-  review of this evaluation;
+  outputs, which include the evaluation's record of its repo commit and UTC time (the head's
+  first data file; Gate 1: `evaluation.json`, saved by `gate1_check`), so a head edited after
+  it was written, a report already finished, or outputs changed since are refused;
+- the critic file is `critic_<the report's iteration id>_<k>.md` in the report's folder, its
+  title names the report's file name, and its Request section quotes the sha256 of the
+  evaluation record, so that a review of the criteria, of a claim or of another evaluation of
+  the same iteration is not taken for the review of this evaluation;
 - the verdict is read only from the critic's own VERDICT line (`critic_verdict_line`), never
   from text quoted in the request;
 - the `Result` line follows from the coded check, that verdict and the kill statement by the
-  rule of LOOP.md §5 (`decide_result`).
+  rule of LOOP.md §5 (`decide_result`);
+- `verify_report`, run before the commit that adds the finished report, checks that the whole
+  report is still what `finish_report` writes.
 
 Stated limits, outside the model or left to the runner, the launcher and LOOP.md:
+- A finished report edited after `verify_report` ran, before its first commit or in a later
+  commit of the same session, is seen by no guard: `report-edit` covers only reports
+  committed before the session, and T1 and the launcher check the form and the existence of
+  a SUPPORTED review, not the rows. A consistent edit of a FAIL into a PASS (rows, `Coded
+  check` and `Result`) would pass both. LOOP.md §5 forbids editing a report by hand; the
+  defence is that rule and `verify_report` right before the commit (critic_it-20261010-1905_1.md,
+  finding A).
 - Git runs in the inherited environment: `GIT_*` variables, the global and system config and
   the per-user exclude file (`core.excludesFile`) can change what it sees. A tracked file with
   a skip-worktree or assume-unchanged bit does not show in `git status`, so the clean-tree
@@ -54,10 +64,12 @@ Stated limits, outside the model or left to the runner, the launcher and LOOP.md
   folder makes the head unfinishable, which fails safe.
 - Symbolic links are followed. A saved critic file forged or edited to say SUPPORTED is caught
   only by the runner (T1).
-- The writer does not check that the head reads correctly to the launcher, that the critic's
-  title or request names the gate, which commits touched the report, or that the gate code at
-  finish is the code of the named commit; the launcher, the runner and the critic's review of
-  the evaluation cover those.
+- The writer does not check that the head reads correctly to the launcher (its report check
+  does), that the critic's title or request names the gate (T1 does), which commits touched
+  the report (`report-edit` does for earlier sessions; see the first limit for this one), or
+  that the gate code at finish is the code of the named commit (the critic's review of the
+  evaluation does). The rerun of a gate in the same iteration empties its saved outputs
+  before it refuses to write a second report, which leaves the first head unfinishable.
 """
 
 from __future__ import annotations
@@ -78,7 +90,8 @@ REPORT_FILE_RE = re.compile(
     r"G(?:(?P<n>[123])|4_(?P<set>[A-Za-z0-9]+)|(?P<base>base))_(?P<iter>it-\d{8}-\d{4})\.md")
 # Markdown decoration the launcher and the runner strip before they read a line's label
 LINE_DECORATION = " \t>*-+#|_`"
-VERDICT_LINE_RE = re.compile(r"VERDICT: [A-Z]+")
+# The three verdicts of LOOP.md §6, whole: the runner reads `VERDICT: SUPPORTEDX` as SUPPORTED
+VERDICT_LINE_RE = re.compile(r"VERDICT: (?:SUPPORTED|REFUTED|INCONCLUSIVE)")
 
 
 @dataclass
@@ -212,26 +225,37 @@ def write_report(result: GateResult, iteration: str, out_dir: Path = GATE_REPORT
     return path
 
 
-def critic_verdict_line(text: str) -> str | None:
-    """The critic's own VERDICT line of a saved critic review (LOOP.md §6), or None.
+def critic_sections(text: str) -> tuple[list[str], list[str]] | None:
+    """(request lines, report lines) of a saved critic review (LOOP.md §6), or None.
 
     A saved review is a title, a line `Request:`, the request, a line `Report:` and the
-    critic's report, which starts with its VERDICT line. The verdict is read only when the
-    file has exactly one line that reads `Request:` and exactly one line labelled `report:`
-    (after Markdown decoration, in any case), that line reads exactly `Report:` and comes
-    after `Request:`, and the first non-blank line after it reads exactly `VERDICT: <WORD>`.
-    Otherwise this returns None and the writer refuses. A request that quotes a `Report:`
-    line, or a report that holds one, gives two labelled lines, so a verdict quoted in the
-    request is never read as the critic's, whatever follows it. With a single marker and the
-    verdict on the first non-blank line after it, the launcher and the runner, which read from
-    the first line labelled `report:`, read the same line.
-    """
+    critic's report. The sections are split only when the file has exactly one line that
+    reads `Request:` and exactly one line labelled `report:` (after Markdown decoration, in
+    any case), and that line reads exactly `Report:` and comes after `Request:`. A request
+    that quotes a `Report:` line, or a report that holds one, gives two labelled lines, and
+    the file is refused, so text quoted in the request is never read as the critic's."""
     lines = text.splitlines()
     requests = [i for i, line in enumerate(lines) if line == "Request:"]
     marks = [i for i, line in enumerate(lines) if label_key(line).startswith("report:")]
     if len(requests) != 1 or len(marks) != 1 or lines[marks[0]] != "Report:" or requests[0] > marks[0]:
         return None
-    first = next((line for line in lines[marks[0] + 1:] if line.strip()), "")
+    return lines[requests[0] + 1:marks[0]], lines[marks[0] + 1:]
+
+
+def critic_verdict_line(text: str) -> str | None:
+    """The critic's own VERDICT line of a saved critic review (LOOP.md §6), or None.
+
+    The verdict is read only from a file that `critic_sections` splits, and only when the
+    first non-blank line of the report section reads exactly `VERDICT: SUPPORTED`,
+    `VERDICT: REFUTED` or `VERDICT: INCONCLUSIVE`. Otherwise this returns None and the
+    writer refuses. With a single `report:` marker and the verdict on the first non-blank
+    line after it, the launcher and the runner, which read from the first line labelled
+    `report:`, read the same verdict.
+    """
+    sections = critic_sections(text)
+    if sections is None:
+        return None
+    first = next((line for line in sections[1] if line.strip()), "")
     return first if VERDICT_LINE_RE.fullmatch(first) else None
 
 
@@ -283,6 +307,54 @@ def decide_result(coded_pass: bool, verdict: str | None, kill: str, gate: str | 
     return "NOT DECIDED"
 
 
+def _rebuilt_head(report: Path, rebuild: Callable[[str], GateResult] | None) -> tuple[GateResult, bytes]:
+    """The GateResult that `rebuild` makes from the saved outputs for the report's file name,
+    and the head it renders, as bytes."""
+    gate, run_set, iteration = parse_report_name(report.name)
+    if rebuild is None:
+        raise ValueError(f"no rebuild for the gate of {report.name}: it cannot be finished")
+    try:
+        rebuilt = rebuild(iteration)
+    except OSError as exc:
+        raise ValueError(f"{report.name}: the saved outputs cannot be read ({exc})") from exc
+    if (rebuilt.gate_number, rebuilt.run_set) != (gate, run_set):
+        raise ValueError(f"{report.name}: the rebuild is of Gate {rebuilt.gate_number}")
+    return rebuilt, render_report_head(rebuilt, iteration).encode("utf-8")
+
+
+def _tail(report: Path, critic_report: Path, kill: str, rebuilt: GateResult) -> tuple[str, str]:
+    """(result, the `Critic`, `Kill criteria` and `Result` lines) for a report whose head is
+    `rebuilt`, from the saved critic review; raises ValueError unless the review is bound to
+    this evaluation (see `finish_report`)."""
+    gate, run_set, iteration = parse_report_name(report.name)
+    m = CRITIC_FILE_RE.fullmatch(critic_report.name)
+    if not m or m.group(1) != iteration:
+        raise ValueError(f"{critic_report.name} is not critic_{iteration}_<k>.md; the gate's "
+                         "critic review comes from the same iteration (LOOP.md §6)")
+    if critic_report.resolve().parent != report.resolve().parent:
+        raise ValueError(f"{critic_report} is not in the folder of {report.name}, where the "
+                         "launcher reads the file the Critic line names")
+    critic_text = critic_report.read_text(encoding="utf-8")
+    if report.name not in critic_text.split("\n", 1)[0]:
+        raise ValueError(f"{critic_report.name}: its title does not name {report.name}, so it "
+                         "is not the review of this evaluation")
+    sections = critic_sections(critic_text)
+    record_hash = rebuilt.data_files[0][1] if rebuilt.data_files else None
+    if sections is None or record_hash is None or record_hash not in "\n".join(sections[0]):
+        raise ValueError(f"{critic_report.name}: its Request section does not quote the sha256 of "
+                         "the evaluation record (the head's first data file), so it is not bound "
+                         "to this evaluation")
+    verdict = critic_verdict_line(critic_text)
+    if verdict is None:
+        raise ValueError(f"{critic_report.name}: no single `Report:` line followed by the "
+                         "critic's own VERDICT line")
+    kill = " ".join(kill.split())
+    result = decide_result(rebuilt.coded_pass, verdict, kill, gate=gate, run_set=run_set)
+    return result, (f"Critic: {verdict}, {iteration}, {critic_report.name}\n"
+                    f"Kill criteria: {kill}\n"
+                    f"Result: {result}\n")
+
+
 def finish_report(report: Path, critic_report: Path, kill: str,
                   rebuild: Callable[[str], GateResult] | None) -> str:
     """Append the `Critic`, `Kill criteria` and `Result` lines to a gate report and return
@@ -290,44 +362,50 @@ def finish_report(report: Path, critic_report: Path, kill: str,
 
     `rebuild(iteration)` is the gate's function that builds its GateResult from the outputs
     the evaluation saved (Gate 1: `gate1_result`); there is no default, so a gate without one
-    cannot be finished. `critic_report` is the saved `critic_<iteration id>_<k>.md`. `kill` is
-    `none met` or `Kill criterion <n> met: <evidence>` (`decide_result`).
+    cannot be finished. Its first data file is the evaluation's record, which holds the repo
+    commit and the time of the evaluation. `critic_report` is the saved
+    `critic_<iteration id>_<k>.md`. `kill` is `none met` or `Kill criterion <n> met:
+    <evidence>` (`decide_result`).
 
     Refuses (ValueError, report unchanged) unless the report's bytes are exactly the head
     that `render_report_head` makes from `rebuild`, for the gate, set and iteration of the
-    report's file name; the critic file is named `critic_<that iteration id>_<k>.md` and its
-    title line names the report's file name; and `critic_verdict_line` reads its verdict.
-    The module docstring gives the threat model and the limits.
+    report's file name; the critic file is named `critic_<that iteration id>_<k>.md`, sits in
+    the report's folder, its title line names the report's file name, and its Request section
+    quotes the sha256 of the evaluation record, so that a review of another evaluation of the
+    same iteration does not finish this one; and `critic_verdict_line` reads its verdict.
+    Run `verify_report` on the finished report before committing it. The module docstring
+    gives the threat model and the limits.
     """
-    gate, run_set, iteration = parse_report_name(report.name)
-    if rebuild is None:
-        raise ValueError(f"no rebuild for the gate of {report.name}: it cannot be finished")
+    rebuilt, head = _rebuilt_head(report, rebuild)
     raw = report.read_bytes()
-    try:
-        rebuilt = rebuild(iteration)
-    except OSError as exc:
-        raise ValueError(f"{report.name}: the saved outputs cannot be read ({exc})") from exc
-    if (rebuilt.gate_number, rebuilt.run_set) != (gate, run_set):
-        raise ValueError(f"{report.name}: the rebuild is of Gate {rebuilt.gate_number}")
-    if raw != render_report_head(rebuilt, iteration).encode("utf-8"):
+    if raw != head:
         raise ValueError(f"{report.name} is not exactly the head that the saved outputs give: "
                          "edited since it was written, already finished, or the outputs changed")
-    m = CRITIC_FILE_RE.fullmatch(critic_report.name)
-    if not m or m.group(1) != iteration:
-        raise ValueError(f"{critic_report.name} is not critic_{iteration}_<k>.md; the gate's "
-                         "critic review comes from the same iteration (LOOP.md §6)")
-    critic_text = critic_report.read_text(encoding="utf-8")
-    if report.name not in critic_text.split("\n", 1)[0]:
-        raise ValueError(f"{critic_report.name}: its title does not name {report.name}, so it "
-                         "is not the review of this evaluation")
-    verdict = critic_verdict_line(critic_text)
-    if verdict is None:
-        raise ValueError(f"{critic_report.name}: no single `Report:` line followed by the "
-                         "critic's own VERDICT line")
-    kill = " ".join(kill.split())
-    result = decide_result(rebuilt.coded_pass, verdict, kill, gate=gate, run_set=run_set)
-    tail = (f"Critic: {verdict}, {iteration}, {critic_report.name}\n"
-            f"Kill criteria: {kill}\n"
-            f"Result: {result}\n")
+    result, tail = _tail(report, critic_report, kill, rebuilt)
     report.write_bytes(raw + tail.encode("utf-8"))
     return result
+
+
+def verify_report(report: Path, critic_report: Path,
+                  rebuild: Callable[[str], GateResult] | None) -> list[str]:
+    """Why a finished report is not exactly what `finish_report` writes from the saved outputs
+    and the critic review now; empty when it is. Run it before the commit that adds the
+    finished report, because no guard sees an edit of a report between its finish and that
+    commit, or in a later commit of the same session (module docstring, limits)."""
+    try:
+        rebuilt, head = _rebuilt_head(report, rebuild)
+    except ValueError as exc:
+        return [str(exc)]
+    raw = report.read_bytes()
+    if not raw.startswith(head):
+        return [f"{report.name}: the head is not the one the saved outputs give"]
+    lines = raw[len(head):].decode("utf-8").split("\n")
+    kill = lines[1][len("Kill criteria: "):] if len(lines) > 1 and lines[1].startswith("Kill criteria: ") else ""
+    try:
+        _, tail = _tail(report, critic_report, kill, rebuilt)
+    except ValueError as exc:
+        return [str(exc)]
+    if raw != head + tail.encode("utf-8"):
+        return [f"{report.name}: the Critic, Kill criteria or Result lines are not those the "
+                "critic review and the saved outputs give"]
+    return []

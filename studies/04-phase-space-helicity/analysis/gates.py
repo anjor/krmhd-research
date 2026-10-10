@@ -40,6 +40,12 @@ Usage (from the repo root):
     uv run python studies/04-phase-space-helicity/analysis/gates.py gate1 --iteration <id>
     uv run python studies/04-phase-space-helicity/analysis/gates.py finish \
         --report <gate report> --critic <critic report> --kill "none met"
+    uv run python studies/04-phase-space-helicity/analysis/gates.py verify \
+        --report <gate report> --critic <critic report>
+
+The critic's request for the evaluation must quote the sha256 of the evaluation record (the
+first file under Data files), and `verify` runs just before the commit that adds the
+finished report.
 """
 
 from __future__ import annotations
@@ -60,7 +66,8 @@ from pathlib import Path
 from gate_report import (  # the shared report machinery, re-exported for the tests
     ITERATION_RE, CRITIC_FILE_RE, Row, GateResult, sha256_file, repo_rel, report_name,
     report_title, parse_report_name, label_key, render_report_head, write_report,
-    critic_verdict_line, critic_title_ok, decide_result, finish_report,
+    critic_sections, critic_verdict_line, critic_title_ok, decide_result, finish_report,
+    verify_report,
 )
 
 STUDY = Path(__file__).resolve().parents[1]
@@ -595,6 +602,10 @@ def main(argv: list[str] | None = None) -> int:
     pf.add_argument("--report", required=True, type=Path)
     pf.add_argument("--critic", required=True, type=Path)
     pf.add_argument("--kill", required=True)
+    pv = sub.add_parser("verify", help="check a finished report against the saved outputs and "
+                                       "its critic review; run it before committing the report")
+    pv.add_argument("--report", required=True, type=Path)
+    pv.add_argument("--critic", required=True, type=Path)
     args = parser.parse_args(argv)
 
     if args.cmd == "gate1":
@@ -613,6 +624,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Wrote {repo_rel(path)}")
         return 0 if result.coded_pass else 1
     gate = parse_report_name(args.report.name)[0]
+    if args.cmd == "verify":
+        problems = verify_report(args.report, args.critic, REBUILD.get(gate))
+        print("\n".join(problems) if problems else f"{args.report.name}: verified")
+        return 1 if problems else 0
     result_line = finish_report(args.report, args.critic, args.kill, REBUILD.get(gate))
     print(f"Result: {result_line}")
     return 0

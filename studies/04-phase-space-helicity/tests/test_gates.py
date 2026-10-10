@@ -453,9 +453,14 @@ class Gate1FinishTests(unittest.TestCase):
     setUp, judge_kw = Gate1CheckTests.setUp, Gate1CheckTests.judge_kw
     run_check, rebuild = Gate1CheckTests.run_check, Gate1CheckTests.rebuild
 
-    def critic(self, k: int, title: str, report: str = "Report:\nVERDICT: SUPPORTED\nEvidence: x\n") -> Path:
+    def critic(self, k: int, title: str, report: str = "Report:\nVERDICT: SUPPORTED\nEvidence: x\n",
+               request: str | None = None) -> Path:
+        """A saved critic review whose request quotes the evaluation record's sha256 unless
+        `request` is given."""
+        if request is None:
+            request = f"record {gates.GATE1_RECORD} sha256 {gates.sha256_file(self.work / gates.GATE1_RECORD)}"
         return write(self.reports / f"critic_{ITER}_{k}.md",
-                     f"# Critic report {ITER}_{k}: {title}\n\nRequest:\nreview it\n\n{report}")
+                     f"# Critic report {ITER}_{k}: {title}\n\nRequest:\n{request}\n\n{report}")
 
     def test_finish_pass_and_edits_refused(self) -> None:
         path = gates.write_report(self.run_check(), ITER, self.reports)
@@ -492,6 +497,56 @@ class Gate1FinishTests(unittest.TestCase):
                                       f"critic_{ITER}_2.md\nKill criteria: none met\nResult: PASS\n"))
         with self.assertRaises(ValueError):  # already finished
             gates.finish_report(path, crit, "none met", self.rebuild)
+        self.assertEqual(gates.verify_report(path, crit, self.rebuild), [])
+
+    def test_verify_sees_edits_after_finish(self) -> None:
+        """Finding A of critic_it-20261010-1905_1.md: a FAIL edited into a PASS after finish."""
+        path = gates.write_report(self.run_check(scripts=self.scripts + (("bad.py", "all-checks"),)),
+                                  ITER, self.reports)
+        crit = self.critic(2, f"Gate 1 evaluation {path.name}")
+        self.assertEqual(gates.finish_report(path, crit, "none met", self.rebuild), "FAIL")
+        finished = path.read_text()
+        self.assertEqual(gates.verify_report(path, crit, self.rebuild), [])
+        edits = {
+            "FAIL made PASS": finished.replace("| no |", "| yes |").replace("Coded check: FAIL", "Coded check: PASS")
+                                      .replace("Result: FAIL", "Result: PASS"),
+            "Result only": finished.replace("Result: FAIL", "Result: PASS"),
+            "Critic line": finished.replace(f"critic_{ITER}_2.md\n", f"critic_{ITER}_3.md\n"),
+            "kill statement": finished.replace("Kill criteria: none met", "Kill criteria: none  met"),
+            "line appended": finished + "Note: fine\n",
+            "unfinished": finished.split("Critic:")[0],
+        }
+        for name, text in edits.items():
+            with self.subTest(name):
+                self.assertNotEqual(text, finished)
+                path.write_text(text)
+                self.assertNotEqual(gates.verify_report(path, crit, self.rebuild), [])
+        path.write_text(finished)
+        import contextlib
+        import io
+        from unittest import mock
+        with mock.patch.dict(gates.REBUILD, {"1": self.rebuild}), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(gates.main(["verify", "--report", str(path), "--critic", str(crit)]), 0)
+            path.write_text(edits["Result only"])
+            self.assertEqual(gates.main(["verify", "--report", str(path), "--critic", str(crit)]), 1)
+
+    def test_review_bound_to_this_evaluation(self) -> None:
+        """Finding B of critic_it-20261010-1905_1.md: a review of an earlier evaluation of the
+        same iteration, or a review saved outside the report's folder, does not finish it."""
+        self.run_check()
+        first = self.critic(2, f"Gate 1 evaluation G1_{ITER}.md")  # quotes the first record
+        self.run_check(head="2" * 40)  # a second evaluation in the same iteration, new record
+        path = gates.write_report(self.rebuild(ITER), ITER, self.reports)
+        head = path.read_bytes()
+        with self.assertRaises(ValueError):
+            gates.finish_report(path, first, "none met", self.rebuild)
+        elsewhere = write(self.tmp / "elsewhere" / f"critic_{ITER}_3.md",
+                          self.critic(3, f"Gate 1 evaluation {path.name}").read_text())
+        with self.assertRaises(ValueError):
+            gates.finish_report(path, elsewhere, "none met", self.rebuild)
+        self.assertEqual(path.read_bytes(), head)
+        self.assertEqual(gates.finish_report(path, self.critic(4, f"Gate 1 evaluation {path.name}"),
+                                             "none met", self.rebuild), "PASS")
 
     def test_finish_fail_and_not_decided(self) -> None:
         path = gates.write_report(self.run_check(scripts=self.scripts + (("bad.py", "all-checks"),)),
@@ -554,6 +609,12 @@ class Gate1FinishTests(unittest.TestCase):
                 mock.patch.object(gates, "gate1_check", return_value=moved), \
                 mock.patch.object(gates, "write_report") as writer, contextlib.redirect_stderr(err):
             self.assertEqual(gates.main(["gate1", "--iteration", ITER]), 2)
+        writer.assert_not_called()
+        same_head = gates.GateResult(**{**self.rebuild(ITER).__dict__, "repo_commit": gates.git_head()})
+        with mock.patch.object(gates, "tree_is_clean", side_effect=[True, False]), \
+                mock.patch.object(gates, "gate1_check", return_value=same_head), \
+                mock.patch.object(gates, "write_report") as writer, contextlib.redirect_stderr(err):
+            self.assertEqual(gates.main(["gate1", "--iteration", ITER]), 2)  # dirtied during the run
         writer.assert_not_called()
 
 
@@ -622,7 +683,8 @@ class ReportTests(unittest.TestCase):
     def test_finish_with_a_stub_rebuild(self) -> None:
         path = gates.write_report(self.make(), ITER, self.tmp)
         crit = write(self.tmp / f"critic_{ITER}_1.md",
-                     CRITIC_OK.replace("0916_1: test", f"0916_1: Gate 1 evaluation {path.name}"))
+                     CRITIC_OK.replace("0916_1: test", f"0916_1: Gate 1 evaluation {path.name}")
+                     .replace("something\n", f"record sha256 {'0' * 64}\n"))
         with self.assertRaises(ValueError):  # the rebuild is of another gate
             gates.finish_report(path, crit, "none met", lambda it: self.make(gate="2"))
         def unreadable(iteration: str) -> gates.GateResult:
@@ -640,6 +702,8 @@ class ReportTests(unittest.TestCase):
             "fence before the verdict": CRITIC_OK.replace("Report:\n", "Report:\n```\n"),
             "preamble before the verdict": CRITIC_OK.replace("Report:\n", "Report:\nHere it is.\n"),
             "bold verdict": CRITIC_OK.replace("VERDICT: SUPPORTED", "**VERDICT: SUPPORTED**"),
+            "verdict word with a suffix": CRITIC_OK.replace("VERDICT: SUPPORTED", "VERDICT: SUPPORTEDX"),
+            "verdict outside the three": CRITIC_OK.replace("VERDICT: SUPPORTED", "VERDICT: APPROVE"),
             "no Request line": CRITIC_OK.replace("Request:\n", "Asked:\n"),
             "two Request lines": CRITIC_OK.replace("Request:\n", "Request:\nRequest:\n"),
             "Report before Request": "# t\n\nReport:\nVERDICT: SUPPORTED\nRequest:\nx\n",
@@ -658,11 +722,12 @@ class ReportTests(unittest.TestCase):
             with self.subTest(name):
                 self.assertIsNone(gates.critic_verdict_line(text))
 
-    def test_verdict_line_agrees_with_launcher_reader(self) -> None:
-        """Wherever the writer reads a verdict, the launcher reads the same one."""
+    def test_verdict_line_agrees_with_launcher_and_runner_readers(self) -> None:
+        """Wherever the writer reads a verdict, the launcher and the runner read the same one."""
         import itertools
         pieces = ("Report:", "VERDICT: SUPPORTED", "VERDICT: REFUTED", "**Report:**", "report: x",
-                  "```", "", "Request:", "Evidence: y", "> VERDICT: SUPPORTED", "Preamble.")
+                  "```", "", "Request:", "Evidence: y", "> VERDICT: SUPPORTED", "Preamble.",
+                  "VERDICT: SUPPORTEDX", " ")
         read = 0
         for combo in itertools.product(pieces, repeat=4):
             text = "# Critic report t\n\nRequest:\nq\n" + "\n".join(combo) + "\n"
@@ -671,6 +736,7 @@ class ReportTests(unittest.TestCase):
                 read += 1
                 with self.subTest(combo=combo):
                     self.assertEqual(mine, launcher_critic_verdict(text))
+                    self.assertEqual(mine, "VERDICT: " + runner_saved_verdict(text))
         self.assertGreater(read, 0)
 
     def test_report_module_is_importable_by_a_frozen_evaluation(self) -> None:
@@ -712,5 +778,25 @@ def launcher_critic_verdict(text: str) -> str | None:
                     return value
                 break
     return None
+
+
+# A copy of the runner's saved_verdict and first_verdict (loop/guards.py, T1), as text, for
+# the same reason.
+def runner_saved_verdict(text: str) -> str:
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        key = line.strip().lstrip(_LAUNCHER_DECORATION)
+        if not key.lower().startswith("report:"):
+            continue
+        for candidate in [key[len("report:"):]] + lines[i + 1:]:
+            if candidate.strip().startswith("```"):
+                continue
+            value = candidate.strip().strip("`*_>").strip()
+            if value:
+                if not value.startswith("VERDICT:"):
+                    return ""
+                m = re.search(r"VERDICT:\s*(SUPPORTED|REFUTED|INCONCLUSIVE|APPROVE|REQUEST CHANGES)", value)
+                return m.group(1) if m else ""
+    return ""
 
 
