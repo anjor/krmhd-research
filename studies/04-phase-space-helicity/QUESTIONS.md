@@ -8,6 +8,34 @@ How Anjor answers: add a line that starts with `ANSWER:` under a question, commi
 
 Questions the loop cannot get past without Anjor. While this section has an item, `STOP` exists in the study folder and the loop does not run. Answer the question, delete `STOP` (or run `loop/resume.sh`), commit and push.
 
+None.
+
+## Open, not blocking
+
+The loop proceeds on its recommendation. If Anjor answers differently, the loop adapts and logs the rework.
+
+### Q8. The Study 2 data link is outside the loop session's readable folders (it-20261005-1416)
+
+`studies/02-collisionality-scan/data` in the loop's clone links to the data in Anjor's checkout `~/repos/anjor/krmhd-research`. A loop session may only list and read inside the clone and the GANDALF worktree, so listing `hermite128_nu3_imex/checkpoints/` through the link was denied in it-20261005-1416. Phase 1 task 5 (the ν-scan checkpoint analysis, a pipeline test under decision 5) and the Gate 2 checkpoint budgets need to read those files. Options: (a) Anjor adds the Study 2 data folder to the session's readable folders (a change to the loop's settings, which only he makes); (b) the loop reads the checkpoints from the cloud volume instead, through the launcher's `fetch`, which today fetches only the loop's own runs; (c) Anjor copies the ν = 3 checkpoints (t = 2180, 2190, 2200) and its `diagnostics_timeseries.npz` into `studies/04-phase-space-helicity/data/v050_nu3/` in the loop's clone, which git ignores. Recommendation: (c), because it touches no guard and the pipeline test needs only ν = 3. Not blocking now: Gate 1 and the Phase 1 local tests do not need the checkpoints. The loop will not read through the link until this is settled.
+
+### Q4. Collaborator paragraph (Gate 1, 2026-10-01)
+
+**Collaborator paragraph** (draft below). To Chandran, Mallet and Meyrand, or to Alex first?
+
+This stays with Anjor and does not block (brief, 1 October 2026): sending it leaves the two repos, so the loop never sends it. PLAN.md §9 question 3 asked the same thing. Recommendation from the loop: none on the addressee, which is Anjor's call. The draft below stands as written.
+
+#### Draft collaborator paragraph
+
+> I am setting up a numerical test of whether conservation of your Γ^± (Appendix B, eqs B25 and B32) changes the Hermite cascade in driven KRMHD turbulence. The solver is GANDALF (JAX, Fourier–Hermite, 128³ with M = 128), which evolves one compressive Hermite hierarchy g with a (1 − 1/Λ) g_0 coupling in the g_1 equation; with Λ = Λ^+ = √5 at β_i = τ = Z = 1 this is your G^+ branch, and a second run at Λ^− would give G^−. I have checked symbolically and against the solver's right-hand side that Σ_m √(m+1) g_m g_{m+1} − g_0 g_1/Λ is exactly conserved at finite M under zero truncation, with no boundary term, and that it is the in-phase part of the same neighbour correlator whose quadrature part is the Hermite flux. The plan is to inject Γ^± in a controlled way by forcing g_0 and g_1 with a fixed relative phase, at equal free-energy injection, and compare W(m), the forward and backward Hermite fluxes and the Γ^± spectrum between opposite signs of injection and a zero-injection control. The balanced base state has ⟨Γ^±⟩ = 0 by the z → −z, v∥ → −v∥ symmetry, so the forcing breaks that symmetry by hand. Two questions I would value your view on: whether you expect Γ^± or H_ph-sp to be the more telling diagnostic of a velocity-space bottleneck, given that H_ph-sp is nonlocal in Hermite space; and whether running the two G^± branches separately (two runs at Λ^±) loses anything for this question, since the branches are decoupled in KRMHD.
+
+## For review
+
+Gates the loop has passed and decisions it has made, newest first, for Anjor's veto. Each item names its gate report or `decisions.md` row and the commit.
+
+- **R1 (it-20261010-1905)**: Gate 1 criteria part (a), the gate report machinery, accepted on your Q10 answer after one critic review. The review, `critic_it-20261010-1905_1.md` on 6c49f09, was REFUTED. Fixed in 35ae1f2: (A) nothing guards a finished report edited before its commit or later in the same session (the runner's `report-edit` covers only reports from earlier sessions), so `gates.py verify` now rechecks the whole report against the saved outputs and the critic file just before that commit, and the remaining gap is a stated limit; (B) a review of an earlier evaluation in the same iteration could finish a later one, so the critic's request must now quote the sha256 of the evaluation record; (P3) the critic file must sit in the report's folder; (P4) only the three whole verdict words are read. Recorded in the 2026-10-10 row of `decisions.md`. Finding A shows that LOOP.md §5's sentence "a PASS made by hand is refused or stops the loop" does not hold for an in-session edit of a report before or after its first commit; changing the runner is yours if you want that closed.
+
+## Answered
+
 - **STOP 2026-10-10 (agent)**: Gate 1 criteria part (a), fourth review under the Q9 threat model, was refuted on findings inside the model (critic_it-20261010-1757_1.md, review a1 of the split): F1, a request that quotes a Report line with a SUPPORTED verdict lets the writer read that quoted verdict when the saved report opens with a preamble, so a REFUTED review can finish as PASS; F2, the head's repo commit and Evaluated t... See `STOP`.
 
 ### Q10. Gate 1 report machinery: the fourth review was refuted inside your threat model. How should part (a) go on? (it-20261010-1757)
@@ -37,32 +65,7 @@ Options:
 Recommendation: (a). Narrow reviews now return in minutes. F1 to F4 are concrete and cheap. The split means a sixth refutation would point at a much smaller surface. If you would rather stop spending iterations on this machinery, (c) is the better long-term choice than (b). The runner and the launcher already refuse a PASS that lacks a SUPPORTED review in the session.
 
 ANSWER: (c), simplify. Strip the gate report code down to what it must do: write the head from the saved outputs, and write the last lines from the critic file. Keep two fixes. F2: `gate1_check` saves HEAD and the UTC time when it runs, and the head takes both from that record. F1: read the verdict only from the critic report's own VERDICT line, never from quoted request text. Drop the writer's defences that duplicate the runner's checks (T1, the commit guards) and the launcher's `check-report`; those already refuse a PASS without a SUPPORTED review in the session. F3, F4 and any other environment gaps go in the docstring as limits, not fixes. Ask the critic once to review the simplified code against my Q9 threat model, counting the runner and launcher as part of the defence; something they already catch is not grounds for REFUTED. If that review finds faults, fix them, record what was fixed in `decisions.md` and under "For review", and go on without another review of part (a) and without stopping. I accept part (a) on that basis. Then part (b), part (c) and the claim reviews, keeping each critic request narrow, as in (a1). The aim is to get back to the physics.
-
-## Open, not blocking
-
-The loop proceeds on its recommendation. If Anjor answers differently, the loop adapts and logs the rework.
-
-### Q8. The Study 2 data link is outside the loop session's readable folders (it-20261005-1416)
-
-`studies/02-collisionality-scan/data` in the loop's clone links to the data in Anjor's checkout `~/repos/anjor/krmhd-research`. A loop session may only list and read inside the clone and the GANDALF worktree, so listing `hermite128_nu3_imex/checkpoints/` through the link was denied in it-20261005-1416. Phase 1 task 5 (the ν-scan checkpoint analysis, a pipeline test under decision 5) and the Gate 2 checkpoint budgets need to read those files. Options: (a) Anjor adds the Study 2 data folder to the session's readable folders (a change to the loop's settings, which only he makes); (b) the loop reads the checkpoints from the cloud volume instead, through the launcher's `fetch`, which today fetches only the loop's own runs; (c) Anjor copies the ν = 3 checkpoints (t = 2180, 2190, 2200) and its `diagnostics_timeseries.npz` into `studies/04-phase-space-helicity/data/v050_nu3/` in the loop's clone, which git ignores. Recommendation: (c), because it touches no guard and the pipeline test needs only ν = 3. Not blocking now: Gate 1 and the Phase 1 local tests do not need the checkpoints. The loop will not read through the link until this is settled.
-
-### Q4. Collaborator paragraph (Gate 1, 2026-10-01)
-
-**Collaborator paragraph** (draft below). To Chandran, Mallet and Meyrand, or to Alex first?
-
-This stays with Anjor and does not block (brief, 1 October 2026): sending it leaves the two repos, so the loop never sends it. PLAN.md §9 question 3 asked the same thing. Recommendation from the loop: none on the addressee, which is Anjor's call. The draft below stands as written.
-
-#### Draft collaborator paragraph
-
-> I am setting up a numerical test of whether conservation of your Γ^± (Appendix B, eqs B25 and B32) changes the Hermite cascade in driven KRMHD turbulence. The solver is GANDALF (JAX, Fourier–Hermite, 128³ with M = 128), which evolves one compressive Hermite hierarchy g with a (1 − 1/Λ) g_0 coupling in the g_1 equation; with Λ = Λ^+ = √5 at β_i = τ = Z = 1 this is your G^+ branch, and a second run at Λ^− would give G^−. I have checked symbolically and against the solver's right-hand side that Σ_m √(m+1) g_m g_{m+1} − g_0 g_1/Λ is exactly conserved at finite M under zero truncation, with no boundary term, and that it is the in-phase part of the same neighbour correlator whose quadrature part is the Hermite flux. The plan is to inject Γ^± in a controlled way by forcing g_0 and g_1 with a fixed relative phase, at equal free-energy injection, and compare W(m), the forward and backward Hermite fluxes and the Γ^± spectrum between opposite signs of injection and a zero-injection control. The balanced base state has ⟨Γ^±⟩ = 0 by the z → −z, v∥ → −v∥ symmetry, so the forcing breaks that symmetry by hand. Two questions I would value your view on: whether you expect Γ^± or H_ph-sp to be the more telling diagnostic of a velocity-space bottleneck, given that H_ph-sp is nonlocal in Hermite space; and whether running the two G^± branches separately (two runs at Λ^±) loses anything for this question, since the branches are decoupled in KRMHD.
-
-## For review
-
-Gates the loop has passed and decisions it has made, newest first, for Anjor's veto. Each item names its gate report or `decisions.md` row and the commit.
-
-None yet.
-
-## Answered
+Handled (it-20261010-1905): simplified the gate report code as directed (6c49f09), asked the critic once (critic_it-20261010-1905_1.md, REFUTED), fixed its findings (35ae1f2), recorded them in decisions.md (2026-10-10 row) and under For review (R1), and accepted part (a) on that basis. Part (b) is the next block.
 
 - **STOP 2026-10-09 (agent)**: Gate 1 criteria part (a), the shared report machinery, was refuted a third time since the approach changed (critic_it-20261009-2146_1.md: the git checks run with the inherited environment, so git environment variables can make a report name another repository's HEAD and pass the clean-tree check; the runner reads head lines with case folding that the writer does not mirror). LOOP.md section 4: ... See `STOP`.
 
