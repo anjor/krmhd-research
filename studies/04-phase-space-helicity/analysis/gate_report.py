@@ -12,11 +12,36 @@ It imports only the standard library, and calls no loader (`importlib`, `compile
 import it under the launcher's rule (LOOP.md §5, item 2). It is then frozen with that
 evaluation, so a change after the first launch of a set is a hard stop. The Gate 1 to 3
 checks, which need GANDALF and the environment, stay in `analysis/gates.py`.
+
+Threat model (Anjor's answer to QUESTIONS.md Q9, 10 October 2026). The machinery must catch
+honest mistakes (a report naming the wrong commit, a dirty tree, a check that did not run or
+did not finish, a verdict or Result line that does not follow from the saved outputs, a
+criterion changed after review) and a report head edited after the fact. It does not defend
+against a session that sets git, Python, JAX or XLA environment variables, plants or edits
+ignored files, or forges a saved critic file; the runner's guards cover a hostile session.
+
+Stated limits, all outside that model:
+- Git runs with every `GIT_*` variable removed and without the global and system config
+  (`git_env`), and `-c core.fsmonitor=false`; the repository's own `.git/config`, which the
+  runner guards, still applies.
+- Python may run a stale or planted `.pyc` from the ignored `analysis/__pycache__/` in place
+  of the committed source; git cannot see it, so the named commit is the code that ran only
+  if the cache is the interpreter's own.
+- A saved critic file is read as it stands. One forged to say SUPPORTED is caught only by
+  the runner (T1), which matches it against the critic's report in the session transcript.
+- The re-judge reads the evaluation's saved outputs, which live in the ignored
+  `data/scratch/`. An edit of them is outside the model; a legitimate rerun into the same
+  folder (for example a critic reproducing the evaluation there) makes the head
+  unfinishable, which fails safe.
+- `finish_report` checks that the named repo commit exists and that the gate code it is
+  given (`code_paths`) is unchanged from that commit in the working tree; it cannot tell
+  whether the interpreter that ran the evaluation loaded that code.
 """
 
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import subprocess
 from collections.abc import Callable
@@ -40,6 +65,14 @@ REPORT_FILE_RE = re.compile(
 LINE_DECORATION = " \t>*-+#|_`"
 VERDICT_LABEL_RES = (re.compile(r"^(?:final\s+)?result\b"), re.compile(r"^coded\s+checks?\b"),
                      re.compile(r"^critic\b"), re.compile(r"^kill\s+criteri"))
+# The same labels matched case-insensitively on the line as written, so that a letter that
+# Python's IGNORECASE folds to ASCII (ſ to s, ı to i, the Kelvin sign to k) counts too.
+VERDICT_LABEL_FOLDED_RES = tuple(re.compile(p.pattern, re.IGNORECASE) for p in VERDICT_LABEL_RES)
+# How the runner reads a gate report (loop/guards.py, T1: `claims_pass` and
+# `critic_file_named`), copied as text: the label is the line without leading Markdown
+# decoration, not lower-cased, matched with IGNORECASE.
+RUNNER_RESULT_PASS_RE = re.compile(r"^(?:final\s+)?result\b[^:\n]*:[\s`*_\"']*pass\b", re.IGNORECASE)
+RUNNER_CRITIC_LABEL_RE = re.compile(r"^critic\b", re.IGNORECASE)
 HEADER_KEYS = ("gate", "evaluated:", "command:", "runs:", "left out:", "frozen", "coded check:",
                "critic:", "kill criteria:", "result:")
 TEMPLATE_PLACEHOLDERS = (
@@ -142,13 +175,17 @@ def label_key(line: str) -> str:
 
 
 def head_form_problems(lines: list[str]) -> list[str]:
-    """Lines of a report head (everything above `Coded check`) that the launcher would
-    misread: a line it would count as a `Result`, `Coded check`, `Critic` or `Kill criteria`
-    line, and unfilled template text."""
+    """Lines of a report head (everything above `Coded check`) that the launcher or the runner
+    would misread: a line either would count as a `Result`, `Coded check`, `Critic` or `Kill
+    criteria` line, read in lower case (the launcher) or with case folding (the runner's
+    `claims_pass` and `critic_file_named`), and unfilled template text."""
     problems = []
     for line in lines:
         key = label_key(line)
-        if any(p.match(key) for p in VERDICT_LABEL_RES):
+        raw_key = line.strip().lstrip(LINE_DECORATION)
+        if (any(p.match(key) for p in VERDICT_LABEL_RES)
+                or any(p.match(raw_key) for p in VERDICT_LABEL_FOLDED_RES)
+                or RUNNER_RESULT_PASS_RE.match(raw_key) or RUNNER_CRITIC_LABEL_RE.match(raw_key)):
             problems.append(f"line reads as a verdict line: {line!r}")
         if key.startswith(HEADER_KEYS) and PLACEHOLDER_RE.search(line):
             problems.append(f"placeholder on a header line: {line!r}")
@@ -220,7 +257,7 @@ def render_report_head(result: GateResult, iteration: str) -> str:
         lines.append(f"| {_cell(row.quantity)} | {_cell(row.value)} | {_cell(threshold)} | {mark} |")
     problems = head_form_problems("\n".join(lines).splitlines())
     if problems:
-        raise ValueError("the report head would be misread by the launcher: " + "; ".join(problems))
+        raise ValueError("the report head would be misread by the launcher or the runner: " + "; ".join(problems))
     lines += ["", f"Coded check: {'PASS' if result.coded_pass else 'FAIL'}"]
     return "\n".join(lines) + "\n"
 
@@ -380,6 +417,47 @@ def decide_result(coded_pass: bool, verdict: str | None, kill: str, gate: str | 
     return "NOT DECIDED"
 
 
+def git_env() -> dict[str, str]:
+    """The environment the gate code runs git in: this process's without any `GIT_*`
+    variable (`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_CONFIG_*` and the rest),
+    and with the global and system config files switched off, so that git reads only the
+    repository it is pointed at and that repository's own `.git/config`."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull)
+    return env
+
+
+def git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess:
+    """`git -C <repo> -c core.fsmonitor=false <args>` in `git_env()`, text output captured.
+
+    Raises ValueError, running nothing else, unless `repo` is the top of its own work tree
+    and its git directory is `<repo>/.git`, so that the answer is about `repo` and not about
+    an enclosing repository or one named elsewhere."""
+    base = ["git", "-C", str(repo), "-c", "core.fsmonitor=false"]
+    where = subprocess.run(base + ["rev-parse", "--show-toplevel", "--absolute-git-dir"],
+                           env=git_env(), capture_output=True, text=True)
+    lines = where.stdout.splitlines()
+    want = Path(repo).resolve()
+    if (where.returncode != 0 or len(lines) != 2 or Path(lines[0]).resolve() != want
+            or Path(lines[1]).resolve() != want / ".git"):
+        raise ValueError(f"{repo} is not the top of a git work tree with its own .git "
+                         f"(git saw {lines or where.stderr.strip()!r})")
+    return subprocess.run(base + list(args), env=git_env(), check=check, capture_output=True, text=True)
+
+
+def code_changed_problems(commit: str, paths: tuple[str, ...], repo: Path = REPO) -> list[str]:
+    """Why the gate code under `paths` (repo-relative) in the working tree is not the code of
+    `commit`: the commit does not exist in `repo`, or a tracked file differs from it, or a
+    file under `paths` is untracked. Empty when the code is the commit's."""
+    if not re.fullmatch(r"[0-9a-f]{40}", commit) or git(
+            repo, "cat-file", "-e", f"{commit}^{{commit}}", check=False).returncode != 0:
+        return [f"repo commit {commit} does not exist in {repo}"]
+    changed = git(repo, "diff", "--name-only", commit, "--", *paths).stdout.split()
+    untracked = git(repo, "ls-files", "--others", "--exclude-standard", "--", *paths).stdout.split()
+    return ([f"{p} differs from commit {commit[:12]}" for p in changed]
+            + [f"{p} is untracked" for p in untracked])
+
+
 def report_history_problems(report: Path, iteration: str, repo: Path = REPO) -> list[str]:
     """Commits that touched a gate report and are not of its own iteration. A report that git
     tracks may be finished only if every commit that touched it has a subject starting
@@ -390,12 +468,9 @@ def report_history_problems(report: Path, iteration: str, repo: Path = REPO) -> 
         rel = report.resolve().relative_to(repo.resolve()).as_posix()
     except ValueError:
         return []
-    has_head = subprocess.run(["git", "-C", str(repo), "rev-parse", "--verify", "-q", "HEAD"],
-                              capture_output=True, text=True).returncode == 0
-    if not has_head:
+    if git(repo, "rev-parse", "--verify", "-q", "HEAD", check=False).returncode != 0:
         return []  # a repo without commits (tests)
-    out = subprocess.run(["git", "-C", str(repo), "log", "--format=%h %s", "--", rel],
-                         check=True, capture_output=True, text=True).stdout
+    out = git(repo, "log", "--format=%h %s", "--", rel).stdout
     own = f"Study 04 [{iteration}]"
     return [f"commit {line.split(' ', 1)[0]} touched {rel} and is not of {iteration}"
             for line in out.splitlines() if not line.split(" ", 1)[-1].startswith(own)]
@@ -403,7 +478,8 @@ def report_history_problems(report: Path, iteration: str, repo: Path = REPO) -> 
 
 def finish_report(report: Path, critic_report: Path, kill: str,
                   reports_dir: Path | None = None,
-                  rejudge: Callable[[GateResult, str], GateResult] | None = None) -> str:
+                  rejudge: Callable[[GateResult, str], GateResult] | None = None,
+                  repo: Path = REPO, code_paths: tuple[str, ...] | None = None) -> str:
     """Append the `Critic`, `Kill criteria` and `Result` lines to a gate report.
 
     `critic_report` is the saved `gate_reports/critic_<iteration id>_<k>.md`; its VERDICT
@@ -422,7 +498,10 @@ def finish_report(report: Path, critic_report: Path, kill: str,
       edited after the evaluation, consistently or not, is refused;
     - the report and the critic report sit in the same folder, `reports_dir` if given (the
       command line gives `gate_reports/`), and no commit of another iteration touched the
-      report (`report_history_problems`);
+      report (`report_history_problems` in `repo`);
+    - if `code_paths` is given (the command line gives each gate's code), the head's repo
+      commit exists in `repo` and the files under `code_paths` are unchanged from it
+      (`code_changed_problems`), so the head names the code that is being finished;
     - the critic report is from the same iteration, its title matches its file name and
       names the gate and the report's file name;
     - its `Request:` section quotes the sha256 of the head as written, the repo commit and
@@ -436,10 +515,14 @@ def finish_report(report: Path, critic_report: Path, kill: str,
     - neither file is a symbolic link, so the `Critic` line names the file that was read.
 
     What it cannot see: whether the critic was in fact given those files, whether the
-    iteration ID is the current session's, and whether another review of the same session
-    that names the gate returned something other than SUPPORTED; those rest on LOOP.md §6 and
-    on the runner (T1).
+    iteration ID is the current session's, whether another review of the same session that
+    names the gate returned something other than SUPPORTED, and whether the saved critic file
+    holds what the critic returned; those rest on LOOP.md §6 and on the runner (T1). The
+    module docstring states the threat model and the other limits.
     """
+    if rejudge is None:
+        raise ValueError(f"no re-judge for the gate of {report.name}: its rows cannot be "
+                         "checked against its outputs")
     links = [p for p in (report, critic_report) if p.is_symlink()]
     if links:
         raise ValueError(f"{links[0]} is a symbolic link; finish the files themselves")
@@ -459,9 +542,14 @@ def finish_report(report: Path, critic_report: Path, kill: str,
             reports_dir is not None and reports_dir.resolve() != folder):
         raise ValueError(f"{critic_report} and {report} must both sit in "
                          f"{reports_dir if reports_dir is not None else 'the same folder'}")
-    history = report_history_problems(report, report_iteration)
+    history = report_history_problems(report, report_iteration, repo)
     if history:
         raise ValueError(f"{report.name} may not be finished: " + "; ".join(history))
+    if code_paths is not None:
+        changed = code_changed_problems(stated.repo_commit, code_paths, repo)
+        if changed:
+            raise ValueError(f"{report.name}: the gate code is not that of the head's commit: "
+                             + "; ".join(changed[:5]))
     m = CRITIC_FILE_RE.fullmatch(critic_report.name)
     if not m:
         raise ValueError(f"{critic_report.name} is not critic_<iteration id>_<k>.md")
@@ -494,8 +582,6 @@ def finish_report(report: Path, critic_report: Path, kill: str,
     if verdict is None:
         raise ValueError(f"{critic_report} has no VERDICT line that the writer, the launcher and "
                          "the runner would all read the same way")
-    if rejudge is None:
-        raise ValueError(f"no re-judge for Gate {gate}: its rows cannot be checked against its outputs")
     try:
         rebuilt = render_report_head(rejudge(stated, report_iteration), report_iteration)
     except OSError as exc:

@@ -13,6 +13,7 @@ import sys
 import tempfile
 import textwrap
 import unittest
+from collections.abc import Callable
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "analysis"))
@@ -1082,6 +1083,213 @@ class MachineryTests(unittest.TestCase):
         with mock.patch.object(importlib.util, "find_spec", return_value=local):
             self.assertEqual(gates.installed_gandalf_location(), (False, "distribution in site-packages, "
                                                                          "krmhd outside site-packages"))
+
+
+def make_repo(path: Path) -> Callable[..., str]:
+    """A git repo at `path` with one commit; returns a function that runs git in it (in the
+    inherited environment, as a person would) and returns its stdout."""
+    import subprocess
+
+    def run(*args: str) -> str:
+        return subprocess.run(["git", "-C", str(path), "-c", "commit.gpgsign=false", *args], check=True,
+                              capture_output=True, text=True).stdout
+
+    path.mkdir(parents=True)
+    run("init", "-q")
+    write(path / "gate.py", "x = 1\n")
+    run("add", ".")
+    run("commit", "-q", "-m", "Study 04 [it-20261003-0000]: code")
+    return run
+
+
+class ThreatModelTests(unittest.TestCase):
+    """The findings of critic_it-20261009-2146_1.md, under the threat model of QUESTIONS.md Q9."""
+
+    setUp, result, critic, evidence = (MachineryTests.setUp, MachineryTests.result, MachineryTests.critic,
+                                       MachineryTests.evidence)
+
+    # finding 1: git runs without the GIT_* variables and only on its own work tree
+    def test_git_ignores_git_environment(self) -> None:
+        import os
+        from unittest import mock
+        other, mine = self.tmp / "other", self.tmp / "mine"
+        make_repo(other)
+        run = make_repo(mine)
+        report = write(mine / "gate_reports" / f"G1_{ITER}.md", "head\n")
+        run("add", ".")
+        run("commit", "-q", "-m", "Study 04 [it-20261003-0000]: someone else's report")
+        head = run("rev-parse", "HEAD").strip()
+        write(mine / "dirty.txt", "x")
+        hostile = {"GIT_DIR": str(other / ".git"), "GIT_WORK_TREE": str(other),
+                   "GIT_INDEX_FILE": str(other / ".git" / "index"), "GIT_CONFIG_COUNT": "1",
+                   "GIT_CONFIG_KEY_0": "status.showUntrackedFiles", "GIT_CONFIG_VALUE_0": "no"}
+        with mock.patch.dict(os.environ, hostile):
+            self.assertEqual(gates.git_head(mine), head)
+            self.assertFalse(gates.tree_is_clean(mine, paths=(".",)))
+            self.assertEqual(len(gates.report_history_problems(report, ITER, mine)), 1)
+            self.assertFalse(any(k.startswith("GIT_") and k not in ("GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_GLOBAL")
+                                 for k in gates.git_env()))
+        # a folder inside a repo is not a repo of its own
+        with self.assertRaises(ValueError):
+            gates.git_head(mine / "gate_reports")
+        with self.assertRaises(ValueError):
+            gates.tree_is_clean(self.tmp)
+
+    # finding 1, at finish: the head's commit must exist and the gate code must be its code
+    def test_finish_checks_code_against_the_named_commit(self) -> None:
+        run = make_repo(self.tmp / "repo")
+        repo = self.tmp / "repo"
+        commit = run("rev-parse", "HEAD").strip()
+        folder = repo / "gate_reports"
+        cases = (("commit that does not exist", "f" * 40, None),
+                 ("code changed since", commit, "x = 2\n"),
+                 ("the commit's code", commit, "x = 1\n"))
+        for k, (name, sha, code) in enumerate(cases, start=1):
+            with self.subTest(name):
+                if code is not None:
+                    write(repo / "gate.py", code)
+                r = self.result("2", repo_commit=sha)
+                sub = folder / f"k{k}"
+                path = gates.write_report(r, ITER, sub)
+                crit = self.critic(f"critic_{ITER}_{k}.md", f"Gate 2 evaluation {path.name}", self.evidence(r),
+                                   folder=sub)
+                if k < 3:
+                    with self.assertRaises(ValueError):
+                        finish(path, crit, "none met", repo=repo, code_paths=("gate.py",))
+                    self.assertNotIn("Result:", path.read_text())
+                else:
+                    self.assertEqual(finish(path, crit, "none met", repo=repo, code_paths=("gate.py",)), "PASS")
+        write(repo / "new_gate_file.py", "")
+        self.assertEqual(gates.code_changed_problems(commit, ("new_gate_file.py",), repo),
+                         ["new_gate_file.py is untracked"])
+
+    # finding 3: the runner reads heads with case folding
+    def test_head_refuses_lines_the_runner_would_misread(self) -> None:
+        kelvin, long_s, dotless_i = "K", "ſ", "ı"
+        for quantity in (f"Re{long_s}ult: pass", f"cr{dotless_i}tic critic_{ITER}_9.md", f"{kelvin}ill criteria: none met",
+                         f"Final re{long_s}ult (rerun): `PASS`", f"Coded chec{kelvin}", "RESULT: PASS",
+                         f"**cr{dotless_i}tic**: x"):
+            with self.subTest(quantity=quantity):
+                raw = quantity.strip().lstrip(gates.LINE_DECORATION)
+                self.assertTrue(gates.RUNNER_RESULT_PASS_RE.match(raw) or gates.RUNNER_CRITIC_LABEL_RE.match(raw)
+                                or any(p.match(raw) for p in gates.VERDICT_LABEL_FOLDED_RES))
+                with self.assertRaises(ValueError):
+                    gates.render_report_head(self.result(rows=[gates.Row(quantity, "1", "1", True)]), ITER)
+        # the mirrors are the runner's own patterns, copied as text
+        guards = (gates.STUDY / "loop" / "guards.py").read_text(encoding="utf-8")
+        for pattern in (gates.RUNNER_RESULT_PASS_RE, gates.RUNNER_CRITIC_LABEL_RE):
+            self.assertIn(f're.compile(r"{pattern.pattern}", re.IGNORECASE)', guards)
+        self.assertIn('LINE_DECORATION = "' + gates.LINE_DECORATION.replace("\t", "\\t") + '"', guards)
+
+    def test_fuzzed_heads_never_read_as_verdicts(self) -> None:
+        import random
+        rng = random.Random(20261010)
+        pieces = ["result", "Reſult", "crıtic", "Kill", "criteria", "coded", "check", "final",
+                  "pass", "PASS", ":", " ", "|", "*", "_", "`", ">", "#", "-", "\n", "\r", "\x85", " ",
+                  "<x>", "VERDICT", "x", "1"]
+        written = 0
+        for _ in range(3000):
+            def text() -> str:
+                return "".join(rng.choice(pieces) for _ in range(rng.randint(1, 6)))
+            r = self.result(rng.choice(["2", "4"]), "A", gate_name=text(), runs=text(),
+                            rows=[gates.Row(text(), text(), text(), rng.choice([True, None]))])
+            if r.gate_number == "2":
+                r.run_set, r.frozen = None, []
+            try:
+                head = gates.render_report_head(r, ITER)
+            except ValueError:
+                continue
+            written += 1
+            for line in head.splitlines()[:-1]:  # all but the Coded check line
+                raw = line.strip().lstrip(gates.LINE_DECORATION)
+                self.assertFalse(gates.RUNNER_RESULT_PASS_RE.match(raw) or gates.RUNNER_CRITIC_LABEL_RE.match(raw)
+                                 or any(p.match(gates.label_key(line)) for p in gates.VERDICT_LABEL_RES), line)
+        self.assertGreater(written, 100)
+
+    # finding 4: the history refusal and the Gate 1 re-judge through finish_report, and main
+    def test_history_refusal_through_finish(self) -> None:
+        run = make_repo(self.tmp / "repo")
+        repo = self.tmp / "repo"
+        r = self.result()
+        path = gates.write_report(r, ITER, repo / "gate_reports")
+        crit = self.critic(f"critic_{ITER}_1.md", f"Gate 1 evaluation {path.name}", self.evidence(r),
+                           folder=repo / "gate_reports")
+        run("add", str(path))
+        run("commit", "-q", "-m", "Study 04 [it-20261003-0000]: a head of another iteration")
+        with self.assertRaises(ValueError) as caught:
+            finish(path, crit, "none met", repo=repo)
+        self.assertIn("may not be finished", str(caught.exception))
+        self.assertNotIn("Result:", path.read_text())
+
+    def test_main_finish_reaches_the_rejudge(self) -> None:
+        import contextlib
+        import io
+        from unittest import mock
+        folder = self.tmp / "gate_reports"
+        r2 = self.result("2")
+        path2 = gates.write_report(r2, ITER, folder)
+        crit2 = self.critic(f"critic_{ITER}_1.md", f"Gate 2 evaluation {path2.name}", self.evidence(r2), folder=folder)
+        with mock.patch.object(gates, "GATE_REPORTS", folder), self.assertRaises(ValueError) as caught:
+            gates.main(["finish", "--report", str(path2), "--critic", str(crit2), "--kill", "none met"])
+        self.assertIn("no re-judge", str(caught.exception))
+        # Gate 1: the head names the real HEAD, the code checked is a frozen file unchanged
+        # since, and the re-judge in REJUDGE is the one called
+        r1 = self.result("1", repo_commit=gates.git_head())
+        path1 = gates.write_report(r1, ITER, folder)
+        crit1 = self.critic(f"critic_{ITER}_2.md", f"Gate 1 evaluation {path1.name}", self.evidence(r1), folder=folder)
+        calls = []
+
+        def stub(stated: gates.GateResult, iteration: str) -> gates.GateResult:
+            calls.append(iteration)
+            return stated
+
+        argv = ["finish", "--report", str(path1), "--critic", str(crit1), "--kill", "none met"]
+        with mock.patch.object(gates, "GATE_REPORTS", folder), mock.patch.dict(gates.REJUDGE, {"1": stub}), \
+                mock.patch.object(gates.sys.modules["gate_report"], "code_changed_problems",
+                                  return_value=["changed"]), self.assertRaises(ValueError):
+            gates.main(argv)
+        self.assertEqual(calls, [])
+        with mock.patch.object(gates, "GATE_REPORTS", folder), mock.patch.dict(gates.REJUDGE, {"1": stub}), \
+                mock.patch.dict(gates.GATE_CODE, {"1": (f"{gates.STUDY_REL}/PLAN.md",)}), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(gates.main(argv), 0)
+        self.assertEqual(calls, [ITER])
+        self.assertTrue(path1.read_text().endswith("Result: PASS\n"))
+
+
+class Gate1RejudgeThroughFinishTests(unittest.TestCase):
+    """`gate1_rejudge` as `finish_report` calls it (critic_it-20261009-2146_1.md, finding 4)."""
+
+    setUp, run_check = Gate1CheckTests.setUp, Gate1CheckTests.run_check
+
+    def test_finish_with_gate1_rejudge(self) -> None:
+        import hashlib
+        result = self.run_check()
+        self.assertTrue(result.coded_pass)
+        path = gates.write_report(result, ITER, self.reports)
+        head = path.read_bytes()
+        evidence = " ".join([hashlib.sha256(head).hexdigest(), result.repo_commit, result.evaluated_utc]
+                            + [d for _, d in result.data_files])
+        # _2: the stand-in claims table names critic_<ITER>_1.md as a claim review
+        crit = write(self.reports / f"critic_{ITER}_2.md",
+                     f"# Critic report {ITER}_2: Gate 1 evaluation {path.name}\n\nRequest:\n{evidence}\n\n"
+                     "Report:\nVERDICT: SUPPORTED\nEvidence: x\n")
+        kw = dict(scratch=self.tmp / "scratch", lock=self.lock, install_info=(PIN, True, "test"),
+                  derivations=self.deriv, reports_dir=self.reports, scripts=self.scripts, claims=("C1", "C2"),
+                  study=self.tmp, accepted=("SPEC.md",))
+
+        def rejudge(stated: gates.GateResult, iteration: str) -> gates.GateResult:
+            return gates.gate1_rejudge(stated, iteration, **dict(kw))
+
+        stdout = self.tmp / "scratch" / f"gate1_{ITER}" / "d01.stdout"
+        saved = stdout.read_text()
+        stdout.write_text("FAILED: edited after the evaluation\n")
+        with self.assertRaises(ValueError):
+            gates.finish_report(path, crit, "none met", reports_dir=self.reports, rejudge=rejudge)
+        self.assertEqual(path.read_bytes(), head)
+        stdout.write_text(saved)
+        self.assertEqual(gates.finish_report(path, crit, "none met", reports_dir=self.reports, rejudge=rejudge),
+                         "PASS")
 
 
 if __name__ == "__main__":

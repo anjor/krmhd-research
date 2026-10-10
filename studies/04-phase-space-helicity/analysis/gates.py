@@ -11,6 +11,9 @@ writer in `analysis/gate_report.py`, so that no number and no verdict is typed b
    (`gate_reports/critic_<iteration id>_<k>.md`), after the gate's re-judge (`REJUDGE`)
    has rebuilt the same rows from the saved outputs. `finish_report` states the rest.
 
+The threat model the machinery is built and judged against (Anjor, QUESTIONS.md Q9) and the
+limits outside it are in `gate_report`'s module docstring.
+
 Gate 1 (PLAN.md §4, Phase 0): the invariant mapping and SPEC.md are accepted.
 Its coded check (`gate1_check`) reruns every Phase 0 derivation script on the
 pinned GANDALF, applies each script's own pass criterion (and, for D02 and
@@ -61,7 +64,8 @@ from gate_report import (  # the shared report machinery, re-exported for the te
     _one_line, head_field_problems, render_report_head, parse_report_head, write_report,
     VERDICT_LINE_RE, _first_report_mark, critic_verdict_line, critic_request_text, KILL_MET_RE,
     KILL_GATE, decide_result, report_history_problems, finish_report, critic_title_ok,
-    gate_label_re,
+    gate_label_re, VERDICT_LABEL_FOLDED_RES, RUNNER_RESULT_PASS_RE, RUNNER_CRITIC_LABEL_RE,
+    git_env, git, code_changed_problems,
 )
 
 STUDY = Path(__file__).resolve().parents[1]
@@ -544,9 +548,9 @@ def gate1_fixed_fields(iteration: str) -> dict[str, str]:
 
 
 def git_head(repo: Path = REPO) -> str:
-    """Full sha of HEAD."""
-    return subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], check=True,
-                          capture_output=True, text=True).stdout.strip()
+    """Full sha of HEAD of `repo`, read through `gate_report.git` (no `GIT_*` variables, no
+    global config, `repo` checked to be its own work tree)."""
+    return git(repo, "rev-parse", "HEAD").stdout.strip()
 
 
 def gate1_check(iteration: str,
@@ -570,6 +574,14 @@ def gate1_check(iteration: str,
     the committed copy alone. Its stdout, stderr and exit code are saved beside it, and
     claims.md is copied there, so that `gate1_judge` builds every row from saved, hashed
     files and `gate1_rejudge` can build them again when the report is finished.
+
+    Stated limits (outside the threat model in `gate_report`'s docstring): the scripts run
+    with `-E -s`, which removes `PYTHON*` variables and the user site but keeps `JAX_*` and
+    `XLA_FLAGS`; all of them run in the one scratch folder, which is first on each script's
+    `sys.path`, so a module planted there would shadow an import, and the install check
+    (`installed_gandalf_location`) resolves `krmhd` from `analysis/`, not from that folder.
+    The folder is emptied before the first script runs, so only a script of the list can
+    leave a file there for a later one.
     """
     if not ITERATION_RE.fullmatch(iteration):
         raise ValueError(f"iteration id {iteration!r} is not of the form it-YYYYMMDD-HHMM")
@@ -641,11 +653,11 @@ def tree_is_clean(repo: Path = REPO, paths: tuple[str, ...] = CLEAN_TREE_PATHS) 
     """True when `git status --porcelain --untracked-files=all` prints nothing (untracked files
     count, whatever `status.showUntrackedFiles` says) and no tracked file under `paths` has a
     skip-worktree or assume-unchanged bit. The bit is checked only there, because the runner
-    sets skip-worktree on another study's data link (LOOP.md §2)."""
-    out = subprocess.run(["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=all"],
-                         check=True, capture_output=True, text=True).stdout
-    bits = subprocess.run(["git", "-C", str(repo), "ls-files", "-v", "--", *paths], check=True,
-                          capture_output=True, text=True).stdout
+    sets skip-worktree on another study's data link (LOOP.md §2). Git runs through
+    `gate_report.git`, so `GIT_*` variables and the global config cannot point it at another
+    repository or index, and `repo` must be its own work tree."""
+    out = git(repo, "status", "--porcelain", "--untracked-files=all").stdout
+    bits = git(repo, "ls-files", "-v", "--", *paths).stdout
     return out.strip() == "" and not hidden_index_bits(bits)
 
 
@@ -660,7 +672,7 @@ def _rel_or_name(path: Path) -> str:
 def _safe_head() -> str:
     try:
         return git_head()
-    except (subprocess.CalledProcessError, OSError):
+    except (subprocess.CalledProcessError, OSError, ValueError):
         return "unknown"
 
 
@@ -670,6 +682,12 @@ def _safe_head() -> str:
 
 # The re-judge of each gate that `finish` may finish; a gate missing here cannot be finished.
 REJUDGE: dict[str, Callable[[GateResult, str], GateResult]] = {"1": gate1_rejudge}
+# The code each gate's report rests on (repo-relative); `finish` refuses unless it is unchanged
+# from the commit the head names.
+GATE_CODE: dict[str, tuple[str, ...]] = {
+    "1": (f"{STUDY_REL}/analysis/gates.py", f"{STUDY_REL}/analysis/gate_report.py",
+          f"{STUDY_REL}/derivations", "uv.lock", "pyproject.toml"),
+}
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
@@ -706,7 +724,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if result.coded_pass else 1
     gate = parse_report_name(args.report.name)[0]
     result_line = finish_report(args.report, args.critic, args.kill, reports_dir=GATE_REPORTS,
-                                rejudge=REJUDGE.get(gate))
+                                rejudge=REJUDGE.get(gate), repo=REPO,
+                                code_paths=GATE_CODE.get(gate, (f"{STUDY_REL}/analysis",)))
     print(f"Result: {result_line}")
     return 0
 
