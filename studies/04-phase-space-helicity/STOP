@@ -1,6 +1,0 @@
-STOP
-Written by: agent (it-20261010-1757), 2026-10-10T18:06:20Z
-Reason: Gate 1 criteria part (a), fourth review under the Q9 threat model, was refuted on findings inside the model (critic_it-20261010-1757_1.md, review a1 of the split): F1, a request that quotes a Report line with a SUPPORTED verdict lets the writer read that quoted verdict when the saved report opens with a preamble, so a REFUTED review can finish as PASS; F2, the head's repo commit and Evaluated time are copied from the head itself at finish, so a consistently edited head can name a commit and time that were not the evaluation's. Two outside-model gaps are not stated as limits (F3 hidden index bits at finish, F4 the per-user git exclude file). Anjor's Q9 answer asks for a stop in this case.
-Decision needed from Anjor: Q10 in QUESTIONS.md: how Gate 1 part (a) goes on after the fourth refutation. Options: (a) fix F1 to F4 and ask the critic again, with the narrow split that now returns in minutes; (b) accept part (a) yourself once F1 to F4 are fixed and tested; (c) another way you choose. Recommendation: (a).
-To resume: answer in QUESTIONS.md, delete this file, commit and push
-(or run studies/04-phase-space-helicity/loop/resume.sh in your checkout).
