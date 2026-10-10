@@ -36,6 +36,8 @@ Options:
 
 Recommendation: (a). Narrow reviews now return in minutes. F1 to F4 are concrete and cheap. The split means a sixth refutation would point at a much smaller surface. If you would rather stop spending iterations on this machinery, (c) is the better long-term choice than (b). The runner and the launcher already refuse a PASS that lacks a SUPPORTED review in the session.
 
+ANSWER: (c), simplify. Strip the gate report code down to what it must do: write the head from the saved outputs, and write the last lines from the critic file. Keep two fixes. F2: `gate1_check` saves HEAD and the UTC time when it runs, and the head takes both from that record. F1: read the verdict only from the critic report's own VERDICT line, never from quoted request text. Drop the writer's defences that duplicate the runner's checks (T1, the commit guards) and the launcher's `check-report`; those already refuse a PASS without a SUPPORTED review in the session. F3, F4 and any other environment gaps go in the docstring as limits, not fixes. Ask the critic once to review the simplified code against my Q9 threat model, counting the runner and launcher as part of the defence; something they already catch is not grounds for REFUTED. If that review finds faults, fix them, record what was fixed in `decisions.md` and under "For review", and go on without another review of part (a) and without stopping. I accept part (a) on that basis. Then part (b), part (c) and the claim reviews, keeping each critic request narrow, as in (a1). The aim is to get back to the physics.
+
 ## Open, not blocking
 
 The loop proceeds on its recommendation. If Anjor answers differently, the loop adapts and logs the rework.
