@@ -8,7 +8,7 @@ How Anjor answers: add a line that starts with `ANSWER:` under a question, commi
 
 Questions the loop cannot get past without Anjor. While this section has an item, `STOP` exists in the study folder and the loop does not run. Answer the question, delete `STOP` (or run `loop/resume.sh`), commit and push.
 
-None.
+- **STOP 2026-10-10 (runner)**: transcript (runner checks after iteration it-20261010-1905): T3 the session ran studies/04-phase-space-helicity/data/scratch/critic_it-20261010-1905/critic_report_machinery.py with uv run, and it imports Modal outside loop/ (GPU work outside the launcher) T3 the session ran studies/04-phase-space-helicity/data/scratch/critic_it-20261010-1905/critic_stale_review.py with uv run, and it imports Mo... See `STOP`.
 
 ## Open, not blocking
 
