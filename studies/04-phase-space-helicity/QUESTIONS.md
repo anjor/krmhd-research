@@ -8,28 +8,33 @@ How Anjor answers: add a line that starts with `ANSWER:` under a question, commi
 
 Questions the loop cannot get past without Anjor. While this section has an item, `STOP` exists in the study folder and the loop does not run. Answer the question, delete `STOP` (or run `loop/resume.sh`), commit and push.
 
-- **STOP 2026-10-09 (agent)**: Gate 1 criteria part (a), the shared report machinery, was refuted a third time since the approach changed (critic_it-20261009-2146_1.md: the git checks run with the inherited environment, so git environment variables can make a report name another repository's HEAD and pass the clean-tree check; the runner reads head lines with case folding that the writer does not mirror). LOOP.md section 4: ... See `STOP`.
+- **STOP 2026-10-10 (agent)**: Gate 1 criteria part (a), fourth review under the Q9 threat model, was refuted on findings inside the model (critic_it-20261010-1757_1.md, review a1 of the split): F1, a request that quotes a Report line with a SUPPORTED verdict lets the writer read that quoted verdict when the saved report opens with a preamble, so a REFUTED review can finish as PASS; F2, the head's repo commit and Evaluated t... See `STOP`.
 
-### Q9. Gate 1 report machinery refuted three times since the approach changed: how should Gate 1 go on? (it-20261009-2146)
+### Q10. Gate 1 report machinery: the fourth review was refuted inside your threat model. How should part (a) go on? (it-20261010-1757)
 
-Since it-20261005-1446 split the Gate 1 criteria review into parts (a), (b) and (c), part (a) has been refuted three times: `critic_it-20261005-2234_1.md`, `critic_it-20261009-2116_1.md` and `critic_it-20261009-2146_1.md` (claim C15). LOOP.md §4 makes three failed entries on one approach a hard stop.
+You asked for a stop if the fourth review of part (a) was refuted on findings inside the threat model of your Q9 answer. It was: `gate_reports/critic_it-20261010-1757_1.md` (claim C15). The review covered 057978c, which carries fixes 1 to 4 of Q9.
 
-The third review found that most of the machinery now holds. Questions 2 to 6 held up: re-judge from saved outputs, binding to this evaluation, agreement between the writer, the launcher and the runner on the verdict, the Result rule, and importability by a frozen evaluation. The launcher's form check passed on writer-made reports for every gate. What it refuted:
-1. `git_head`, `tree_is_clean` and `report_history_problems` run git with the inherited environment, so `GIT_DIR` and `GIT_WORK_TREE` (or a global git config) can make a report name another repository's HEAD and pass the clean-tree check.
-2. Limits that are true but not stated in the docstrings: a stale `.pyc` in the ignored `analysis/__pycache__/`; the derivation scripts' shared folder on `sys.path`; JAX and XLA variables that `-E` keeps; and `finish` does not check that the gate code at finish equals the code at the named commit.
-3. The runner's reader of a head uses case-insensitive regexes on keys it does not lower-case, so Unicode case folding (ſ, ı, the Kelvin sign) lets the writer emit a table row that the runner reads as `Result: PASS` or as the Critic line. The review found no path to a false PASS; the risk is a spurious runner STOP.
-4. Test gaps: none for the git environment or the runner's case-insensitive reading, and the history refusal and the re-judge are never exercised through `finish_report`.
+How the review went. The two earlier requests for this review, in it-20261010-1317 and it-20261010-1523, never returned, and both sessions were killed at 120 minutes. Each request asked eight questions over about 9,800 lines of code and all of LOOP.md. This iteration split part (a) into two narrow reviews. (a1) asks whether a report can wrongly finish as PASS and whether the environment checks catch honest mistakes. (a2) covers the head's form against the launcher's and runner's readers, the Result rule's kill mapping, frozen importability and the tests. Each request named the functions and LOOP.md lines to read. (a1) returned in under 5 minutes. (a2) was not asked, because (a1) already met your stop condition.
 
-Each review has found new edge cases. They are less about whether the report is right and more about an adversary who controls the environment, which no review can close for good.
+Findings the critic placed inside the model:
+- F1 (`gate_report.py` `critic_verdict_line`). A request can quote a line `Report:` followed by `VERDICT: SUPPORTED`. If the saved critic report then opens with a preamble line before its own `VERDICT: REFUTED`, the writer reads the quoted SUPPORTED and finishes the report as PASS. The critic's probe did this. Its docstring says this case is refused. Proposed fix: refuse any critic file whose request has a line labelled `report:` or `verdict`, or that holds more than one such line.
+- F2 (`gates.py` `gate1_rejudge`). The head's repo commit and `Evaluated` time are copied from the head itself. A head edited consistently before the request is written therefore passes. It can name any commit whose gate code matches the tree, at any time. The Result line cannot change this way, but the head can misname the evaluation's commit. Proposed fix: `gate1_check` saves HEAD and the UTC time in its scratch outputs and lists the file under Data files, and the re-judge reads them back.
+
+Outside the model, but not stated as limits in the docstrings (so also grounds under your rule):
+- F3. The finish-time check of the gate code against the named commit does not see a change to a gate file whose assume-unchanged or skip-worktree bit is set. Fix: apply `hidden_index_bits` there too.
+- F4. Git still reads the per-user exclude file (`~/.config/git/ignore`), so an untracked file it lists is invisible to the clean-tree check. Fix: `-c core.excludesFile=/dev/null`, or state it.
+
+What held: refusal of re-encoded, CRLF, BOM, tail-carrying or linked heads; recomputing the coded check and the rows from saved outputs; no finish for gates without a re-judge; the binding to a critic file in `gate_reports/` from the same iteration with the head's sha256; refusal of finished reports and of reports touched by another iteration; the dirty-tree and moved-HEAD refusals at the run.
+
+All four fixes are small, about one iteration with tests. Part (a) has now been refuted seven times in total, counting the three reviews of the whole criteria. Each refutation found fewer and narrower faults, but there is no sign yet of a review that comes back clean.
 
 Options:
-- (a) The loop fixes 1 to 4 and asks the critic once more, as a fresh allowance: git with `GIT_*` removed and the toplevel checked against the repo, the writer refusing anything the runner's case-insensitive reading would take as a verdict or Critic line, the limits stated, and the tests added.
-- (b) As (a), but you also fix a threat model for the gate code, for example: "the machinery guards against mistakes and against a head edited after the fact, not against a session that sets git or Python environment variables or plants ignored files". The critic then judges against it, so the review can converge.
-- (c) You review the report machinery yourself and accept it, recorded as your decision, and the loop goes on to part (b).
+- (a) The loop fixes F1 to F4 with tests and asks the critic again, as a fifth allowance, with the narrow split: (a1) on the fixes, then (a2). It stops again if either is refuted inside the model.
+- (b) The loop fixes F1 to F4 with tests, and you accept part (a) on that basis, recorded as your decision. The loop then goes on to (a2) and parts (b) and (c), each with a narrow critic review.
+- (c) Simplify. The loop drops the writer's own defences that duplicate the runner's T1 check and the launcher's report check, which already guard every PASS. The gate code then only writes the head from saved outputs and the last three lines from the critic file, and the review judges that much smaller piece.
+- (d) Something else you choose.
 
-Recommendation: (b). The fixes in (a) are cheap, about one iteration. Without a stated threat model, a fourth review is likely to find a fifth class of environmental edge case. The runner already checks the session for the threats in it (T1 and the git config guards).
-
-ANSWER: (b). Fix 1 to 4, then ask the critic once more, as a fresh allowance. Threat model for the gate code, for parts (a), (b) and (c): the machinery must catch honest mistakes (a report naming the wrong commit, a dirty tree, a check that did not run or did not finish, a verdict or Result line that does not follow from the saved outputs, a criterion changed after review) and a report head edited after the fact. It does not need to defend against a session that sets git, Python, JAX or XLA environment variables, plants or edits ignored files (a stale `.pyc`, scratch outputs), or forges a saved critic file. The runner's guards cover a hostile session. Weaknesses outside this model go in the docstrings as stated limits and are not grounds for REFUTED. Give the critic this paragraph with each criteria review. If the fourth review of part (a) is refuted on findings inside the model, stop and ask me again.
+Recommendation: (a). Narrow reviews now return in minutes. F1 to F4 are concrete and cheap. The split means a sixth refutation would point at a much smaller surface. If you would rather stop spending iterations on this machinery, (c) is the better long-term choice than (b). The runner and the launcher already refuse a PASS that lacks a SUPPORTED review in the session.
 
 ## Open, not blocking
 
@@ -56,6 +61,30 @@ Gates the loop has passed and decisions it has made, newest first, for Anjor's v
 None yet.
 
 ## Answered
+
+- **STOP 2026-10-09 (agent)**: Gate 1 criteria part (a), the shared report machinery, was refuted a third time since the approach changed (critic_it-20261009-2146_1.md: the git checks run with the inherited environment, so git environment variables can make a report name another repository's HEAD and pass the clean-tree check; the runner reads head lines with case folding that the writer does not mirror). LOOP.md section 4: ... See `STOP`.
+
+### Q9. Gate 1 report machinery refuted three times since the approach changed: how should Gate 1 go on? (it-20261009-2146)
+
+Since it-20261005-1446 split the Gate 1 criteria review into parts (a), (b) and (c), part (a) has been refuted three times: `critic_it-20261005-2234_1.md`, `critic_it-20261009-2116_1.md` and `critic_it-20261009-2146_1.md` (claim C15). LOOP.md §4 makes three failed entries on one approach a hard stop.
+
+The third review found that most of the machinery now holds. Questions 2 to 6 held up: re-judge from saved outputs, binding to this evaluation, agreement between the writer, the launcher and the runner on the verdict, the Result rule, and importability by a frozen evaluation. The launcher's form check passed on writer-made reports for every gate. What it refuted:
+1. `git_head`, `tree_is_clean` and `report_history_problems` run git with the inherited environment, so `GIT_DIR` and `GIT_WORK_TREE` (or a global git config) can make a report name another repository's HEAD and pass the clean-tree check.
+2. Limits that are true but not stated in the docstrings: a stale `.pyc` in the ignored `analysis/__pycache__/`; the derivation scripts' shared folder on `sys.path`; JAX and XLA variables that `-E` keeps; and `finish` does not check that the gate code at finish equals the code at the named commit.
+3. The runner's reader of a head uses case-insensitive regexes on keys it does not lower-case, so Unicode case folding (ſ, ı, the Kelvin sign) lets the writer emit a table row that the runner reads as `Result: PASS` or as the Critic line. The review found no path to a false PASS; the risk is a spurious runner STOP.
+4. Test gaps: none for the git environment or the runner's case-insensitive reading, and the history refusal and the re-judge are never exercised through `finish_report`.
+
+Each review has found new edge cases. They are less about whether the report is right and more about an adversary who controls the environment, which no review can close for good.
+
+Options:
+- (a) The loop fixes 1 to 4 and asks the critic once more, as a fresh allowance: git with `GIT_*` removed and the toplevel checked against the repo, the writer refusing anything the runner's case-insensitive reading would take as a verdict or Critic line, the limits stated, and the tests added.
+- (b) As (a), but you also fix a threat model for the gate code, for example: "the machinery guards against mistakes and against a head edited after the fact, not against a session that sets git or Python environment variables or plants ignored files". The critic then judges against it, so the review can converge.
+- (c) You review the report machinery yourself and accept it, recorded as your decision, and the loop goes on to part (b).
+
+Recommendation: (b). The fixes in (a) are cheap, about one iteration. Without a stated threat model, a fourth review is likely to find a fifth class of environmental edge case. The runner already checks the session for the threats in it (T1 and the git config guards).
+
+ANSWER: (b). Fix 1 to 4, then ask the critic once more, as a fresh allowance. Threat model for the gate code, for parts (a), (b) and (c): the machinery must catch honest mistakes (a report naming the wrong commit, a dirty tree, a check that did not run or did not finish, a verdict or Result line that does not follow from the saved outputs, a criterion changed after review) and a report head edited after the fact. It does not need to defend against a session that sets git, Python, JAX or XLA environment variables, plants or edits ignored files (a stale `.pyc`, scratch outputs), or forges a saved critic file. The runner's guards cover a hostile session. Weaknesses outside this model go in the docstrings as stated limits and are not grounds for REFUTED. Give the critic this paragraph with each criteria review. If the fourth review of part (a) is refuted on findings inside the model, stop and ask me again.
+Handled (it-20261010-1757): fixes 1 to 4 were made in 057978c (it-20261010-1317). The fourth review, given this paragraph verbatim, was refuted on findings inside the model (critic_it-20261010-1757_1.md), so the loop stopped and asks again in Q10.
 
 - **STOP 2026-10-06 (runner)**: WIP streak (runner checks after iteration it-20261006-1454): streak: 6 iterations in a row ended WIP or as a stub (limit 6): it-20261006-1454 it-20261005-2234 it-20261005-1519 it-20261005-1446 it-20261005-1416 it-20261002-0916 See `STOP`.
 

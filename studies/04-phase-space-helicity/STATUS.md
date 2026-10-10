@@ -4,13 +4,13 @@ Front page of the autonomous loop. `LOOP.md` is the protocol. The log is in `log
 
 ## Next block
 
-**Hard stop (it-20261009-2146): waits for Anjor's answer to QUESTIONS.md Q9.** Gate 1 criteria part (a), the report machinery, was refuted for the third time since the approach changed: `critic_it-20261005-2234_1.md`, `critic_it-20261009-2116_1.md` and `critic_it-20261009-2146_1.md` (claim C15). LOOP.md §4 then makes it a hard stop.
-What remains after Anjor's answer, for options (a) and (b) of Q9, against the code at a64d2e2:
-1. Run git with every `GIT_*` variable removed (and `-c core.fsmonitor=false`) in `git_head`, `tree_is_clean`, `main` and `report_history_problems`, and check that `rev-parse --show-toplevel` and `--git-dir` are the repo's.
-2. Make the writer refuse any head line that the runner's case-insensitive readers (guards.py `RESULT_PASS_RE`, `CRITIC_LABEL_RE`, `claims_pass`) would take as a verdict or Critic line, including through Unicode case folding.
-3. State these limits in the docstrings: a stale `.pyc` in `analysis/__pycache__/`; the scripts' shared scratch folder on `sys.path`; JAX and XLA variables that `-E` keeps; `finish` does not check the gate code against the named commit; a forged saved critic file is caught only by the runner; and the shared, ignored scratch outputs that the re-judge reads.
-4. Tests: the git environment, the runner's case-folding reading, the history refusal and `gate1_rejudge` through `finish_report`, and `main finish` reaching `REJUDGE`.
-Questions 2 to 6 of the review held up. If part (a) passes: part (b), then (c), then the claim reviews, then the Gate 1 evaluation.
+**Hard stop (it-20261010-1757): waits for Anjor's answer to QUESTIONS.md Q10.** The fourth review of Gate 1 criteria part (a), on 057978c and under the Q9 threat model, was refuted on findings inside the model (`critic_it-20261010-1757_1.md`, review (a1) of a narrow split; claim C15). Anjor's Q9 answer asked for a stop in that case.
+What remains for options (a) and (b) of Q10, against the code at 057978c:
+1. F1: `critic_verdict_line` must refuse a critic file whose request has a line labelled `report:` or `verdict` (or any file with more than one such line), and its docstring must match; add a test with a preamble before the critic's own VERDICT.
+2. F2: `gate1_check` saves HEAD and the UTC time in `scratch/gate1_<it>/`, lists the file under Data files, and `gate1_rejudge` reads them back instead of copying them from the head.
+3. F3: `code_changed_problems` applies `hidden_index_bits` to the gate code paths.
+4. F4: git runs with `-c core.excludesFile=/dev/null`, or the limit is stated.
+Then (a1) again on the fixes and (a2) (head form against the readers, the kill mapping, frozen importability, the tests), each as a narrow request naming functions and LOOP.md lines; (a1) returned in under 5 minutes this way, while the two large requests before it never returned. After part (a): part (b), then (c), then the claim reviews, then the Gate 1 evaluation.
 The changed approach (it-20261005-1446) stands:
 1. Split the review into three narrower critic reviews, each needing SUPPORTED before the next: (a) the shared report machinery (now `analysis/gate_report.py`, plus the environment checks and the command line in `gates.py`); (b) the script rules and D03; (c) the claim rules (`judge_claim`, `GATE1_CLAIMS`). Name Gate 1 in each request.
 2. Take the numeric `as2018` thresholds out of the coded check: keep its exit code and section 1 (algebraic antisymmetry). The instability goes into a successor of C16 (C19) judged by its own claim review. C19 must say that `critic_as2018.py` tests the plain Λ → ∞ ∂_v, and that D02's operator is J = A_low − A_up with the (1, 0) entry c_Λ, antisymmetric only with the weight P (check D02's own check of that). The dt comparison in `critic_as2018.py` also changes run length and fit window (T = 3.0 vs 1.2), so it does not isolate dt; say so in C19 or fix the script.
@@ -34,6 +34,9 @@ Compute cap 200.0 A100-h: used 0.00, reserved 0.00, left 200.00 (launches 1, run
 
 ## Iterations, newest first
 
+- it-20261010-1757 — hard stop: Gate 1 criteria part (a), fourth review of 057978c, split into narrow reviews after two large requests never returned. (a1) returned in 5 minutes, REFUTED inside Anjor's threat model (`critic_it-20261010-1757_1.md`: a quoted verdict in a request can be read as the critic's; the head's commit and time are not bound to saved outputs). STOP written and Q10 asked, as his Q9 answer required.
+- it-20261010-1523 — stub (killed at 120 min): Gate 1 criteria part (a), a time-boxed retry of the review of 057978c; the critic returned nothing.
+- it-20261010-1317 — stub (killed at 120 min): Gate 1 criteria part (a), fixes 1 to 4 of Q9 committed (057978c); the critic review never returned.
 - it-20261009-2146 — hard stop: Gate 1 criteria part (a), third submission. Self-probe fixes first (a64d2e2: symlinks refused at finish, an install location check, Gate 1 re-judge rebuilds every head field except the commit and the time). Critic REFUTED (`critic_it-20261009-2146_1.md`: git runs with the inherited environment; the runner's case-folding reader of heads). That is three failed entries on the changed approach, so STOP was written and Q9 asked.
 - it-20261009-2116 — WIP: Gate 1 criteria part (a), second submission. Recovered the stash of it-20261005-2234 and handled Anjor's answer to the WIP-streak stop. Fixed the findings of `critic_it-20261005-2234_1.md`. Critic REFUTED again (`critic_it-20261009-2116_1.md`: a consistently edited head still finished as PASS). Fixed after the review: re-judge from saved outputs, head hash binding, Frozen lines, the runner's gate names, isolated install check, and the machinery split into `gate_report.py`. Not yet reviewed.
 - it-20261006-1454 — stub (Anjor ended the session); the runner wrote STOP for the WIP streak, and Anjor resumed the loop on 2026-10-09.
