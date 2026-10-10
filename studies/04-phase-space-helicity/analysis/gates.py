@@ -5,14 +5,15 @@ A quality gate passes when its coded check here passes on raw outputs, the
 kill criterion is met. Every gate writes its report in two steps, through the shared
 writer in `analysis/gate_report.py`, so that no number and no verdict is typed by hand:
 
-1. `write_report` writes everything down to the `Coded check` line.
-2. `finish_report` appends the `Critic`, `Kill criteria` and `Result` lines,
-   copying the critic's VERDICT line from its saved report
-   (`gate_reports/critic_<iteration id>_<k>.md`), after the gate's re-judge (`REJUDGE`)
-   has rebuilt the same rows from the saved outputs. `finish_report` states the rest.
+1. The gate runs, saves its outputs, and `write_report` writes everything down to the
+   `Coded check` line from the result built from those saved outputs.
+2. `finish_report` builds the head again from the saved outputs (`REBUILD`), refuses unless
+   the report is still exactly that head, and appends the `Critic`, `Kill criteria` and
+   `Result` lines from the critic's saved report (`gate_reports/critic_<iteration id>_<k>.md`).
 
-The threat model the machinery is built and judged against (Anjor, QUESTIONS.md Q9) and the
-limits outside it are in `gate_report`'s module docstring.
+The threat model the machinery is built and judged against (Anjor, QUESTIONS.md Q9 and Q10),
+the checks it leaves to the runner and the launcher, and its limits are in `gate_report`'s
+module docstring.
 
 Gate 1 (PLAN.md §4, Phase 0): the invariant mapping and SPEC.md are accepted.
 Its coded check (`gate1_check`) reruns every Phase 0 derivation script on the
@@ -21,7 +22,8 @@ critic_as2018.py, the criteria below that turn the SPEC.md and claim text into
 numbers), checks that the installed GANDALF is the commit pinned in uv.lock,
 and checks that every claim the mapping and SPEC.md rest on is supported with a
 SUPPORTED critic verdict. It hashes SPEC.md and docs/rediscovery.md so that the
-report names what was accepted. `gates.py gate1` refuses to run on a dirty tree.
+report names what was accepted. `gates.py gate1` refuses to run on a dirty tree, and
+refuses to write the report if the tree or HEAD changed while it ran.
 
 Scope. Statements of SPEC.md §1, §2, §3 and §6 are checked where a script or a
 claim covers them: §1–§2 by D01, D02, the blind test and the claims, and the
@@ -43,7 +45,6 @@ Usage (from the repo root):
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.metadata
 import json
 import math
@@ -57,15 +58,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from gate_report import (  # the shared report machinery, re-exported for the tests
-    ITERATION_RE, UTC_STAMP_RE, FROZEN_ITEM_RE, CRITIC_FILE_RE, REPORT_FILE_RE,
-    LINE_DECORATION, VERDICT_LABEL_RES, HEADER_KEYS, TEMPLATE_PLACEHOLDERS, PLACEHOLDER_RE,
-    Row, GateResult, sha256_file, repo_rel, _cell,
-    report_name, report_title, parse_report_name, label_key, head_form_problems,
-    _one_line, head_field_problems, render_report_head, parse_report_head, write_report,
-    VERDICT_LINE_RE, _first_report_mark, critic_verdict_line, critic_request_text, KILL_MET_RE,
-    KILL_GATE, decide_result, report_history_problems, finish_report, critic_title_ok,
-    gate_label_re, VERDICT_LABEL_FOLDED_RES, RUNNER_RESULT_PASS_RE, RUNNER_CRITIC_LABEL_RE,
-    git_env, git, code_changed_problems,
+    ITERATION_RE, CRITIC_FILE_RE, Row, GateResult, sha256_file, repo_rel, report_name,
+    report_title, parse_report_name, label_key, render_report_head, write_report,
+    critic_verdict_line, critic_title_ok, decide_result, finish_report,
 )
 
 STUDY = Path(__file__).resolve().parents[1]
@@ -141,6 +136,9 @@ GATE1_PHASE0_VERDICTS: dict[str, str] = {
 # Files Gate 1 accepts as written, hashed in the report so that it names what was accepted.
 GATE1_ACCEPTED_FILES: tuple[str, ...] = ("SPEC.md", "docs/rediscovery.md")
 GATE1_SCRIPT_TIMEOUT_S = 1800.0
+# The record `gate1_check` saves before the scripts run: repo commit, UTC time, installed
+# GANDALF commit and uv.lock pin. It is hashed under Data files like every other output.
+GATE1_RECORD = "evaluation.json"
 
 
 # ---------------------------------------------------------------------------
@@ -169,79 +167,14 @@ def uv_lock_pin(lock: Path) -> str:
 
 
 def installed_gandalf_commit() -> str:
-    """The commit of the installed GANDALF, from its PEP 610 direct_url.json, or 'unknown'."""
+    """The commit of the installed GANDALF, from its PEP 610 direct_url.json, or 'unknown'.
+    Read in this interpreter; that the scripts import the same package, and that it was not
+    edited after installation, is outside the threat model (`gate_report` docstring)."""
     try:
         raw = importlib.metadata.distribution(GANDALF_PACKAGE).read_text("direct_url.json")
         return json.loads(raw or "{}").get("vcs_info", {}).get("commit_id", "unknown")
     except (importlib.metadata.PackageNotFoundError, ValueError):
         return "unknown"
-
-
-def installed_gandalf_intact() -> tuple[bool, str]:
-    """Whether every installed GANDALF file with a RECORD hash still has that sha256, so that
-    an edit of the installed package cannot pass as the pinned commit. Returns (ok, seen).
-
-    At least one hashed file must lie under `krmhd/`, so that a distribution that hashes only
-    its metadata does not pass. Gate 1 calls this through `isolated_install_info`, in an
-    interpreter started with `-E -s` like the derivation scripts.
-
-    Limits: RECORD itself carries no hash, so an edit of a file together with its RECORD line
-    passes; files RECORD does not list (`.pth` files, `sitecustomize`, stale `.pyc`) are not
-    checked. `-E -s` closes `PYTHONPATH` and the user site, not a `.pth` file in the
-    environment's own site-packages."""
-    import base64
-
-    try:
-        dist = importlib.metadata.distribution(GANDALF_PACKAGE)
-    except importlib.metadata.PackageNotFoundError:
-        return False, "not installed"
-    hashed = [f for f in (dist.files or []) if f.hash and f.hash.mode == "sha256"]
-    changed = []
-    for f in hashed:
-        path = Path(f.locate())
-        digest = (base64.urlsafe_b64encode(hashlib.sha256(path.read_bytes()).digest())
-                  .rstrip(b"=").decode() if path.is_file() else "missing")
-        if digest != f.hash.value:
-            changed.append(str(f))
-    package = [f for f in hashed if str(f).startswith("krmhd/")]
-    seen = f"{len(hashed)} files with RECORD hashes ({len(package)} under krmhd/), {len(changed)} changed"
-    if changed:
-        seen += ": " + ", ".join(changed[:3])
-    return bool(package) and not changed, seen
-
-
-def installed_gandalf_location() -> tuple[bool, str]:
-    """Whether the GANDALF distribution and the `krmhd` package that `import krmhd` finds both
-    lie in this interpreter's own site-packages (`sysconfig` purelib), so that a distribution
-    or a package in the script's folder, or anywhere else on `sys.path`, cannot answer for the
-    installed one. Matters at `finish`, when the tree is not clean. Returns (ok, seen)."""
-    import importlib.util
-    import sysconfig
-
-    purelib = Path(sysconfig.get_paths()["purelib"]).resolve()
-    try:
-        dist_dir = Path(importlib.metadata.distribution(GANDALF_PACKAGE).locate_file("")).resolve()
-        spec = importlib.util.find_spec("krmhd")
-    except (importlib.metadata.PackageNotFoundError, ImportError, ValueError):
-        return False, "GANDALF distribution or krmhd not found"
-    origin = Path(spec.origin).resolve() if spec is not None and spec.origin else None
-    dist_ok = dist_dir == purelib
-    pkg_ok = origin is not None and origin.is_relative_to(purelib)
-    return dist_ok and pkg_ok, (f"distribution {'in' if dist_ok else 'outside'} site-packages, "
-                                f"krmhd {'in' if pkg_ok else 'outside'} site-packages")
-
-
-def isolated_install_info(python: str = sys.executable) -> tuple[str, bool, str]:
-    """(installed GANDALF commit, intact, what was seen), computed in a fresh interpreter
-    started with `-E -s`, as the derivation scripts are, so that a GANDALF distribution
-    named by `PYTHONPATH` or the user site cannot answer for the one the scripts import."""
-    proc = subprocess.run([python, "-E", "-s", str(Path(__file__).resolve()), "install-info"],
-                          capture_output=True, text=True, timeout=300)
-    try:
-        info = json.loads(proc.stdout)
-        return str(info["commit"]), bool(info["intact"]), str(info["seen"])
-    except (ValueError, KeyError, TypeError):
-        return "unknown", False, f"install check failed (exit {proc.returncode})"
 
 
 def judge_script(rule: str, returncode: int, stdout: str,
@@ -478,24 +411,25 @@ def judge_claim(claim: str, table: dict[str, tuple[str, str]], reports_dir: Path
     return True, seen
 
 
-def gate1_judge(work: Path, pin: str, installed: str, intact: tuple[bool, str],
+def gate1_judge(work: Path, record: dict,
                 derivations: Path = STUDY / "derivations",
                 reports_dir: Path = GATE_REPORTS,
                 scripts: tuple[tuple[str, str], ...] = GATE1_SCRIPTS,
                 claims: tuple[str, ...] = GATE1_CLAIMS,
                 study: Path = STUDY,
                 accepted: tuple[str, ...] = GATE1_ACCEPTED_FILES) -> tuple[list[Row], list[tuple[str, str]]]:
-    """Gate 1 rows and data files from the outputs `gate1_check` saved in `work`: each
-    script's stdout and exit code, D02's rerun npz and the copy of claims.md."""
-    rows = [Row("installed GANDALF commit", installed, f"uv.lock pin {pin}", installed == pin),
-            Row("installed GANDALF files", intact[1],
-                "every RECORD sha256 unchanged; distribution and krmhd in site-packages", intact[0])]
+    """Gate 1 rows and data files from the outputs `gate1_check` saved in `work`: the record
+    (`GATE1_RECORD`, read into `record`), each script's stdout and exit code, D02's rerun npz
+    and the copy of claims.md."""
+    installed, pin = str(record["gandalf_installed"]), str(record["gandalf_pin"])
+    rows = [Row("installed GANDALF commit", installed, f"uv.lock pin {pin}", installed == pin)]
     data_files: list[tuple[str, str]] = []
 
     def saved(path: Path) -> Path:
         data_files.append((_rel_or_name(path), sha256_file(path) if path.is_file() else "missing"))
         return path
 
+    saved(work / GATE1_RECORD)
     for name, rule in scripts:
         saved(derivations / name)
         out = saved(work / f"{Path(name).stem}.stdout").read_text(encoding="utf-8")
@@ -521,17 +455,19 @@ def gate1_judge(work: Path, pin: str, installed: str, intact: tuple[bool, str],
     return rows, data_files
 
 
-def gate1_rejudge(stated: GateResult, iteration: str, scratch: Path = SCRATCH,
-                  lock: Path = REPO / "uv.lock", **kw) -> GateResult:
-    """The Gate 1 result rebuilt from the outputs saved in `scratch/gate1_<iteration>/`, with
-    the install checked again, for `finish_report` to compare with the head it finishes.
-    Every field is rebuilt except the repo commit and the evaluated time, which no saved
-    output records; the critic's request quotes both (`finish_report`)."""
-    pin = uv_lock_pin(lock)
-    info = kw.pop("install_info", None) or isolated_install_info()
-    rows, data_files = gate1_judge(scratch / f"gate1_{iteration}", pin, info[0], info[1:], **kw)
-    return GateResult(**{**stated.__dict__, **gate1_fixed_fields(iteration), "gandalf_commit": info[0],
-                         "rows": rows, "data_files": data_files, "run_set": None, "frozen": []})
+def gate1_result(iteration: str, scratch: Path = SCRATCH, **kw) -> GateResult:
+    """The Gate 1 result built only from what `gate1_check` saved in
+    `scratch/gate1_<iteration>/`: the rows and data files (`gate1_judge`), and from the
+    record the repo commit, the evaluated time and the installed GANDALF commit.
+    `gate1_check` returns it, and `finish_report` calls it again (`REBUILD`) to compare with
+    the head it finishes, so the two differ only if the saved outputs, the claim reports the
+    claim rows read, or the code that judges them changed in between."""
+    work = scratch / f"gate1_{iteration}"
+    record = json.loads((work / GATE1_RECORD).read_text(encoding="utf-8"))
+    rows, data_files = gate1_judge(work, record, **kw)
+    return GateResult(**gate1_fixed_fields(iteration), repo_commit=str(record["repo_commit"]),
+                      gandalf_commit=str(record["gandalf_installed"]), data_files=data_files,
+                      rows=rows, evaluated_utc=str(record["evaluated_utc"]))
 
 
 def gate1_fixed_fields(iteration: str) -> dict[str, str]:
@@ -548,9 +484,9 @@ def gate1_fixed_fields(iteration: str) -> dict[str, str]:
 
 
 def git_head(repo: Path = REPO) -> str:
-    """Full sha of HEAD of `repo`, read through `gate_report.git` (no `GIT_*` variables, no
-    global config, `repo` checked to be its own work tree)."""
-    return git(repo, "rev-parse", "HEAD").stdout.strip()
+    """Full sha of HEAD of `repo`; raises if git cannot read it."""
+    return subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], check=True,
+                          capture_output=True, text=True).stdout.strip()
 
 
 def gate1_check(iteration: str,
@@ -562,45 +498,42 @@ def gate1_check(iteration: str,
                 scripts: tuple[tuple[str, str], ...] = GATE1_SCRIPTS,
                 claims: tuple[str, ...] = GATE1_CLAIMS,
                 installed: str | None = None,
-                intact: tuple[bool, str] | None = None,
+                head: str | None = None,
                 timeout_s: float = GATE1_SCRIPT_TIMEOUT_S,
                 python: str = sys.executable,
                 study: Path = STUDY,
                 accepted: tuple[str, ...] = GATE1_ACCEPTED_FILES) -> GateResult:
     """Gate 1 coded check (PLAN.md §4 Phase 0; SPEC.md §1–§2).
 
-    Each derivation script is copied into `scratch/gate1_<iteration>/` and run there, so
-    that a script that writes beside itself (D02 writes reference_profiles.npz) leaves
-    the committed copy alone. Its stdout, stderr and exit code are saved beside it, and
-    claims.md is copied there, so that `gate1_judge` builds every row from saved, hashed
-    files and `gate1_rejudge` can build them again when the report is finished.
+    It first saves the record `scratch/gate1_<iteration>/evaluation.json`: the repo HEAD
+    (`head` overrides it in tests) and the UTC time as the check starts, the installed GANDALF
+    commit and the uv.lock pin. Each derivation script is then copied into the same folder
+    and run there, so that a script that writes beside itself (D02 writes
+    reference_profiles.npz) leaves the committed copy alone. Its stdout, stderr and exit code
+    are saved beside it, and claims.md is copied there. The result is `gate1_result` of that
+    folder, so every field of the head comes from saved, hashed files, and `finish_report`
+    builds the same head again from them.
 
-    Stated limits (outside the threat model in `gate_report`'s docstring): the scripts run
-    with `-E -s`, which removes `PYTHON*` variables and the user site but keeps `JAX_*` and
-    `XLA_FLAGS`; all of them run in the one scratch folder, which is first on each script's
-    `sys.path`, so a module planted there would shadow an import, and the install check
-    (`installed_gandalf_location`) resolves `krmhd` from `analysis/`, not from that folder.
-    The folder is emptied before the first script runs, so only a script of the list can
-    leave a file there for a later one.
+    The scripts run with `-E -s` (no `PYTHON*` variables, no user site); the limits of that
+    and of the scratch folder are in `gate_report`'s docstring.
     """
     if not ITERATION_RE.fullmatch(iteration):
         raise ValueError(f"iteration id {iteration!r} is not of the form it-YYYYMMDD-HHMM")
-    head = _safe_head()  # read before the scripts run, so the report names what ran
     work = scratch / f"gate1_{iteration}"
     if work.exists():
         shutil.rmtree(work)
     work.mkdir(parents=True)
-    pin = uv_lock_pin(lock)
-    if installed is None or intact is None:
-        info = isolated_install_info(python)
-        installed = info[0] if installed is None else installed
-        intact = info[1:] if intact is None else intact
+    record = {
+        "repo_commit": git_head() if head is None else head,  # before the scripts run
+        "evaluated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "gandalf_installed": installed_gandalf_commit() if installed is None else installed,
+        "gandalf_pin": uv_lock_pin(lock),
+    }
+    (work / GATE1_RECORD).write_text(json.dumps(record, indent=1) + "\n", encoding="utf-8")
 
     for name, _ in scripts:
         shutil.copy2(derivations / name, work / name)
         try:
-            # -E -s: no PYTHON* variables and no user site, so `import krmhd` resolves to the
-            # installed, RECORD-checked package and not to a folder named in the environment
             proc = subprocess.run([python, "-E", "-s", name], cwd=work, capture_output=True, text=True,
                                   timeout=timeout_s)
             rc, out, err = proc.returncode, proc.stdout, proc.stderr
@@ -611,18 +544,8 @@ def gate1_check(iteration: str,
         for suffix, text in (("stdout", out), ("stderr", err), ("exit", f"{rc}\n")):
             (work / f"{Path(name).stem}.{suffix}").write_text(text, encoding="utf-8")
     shutil.copy2(claims_path, work / "claims.md")
-
-    rows, data_files = gate1_judge(work, pin, installed, intact, derivations=derivations,
-                                   reports_dir=reports_dir, scripts=scripts, claims=claims,
-                                   study=study, accepted=accepted)
-    return GateResult(
-        **gate1_fixed_fields(iteration),
-        repo_commit=head,
-        gandalf_commit=installed,
-        data_files=data_files,
-        rows=rows,
-        evaluated_utc=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    )
+    return gate1_result(iteration, scratch, derivations=derivations, reports_dir=reports_dir,
+                        scripts=scripts, claims=claims, study=study, accepted=accepted)
 
 
 _RULE_TEXT = {
@@ -637,28 +560,13 @@ _RULE_TEXT = {
 }
 
 
-# Where a hidden index bit is refused: the launcher's folders, and the lock and project files
-# that the pin row reads
-CLEAN_TREE_PATHS = (STUDY_REL, "shared", "uv.lock", "pyproject.toml")
-
-
-def hidden_index_bits(ls_files_v: str) -> list[str]:
-    """Files that `git ls-files -v` marks skip-worktree (`S`) or assume-unchanged (a lower-case
-    tag): `git status` does not show a change to them."""
-    return [line[2:] for line in ls_files_v.splitlines()
-            if len(line) > 2 and (line[0] == "S" or line[0].islower())]
-
-
-def tree_is_clean(repo: Path = REPO, paths: tuple[str, ...] = CLEAN_TREE_PATHS) -> bool:
+def tree_is_clean(repo: Path = REPO) -> bool:
     """True when `git status --porcelain --untracked-files=all` prints nothing (untracked files
-    count, whatever `status.showUntrackedFiles` says) and no tracked file under `paths` has a
-    skip-worktree or assume-unchanged bit. The bit is checked only there, because the runner
-    sets skip-worktree on another study's data link (LOOP.md §2). Git runs through
-    `gate_report.git`, so `GIT_*` variables and the global config cannot point it at another
-    repository or index, and `repo` must be its own work tree."""
-    out = git(repo, "status", "--porcelain", "--untracked-files=all").stdout
-    bits = git(repo, "ls-files", "-v", "--", *paths).stdout
-    return out.strip() == "" and not hidden_index_bits(bits)
+    count, whatever `status.showUntrackedFiles` says). Its limits (environment, hidden index
+    bits, the per-user exclude file) are in `gate_report`'s docstring."""
+    out = subprocess.run(["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=all"],
+                         check=True, capture_output=True, text=True).stdout
+    return out.strip() == ""
 
 
 def _rel_or_name(path: Path) -> str:
@@ -669,25 +577,14 @@ def _rel_or_name(path: Path) -> str:
         return path.name
 
 
-def _safe_head() -> str:
-    try:
-        return git_head()
-    except (subprocess.CalledProcessError, OSError, ValueError):
-        return "unknown"
-
-
 # ---------------------------------------------------------------------------
 # Command line
 # ---------------------------------------------------------------------------
 
-# The re-judge of each gate that `finish` may finish; a gate missing here cannot be finished.
-REJUDGE: dict[str, Callable[[GateResult, str], GateResult]] = {"1": gate1_rejudge}
-# The code each gate's report rests on (repo-relative); `finish` refuses unless it is unchanged
-# from the commit the head names.
-GATE_CODE: dict[str, tuple[str, ...]] = {
-    "1": (f"{STUDY_REL}/analysis/gates.py", f"{STUDY_REL}/analysis/gate_report.py",
-          f"{STUDY_REL}/derivations", "uv.lock", "pyproject.toml"),
-}
+# The function that builds each gate's result from its saved outputs, for `finish`; a gate
+# missing here cannot be finished.
+REBUILD: dict[str, Callable[[str], GateResult]] = {"1": gate1_result}
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
@@ -698,15 +595,8 @@ def main(argv: list[str] | None = None) -> int:
     pf.add_argument("--report", required=True, type=Path)
     pf.add_argument("--critic", required=True, type=Path)
     pf.add_argument("--kill", required=True)
-    sub.add_parser("install-info", help="print the installed GANDALF commit and RECORD check as JSON")
     args = parser.parse_args(argv)
 
-    if args.cmd == "install-info":
-        ok, seen = installed_gandalf_intact()
-        where_ok, where = installed_gandalf_location()
-        print(json.dumps({"commit": installed_gandalf_commit(), "intact": ok and where_ok,
-                          "seen": f"{seen}; {where}"}))
-        return 0
     if args.cmd == "gate1":
         if not tree_is_clean():
             print("Refusing: the working tree is not clean, so the report could not name the "
@@ -714,7 +604,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         result = gate1_check(args.iteration)
         # Limit: a change made and undone between the two checks is not seen.
-        if not tree_is_clean() or _safe_head() != result.repo_commit:
+        if not tree_is_clean() or git_head() != result.repo_commit:
             print("Refusing: the tree or HEAD changed while the gate ran; no report written.",
                   file=sys.stderr)
             return 2
@@ -723,9 +613,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Wrote {repo_rel(path)}")
         return 0 if result.coded_pass else 1
     gate = parse_report_name(args.report.name)[0]
-    result_line = finish_report(args.report, args.critic, args.kill, reports_dir=GATE_REPORTS,
-                                rejudge=REJUDGE.get(gate), repo=REPO,
-                                code_paths=GATE_CODE.get(gate, (f"{STUDY_REL}/analysis",)))
+    result_line = finish_report(args.report, args.critic, args.kill, REBUILD.get(gate))
     print(f"Result: {result_line}")
     return 0
 
