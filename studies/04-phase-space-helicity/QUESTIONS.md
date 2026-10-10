@@ -29,6 +29,8 @@ Options:
 
 Recommendation: (b). The fixes in (a) are cheap, about one iteration. Without a stated threat model, a fourth review is likely to find a fifth class of environmental edge case. The runner already checks the session for the threats in it (T1 and the git config guards).
 
+ANSWER: (b). Fix 1 to 4, then ask the critic once more, as a fresh allowance. Threat model for the gate code, for parts (a), (b) and (c): the machinery must catch honest mistakes (a report naming the wrong commit, a dirty tree, a check that did not run or did not finish, a verdict or Result line that does not follow from the saved outputs, a criterion changed after review) and a report head edited after the fact. It does not need to defend against a session that sets git, Python, JAX or XLA environment variables, plants or edits ignored files (a stale `.pyc`, scratch outputs), or forges a saved critic file. The runner's guards cover a hostile session. Weaknesses outside this model go in the docstrings as stated limits and are not grounds for REFUTED. Give the critic this paragraph with each criteria review. If the fourth review of part (a) is refuted on findings inside the model, stop and ask me again.
+
 ## Open, not blocking
 
 The loop proceeds on its recommendation. If Anjor answers differently, the loop adapts and logs the rework.
