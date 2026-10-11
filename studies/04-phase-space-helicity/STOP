@@ -1,8 +1,0 @@
-STOP
-Written by: runner (it-20261010-1905), 2026-10-10T19:25:36Z
-Reason: transcript (runner checks after iteration it-20261010-1905):
-  T3 the session ran studies/04-phase-space-helicity/data/scratch/critic_it-20261010-1905/critic_report_machinery.py with uv run, and it imports Modal outside loop/ (GPU work outside the launcher)
-  T3 the session ran studies/04-phase-space-helicity/data/scratch/critic_it-20261010-1905/critic_stale_review.py with uv run, and it imports Modal outside loop/ (GPU work outside the launcher)
-Decision needed from Anjor: Each line above names a commit or a file and the rule it broke. Revert or approve each flagged change (look at the commits with git show), then resume.
-To resume: answer in QUESTIONS.md, delete this file, commit and push
-(or run studies/04-phase-space-helicity/loop/resume.sh in your checkout).
