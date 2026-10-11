@@ -76,12 +76,15 @@
 # Every git command of the runner runs with hooks and fsmonitor off and signing off, so code
 # a session plants in .git cannot run inside the runner.
 #
-# Written for macOS: bash 3.2, BSD date/stat/ps/lsof, no GNU timeout. The whole script is one
-# function that bash parses before running it, so a session that edits this file on disk
-# cannot change what the running runner does. For the same reason the checks run from a
-# copy of the loop files (guards.py, loopcommon.py, frozen.json, config.env, settings.json,
-# prompt.md, modal_launch.py) taken from the commit the session started from, under the
-# interpreter's real path with -I -S, and claude gets its --settings from that copy.
+# Written for macOS: bash 3.2, BSD date/stat/ps/lsof, no GNU timeout. It runs on Linux too
+# (GNU date and stat, procps ps, lsof in /usr/bin), because file_mtime, iter_start_epoch and
+# cwd_sweep handle both.
+#
+# The whole script is one function that bash parses before running it, so a session that
+# edits this file on disk cannot change what the running runner does. For the same reason the
+# checks run from a copy of the loop files (guards.py, loopcommon.py, frozen.json, config.env,
+# settings.json, prompt.md, modal_launch.py) taken from the commit the session started from,
+# under the interpreter's real path with -I -S, and claude gets its --settings from that copy.
 
 set -u
 umask 022
@@ -223,6 +226,13 @@ with_timeout() {  # with_timeout SECONDS COMMAND...: run it; status 124 if it ov
 
 gnet() { with_timeout "$NET_TIMEOUT" git -C "$REPO" -c core.hooksPath=/dev/null -c core.fsmonitor=false -c commit.gpgSign=false "$@"; }
 
+file_mtime() {  # file_mtime PATH: its modification time in epoch seconds (GNU stat on Linux, BSD stat on macOS)
+  local t
+  if stat --version >/dev/null 2>&1; then t=$(stat -c %Y "$1" 2>/dev/null); else t=$(stat -f %m "$1" 2>/dev/null); fi
+  case "$t" in ''|*[!0-9]*) return 1 ;; esac
+  echo "$t"
+}
+
 guard() {  # guard SUBCOMMAND ...: guards.py from the trusted copy, against this repo (status 3: not run)
   if [ -z "$GUARD_PY" ]; then
     echo "guards not run: the loop is stopped, so neither HEAD's loop files nor its config.env may run" >&2
@@ -336,14 +346,15 @@ cwd_sweep() {  # cwd_sweep WHEN: kill processes without a terminal whose cwd is 
   # Claude Code runs each tool command as its own session leader, so `cmd &` in a tool call
   # outlives the session's process group. Such orphans are found by their working directory.
   # Never the runner, its ancestors (run_forever.sh) or its own helpers, never caffeinate,
-  # and never a process with a terminal (Anjor's shells). A process that a session started
-  # in another directory and detached from its parent before a snapshot is not found.
-  local when="$1" wt victims n
+  # and never a process with a terminal (Anjor's shells; ps shows no terminal as ?? on macOS
+  # and ? on Linux). A process that a session started in another directory and detached from
+  # its parent before a snapshot is not found.
+  local when="$1" wt victims n lsof
   SWEPT_CWD=0
-  [ -x /usr/sbin/lsof ] || return 0
+  if [ -x /usr/sbin/lsof ]; then lsof=/usr/sbin/lsof; elif [ -x /usr/bin/lsof ]; then lsof=/usr/bin/lsof; else return 0; fi
   wt=$(sweep_worktree)
   ps -axo pid=,ppid=,tty=,comm= > "$TRUSTED/ps.txt" 2>/dev/null || return 0
-  with_timeout 60 /usr/sbin/lsof -w -n -P -a -d cwd -u "$(id -u)" -Fpn > "$TRUSTED/cwd.txt" 2>/dev/null
+  with_timeout 60 "$lsof" -w -n -P -a -d cwd -u "$(id -u)" -Fpn > "$TRUSTED/cwd.txt" 2>/dev/null
   victims=$(awk -v self="$$" -v r1="$REPO" -v r2="${wt:-}" '
     function inside(path) {
       return (path == r1 || index(path, r1 "/") == 1 || (r2 != "" && (path == r2 || index(path, r2 "/") == 1)))
@@ -358,7 +369,7 @@ cwd_sweep() {  # cwd_sweep WHEN: kill processes without a terminal whose cwd is 
       changed = 1
       while (changed) { changed = 0; for (p in pp) if (!(p in desc) && (pp[p] in desc)) { desc[p] = 1; changed = 1 } }
       for (p in cand) {
-        if (!(p in pp) || (p in anc) || (p in desc) || tt[p] != "??") continue
+        if (!(p in pp) || (p in anc) || (p in desc) || (tt[p] != "??" && tt[p] != "?")) continue
         name = comm[p]; sub(/.*\//, "", name)
         if (name == "caffeinate") continue
         print p
@@ -420,7 +431,7 @@ take_lock() {  # mkdir is atomic; the lock records our pid and start time
   lst=$(cat "$LOCK/lstart" 2>/dev/null)
   if [ -z "$pid" ]; then
     # Being created this instant, or left by a runner that died between mkdir and write.
-    age=$(( $(date +%s) - $(stat -f %m "$LOCK" 2>/dev/null || echo 0) ))
+    age=$(( $(date +%s) - $(file_mtime "$LOCK" || echo 0) ))
     if [ "$age" -lt 60 ]; then LOCK_HOLDER=starting; return 1; fi
   elif kill -0 "$pid" 2>/dev/null; then
     if [ -z "$lst" ] || [ "$(proc_lstart "$pid")" = "$lst" ]; then LOCK_HOLDER=$pid; return 1; fi
@@ -429,7 +440,7 @@ take_lock() {  # mkdir is atomic; the lock records our pid and start time
   # The lock is stale. Take it over under a second lock, and only if it is still the stale
   # one we read, so that two runners that both saw it stale cannot both win.
   if ! mkdir "$LOCK.takeover" 2>/dev/null; then
-    age=$(( $(date +%s) - $(stat -f %m "$LOCK.takeover" 2>/dev/null || echo 0) ))
+    age=$(( $(date +%s) - $(file_mtime "$LOCK.takeover" || echo 0) ))
     if [ "$age" -lt 120 ]; then LOCK_HOLDER=takeover; return 1; fi
     rm -rf "$LOCK.takeover"  # left by a runner that died during a takeover
     mkdir "$LOCK.takeover" 2>/dev/null || { LOCK_HOLDER=takeover; return 1; }
@@ -643,7 +654,7 @@ rescue_midop() {  # rescue_midop OP ID: keep a half-done operation's commits and
 clear_git_state() {  # clear_git_state pre|post ID: save, then abort, half-done git operations
   local mode="$1" id="$2" age op=""
   if [ -f "$GITDIR/index.lock" ]; then
-    age=$(( $(date +%s) - $(stat -f %m "$GITDIR/index.lock" 2>/dev/null || echo 0) ))
+    age=$(( $(date +%s) - $(file_mtime "$GITDIR/index.lock" || echo 0) ))
     # After a session every session process is dead, so its lock is stale. Before one, only
     # an old lock is taken to be stale.
     if [ "$mode" = post ] || [ "$age" -gt 300 ]; then
@@ -941,7 +952,7 @@ apps_overdue() {  # 0 if the oldest session window still waiting for its check e
   local oldest
   [ -s "$STATE/app_windows" ] || return 1
   oldest=$(awk 'NR == 1 { print $2 }' "$STATE/app_windows")
-  case "$oldest" in ''|*[!0-9]*) oldest=$(stat -f %m "$STATE/app_windows" 2>/dev/null || echo 0) ;; esac
+  case "$oldest" in ''|*[!0-9]*) oldest=$(file_mtime "$STATE/app_windows" || echo 0) ;; esac
   [ $(( $(date +%s) - oldest )) -ge "$APPS_UNCHECKED_STOP_SEC" ]
 }
 
@@ -962,7 +973,11 @@ iter_start_epoch() {  # iter_start_epoch ID: the UTC minute an iteration ID name
   local d="${1#it-}"
   d="${d%%-*}${d#*-}"
   case "$d" in [0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]) ;; *) return 1 ;; esac
-  date -j -u -f '%Y%m%d%H%M%S' "${d}00" +%s 2>/dev/null
+  if date --version >/dev/null 2>&1; then
+    date -u -d "${d:0:4}-${d:4:2}-${d:6:2} ${d:8:2}:${d:10:2}:00" +%s 2>/dev/null  # GNU date (Linux)
+  else
+    date -j -u -f '%Y%m%d%H%M%S' "${d}00" +%s 2>/dev/null  # BSD date (macOS)
+  fi
 }
 
 # ---------------------------------------------------------------------------

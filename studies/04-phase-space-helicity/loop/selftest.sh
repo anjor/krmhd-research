@@ -49,6 +49,10 @@ RUN_TAG=$(printf '%05d%05d' $(( $$ % 100000 )) $(( RANDOM % 100000 )))
 
 mk() { echo "1000.${RUN_TAG}$1"; }  # mk CODE: this run's marker for one case
 
+epoch_utc() {  # epoch_utc SECONDS FORMAT: that moment in UTC (GNU date on Linux, BSD date on macOS)
+  if date --version >/dev/null 2>&1; then date -u -d "@$1" "$2"; else date -u -r "$1" "$2"; fi
+}
+
 kill_markers() {  # kill_markers TAG: kill the 'sleep 1000.<TAG>...' processes, and only those
   local p
   for p in $(pgrep -f "sleep 1000\\.$1" 2>/dev/null); do kill -KILL "$p" 2>/dev/null; done
@@ -1630,11 +1634,11 @@ case_dead_runner_window() {  # a dead runner recorded no session start: its wind
   local dead before now stamp
   new_case dead_runner_window
   now=$(date +%s)
-  dead="it-$(date -u -r $((now - 120)) +%Y%m%d-%H%M)"
+  dead="it-$(epoch_utc $((now - 120)) +%Y%m%d-%H%M)"
   before=$(git -C "$CL" rev-parse HEAD)
   mkdir -p "$ST"
   echo "$dead $before" > "$ST/inflight"
-  stamp=$(date -u -r "$now" '+%Y-%m-%d %H:%M:%S+00:00')
+  stamp=$(epoch_utc "$now" '+%Y-%m-%d %H:%M:%S+00:00')
   printf '[{"App ID": "ap-late", "Description": "handmade", "State": "stopped", "Tasks": "0", "Created at": "%s", "Stopped at": "%s"}]\n' \
     "$stamp" "$stamp" > "$C/stub/apps.json"
   run_iter normal
@@ -1789,7 +1793,7 @@ EOF
   now=$(date +%s)
   j="$C/apps.json"
   printf '[{"App ID": "ap-handrun-9", "Description": "s04-loop-l001-a", "State": "stopped", "Created at": "%s"}, {"App ID": "ap-launcher-1", "Description": "s04-loop-l001-a", "State": "stopped", "Created at": "%s"}]\n' \
-    "$(date -u -r "$now" '+%Y-%m-%d %H:%M:%S+00:00')" "$(date -u -r "$now" '+%Y-%m-%d %H:%M:%S+00:00')" > "$j"
+    "$(epoch_utc "$now" '+%Y-%m-%d %H:%M:%S+00:00')" "$(epoch_utc "$now" '+%Y-%m-%d %H:%M:%S+00:00')" > "$j"
   out=$(gp apps-check --apps-json "$j" --prefix s04-loop --window $((now - 60)) $((now + 60)) --any-name)
   rc=$?
   [ "$rc" = 1 ] || fail "apps-check exit $rc, expected 1"
@@ -1918,7 +1922,9 @@ case_guards_gate4() {  # gate4-repeat: a set's Gate 4 decision is made once; rep
   g="$CL/$STUDY_REL/gate_reports"
   mkdir -p "$g"
   # Sets C, D and E stand for sets Anjor added to the launcher (report-name reads its RUN_SETS).
-  sed -i '' 's/^RUN_SETS = .*/RUN_SETS = ("base", "A", "B", "C", "D", "E")/' "$CL/$STUDY_REL/loop/modal_launch.py"
+  # -i.bak, then remove the backup: the one in-place form GNU and BSD sed both accept.
+  sed -i.bak 's/^RUN_SETS = .*/RUN_SETS = ("base", "A", "B", "C", "D", "E")/' "$CL/$STUDY_REL/loop/modal_launch.py" \
+    && rm -f "$CL/$STUDY_REL/loop/modal_launch.py.bak"
   grep -q '^RUN_SETS = ("base", "A", "B", "C", "D", "E")$' "$CL/$STUDY_REL/loop/modal_launch.py" || fail "could not add the test sets"
   printf '# Gate 4 report, set A: it-20260930-1200\n\nResult: NOT DECIDED\n' > "$g/G4_A_it-20260930-1200.md"
   anjor_commit "an undecided evaluation of set A"
