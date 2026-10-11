@@ -84,7 +84,15 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import loopcommon as lc  # noqa: E402
 
-DEFAULT_REPO = Path(__file__).resolve().parents[3]
+def default_repo() -> Path:
+    """The repo this file lives in (loop/ is three folders below it), for a run without --repo.
+
+    Computed only when needed: the runner runs a copy of this file from a temporary folder,
+    always with --repo, and on Linux that folder (/tmp/s04-trusted.XXXXXX) has too few parents.
+    """
+    return Path(__file__).resolve().parents[3]
+
+
 EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 # Every git call: no hooks, no fsmonitor, no quoting of paths in human-readable output.
 GIT_SAFE = ("-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "core.quotePath=false")
@@ -4002,7 +4010,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not getattr(args, "func", None):
         parser.print_help()
         return 2
-    args.repo = Path(args.repo_sub or args.repo_main or DEFAULT_REPO).resolve()
+    args.repo = Path(args.repo_sub or args.repo_main or default_repo()).resolve()
     return int(args.func(args) or 0)
 
 

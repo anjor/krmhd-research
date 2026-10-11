@@ -4,8 +4,9 @@
 # Start it in the loop's clone, in a terminal you leave open (or under tmux):
 #     studies/04-phase-space-helicity/loop/run_forever.sh
 # It refuses to run unless 'git config s04.loopclone' is 'true' in the clone (the loop never
-# runs in Anjor's own checkout). It keeps the Mac awake with caffeinate while it lives, runs
-# run_iteration.sh, pauses PAUSE_BETWEEN_ITERATIONS_SEC, and repeats.
+# runs in Anjor's own checkout). On a Mac it keeps the machine awake with caffeinate while it
+# lives (Linux has no caffeinate and a server needs none). It runs run_iteration.sh, pauses
+# PAUSE_BETWEEN_ITERATIONS_SEC, and repeats.
 #
 # It stops starting sessions as soon as STOP exists, in the working tree or committed at HEAD.
 # Before it exits it makes sure the STOP is on origin, so that Anjor sees it: if the push
@@ -140,7 +141,7 @@ main() {
 
   if command -v caffeinate >/dev/null 2>&1; then
     caffeinate -i -s -w $$ >/dev/null 2>&1 &
-  else
+  elif [ "$(uname -s)" = Darwin ]; then
     echo "run_forever.sh: caffeinate not found; the Mac may sleep" >&2
   fi
 

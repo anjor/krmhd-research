@@ -151,7 +151,9 @@ fi
 
 # --- Tools ---------------------------------------------------------------------------------
 if v=$("$CLAUDE_BIN" --version 2>/dev/null); then pass "claude: $v ($CLAUDE_BIN)"; else fail "claude --version ($CLAUDE_BIN)"; fi
-if command -v caffeinate >/dev/null 2>&1; then pass "caffeinate"; else fail "caffeinate (run_forever.sh keeps the Mac awake with it)"; fi
+if command -v caffeinate >/dev/null 2>&1; then pass "caffeinate"
+elif [ "$(uname -s)" != Darwin ]; then info "no caffeinate: it is macOS-only, and run_forever.sh needs it only to keep a Mac awake"
+else fail "caffeinate (run_forever.sh keeps the Mac awake with it)"; fi
 if command -v "$UV_BIN" >/dev/null 2>&1; then pass "uv: $("$UV_BIN" --version 2>/dev/null)"; else fail "uv on PATH"; fi
 if [ "$SKIP_UV" = 1 ]; then
   info "uv sync --frozen skipped (--skip-uv)"
@@ -180,7 +182,7 @@ else
   fail "the clone holds files a session would load or git would run: $(head -3 "$tmp/clone.out" | tr '\n' ' ')"
 fi
 info "clone identity: user.name '$(git -C "$REPO" config --local --get user.name 2>/dev/null)' (the runner sets it to ${LOOP_GIT_NAME:-?})"
-if [ -x /usr/sbin/lsof ]; then pass "lsof (the runner finds orphaned tool processes with it)"; else fail "/usr/sbin/lsof missing"; fi
+if [ -x /usr/sbin/lsof ] || [ -x /usr/bin/lsof ]; then pass "lsof (the runner finds orphaned tool processes with it)"; else fail "lsof missing (neither /usr/sbin/lsof nor /usr/bin/lsof)"; fi
 case "${STOP_ON_ANY_NEW_MODAL_APP:-1}" in
   1) info "STOP_ON_ANY_NEW_MODAL_APP=1: any Modal app created during a session and missing from the ledger stops the loop" ;;
   0) info "STOP_ON_ANY_NEW_MODAL_APP=0: only apps named ${MODAL_APP_PREFIX:-s04-loop}* are checked against session windows" ;;
