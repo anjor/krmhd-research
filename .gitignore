@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 .claude/settings.local.json
 studies/04-phase-space-helicity/.loop/
+paper/phase-velocity-slices/.loop/
