@@ -6,6 +6,10 @@ A. delta-correlated slices with density F_M: exact Hermite spectrum
   [PASS] A2 the same at m = 50, 200 (mpmath); W(m) pi sqrt(2m) = 1 - 1/(8m) + O(m^-2)
 ====================================================================================================
 B. Kanekar et al. 2015 eq. (4.10) at alpha = 0 is the delta-correlated slice spectrum
+   m=1: (1/(2^m m!)) int |Z^(m)|^2 = 3.9374024857; sqrt2 pi Gamma(m+1/2)/m! = 3.9374024864
+   m=2: (1/(2^m m!)) int |Z^(m)|^2 = 2.9530518648; sqrt2 pi Gamma(m+1/2)/m! = 2.9530518648
+   m=3: (1/(2^m m!)) int |Z^(m)|^2 = 2.4608765540; sqrt2 pi Gamma(m+1/2)/m! = 2.4608765540
+   m=5: (1/(2^m m!)) int |Z^(m)|^2 = 1.9379402863; sqrt2 pi Gamma(m+1/2)/m! = 1.9379402863
 paper/phase-velocity-slices/derivations/truncated/t4_dictionary.py:86: IntegrationWarning: The maximum number of subdivisions (400) has been achieved.
   If increasing the limit yields no improvement it is advised to analyze 
   the integrand in order to determine the difficulties.  If the position of a 
@@ -13,10 +17,6 @@ paper/phase-velocity-slices/derivations/truncated/t4_dictionary.py:86: Integrati
   probably gain from splitting up the interval and calling the integrator 
   on the subranges.  Perhaps a special-purpose integrator should be used.
   val = sum(quad(f, a_, b_, limit=400)[0] for a_, b_ in [(-60, -6), (-6, 0), (0, 6), (6, 60)])
-   m=1: (1/(2^m m!)) int |Z^(m)|^2 = 3.9374024857; sqrt2 pi Gamma(m+1/2)/m! = 3.9374024864
-   m=2: (1/(2^m m!)) int |Z^(m)|^2 = 2.9530518648; sqrt2 pi Gamma(m+1/2)/m! = 2.9530518648
-   m=3: (1/(2^m m!)) int |Z^(m)|^2 = 2.4608765540; sqrt2 pi Gamma(m+1/2)/m! = 2.4608765540
-   m=5: (1/(2^m m!)) int |Z^(m)|^2 = 1.9379402863; sqrt2 pi Gamma(m+1/2)/m! = 1.9379402863
    m=8: (1/(2^m m!)) int |Z^(m)|^2 = 1.5464590674; sqrt2 pi Gamma(m+1/2)/m! = 1.5464590454
   [PASS] B1 (1/(2^m m!)) int |Z^(m)(zeta)|^2 dzeta = sqrt2 pi Gamma(m+1/2)/m! (Kanekar 4.10 at alpha = 0)
 ====================================================================================================
@@ -55,4 +55,4 @@ E. Truncated form of the dictionary
    Lam=+2.2361: |<W(m)>_t - p_m sum_j E_j R_mj^2/n_j| / max = 1.4e-04; W(m) pi sqrt(2m)/sum_j E_j Delta_j at m=[4, 8, 16, 32, 48, 64]: [0.947, 0.973, 0.987, 0.994, 1.001, 1.018]; W(m) 2 sqrt(M m)/W_tot: [0.91, 0.936, 0.949, 0.956, 0.962, 0.978]
    Lam=-2.2361: |<W(m)>_t - p_m sum_j E_j R_mj^2/n_j| / max = 2.1e-04; W(m) pi sqrt(2m)/sum_j E_j Delta_j at m=[4, 8, 16, 32, 48, 64]: [0.982, 0.991, 0.996, 0.998, 0.999, 0.999]; W(m) 2 sqrt(M m)/W_tot: [0.987, 0.997, 1.001, 1.003, 1.004, 1.004]
   [PASS] E2 closed system: time average = slice-diagonal spectrum, level [sum_j E_j Delta_j]/(pi sqrt(2m)) (~ W_tot/(2 sqrt(M m)))
-== t4_dictionary: 9/9 checks passed (8.7 s)
+== t4_dictionary: 9/9 checks passed (9.0 s)

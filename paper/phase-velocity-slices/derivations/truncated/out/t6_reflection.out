@@ -96,4 +96,4 @@ D. Forced steady state at M = 128, n = 6, nu = 3, Lam = sqrt5, k_z = 2 pi, s = 1
     128 | 1.2702 | 0.2991 | 0.6810 | 4.2475 | 2.2107 | 2.1854
   [PASS] D1 W_zero/W_open follows [1 + e^(-2X(1-mu))]/(1 - e^(-2X)) within 1% for 2 <= m <= 48 (X from the exact revival)
    (the law with the WKB X gives coth(X) = 1.2107 at low m; with X_meas coth = 1.1854)
-== t6_reflection: 9/9 checks passed (40.8 s)
+== t6_reflection: 9/9 checks passed (42.0 s)

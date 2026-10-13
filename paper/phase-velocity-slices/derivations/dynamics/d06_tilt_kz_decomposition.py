@@ -1,14 +1,16 @@
 """d06: the k_z-based phase-mixing / unmixing decomposition is not invariant under field-line tilt.  For linear
 streaming along a uniformly tilted field the script checks that free streaming (and Landau damping from g_0) is pure
 phase mixing, the per-mode relations between the field-aligned and k_z-based fluxes and splits through GANDALF's
-diagnostics, and the Gaussian-ensemble results (cos^2(alpha) law, misclassified weight alpha/pi, backward share and
-its late-time limit 1/2, closed form of the true net flux) against Monte Carlo sums.  It supports Section 5 and
-Appendix E (the k_z-based decomposition under field-line tilt).
+diagnostics, and the Gaussian-ensemble results: the misclassified weight alpha/pi and the backward share against
+Monte Carlo sums, the late-time limit 1/2 of the share, and the cos^2(alpha) law and the closed form of the true net
+flux from the one-dimensional ensemble integrals (../review/dynamics/c04_tilt_landau.py checks these two by direct 2D
+quadrature).  It supports Section 5 and Appendix E (the k_z-based decomposition under field-line tilt).
 
 Model: linear streaming along a uniformly tilted static field, grad_par = d_z + b0 d_x (no flow, collisionless).
 Every Fourier mode evolves with k_par = k_z + b0 k_x:  g(k, t) = exp(-i s k_par t A) g(k, 0).
 True (field-aligned) flux through m:   Pi_m(k)   = -2 s k_par p_m A_{m,m+1} Im(g_m^* g_{m+1});
-k_z-based flux (GANDALF hermite_flux): Pi^z_m(k) = (k_z / k_par) Pi_m(k)                     (exact, per mode).
+k_z-based flux (GANDALF hermite_flux): Pi^z_m(k) = (k_z / k_par) Pi_m(k)                     (exact, per mode;
+hermite_flux itself omits the factor s p_m, which is 1 in T2).
 Phase-mixing split  g~_m = (i sgn kappa)^m g_m,  g^{+-}_m = (g~_m +- g~_{m+1})/2,  kappa = k_par or k_z:
   |g^+|^2 - |g^-|^2 = -sgn(kappa) Im(g_m^* g_{m+1}),  and the k_z split swaps + and - on modes with k_z k_par < 0.
 
@@ -23,7 +25,8 @@ Exact results checked here
     (c) the k_z-reported backward flux (true backward flux = 0) is
         B_m(t) = int dy phi(y) [cos a sin a phi(|y| cot a)/|y| - cos^2 a Phi(-|y| cot a)] Pi_m(k_par = sigma_par y, t),
         with Pi_m(k_par, t) the free-streaming flux; its share B/(F + B) tends to 1/2 at late times (fixed m);
-    checked against Monte Carlo sums over sampled modes.
+    (b) and (c) are checked against Monte Carlo sums over sampled modes; (a) holds identically in the
+    one-dimensional integrals used here (c04 in ../review/dynamics checks it by 2D quadrature).
  T4 exact true net flux for the Gaussian ensemble: t Pi_m = 2 (tau^2/2)^{m+1} (2m+1)!! / (m! (1 + tau^2)^{m+3/2}),
     tau = s sigma_par t.
 """

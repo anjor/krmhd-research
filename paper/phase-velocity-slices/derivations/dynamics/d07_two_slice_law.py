@@ -15,7 +15,8 @@ Slices a_j = w_j . g (left eigenvectors of A), C(j,j') = <a_j a_j'> (volume aver
  L3 Hermite flux:  Pi_m = 2 s p_m A_{m,m+1} <g_m grad_par g_{m+1}> = -sum_{j,j'} K_m(j,j') dC(j,j')/dt,
     K_m(j,j') = sum_{n<=m} p_n v_j(n) v_j'(n)  (Christoffel-Darboux kernel), with the CD identity
     (u_j' - u_j) K_m(j,j') = p_m A_{m,m+1} [v_j(m) v_j'(m+1) - v_j(m+1) v_j'(m)];
-    per mode, the k_z-only flux (krmhd hermite_flux convention) is the CD-filtered linear dephasing:
+    per mode, the k_z-only flux (dcore.flux_kz, i.e. s p_m times krmhd's hermite_flux) is the CD-filtered linear
+    dephasing:
     Pi^z_m(k) = -sum K_m(j,j') Re[-i s k_z (u_j - u_j') C_k(j,j')].
  L4 frozen field lines: in the frozen-line problem C(j,j'; t) = <a_j(0), T_{s(u_j' - u_j) t} a_j'(0)>, with
     T_l = exp(-l grad_par(0)) the translation along the frozen field lines (checked for one pair).

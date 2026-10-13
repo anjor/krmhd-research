@@ -43,4 +43,4 @@ g. Even-M principal-value H for G = F_M(v - 1/2): convergence rate at Lam = sqrt
    Lam=-2.2361: fit error x sqrt(M) = -1.0082 -0.396 M^-1/2 +0.701 M^-1 (max residual 1.4e-05); successive increments shrink by 1.20, 1.28, 1.33, 1.36
    Lam=+inf: fit error x sqrt(M) = -1.5204 +0.003 M^-1/2 +1.100 M^-1 (max residual 1.4e-05); successive increments shrink by 1.98, 1.99, 1.99, 2.00
   [PASS] c03.g even-M PV error = c M^-1/2 (1 + O(M^-1/2)) for Lam = sqrt5, -sqrt5, inf (coefficient settles; slow at Lam = sqrt5)
-== c03_invariants: 7/7 passed (86.9 s)
+== c03_invariants: 7/7 passed (68.6 s)

@@ -1,0 +1,63 @@
+T1  free streaming is pure phase mixing; truncated GANDALF ladder vs the Poisson formula
+  [PASS] T1 |g_m|^2 Poisson and Pi_m = (2 lam/t) e^-lam lam^m/m! (M = 256 ladder, before recurrence)  (max abs diff 3.1e-14)
+  [PASS] T1 free-streaming flux non-negative at every m (pure phase mixing)  (min 0.0e+00)
+    Lambda = sqrt5, g_0 initial: min_m,t Pi_m / max|Pi| = 0.00e+00 (k_par = 1, 5; t <= 3)
+  [PASS] T1 Landau case (Lambda = sqrt5) from g_0 is also pure phase mixing (flux >= 0)  (0.0e+00)
+T2  per-mode identities through GANDALF's diagnostics on an exact tilted-field solution
+    N = 32, M = 256, b0 = 0.5 (alpha = 45 deg), spectral cut |k_par| < 29.0; weight on modes with k_z k_par < 0: 0.104
+  [PASS] T2 tau=1.5: hermite_flux = (k_z/k_par) x field-aligned flux, every mode and m  (1.5e-16)
+  [PASS] T2 tau=1.5: field-aligned flux >= 0 on every mode (pure phase mixing)  (min/max = -1.9e-31)
+  [PASS] T2 tau=1.5: |g+|^2 - |g-|^2 = -sgn(kappa) Im(g_m^* g_m+1)  (5.6e-17)
+  [PASS] T2 tau=1.5: k_z split swaps + and - exactly on modes with k_z k_par < 0  (0.0e+00)
+    tau = 1.5 (t = 0.1125); true backward flux = 0; GANDALF k_z diagnostics: m=1: unmixing energy share 0.101, backward flux share 0.054; m=2: unmixing energy share 0.058, backward flux share 0.028; m=4: unmixing energy share 0.024, backward flux share 0.010; m=8: unmixing energy share 0.006, backward flux share 0.002; m=16: unmixing energy share 0.001, backward flux share 0.000
+  [PASS] T2 tau=6.0: hermite_flux = (k_z/k_par) x field-aligned flux, every mode and m  (1.4e-16)
+  [PASS] T2 tau=6.0: field-aligned flux >= 0 on every mode (pure phase mixing)  (min/max = -2.0e-30)
+  [PASS] T2 tau=6.0: |g+|^2 - |g-|^2 = -sgn(kappa) Im(g_m^* g_m+1)  (4.4e-16)
+  [PASS] T2 tau=6.0: k_z split swaps + and - exactly on modes with k_z k_par < 0  (0.0e+00)
+    tau = 6.0 (t = 0.4502); true backward flux = 0; GANDALF k_z diagnostics: m=1: unmixing energy share 0.331, backward flux share 0.296; m=2: unmixing energy share 0.278, backward flux share 0.238; m=4: unmixing energy share 0.182, backward flux share 0.167; m=8: unmixing energy share 0.131, backward flux share 0.103; m=16: unmixing energy share 0.056, backward flux share 0.042
+  [PASS] T2 at tau = 6 GANDALF reports a large unmixing share at low m although the dynamics is pure phase mixing  (m=1: 0.331, m=2: 0.278)
+T3/T4  Gaussian ensemble: exact formulas vs Monte Carlo over sampled modes
+    alpha  tau   m | true net  | k_z: net/true  cos^2a | backward share B/(F+B)  [MC] | (F+B)/true | opp. weight [alpha/pi]
+     14.0  0.5   1 | 1.073e-01 | 0.9411  0.9411 | 0.0001 [0.0001] |   0.941 | 0.0780 [0.0780]
+     14.0  0.5   4 | 1.409e-03 | 0.9411  0.9411 | 0.0000 [0.0000] |   0.941 | 0.0780 [0.0780]
+     14.0  0.5  16 | 1.083e-11 | 0.9411  0.9411 | 0.0000 [0.0000] |   0.941 | 0.0780 [0.0780]
+     14.0  2.0   1 | 2.147e-01 | 0.9411  0.9411 | 0.0016 [0.0016] |   0.944 | 0.0780 [0.0780]
+     14.0  2.0   4 | 1.803e-01 | 0.9411  0.9411 | 0.0000 [0.0000] |   0.941 | 0.0780 [0.0780]
+     14.0  2.0  16 | 2.325e-02 | 0.9411  0.9411 | 0.0000 [0.0000] |   0.941 | 0.0780 [0.0780]
+     14.0  8.0   1 | 2.255e-02 | 0.9411  0.9411 | 0.0946 [0.0946] |   1.161 | 0.0780 [0.0780]
+     14.0  8.0   4 | 3.531e-02 | 0.9411  0.9411 | 0.0217 [0.0216] |   0.984 | 0.0780 [0.0780]
+     14.0  8.0  16 | 5.501e-02 | 0.9411  0.9411 | 0.0004 [0.0004] |   0.942 | 0.0780 [0.0780]
+     26.6  0.5   1 | 1.073e-01 | 0.7999  0.7999 | 0.0016 [0.0016] |   0.802 | 0.1476 [0.1476]
+     26.6  0.5   4 | 1.409e-03 | 0.7999  0.7999 | 0.0000 [0.0000] |   0.800 | 0.1476 [0.1476]
+     26.6  0.5  16 | 1.083e-11 | 0.7999  0.7999 | 0.0000 [0.0000] |   0.800 | 0.1476 [0.1476]
+     26.6  2.0   1 | 2.147e-01 | 0.7999  0.7999 | 0.0213 [0.0213] |   0.836 | 0.1476 [0.1476]
+     26.6  2.0   4 | 1.803e-01 | 0.7999  0.7999 | 0.0012 [0.0012] |   0.802 | 0.1476 [0.1476]
+     26.6  2.0  16 | 2.325e-02 | 0.7999  0.7999 | 0.0000 [0.0000] |   0.800 | 0.1476 [0.1476]
+     26.6  8.0   1 | 2.255e-02 | 0.7999  0.7999 | 0.2390 [0.2378] |   1.532 | 0.1476 [0.1476]
+     26.6  8.0   4 | 3.531e-02 | 0.7999  0.7999 | 0.1284 [0.1279] |   1.076 | 0.1476 [0.1476]
+     26.6  8.0  16 | 5.501e-02 | 0.7999  0.7999 | 0.0239 [0.0239] |   0.840 | 0.1476 [0.1476]
+     45.0  0.5   1 | 1.073e-01 | 0.5000  0.5000 | 0.0213 [0.0213] |   0.522 | 0.2500 [0.2500]
+     45.0  0.5   4 | 1.409e-03 | 0.5000  0.5000 | 0.0012 [0.0012] |   0.501 | 0.2500 [0.2500]
+     45.0  0.5  16 | 1.083e-11 | 0.5000  0.5000 | 0.0000 [0.0000] |   0.500 | 0.2500 [0.2500]
+     45.0  2.0   1 | 2.147e-01 | 0.5000  0.5000 | 0.1141 [0.1142] |   0.648 | 0.2500 [0.2500]
+     45.0  2.0   4 | 1.803e-01 | 0.5000  0.5000 | 0.0311 [0.0311] |   0.533 | 0.2500 [0.2500]
+     45.0  2.0  16 | 2.325e-02 | 0.5000  0.5000 | 0.0009 [0.0009] |   0.501 | 0.2500 [0.2500]
+     45.0  8.0   1 | 2.255e-02 | 0.5000  0.5000 | 0.3582 [0.3580] |   1.763 | 0.2500 [0.2500]
+     45.0  8.0   4 | 3.531e-02 | 0.5000  0.5000 | 0.2771 [0.2777] |   1.122 | 0.2500 [0.2500]
+     45.0  8.0  16 | 5.501e-02 | 0.5000  0.5000 | 0.1401 [0.1401] |   0.695 | 0.2500 [0.2500]
+     63.4  0.5   1 | 1.073e-01 | 0.2001  0.2001 | 0.1141 [0.1144] |   0.259 | 0.3524 [0.3524]
+     63.4  0.5   4 | 1.409e-03 | 0.2001  0.2001 | 0.0311 [0.0311] |   0.213 | 0.3524 [0.3524]
+     63.4  0.5  16 | 1.083e-11 | 0.2001  0.2001 | 0.0009 [0.0003] |   0.200 | 0.3524 [0.3524]
+     63.4  2.0   1 | 2.147e-01 | 0.2001  0.2001 | 0.2600 [0.2599] |   0.417 | 0.3524 [0.3524]
+     63.4  2.0   4 | 1.803e-01 | 0.2001  0.2001 | 0.1509 [0.1513] |   0.287 | 0.3524 [0.3524]
+     63.4  2.0  16 | 2.325e-02 | 0.2001  0.2001 | 0.0346 [0.0354] |   0.215 | 0.3524 [0.3524]
+     63.4  8.0   1 | 2.255e-02 | 0.2001  0.2001 | 0.4275 [0.4286] |   1.379 | 0.3524 [0.3524]
+     63.4  8.0   4 | 3.531e-02 | 0.2001  0.2001 | 0.3824 [0.3816] |   0.850 | 0.3524 [0.3524]
+     63.4  8.0  16 | 5.501e-02 | 0.2001  0.2001 | 0.2887 [0.2885] |   0.473 | 0.3524 [0.3524]
+  [PASS] T3a k_z-reported net flux = cos^2(alpha) x true net flux  (1.1e-16)
+  [PASS] T4 closed form of the true net flux  (0.0e+00)
+  [PASS] T3b weight on modes with k_z k_par < 0 = alpha/pi (Monte Carlo, 2e6 modes)  (5.0e-05)
+  [PASS] T3c backward share formula agrees with Monte Carlo  (1.2e-03)
+    alpha = 45 deg, m = 4: backward share at tau = 50, 200, 800: 0.4614, 0.4903, 0.4976
+  [PASS] T3c backward share -> 1/2 at late times  (0.4976)
+SUMMARY: 17/17 checks passed

@@ -1,0 +1,23 @@
+N = 16: wall 2s
+  t = 0.1: max_xi,m |g_m(X(xi,t),t) - h_m(xi,t)| / max|h| = 3.81e-03;  grad_par: 1.24e-02;  Cauchy |B(X) - J B0| / max|B_perp| = 9.49e-03;  max|det J - 1| = 1.5e-11;  rms displacement 0.09 (wavelength ~ 3.5), max|J - I| = 0.37;  control (Eulerian, no relabelling) 0.18;  g energy fraction at |k| > 0.75 k_cut: NL 7.8e-03, FR 2.7e-03
+  t = 0.2: max_xi,m |g_m(X(xi,t),t) - h_m(xi,t)| / max|h| = 2.12e-02;  grad_par: 4.69e-02;  Cauchy |B(X) - J B0| / max|B_perp| = 3.98e-02;  max|det J - 1| = 3.0e-11;  rms displacement 0.18 (wavelength ~ 3.5), max|J - I| = 0.74;  control (Eulerian, no relabelling) 0.32;  g energy fraction at |k| > 0.75 k_cut: NL 3.0e-02, FR 1.0e-02
+N = 24: wall 4s
+  t = 0.1: max_xi,m |g_m(X(xi,t),t) - h_m(xi,t)| / max|h| = 3.43e-04;  grad_par: 8.74e-04;  Cauchy |B(X) - J B0| / max|B_perp| = 2.66e-04;  max|det J - 1| = 1.4e-11;  rms displacement 0.09 (wavelength ~ 3.5), max|J - I| = 0.37;  control (Eulerian, no relabelling) 0.18;  g energy fraction at |k| > 0.75 k_cut: NL 9.6e-05, FR 3.2e-05
+  t = 0.2: max_xi,m |g_m(X(xi,t),t) - h_m(xi,t)| / max|h| = 5.88e-03;  grad_par: 1.31e-02;  Cauchy |B(X) - J B0| / max|B_perp| = 4.08e-03;  max|det J - 1| = 2.7e-11;  rms displacement 0.18 (wavelength ~ 3.5), max|J - I| = 0.74;  control (Eulerian, no relabelling) 0.34;  g energy fraction at |k| > 0.75 k_cut: NL 1.4e-03, FR 4.6e-04
+N = 32: wall 11s
+  t = 0.1: max_xi,m |g_m(X(xi,t),t) - h_m(xi,t)| / max|h| = 5.76e-05;  grad_par: 3.42e-04;  Cauchy |B(X) - J B0| / max|B_perp| = 2.49e-05;  max|det J - 1| = 1.4e-11;  rms displacement 0.09 (wavelength ~ 3.5), max|J - I| = 0.37;  control (Eulerian, no relabelling) 0.18;  g energy fraction at |k| > 0.75 k_cut: NL 4.8e-06, FR 1.9e-06;  control frozen along -Psi0: 0.20;  control k_z-only: 0.11
+  t = 0.2: max_xi,m |g_m(X(xi,t),t) - h_m(xi,t)| / max|h| = 2.32e-03;  grad_par: 4.40e-03;  Cauchy |B(X) - J B0| / max|B_perp| = 4.94e-04;  max|det J - 1| = 2.7e-11;  rms displacement 0.18 (wavelength ~ 3.5), max|J - I| = 0.74;  control (Eulerian, no relabelling) 0.34;  g energy fraction at |k| > 0.75 k_cut: NL 1.6e-04, FR 5.6e-05;  control frozen along -Psi0: 0.35;  control k_z-only: 0.21
+N = 48: wall 21s
+  t = 0.1: max_xi,m |g_m(X(xi,t),t) - h_m(xi,t)| / max|h| = 1.55e-06;  grad_par: 5.57e-06;  Cauchy |B(X) - J B0| / max|B_perp| = 6.04e-08;  max|det J - 1| = 1.4e-11;  rms displacement 0.09 (wavelength ~ 3.5), max|J - I| = 0.37;  control (Eulerian, no relabelling) 0.18;  g energy fraction at |k| > 0.75 k_cut: NL 1.2e-08, FR 5.8e-09
+  t = 0.2: max_xi,m |g_m(X(xi,t),t) - h_m(xi,t)| / max|h| = 2.96e-04;  grad_par: 6.45e-04;  Cauchy |B(X) - J B0| / max|B_perp| = 1.22e-05;  max|det J - 1| = 2.8e-11;  rms displacement 0.18 (wavelength ~ 3.5), max|J - I| = 0.74;  control (Eulerian, no relabelling) 0.34;  g energy fraction at |k| > 0.75 k_cut: NL 3.6e-06, FR 1.3e-06
+  [PASS] t=0.1: g(X(xi,t),t) = h(xi,t) pointwise, error falls with N to << the controls  (3.8e-03 -> 3.4e-04 -> 5.8e-05 -> 1.6e-06)
+  [PASS] t=0.1: grad_par(t) U = U grad_par(0) pointwise, error falls with N to << the controls  (1.2e-02 -> 8.7e-04 -> 3.4e-04 -> 5.6e-06)
+  [PASS] t=0.1: Cauchy B(X,t) = J B(xi,0), error falls with N to << the controls  (9.5e-03 -> 2.7e-04 -> 2.5e-05 -> 6.0e-08)
+  [PASS] t=0.1: volume preserved along markers (det J = 1)  (1.5e-11)
+  [PASS] t=0.1: controls are O(1) (test is not vacuous): Eulerian 0.18, -Psi0 0.20, k_z-only 0.11; rms displacement 0.09, max|J - I| 0.37
+  [PASS] t=0.2: g(X(xi,t),t) = h(xi,t) pointwise, error falls with N to << the controls  (2.1e-02 -> 5.9e-03 -> 2.3e-03 -> 3.0e-04)
+  [PASS] t=0.2: grad_par(t) U = U grad_par(0) pointwise, error falls with N to << the controls  (4.7e-02 -> 1.3e-02 -> 4.4e-03 -> 6.4e-04)
+  [PASS] t=0.2: Cauchy B(X,t) = J B(xi,0), error falls with N to << the controls  (4.0e-02 -> 4.1e-03 -> 4.9e-04 -> 1.2e-05)
+  [PASS] t=0.2: volume preserved along markers (det J = 1)  (3.0e-11)
+  [PASS] t=0.2: controls are O(1) (test is not vacuous): Eulerian 0.34, -Psi0 0.35, k_z-only 0.21; rms displacement 0.18, max|J - I| 0.74
+SUMMARY: 10/10 checks passed

@@ -20,7 +20,9 @@ Mirror map M: z -> -z, v_par -> -v_par, z+ <-> z-, g_m -> (-1)^m g_m.  On GANDAL
     real pattern) iff q + m + n is even, i.e. iff the statistic is mirror-even.  Random M, Lambda, closures, C.
  M6 parity lemma in GANDALF runs: see d09b_parity_lemma_gandalf.py.
  M7 fourth order: correlated injection (f, rho f) and uncorrelated injection with the same variances inject the
-    same free energy p + rho^2 and give the same second-order statistics, but different slice fourth moments: sum_u E[a_u^4] differs by 12 sigma^4 sum_j v_j0^4 p^2 delta_j^2 (delta_j = sqrt2 rho u_j),
+    same free energy p + rho^2 and give the same mirror-even second-order statistics (the slice energies and Gamma
+    differ; see ../review/dynamics/c06_algebra.py, A3), but different slice fourth moments:
+    sum_u E[a_u^4] differs by 12 sigma^4 sum_j v_j0^4 p^2 delta_j^2 (delta_j = sqrt2 rho u_j),
     even in rho (so phi = 0 and phi = pi agree, phi = pi/2 differs).
 """
 import os
@@ -236,7 +238,7 @@ for Mm in (8, 64):
         fourth = (3 * np.sum(c ** 4), 3 * np.sum(var_unc ** 2))
         pred = 3 * np.sum(v0 ** 4 * 4 * p0 ** 2 * 2 * rho ** 2 * u ** 2)
         c_m = v0 * (p0 - np.sqrt(2) * rho * u)
-        chk(f"M7 M={Mm} rho={rho}: same injected free energy p + rho^2 (2nd order identical)",
+        chk(f"M7 M={Mm} rho={rho}: same injected free energy p + rho^2 (mirror-even 2nd order identical)",
             abs(second[0] - second[1]) < 1e-12 and abs(second[0] - (p0 + rho ** 2)) < 1e-12)
         chk(f"M7 M={Mm} rho={rho}: sum_u E[a_u^4] differs by 12 sum v0^4 p^2 delta^2 (sigma = 1); even in rho",
             abs(fourth[0] - fourth[1] - pred) < 1e-12 * fourth[0] and abs(3 * np.sum(c_m ** 4) - fourth[0]) < 1e-12 * fourth[0],

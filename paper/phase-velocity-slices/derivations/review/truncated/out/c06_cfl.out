@@ -1,24 +1,24 @@
 ----------------------------------------------------------------------------------------------------
 a. 3-D random state: slice energies under gandalf_step at GANDALF's dt_cfl
-W1013 17:31:53.891644 43046366 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
    max|grad z+| = 5.00, max|grad z-| = 4.38, s max|grad Psi| = 3.07; dt_cfl = 3.750e-03; fastest slice speed 32.09; y = dt_cfl k_max V = 5.35 (RK4 limit 2.83)
-   lawson_rk4, dt = 3.750e-03 (1.000 dt_cfl), 30 steps to t = 0.112: energy ratio fast slices (|u| > 8) 9.521e-01, slow slices (|u| < 2) 1.007e+00  [23.5 s]
-   lawson_rk4, dt = 4.687e-04 (0.125 dt_cfl), 240 steps to t = 0.112: energy ratio fast slices (|u| > 8) 9.981e-01, slow slices (|u| < 2) 1.007e+00  [12.3 s]
-   imex_rk222, dt = 3.750e-03 (1.000 dt_cfl), 30 steps to t = 0.112: energy ratio fast slices (|u| > 8) 4.579e+12, slow slices (|u| < 2) 1.008e+00  [12.0 s]
+W1013 20:33:57.100381 43192222 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+   lawson_rk4, dt = 3.750e-03 (1.000 dt_cfl), 30 steps to t = 0.112: energy ratio fast slices (|u| > 8) 9.521e-01, slow slices (|u| < 2) 1.007e+00  [12.9 s]
+   lawson_rk4, dt = 4.687e-04 (0.125 dt_cfl), 240 steps to t = 0.112: energy ratio fast slices (|u| > 8) 9.981e-01, slow slices (|u| < 2) 1.007e+00  [9.1 s]
+   imex_rk222, dt = 3.750e-03 (1.000 dt_cfl), 30 steps to t = 0.112: energy ratio fast slices (|u| > 8) 4.579e+12, slow slices (|u| < 2) 1.008e+00  [7.6 s]
    spectral radius of the explicit operator: fastest slice 413.9, u ~ 0 slice 47.4; y_eff(dt_cfl) = dt_cfl rho = 1.55 (fast), 0.18 (slow); nominal k_max V dt_cfl = 5.35
-   lawson_rk4, dt = 8.542e-03 (y_eff = 3.54, 2.28 dt_cfl), 40 steps: fast-slice energy ratio 7.097e+29, slow 1.544e+00  [18.6 s]
-   lawson_rk4, dt = 5.809e-03 (y_eff = 2.40, 1.55 dt_cfl), 40 steps: fast-slice energy ratio 6.634e-01, slow 1.005e+00  [1.9 s]
+   lawson_rk4, dt = 8.542e-03 (y_eff = 3.54, 2.28 dt_cfl), 40 steps: fast-slice energy ratio 7.097e+29, slow 1.544e+00  [14.6 s]
+   lawson_rk4, dt = 5.809e-03 (y_eff = 2.40, 1.55 dt_cfl), 40 steps: fast-slice energy ratio 6.634e-01, slow 1.005e+00  [1.6 s]
   [PASS] c06.a IMEX at dt_cfl: fastest slices blow up, slow ones do not. Lawson-RK4 obeys y_eff = dt rho_fast <= 2 sqrt2, with rho_fast the spectral radius of the discrete advection of the fastest slice (here GANDALF's dt_cfl happens to be Lawson-stable because y_eff(dt_cfl) < 2 sqrt2 although k_max V dt_cfl > 2 sqrt2)
 GANDALF integrations (scheme, dt, steps, wall s), 16^3, M = 64, Lam = sqrt5:
-   lawson_rk4 dt=3.750e-03 steps=30 wall=23.5s
-   lawson_rk4 dt=4.687e-04 steps=240 wall=12.3s
-   imex_rk222 dt=3.750e-03 steps=30 wall=12.0s
-   lawson_rk4 dt=8.542e-03 steps=40 wall=18.6s
-   lawson_rk4 dt=5.809e-03 steps=40 wall=1.9s
+   lawson_rk4 dt=3.750e-03 steps=30 wall=12.9s
+   lawson_rk4 dt=4.687e-04 steps=240 wall=9.1s
+   imex_rk222 dt=3.750e-03 steps=30 wall=7.6s
+   lawson_rk4 dt=8.542e-03 steps=40 wall=14.6s
+   lawson_rk4 dt=5.809e-03 steps=40 wall=1.6s
 ----------------------------------------------------------------------------------------------------
 b. IMEX explicit stage with hyper-resistivity: exact threshold vs the small-y formula, r = 1, 2, 4
    r=1: smallest unstable dt over k = 3.711e-05 at |k|/k_max = 1.000; at k_max: 3.711e-05; formula (8 eta)^(1/3)/(k_max V)^(4/3) = 3.706e-05
    r=2: smallest unstable dt over k = 3.706e-05 at |k|/k_max = 0.024; at k_max: 3.711e-05; formula (8 eta)^(1/3)/(k_max V)^(4/3) = 3.706e-05
    r=4: smallest unstable dt over k = 5.446e-07 at |k|/k_max = 0.024; at k_max: 3.711e-05; formula (8 eta)^(1/3)/(k_max V)^(4/3) = 3.706e-05
   [PASS] c06.b r = 2: threshold ~k-independent and close to the formula; r = 4: the lowest k sets a far smaller threshold (the formula is specific to r <= 2)
-== c06_cfl: 2/2 passed (70.8 s)
+== c06_cfl: 2/2 passed (47.8 s)

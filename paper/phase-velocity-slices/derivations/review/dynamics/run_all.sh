@@ -1,20 +1,26 @@
 #!/usr/bin/env bash
-# Runs every check script in this folder with uv from the repository root and writes the stdout and stderr of each
-# script to out/<script>.out.  c01 runs twice: with its defaults, and as a strong-flow run (out/<script>_strong.out)
-# that shows the resolution limit of the pointwise test.  c02 runs at N = 16, 24, 32, 48.  The script continues past
-# failures, prints a summary (local start time, wall time and exit status of each run) and exits with status 1 if any
-# run failed or a script of the folder is not in the list.  c05 imports ../../dynamics/dcore.py.
+# Run every independent check c??_*.py in this folder from the repository root with `uv run python` (c00_core.py is
+# the shared helper module, not a check; c05_imex.py also imports ../../dynamics/dcore.py). Each run's stdout and
+# stderr go to out/<run>.out (with the repository path shortened to a relative one). c01 runs twice: with its defaults,
+# and as a strong-flow run (out/c01_lagrangian_pointwise_strong.out) that shows the resolution limit of the pointwise
+# test; c02 runs at N = 16, 24, 32, 48. The runner continues past failures, prints a summary (also saved in
+# out/run_all.out) and exits 1 if any run failed or a check script of the folder is missing from the run list below.
 set -u
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$HERE"
+while [ "$ROOT" != "/" ] && [ ! -f "$ROOT/pyproject.toml" ]; do ROOT="$(dirname "$ROOT")"; done
+[ -f "$ROOT/pyproject.toml" ] || { echo "repository root (pyproject.toml) not found above $HERE"; exit 1; }
+command -v uv > /dev/null || { echo "uv not found"; exit 1; }
+REL="${HERE#"$ROOT"/}"
+OUT="$HERE/out"
+mkdir -p "$OUT"
+cd "$ROOT" || exit 1
+SUMMARY="$OUT/run_all.out"
+: > "$SUMMARY"
+log() { echo "$*" | tee -a "$SUMMARY"; }
 
-here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-root="$(cd "$here/../../../../.." && pwd)"  # repository root
-rel="${here#"$root"/}"                       # this folder, relative to the root
-mkdir -p "$here/out"
-cd "$root" || exit 1
-export PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
-
-# one entry per run: "<name of the .out file>|<script>|<arguments>"
-runs=(
+# one entry per run, in this order: "<name of the .out file>|<script>|<arguments>"
+RUNS=(
   "c01_lagrangian_pointwise|c01_lagrangian_pointwise|"
   "c01_lagrangian_pointwise_strong|c01_lagrangian_pointwise|32,48,64 1.5 0.25,0.5 strong"
   "c02_forcing_same_instant|c02_forcing_same_instant|16,24,32,48"
@@ -23,35 +29,33 @@ runs=(
   "c06_algebra|c06_algebra|"
 )
 
-failed=0
-for f in "$here"/c[0-9]*.py; do
-  s="$(basename "$f" .py)"
-  case "$s" in *_core) continue ;; esac
-  case " ${runs[*]} " in
+status=0
+T0=$(date +%s)
+log "$REL: $(date '+%Y-%m-%d %H:%M:%S'), $(uv run python --version 2>&1)"
+for path in "$HERE"/c[0-9][0-9]_*.py; do
+  s="$(basename "$path" .py)"
+  [ "$s" = "c00_core" ] && continue
+  case " ${RUNS[*]} " in
     *"|$s|"*) ;;
-    *) echo "WARNING: $s.py is not in the run list of run_all.sh"; failed=$((failed + 1)) ;;
+    *) log "$s: FAIL (not in the run list of run_all.sh)"; status=1 ;;
   esac
 done
-
-lines=()
-t_all=$(date +%s)
-for entry in "${runs[@]}"; do
-  IFS='|' read -r name script args <<< "$entry"
-  started=$(date +%Y%m%d_%H%M%S)
+for entry in "${RUNS[@]}"; do
+  IFS='|' read -r name s args <<< "$entry"
+  start=$(date +%Y%m%d_%H%M%S)
   t0=$(date +%s)
   # shellcheck disable=SC2086
-  uv run python "$rel/$script.py" $args > "$here/out/$name.out" 2>&1
-  status=$?
-  wall=$(( $(date +%s) - t0 ))
-  if [ "$status" -eq 0 ]; then result=PASS; else result=FAIL; failed=$((failed + 1)); fi
-  line="$(printf '%s  %-32s  started %s  wall %5d s  exit %d' "$result" "$name" "$started" "$wall" "$status")"
-  echo "$line"
-  lines+=("$line")
+  uv run python -B -u "$REL/$s.py" $args 2>&1 | sed "s|$ROOT/||g" > "$OUT/$name.out"
+  rc=${PIPESTATUS[0]}
+  t1=$(date +%s)
+  npass=$(grep -c '\[PASS\]' "$OUT/$name.out")
+  nfail=$(grep -c '\[FAIL\]' "$OUT/$name.out")
+  if [ "$rc" -ne 0 ] || [ "$nfail" -ne 0 ]; then
+    res=FAIL; status=1
+  else
+    res=PASS
+  fi
+  log "$name: $res (exit $rc; checks passed $npass, failed $nfail), started $start, wall $((t1 - t0)) s"
 done
-total=$(( $(date +%s) - t_all ))
-
-echo
-echo "Summary for $rel (output in $rel/out/)"
-for l in "${lines[@]}"; do echo "  $l"; done
-echo "  ${#runs[@]} runs, $failed failed, total wall ${total} s"
-[ "$failed" -eq 0 ] || exit 1
+log "overall: $([ $status -eq 0 ] && echo PASS || echo FAIL), total wall $(($(date +%s) - T0)) s"
+exit $status

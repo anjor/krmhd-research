@@ -1,0 +1,14 @@
+paper/phase-velocity-slices/derivations/dynamics: 2026-10-13 20:31:05, Python 3.14.3
+d00_sympy_identities: PASS (exit 0; checks passed 36, failed 0), started 20261013_203105, wall 2 s
+d01_gandalf_conventions: PASS (exit 0; checks passed 14, failed 0), started 20261013_203107, wall 2 s
+d02_frozen_line: PASS (exit 0; checks passed 47, failed 0), started 20261013_203109, wall 143 s
+d03_frozen_gandalf_step: PASS (exit 0; checks passed 13, failed 0), started 20261013_203332, wall 70 s
+d04_forcing_superposition: PASS (exit 0; checks passed 18, failed 0), started 20261013_203442, wall 120 s
+d05_breakers: PASS (exit 0; checks passed 7, failed 0), started 20261013_203642, wall 171 s
+d06_tilt_kz_decomposition: PASS (exit 0; checks passed 17, failed 0), started 20261013_203933, wall 17 s
+d07_two_slice_law: PASS (exit 0; checks passed 19, failed 0), started 20261013_203950, wall 5 s
+d08_no_fjortoft: PASS (exit 0; checks passed 16, failed 0), started 20261013_203955, wall 2 s
+d09_mirror: PASS (exit 0; checks passed 40, failed 0), started 20261013_203957, wall 9 s
+d09b_parity_lemma_gandalf: PASS (exit 0; checks passed 11, failed 0), started 20261013_204006, wall 62 s
+d10_elsasser_slices: PASS (exit 0; checks passed 8, failed 0), started 20261013_204108, wall 4 s
+overall: PASS, total wall 607 s

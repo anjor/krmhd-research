@@ -1,0 +1,25 @@
+  [PASS] L1 M=8, Lambda=+2.236, s=1.000: dC/dt = -s (u - u') <a_u' grad_par a_u> (k-summed)  (6.6e-16)
+  [PASS] L1 M=8, Lambda=+2.236, s=1.000: E x B contribution to dC/dt vanishes  (1.0e-16)
+  [PASS] L2 M=8, Lambda=+2.236, s=1.000: per-k law dC_k/dt = linear dephasing + N^Phi_k + N^Psi_k (every mode, every pair)  (1.1e-15)
+  [PASS] L2 M=8, Lambda=+2.236, s=1.000: E x B transfer N^Phi_k is O(1) mode by mode  (max |N^Phi_k| / max |dC_k/dt| = 1.00)
+  [PASS] L2 M=8, Lambda=+2.236, s=1.000: sum_k N^Phi_k = 0  (1.0e-16)
+  [PASS] L2 M=8, Lambda=+2.236, s=1.000: sum_k N^Psi_k = -s (u - u') <a_u' {Psi, a_u}>  (2.3e-16)
+  [PASS] L3 M=8, Lambda=+2.236, s=1.000: Christoffel-Darboux identity for K_m  (1.4e-15)
+  [PASS] L3 M=8, Lambda=+2.236, s=1.000: Pi_m (full grad_par) = -sum K_m(j,j') dC(j,j')/dt  (3.3e-15)
+  [PASS] L3 M=8, Lambda=+2.236, s=1.000: per mode, k_z-only flux = CD-filtered linear dephasing  (1.6e-15)
+    M=8, Lambda=+2.236, s=1.000: field-line share of the flux |Pi - Pi^z| / |Pi| per m: 0.64 0.72 1.05 0.97 0.83 1.26 1.13 0.46
+  [PASS] L1 M=9, Lambda=-2.236, s=1.414: dC/dt = -s (u - u') <a_u' grad_par a_u> (k-summed)  (8.6e-16)
+  [PASS] L1 M=9, Lambda=-2.236, s=1.414: E x B contribution to dC/dt vanishes  (1.5e-16)
+  [PASS] L2 M=9, Lambda=-2.236, s=1.414: per-k law dC_k/dt = linear dephasing + N^Phi_k + N^Psi_k (every mode, every pair)  (1.2e-15)
+  [PASS] L2 M=9, Lambda=-2.236, s=1.414: E x B transfer N^Phi_k is O(1) mode by mode  (max |N^Phi_k| / max |dC_k/dt| = 1.22)
+  [PASS] L2 M=9, Lambda=-2.236, s=1.414: sum_k N^Phi_k = 0  (1.3e-16)
+  [PASS] L2 M=9, Lambda=-2.236, s=1.414: sum_k N^Psi_k = -s (u - u') <a_u' {Psi, a_u}>  (3.5e-16)
+  [PASS] L3 M=9, Lambda=-2.236, s=1.414: Christoffel-Darboux identity for K_m  (2.0e-15)
+  [PASS] L3 M=9, Lambda=-2.236, s=1.414: Pi_m (full grad_par) = -sum K_m(j,j') dC(j,j')/dt  (1.6e-15)
+  [PASS] L3 M=9, Lambda=-2.236, s=1.414: per mode, k_z-only flux = CD-filtered linear dephasing  (1.7e-15)
+    M=9, Lambda=-2.236, s=1.414: field-line share of the flux |Pi - Pi^z| / |Pi| per m: 0.95 0.64 1.17 0.68 2.53 1.09 0.29 0.91 1.51
+    L4 dt = 0.001: <a_i(t) a_j(t)> = 3.9119085087e-04, <a_i(0), T a_j(0)> = 3.9119093222e-04, rel diff 2.08e-07
+    L4 dt = 0.0005: <a_i(t) a_j(t)> = 3.9119084556e-04, <a_i(0), T a_j(0)> = 3.9119085087e-04, rel diff 1.36e-08
+    L4 dt = 0.00025: <a_i(t) a_j(t)> = 3.9119084523e-04, <a_i(0), T a_j(0)> = 3.9119084556e-04, rel diff 8.62e-10
+  [PASS] L4 frozen lines: <a_i(t) a_j(t)> = <a_i(0), T_(s (u_j - u_i) t) a_j(0)> (u_i=-1.438, u_j=1.438); mismatch is RK4 time error (4th order)  (rel diff 2.1e-07 -> 1.4e-08 -> 8.6e-10, observed orders 3.94, 3.98)
+SUMMARY: 19/19 checks passed

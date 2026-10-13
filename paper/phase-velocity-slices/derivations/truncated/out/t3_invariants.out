@@ -85,4 +85,4 @@ E. Convergence to the continuum for G = F_M(v - a), a = 0.5 (all Hermite coeffic
    Lam=-2.2361: even-M PV error ~ M^(-0.512) for M = 32..256; error x sqrt(M) = 1.056, 1.047, 1.038, 1.030
    Lam=+inf: even-M PV error ~ M^(-0.490) for M = 32..256; error x sqrt(M) = 1.486, 1.503, 1.512, 1.516
   [PASS] E1 W, Q_u (all M) and H (odd M) converge spectrally; even-M PV H converges ~ M^-1/2 (local slopes within 0.1), with exactly the predicted node-zero error at Lam = inf (M >= 16)
-== t3_invariants: 8/8 checks passed (4.0 s)
+== t3_invariants: 8/8 checks passed (3.8 s)

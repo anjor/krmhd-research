@@ -30,4 +30,4 @@ e. Spectral-shift law out to M = 8192
    Lam=+2.2361: max deviation from the shift law over |x| < 3 at M = 512, 2048, 8192: 2.42e-03, 1.22e-03, 6.13e-04; fitted rate M^-0.495
    Lam=-2.2361: max deviation from the shift law over |x| < 3 at M = 512, 2048, 8192: 8.47e-04, 4.29e-04, 2.14e-04; fitted rate M^-0.496
   [PASS] c08.e spectral-shift law: deviation keeps falling (about M^-1/2) to M = 8192
-== c08_spectrum: 6/6 passed (18.8 s)
+== c08_spectrum: 6/6 passed (17.2 s)

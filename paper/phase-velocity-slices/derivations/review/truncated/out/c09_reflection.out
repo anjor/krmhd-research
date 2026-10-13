@@ -1,11 +1,11 @@
 ----------------------------------------------------------------------------------------------------
 a. Revival through gandalf_step (IMEX), M = 128, n = 6, nu = 3, Lam = sqrt5, k_z = 2 pi
-W1013 17:33:49.707912 43049979 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+W1013 20:35:28.196687 43194800 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
    X = 1.1753, e^-X = 0.3087; gandalf_step revival ratio = 0.2913 (peak at t = 5.259, T_rec = 5.123); matrix exponential of the operator built here: 0.2913; exact value from t6_reflection.py 0.2913
   [PASS] c09.a GANDALF's stepper reproduces the revival ratio of the linear operator (0.291) to 1%, i.e. e^-X to 6% :: R_gandalf 0.2913, R_expm 0.2913
 GANDALF integrations: grid 4^3, single mode k = (0,0,2pi), M = 128, IMEX:
-   nu=0.0 steps=1500 dt=4.269e-03 wall=24.0s
-   nu=3.0 steps=1500 dt=4.269e-03 wall=10.9s
+   nu=0.0 steps=1500 dt=4.269e-03 wall=19.2s
+   nu=3.0 steps=1500 dt=4.269e-03 wall=8.3s
 ----------------------------------------------------------------------------------------------------
 b. Revival time vs 2 t_w and vs 2 pi/(k s Delta_0)
    M=128 Lam=+inf: revival peak at t/(2 t_w) = 1.0049; 2 pi/(k s Delta_0)/(2 t_w) = 1.0058; sqrt((2M+3)/2M) = 1.0058; peak |g_0| = 1.000
@@ -28,4 +28,4 @@ c. Forced steady state: two different open references
      64 | 1.2067 | 1.2062 | 1.1880 | 1.2135
      96 | 1.4067 | 1.4000 | 1.2283 | 1.2567
   [PASS] c09.c the coth-type law with the measured X holds against both open references for 2 <= m <= 48 (2%)
-== c09_reflection: 3/3 passed (39.1 s)
+== c09_reflection: 3/3 passed (31.4 s)

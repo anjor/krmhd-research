@@ -9,9 +9,9 @@ NL run: gandalf_step with eta = 0, eta_z = 0 (ideal z+-, no spatial damping of g
 FR run: frozen-line prediction d_t h = -s grad_par(0) A h - C h, GANDALF RHS with (z+, z-) = (Psi0, -Psi0),
         classical RK4 with dt_FR = 0.0005 (time error negligible).
 Same physical initial fields as d02 (8^3 seed embedded).  Reports the W(m) and Pi_m (full grad_par) differences
-at t = 0.0625 and 0.125 for dt and dt/2, so the stepper's time error is visible next to the d02 spatial error.
-Expected: Lawson-RK4 error O(dt^2) (midpoint z+- step); IMEX-RK222 error O(dt) (first-order g-z+- coupling,
-gandalf#158); both converge towards the d02 RK4 values at the same N.
+at t = 0.064 and 0.128 for dt = 0.002, 0.001 and 0.0005, so the stepper's time error is visible next to the d02
+spatial error.  At these dt the Lawson-RK4 time error is below the spatial error at N = 32; the IMEX-RK222 error is
+O(dt) (first-order coupling of g to z+-, gandalf#158), and IMEX-RK222 at dt = 0.002 is unstable.
 """
 import os
 import sys

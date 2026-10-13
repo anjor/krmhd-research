@@ -19,4 +19,4 @@ C. The Christoffel-Darboux kernel is a sine-kernel low-pass filter in u
    Lam=+2.2361, M=512: m=64: max|K_hat - sine kernel|/max = 0.126; m=128: max|K_hat - sine kernel|/max = 0.087; m=256: max|K_hat - sine kernel|/max = 0.061;
    Lam=-2.2361, M=512: m=64: max|K_hat - sine kernel|/max = 0.046; m=128: max|K_hat - sine kernel|/max = 0.034; m=256: max|K_hat - sine kernel|/max = 0.023;
   [PASS] C1 K_m(j,l)/sqrt(n_j n_l) ~ sqrt(D_j D_l) sin(sqrt(2m+1)(u_j - u_l))/(pi (u_j - u_l)) for |u| < 1.5
-== t5_flux_cd: 6/6 checks passed (2.8 s)
+== t5_flux_cd: 6/6 checks passed (3.0 s)

@@ -9,8 +9,8 @@ Independent routes:
 
 a. Exact (SymPy, symbolic Lam) solution of K A = A^T K for symmetric K, M = 4, 5, both closures: dimension M + 1 and
    K = Pi phi(A).
-b. A translation-invariant but k-dependent form, sum_k |k_z| g^T Pi g, is NOT conserved by krmhd_rhs (so "exactly the
-   (M+1)-dimensional family" needs the class "k-independent quadratic forms" stated).
+b. A translation-invariant but k-dependent form, sum_k |k_z| g^T Pi g, is NOT conserved by krmhd_rhs (so the
+   (M+1)-dimensional family is complete only within the class of k-independent quadratic forms).
 c. Direct mpmath quadrature of CMM's integrals for random retained moments (M = 8 and 9, Lam = sqrt5):
    B13/B31 (W), B25 (Gamma), B18 (H, principal value) against Q_1/2, Q_u/2, Q_{1/u}/2, and [G, L^2 G] against
    g^T Pi A^2 g + (M+1) g_M^2/2 -- zero closure.

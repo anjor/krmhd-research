@@ -24,4 +24,4 @@ d. Large-m dictionary against direct 2-D quadrature
      local slope of W(m) between m = 100 and 200: -1.463 (prediction with chat = 2l/(1 + 2m l^2): -1.462; pure p = 2 law: -1.5)
    Gaussian (smooth), l = 0.3: W(m) / [int e chat(sqrt2m)/(pi sqrt2m)] at m = 8: 0.9723 (W = 2.832e-02) 20: 1.0275 (W = 6.428e-03) 50: 1.1566 (W = 3.076e-04) 100: 1.4020 (W = 2.928e-06) 200: 2.0560 (W = 3.748e-10)
   [PASS] c04.d W(m) ~ [int e] chat(sqrt(2m))/(pi sqrt(2m)) confirmed by 2-D quadrature for exponential slice correlation
-== c04_dictionary: 4/4 passed (38.8 s)
+== c04_dictionary: 4/4 passed (29.0 s)

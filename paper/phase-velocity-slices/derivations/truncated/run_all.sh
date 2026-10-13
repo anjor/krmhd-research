@@ -1,39 +1,40 @@
-#!/bin/sh
-# Run every check script of this folder (t<n>_*.py) from the repository root with "uv run python".
-# Each script's stdout and stderr go to out/<script>.out; the repository root is stripped from paths printed in
-# warnings, so the files do not depend on where the repository lives. The run continues past failures, prints one
-# summary line per script (local start time, exit status, wall time, last line of the script) and exits with status 1
-# if any script failed.
-HERE=$(cd "$(dirname "$0")" && pwd -P) || exit 1
-ROOT=$(cd "$HERE/../../../.." && pwd -P) || exit 1
-REL=${HERE#"$ROOT"/}
+#!/usr/bin/env bash
+# Run every check script t<n>_*.py in this folder from the repository root with `uv run python`. Each script's stdout
+# and stderr go to out/<script>.out (with the repository path shortened to a relative one). The runner continues past
+# failures, prints a summary with the local start time and wall time of each script (also saved in out/run_all.out)
+# and exits 1 if any script failed. Scripts run with python -B, so no __pycache__ folder is written.
+set -u
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$HERE"
+while [ "$ROOT" != "/" ] && [ ! -f "$ROOT/pyproject.toml" ]; do ROOT="$(dirname "$ROOT")"; done
+[ -f "$ROOT/pyproject.toml" ] || { echo "repository root (pyproject.toml) not found above $HERE"; exit 1; }
+command -v uv > /dev/null || { echo "uv not found"; exit 1; }
+REL="${HERE#"$ROOT"/}"
 OUT="$HERE/out"
-mkdir -p "$OUT" || exit 1
+mkdir -p "$OUT"
 cd "$ROOT" || exit 1
+SUMMARY="$OUT/run_all.out"
+: > "$SUMMARY"
+log() { echo "$*" | tee -a "$SUMMARY"; }
 
 status=0
-failed=""
-t_begin=$(date +%s)
+T0=$(date +%s)
+log "$REL: $(date '+%Y-%m-%d %H:%M:%S'), $(uv run python --version 2>&1)"
 for path in "$HERE"/t[0-9]*_*.py; do
-    s=$(basename "$path" .py)
-    start=$(date +%Y%m%d_%H%M%S)
-    t0=$(date +%s)
-    uv run python "$REL/$s.py" > "$OUT/$s.out.tmp" 2>&1
-    rc=$?
-    t1=$(date +%s)
-    awk -v root="$ROOT/" '{ while ((i = index($0, root)) > 0) $0 = substr($0, 1, i - 1) substr($0, i + length(root)); print }' \
-        "$OUT/$s.out.tmp" > "$OUT/$s.out"
-    rm -f "$OUT/$s.out.tmp"
-    echo "$s: start $start, exit $rc, $((t1 - t0)) s :: $(grep '^== ' "$OUT/$s.out" | tail -n 1)"
-    if [ "$rc" -ne 0 ]; then
-        status=1
-        failed="$failed $s"
-    fi
+  s="$(basename "$path" .py)"
+  start=$(date +%Y%m%d_%H%M%S)
+  t0=$(date +%s)
+  uv run python -B -u "$REL/$s.py" 2>&1 | sed "s|$ROOT/||g" > "$OUT/$s.out"
+  rc=${PIPESTATUS[0]}
+  t1=$(date +%s)
+  npass=$(grep -c '\[PASS\]' "$OUT/$s.out")
+  nfail=$(grep -c '\[FAIL\]' "$OUT/$s.out")
+  if [ "$rc" -ne 0 ] || [ "$nfail" -ne 0 ]; then
+    res=FAIL; status=1
+  else
+    res=PASS
+  fi
+  log "$s: $res (exit $rc; checks passed $npass, failed $nfail), started $start, wall $((t1 - t0)) s"
 done
-echo "total wall time $(($(date +%s) - t_begin)) s"
-if [ "$status" -ne 0 ]; then
-    echo "FAILED:$failed"
-else
-    echo "all scripts passed"
-fi
-exit "$status"
+log "overall: $([ $status -eq 0 ] && echo PASS || echo FAIL), total wall $(($(date +%s) - T0)) s"
+exit $status

@@ -1,4 +1,4 @@
-# Phase-velocity slices (paper P1)
+# Phase-velocity slices
 
 Analytical paper: the compressive sector of kinetic reduced MHD as a continuum of passive scalars, one per parallel phase velocity, and its consequences (invariants, Lagrangian linearity, phase mixing as decorrelation of slices, mirror symmetry, truncated Hermite hierarchies). Target: Journal of Plasma Physics.
 

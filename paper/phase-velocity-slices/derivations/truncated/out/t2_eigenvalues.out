@@ -122,4 +122,4 @@ G. Conventions
    Lam=-2.2361, M=256, nu=300 (m/M)^6, k s = 2 pi: least-damped eigenvalue / (-i k s) = -1.24219931-0.83523093j; Landau root zeta_L = 1.24224689-0.83529963j; |difference| = 8.4e-05; distance to sqrt2 zeta_L, zeta_L/sqrt2: 0.620, 0.438
   [PASS] G2 GANDALF's operator reproduces the Landau root of 1 - (1 + zeta Z)/Lam (u = v/v_th, F_M ~ e^-u^2), not a sqrt2-rescaled one
   [PASS] G3 krmhd_rhs: d_t z+ = +i k_z z+ for z- = 0, so z+ ~ exp(i k_z (z + t)) propagates toward -z :: d_t z+/z+ = 0.000000+6.283185j, i k_z = 0.000000+6.283185j
-== t2_eigenvalues: 18/18 checks passed (10.9 s)
+== t2_eigenvalues: 18/18 checks passed (10.5 s)

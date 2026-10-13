@@ -260,7 +260,7 @@ def flux_full(box: Box, g, psi, s: float, A: np.ndarray, p: np.ndarray) -> np.nd
 
 
 def flux_kz(box: Box, g, s: float, A: np.ndarray, p: np.ndarray, per_mode: bool = False):
-    """k_z-only Hermite flux (as krmhd.diagnostics.hermite_flux, with p_m A_{m,m+1} coefficients)."""
+    """k_z-only Hermite flux -2 s p_m A_{m,m+1} k_z Im(conj(g_m) g_{m+1}), i.e. s p_m times krmhd's hermite_flux."""
     g = np.asarray(g)
     M = g.shape[-1] - 1
     coef = 2 * s * p[:M] * np.array([A[m, m + 1] for m in range(M)])

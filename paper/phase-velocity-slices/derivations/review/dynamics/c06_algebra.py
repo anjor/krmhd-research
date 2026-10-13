@@ -19,7 +19,7 @@ A3 (fourth-order statement, Section 7) correlated (f, rho f) and uncorrelated in
 A4 (no Fjortoft-type constraint) free phase mixing from g(0) = e_0 + r e_1 (Gamma != 0): Gamma is conserved and all
    of it leaves m <= m*, and sum_m m W(m) grows like lambda while every Q_phi is fixed, so no invariant with a
    non-negative m-density B(m) can obey B(m) >= c m W(m) (the Fjortoft-type criterion of Chandran, Mallet & Meyrand
-   2026, section 4.1, with W as the second invariant) along this exact solution.
+   2026, section 4.1, with W in the role of their invariant A) along this exact solution.
 A5 (range of Lambda in the frozen-line theorem) for 0 < Lambda < 1 the ladder has a complex pair, so
    exp(-t s A grad_par(0)) grows like exp(t s |kappa| Im u): the frozen problem is ill-posed in the continuum (growth
    unbounded in kappa); krmhd's Lawson eigensystem refuses such Lambda.
@@ -158,7 +158,7 @@ chk("A5 krmhd.hermite.compute_streaming_eigensystem refuses Lambda = 0.5 (Lawson
 M, Lam = 9, -SQRT5
 u, V, WL = eig_slices(M, Lam)
 j = int(np.argmin(np.abs(u + 1.0)))
-s6 = -1.0 / u[j]
+s_a6 = -1.0 / u[j]                # s = sqrt(beta) that puts slice j at s u_j = -1
 grid = Grid(20)
 rng = np.random.default_rng(12)
 zp = mode_field(grid, *random_modes(rng, (1, 3.5), 3))
@@ -170,7 +170,7 @@ zp2 *= 4 / grid.rms_grad(zp2)
 g = np.zeros((20, 20, 11, M + 1), complex)
 for m in range(M + 1):
     g[..., m] = mode_field(grid, *random_modes(rng, (1, 3.5), 3))
-rhs = make_rhs(grid, M, Lam, s6 ** 2)
+rhs = make_rhs(grid, M, Lam, s_a6 ** 2)
 aj = g @ WL[j]
 d1 = np.asarray(rhs(jnp.asarray(zp), jnp.asarray(zm), jnp.asarray(g))[2]) @ WL[j]
 d2 = np.asarray(rhs(jnp.asarray(zp2), jnp.asarray(zm), jnp.asarray(g))[2]) @ WL[j]
@@ -179,7 +179,7 @@ pred = -br + 1j * grid.KZ * aj
 pred[0, 0, 0] = 0
 e1 = np.abs(d1 - pred).max() / np.abs(pred).max()
 e2 = np.abs(d2 - d1).max() / np.abs(d1).max()
-print(f"    M = 9, Lambda = -sqrt5: u_j = {u[j]:.6f}, beta = {s6 ** 2:.6f}; slice equation residual {e1:.1e}; change when z+ "
+print(f"    M = 9, Lambda = -sqrt5: u_j = {u[j]:.6f}, beta = {s_a6 ** 2:.6f}; slice equation residual {e1:.1e}; change when z+ "
       f"is replaced: {e2:.1e}")
 chk("A6 s u = -1 slice: d_t a = -{z-, a} + d_z a and independent of z+ (M = 9, Lambda = -sqrt5)", e1 < 1e-13 and e2 < 1e-13)
 chk.finish()

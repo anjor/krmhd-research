@@ -61,14 +61,22 @@ def appendix_tex() -> Path | None:
 
 
 def find_source() -> Path | None:
-    """CMM's .tex file: the first argument, else the downloaded source (fetched by ../../fetch_cmm.py if missing)."""
+    """CMM's .tex file: the first argument, else the downloaded source (fetched by ../../fetch_cmm.py if missing).
+
+    The fetch helper runs as a separate process in isolated mode; its output is printed indented."""
     if len(sys.argv) > 1:
         path = Path(sys.argv[1])
         return path if path.is_file() else None
     path = appendix_tex()
     if path is None and FETCH.is_file():
-        sys.stdout.flush()
-        subprocess.run([sys.executable, "-I", str(FETCH), str(CMM_DIR)], check=False)
+        print(f"   CMM source not found in {show(CMM_DIR)}; running {FETCH.name}", flush=True)
+        try:
+            res = subprocess.run([sys.executable, "-I", str(FETCH), str(CMM_DIR)], capture_output=True, text=True,
+                                 timeout=600, check=False)
+            for line in (res.stdout + res.stderr).splitlines():
+                print("     " + line)
+        except (OSError, subprocess.SubprocessError) as exc:
+            print(f"     fetch failed: {exc!r}")
         path = appendix_tex()
     return path
 
@@ -103,8 +111,9 @@ def number_equations(src: str) -> list[tuple[int, list[str]]]:
 def main() -> int:
     path = find_source()
     if path is None:
-        print("== c00_cmm_numbering: SKIPPED (the LaTeX source of CMM, arXiv:2607.27981v1, is not available; "
-              "paper/phase-velocity-slices/derivations/fetch_cmm.py downloads it)", flush=True)
+        print("SKIPPED: the LaTeX source of CMM (arXiv:2607.27981v1) is not available (run "
+              "paper/phase-velocity-slices/derivations/fetch_cmm.py with network access, or pass the path of CMM's "
+              ".tex file)", flush=True)
         return 0
     src = path.read_text(encoding="utf-8", errors="replace")
     print(f"   source: {show(path)}", flush=True)
