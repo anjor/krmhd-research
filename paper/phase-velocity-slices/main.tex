@@ -1,0 +1,84 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage[round,authoryear]{natbib}
+\usepackage{hyperref}
+\usepackage{booktabs}
+
+\hypersetup{colorlinks=true,linkcolor=MidnightBlue,citecolor=MidnightBlue,urlcolor=NavyBlue}
+
+\graphicspath{{figures/}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem{lemma}{Lemma}
+
+\newcommand{\vth}{v_{\mathrm{th}}}
+\newcommand{\gradpar}{\nabla_\parallel}
+\newcommand{\kperp}{k_\perp}
+\newcommand{\zpm}{z^{\pm}}
+
+\title{Kinetic reduced magnetohydrodynamics as a continuum of passive scalars in phase velocity}
+\author{A. Kanekar}
+\date{Draft, \today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+% Written last.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+% Compressive fluctuations in KRMHD; phase mixing, nonlinear advection and echoes;
+% the invariants of Chandran, Mallet & Meyrand (2026); what this paper shows.
+
+\section{The compressive sector of KRMHD}
+\label{sec:model}
+% CMM Appendix B form: two branches G^\pm with \Lambda^\pm, the Laguerre l >= 2 sector,
+% fluid moments, conventions (z^+ direction, v_th, s = \sqrt{\beta_i}).
+
+\section{Phase-velocity slices}
+\label{sec:slices}
+% The operator L_\Lambda, the free-energy inner product, its spectrum, the Case--Van Kampen
+% transform, and the slice equation: each slice is a passive scalar advected by
+% \Phi + s u \Psi and streamed at s u v_A.
+
+\section{Invariants}
+\label{sec:invariants}
+% Q_\phi = [G, \phi(L) G]; W, \Gamma, H as \phi = 1, u, 1/u; \Gamma as the field-aligned
+% free-energy flux; per-slice invariants; what survives at finite k_\perp \rho_i.
+
+\section{Lagrangian linearity}
+\label{sec:frozen}
+% The frozen-line theorem and its corollaries for single-point statistics; forcing;
+% what breaks it; what it implies for echoes.
+
+\section{Phase mixing as decorrelation of slices}
+\label{sec:decorrelation}
+% Two-slice law; Hermite-spectrum dictionary and the m^{-1/2} prefactor; the Hermite flux;
+% the sgn(k_z) decomposition under field-line tilt.
+
+\section{Symmetry and special slices}
+\label{sec:symmetry}
+% Mirror symmetry and balanced turbulence; the s u = \pm 1 slices; u = 0; the fluid limit.
+
+\section{Truncated Hermite hierarchies}
+\label{sec:truncated}
+% M+1 slices; eigenvalues and u_max(M); CFL; the zero slice at even M; hypercollisions as
+% the only coupling between slices.
+
+\section{Checks with GANDALF}
+\label{sec:numerics}
+
+\section{Discussion}
+\label{sec:discussion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
