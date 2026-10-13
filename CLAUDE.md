@@ -12,6 +12,14 @@ This installs all dependencies (GANDALF, JAX, NumPy, etc.) into a local `.venv/`
 
 This repo orchestrates numerical experiments using the GANDALF KRMHD spectral solver. You are helping a plasma physicist run simulations, analyze data, and write papers. The physicist provides physics judgment; you handle implementation.
 
+## Research context
+
+### Study 04 / GANDALF facts
+- GANDALF can be changed, through issues or PRs on https://github.com/anjor/gandalf (Critical Rule 1). "Read-only" means never edit the installed package from this repo. It does not mean GANDALF is frozen.
+- The plan has no status emails. Ignore any older plan text that says otherwise. Questions for Anjor go in `QUESTIONS.md`.
+- The G± hierarchies mix density and δB∥. Never describe them as δB∥-specific.
+- Before resuming any study, re-read its current `SPEC.md` and journal (`STATUS.md`, `decisions.md`, newest `log/` entries). Flag any plan assumption that conflicts with them before acting.
+
 ## Critical Rules
 
 ### 1. GANDALF is read-only
@@ -37,6 +45,39 @@ Log every run to `docs/run_log.md` with: ID, config path, hardware, wall time, o
 
 ### 5. Idempotent analysis
 Analysis scripts read saved diagnostic data and produce figures. They must be re-runnable without re-running simulations. Save diagnostic data in standard formats (HDF5 or NumPy .npz).
+
+## Autonomous workflows
+
+Study 04's loop follows `studies/04-phase-space-helicity/LOOP.md`. Its checkpoint is `STATUS.md`, and where LOOP.md is more specific than the rules below, LOOP.md wins. These rules are the defaults for every other loop or workflow (e.g. paper drafting).
+
+### Long-running loops & workflows
+- Keep a checkpoint file (e.g. `.loop/STATE.md`) with: current phase/gate, last completed step, next step, open questions with Anjor's answers (e.g. Q9, Q10), and the exact relaunch command.
+- Update the checkpoint after each step, so a usage-limit cutoff can be resumed without reloading scripts.
+- Wrap API or critic calls in timeouts of 15 minutes or less, never 2 hours. On timeout, log it and retry or skip; don't hang.
+- Keep critic review rounds bounded (max 2 per artifact) so gates don't stall.
+
+### Status reports
+When asked for status, answer in this fixed format:
+1. Running / stopped
+2. Current phase & gate
+3. Last completed step
+4. Blockers
+5. What I need from you
+6. Next action
+
+Read it from the checkpoint file (`STATUS.md` for Study 04) instead of reconstructing it from logs.
+
+## Environment
+
+### Environment & permissions
+- The shell is zsh. Unquoted variables do NOT word-split, so use arrays or `${=var}` explicitly.
+- These actions are blocked by the permission classifier:
+  - deleting branches or secrets
+  - merging PRs without review
+  - changing branch protection/repo settings
+  - bulk issue triage
+- Don't attempt them. Collect them into a "Needs your action" checklist with exact commands or URLs at the end of the task.
+- For stuck git operations, prefer `git am --abort` / `git rebase --abort` over deleting `.git` internals.
 
 ## Code Style
 
