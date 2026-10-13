@@ -1,0 +1,20 @@
+----------------------------------------------------------------------------------------------------
+a. Scalar non-autonomous test of ARS(2,2,2) stage times
+   lam_I = 0.0, stage time gamma: orders of y(T) [2.002, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]; orders of the |y|^2 drift [2.651, 2.48, 2.317, 2.189, 2.105, 2.055, 2.028]
+   lam_I = 0.0, stage time 1/2: orders of y(T) [1.653, 1.484, 1.32, 1.191, 1.106, 1.056, 1.029]; orders of the |y|^2 drift [2.527, 2.355, 2.216, 2.122, 2.065, 2.034, 2.017]
+   lam_I = 5j, stage time gamma: orders of y(T) [2.008, 2.001, 2.0, 2.0, 2.0, 2.0, 2.0]; orders of the |y|^2 drift [2.788, 2.639, 2.47, 2.309, 2.183, 2.101, 2.053]
+   lam_I = 5j, stage time 1/2: orders of y(T) [1.796, 1.653, 1.485, 1.321, 1.192, 1.107, 1.056]; orders of the |y|^2 drift [2.687, 2.512, 2.344, 2.209, 2.117, 2.062, 2.032]
+  [PASS] c07.a stage time 1/2 -> first order, gamma -> second order; |y|^2 drift second order for both
+----------------------------------------------------------------------------------------------------
+b. GANDALF: single z+ wave, 8^3, M = 8, Lam = -sqrt5, beta = 2
+W1013 17:32:56.904685 43048932 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+   Lawson-RK4 reference (2048 steps, 6.1 s); Lawson errors at T/128, T/256: 1.29e-07, 8.06e-09 (order 4.00)
+   IMEX (8176 steps, 16.6 s): g(T) errors ['8.62e-02', '2.28e-02', '7.07e-03', '2.74e-03', '1.25e-03', '6.09e-04', '3.02e-04', '1.51e-04', '7.54e-05']; orders [1.917, 1.691, 1.369, 1.132, 1.037, 1.01, 1.003, 1.001]
+   IMEX signed W drift (W(T)-W(0))/W(0) ['+1.24e-02', '+1.26e-03', '+1.12e-04', '+2.86e-06', '-2.42e-06', '-9.97e-07', '-2.98e-07', '-8.07e-08', '-2.09e-08']; local orders [3.303, 3.493, 5.291, 0.239, 1.28, 1.741, 1.886, 1.946]
+  [PASS] c07.b gandalf_step IMEX: g(T) first order (single wave, Lam = -sqrt5, beta = 2)
+  [PASS] c07.c W drift of gandalf_step IMEX tends to second order (local order of the finest pair within 0.15 of 2) :: finest local order 1.946
+GANDALF integrations: 8^3, M = 8: Lawson reference 2048 steps + 384 steps, IMEX 8176 steps; total 22.7 s
+   lawson_rk4 reference steps=2048 dt=1.221e-04 wall=6.1s
+   lawson_rk4 steps=128+256 wall=0.8s
+   imex_rk222 steps=16+32+64+128+256+512+1024+2048+4096 = 8176 wall=16.6s
+== c07_imex: 3/3 passed (24.9 s)

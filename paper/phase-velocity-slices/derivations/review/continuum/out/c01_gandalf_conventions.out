@@ -1,0 +1,39 @@
+krmhd 0.6.0, jax 0.9.1
+  [PASS] own wavenumbers equal GANDALF's grid.kx/ky/kz 
+  retained modes: 726 of 2304
+  quadrature A (M=10, Lambda=sqrt5): A[0,1]=0.707106781186547 A[1,0]=0.390879015169710 A[1,2]=0.999999999999999 A[2,1]=0.999999999999999, max|diag|=1.7e-16
+G1  Alfvenic right-hand sides (CMM 3.23-3.24, Phi = (z+ + z-)/2, Psi = (z+ - z-)/2, v_A = 1)
+  [PASS] GANDALF dz+/dt = CMM RHS rel 4.7e-15
+  [PASS] GANDALF dz-/dt = CMM RHS rel 5.2e-15; max|{Psi,Phi}|/max|d_z Phi| = 2.5
+  [PASS] control: grad_par = d_z - {Psi,.} does not match GANDALF rel 1.46
+G2/G3  kinetic sector and slices
+  [PASS] G2 Lambda=+2.236 beta=1.0 zero: GANDALF dg/dt = branch eq. with quadrature A rel 1.9e-15; max|{Phi,g}|/max|s d_z Ag| = 3.1
+  [PASS]    controls: -{Psi,.} gives rel 1.72, Lambda -> -Lambda gives rel 0.14 (both must be > 1e-3) 
+  [PASS] G3 Lambda=+2.236 beta=1.0 zero: slices of GANDALF's dg/dt obey the slice equation rel 2.8e-15; u_j in [-4.10, 4.10]
+  [PASS] G2 Lambda=+2.236 beta=1.0 symmetric: GANDALF dg/dt = branch eq. with quadrature A rel 1.7e-15; max|{Phi,g}|/max|s d_z Ag| = 2.4
+  [PASS]    controls: -{Psi,.} gives rel 1.81, Lambda -> -Lambda gives rel 0.12 (both must be > 1e-3) 
+  [PASS] G3 Lambda=+2.236 beta=1.0 symmetric: slices of GANDALF's dg/dt obey the slice equation rel 2.9e-15; u_j in [-4.54, 4.54]
+  [PASS] G2 Lambda=+2.236 beta=0.3 zero: GANDALF dg/dt = branch eq. with quadrature A rel 1.8e-15; max|{Phi,g}|/max|s d_z Ag| = 4.3
+  [PASS]    controls: -{Psi,.} gives rel 1.87, Lambda -> -Lambda gives rel 0.13 (both must be > 1e-3) 
+  [PASS] G3 Lambda=+2.236 beta=0.3 zero: slices of GANDALF's dg/dt obey the slice equation rel 3.2e-15; u_j in [-4.10, 4.10]
+  [PASS] G2 Lambda=+2.236 beta=0.3 symmetric: GANDALF dg/dt = branch eq. with quadrature A rel 1.5e-15; max|{Phi,g}|/max|s d_z Ag| = 2.8
+  [PASS]    controls: -{Psi,.} gives rel 1.62, Lambda -> -Lambda gives rel 0.12 (both must be > 1e-3) 
+  [PASS] G3 Lambda=+2.236 beta=0.3 symmetric: slices of GANDALF's dg/dt obey the slice equation rel 2.3e-15; u_j in [-4.54, 4.54]
+  [PASS] G2 Lambda=-2.236 beta=1.0 zero: GANDALF dg/dt = branch eq. with quadrature A rel 1.9e-15; max|{Phi,g}|/max|s d_z Ag| = 1.8
+  [PASS]    controls: -{Psi,.} gives rel 1.87, Lambda -> -Lambda gives rel 0.17 (both must be > 1e-3) 
+  [PASS] G3 Lambda=-2.236 beta=1.0 zero: slices of GANDALF's dg/dt obey the slice equation rel 2.8e-15; u_j in [-4.10, 4.10]
+  [PASS] G2 Lambda=-2.236 beta=1.0 symmetric: GANDALF dg/dt = branch eq. with quadrature A rel 2.0e-15; max|{Phi,g}|/max|s d_z Ag| = 2.1
+  [PASS]    controls: -{Psi,.} gives rel 1.97, Lambda -> -Lambda gives rel 0.13 (both must be > 1e-3) 
+  [PASS] G3 Lambda=-2.236 beta=1.0 symmetric: slices of GANDALF's dg/dt obey the slice equation rel 2.7e-15; u_j in [-4.54, 4.54]
+  [PASS] G2 Lambda=-2.236 beta=0.3 zero: GANDALF dg/dt = branch eq. with quadrature A rel 2.1e-15; max|{Phi,g}|/max|s d_z Ag| = 3.7
+  [PASS]    controls: -{Psi,.} gives rel 1.76, Lambda -> -Lambda gives rel 0.15 (both must be > 1e-3) 
+  [PASS] G3 Lambda=-2.236 beta=0.3 zero: slices of GANDALF's dg/dt obey the slice equation rel 2.2e-15; u_j in [-4.10, 4.10]
+  [PASS] G2 Lambda=-2.236 beta=0.3 symmetric: GANDALF dg/dt = branch eq. with quadrature A rel 1.7e-15; max|{Phi,g}|/max|s d_z Ag| = 2.6
+  [PASS]    controls: -{Psi,.} gives rel 1.77, Lambda -> -Lambda gives rel 0.11 (both must be > 1e-3) 
+  [PASS] G3 Lambda=-2.236 beta=0.3 symmetric: slices of GANDALF's dg/dt obey the slice equation rel 2.7e-15; u_j in [-4.54, 4.54]
+G4  direction of z+ propagation (gandalf_step, pure z+ wave, no g)
+W1013 17:29:10.721583 43040910 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+    z+ coefficient ratio after t = 0.5: 0.877583+0.479426j; exp(+i k_z t) = 0.877583+0.479426j
+  [PASS] z+ = f(z + t): propagates toward -z (antiparallel to B0) 
+wall time 4.9 s
+ALL c01 CHECKS PASSED

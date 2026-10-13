@@ -1,0 +1,31 @@
+V1  Volterra kernel
+  [PASS] k(tau) = (i/Lambda) int u F_M e^{-iu tau} du = tau e^{-tau^2/4}/(2 Lambda) max abs 2.2e-14
+V2/V3  autocorrelation C(t) = Fourier transform of rho T^2
+  [PASS] Lambda=+2.236 G_a: [G0, e^(-itL) G0] = int rho T^2 e^(-iut) du, t in [0,12] max |C-S|/[G0,G0] = 1.4e-12 (Richardson correction 4.7e-07); Parseval 0.0e+00, 6.3e-16
+  [PASS] Lambda=+2.236 G_b: [G0, e^(-itL) G0] = int rho T^2 e^(-iut) du, t in [0,12] max |C-S|/[G0,G0] = 2.8e-12 (Richardson correction 1.4e-06); Parseval 0.0e+00, 6.9e-15
+  [PASS] Lambda=-2.236 G_a: [G0, e^(-itL) G0] = int rho T^2 e^(-iut) du, t in [0,12] max |C-S|/[G0,G0] = 1.2e-12 (Richardson correction 3.6e-07); Parseval 0.0e+00, 7.9e-16
+  [PASS] Lambda=-2.236 G_b: [G0, e^(-itL) G0] = int rho T^2 e^(-iut) du, t in [0,12] max |C-S|/[G0,G0] = 9.3e-13 (Richardson correction 5.6e-07); Parseval 0.0e+00, 3.9e-15
+  [PASS] Lambda=+5.000 G_a: [G0, e^(-itL) G0] = int rho T^2 e^(-iut) du, t in [0,12] max |C-S|/[G0,G0] = 6.3e-13 (Richardson correction 1.9e-07); Parseval 2.1e-16, 2.1e-16
+  [PASS] Lambda=+5.000 G_b: [G0, e^(-itL) G0] = int rho T^2 e^(-iut) du, t in [0,12] max |C-S|/[G0,G0] = 8.6e-13 (Richardson correction 4.8e-07); Parseval 1.4e-16, 2.7e-15
+  [PASS] Lambda=-0.400 G_a: [G0, e^(-itL) G0] = int rho T^2 e^(-iut) du, t in [0,12] max |C-S|/[G0,G0] = 2.5e-11 (Richardson correction 1.8e-06); Parseval 0.0e+00, 3.0e-15
+  [PASS] Lambda=-0.400 G_b: [G0, e^(-itL) G0] = int rho T^2 e^(-iut) du, t in [0,12] max |C-S|/[G0,G0] = 4.3e-11 (Richardson correction 3.7e-06); Parseval 0.0e+00, 1.2e-14
+  [PASS] Lambda=+50.000 G_a: [G0, e^(-itL) G0] = int rho T^2 e^(-iut) du, t in [0,12] max |C-S|/[G0,G0] = 6.2e-14 (Richardson correction 1.8e-08); Parseval 0.0e+00, 2.0e-16
+  [PASS] Lambda=+50.000 G_b: [G0, e^(-itL) G0] = int rho T^2 e^(-iut) du, t in [0,12] max |C-S|/[G0,G0] = 6.6e-14 (Richardson correction 4.1e-08); Parseval 1.2e-16, 3.7e-16
+    Lambda=sqrt5: |m(t)| late-time decay rate -0.4100 (Landau root -0.409958 i); |C(40)|/|C(0)| = 1.1e-08
+  [PASS] V3 no point spectrum: C(t) -> 0, density decays at the Landau rate 
+V4  H kernel and the u = 0 slice from int_0^inf C(t) dt
+  [PASS] Lambda=+2.236 G_a: -Im int C = P int G^2/(uF_M) (no Lambda term), Re int C = pi G(0)^2/F_M(0) rel 2.3e-08, 1.9e-11; |C(60)| = 2.5e-11; trapezoid would give 3.9e-04
+  [PASS] Lambda=+2.236 G_b: -Im int C = P int G^2/(uF_M) (no Lambda term), Re int C = pi G(0)^2/F_M(0) rel 2.0e-10, 8.3e-12; |C(60)| = 8.7e-12; trapezoid would give 1.0e-05
+  [PASS] Lambda=-2.236 G_a: -Im int C = P int G^2/(uF_M) (no Lambda term), Re int C = pi G(0)^2/F_M(0) rel 2.2e-08, 1.5e-12; |C(60)| = 1.3e-15; trapezoid would give 3.3e-04
+  [PASS] Lambda=-2.236 G_b: -Im int C = P int G^2/(uF_M) (no Lambda term), Re int C = pi G(0)^2/F_M(0) rel 3.0e-10, 5.7e-12; |C(60)| = 7.2e-16; trapezoid would give 1.5e-05
+  [PASS] Lambda=+5.000 G_a: -Im int C = P int G^2/(uF_M) (no Lambda term), Re int C = pi G(0)^2/F_M(0) rel 2.2e-08, 1.1e-12; |C(60)| = 1.3e-15; trapezoid would give 3.7e-04
+  [PASS] Lambda=+5.000 G_b: -Im int C = P int G^2/(uF_M) (no Lambda term), Re int C = pi G(0)^2/F_M(0) rel 2.3e-10, 2.5e-12; |C(60)| = 6.0e-16; trapezoid would give 1.2e-05
+  [PASS] Lambda=-0.400 G_a: -Im int C = P int G^2/(uF_M) (no Lambda term), Re int C = pi G(0)^2/F_M(0) rel 3.2e-08, 5.4e-10; |C(60)| = 5.5e-09; trapezoid would give 1.8e-04
+  [PASS] Lambda=-0.400 G_b: -Im int C = P int G^2/(uF_M) (no Lambda term), Re int C = pi G(0)^2/F_M(0) rel 1.5e-09, 5.9e-09; |C(60)| = 2.6e-08; trapezoid would give 2.6e-05
+V5  0 < Lambda < 1: unstable growth
+  [PASS] Lambda = 0.5: M0 grows at gamma = root of 1 - sqrt(pi) g e^{g^2} erfc(g) = Lambda measured 0.43275, gamma 0.43275
+V6  surjectivity of the slice map (inverse G-transform)
+  [PASS] odd-even Hilbert rule reproduces the Gaussian's Hilbert transform max abs 9.6e-14
+  [PASS] rho T[eps_R c + eps_I H c] = c for a non-Gaussian c (|u| < 4, three Lambda) max rel 4.5e-14
+wall time 15.3 s
+ALL c03 CHECKS PASSED

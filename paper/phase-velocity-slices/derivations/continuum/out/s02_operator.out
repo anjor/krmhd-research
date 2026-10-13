@@ -1,0 +1,30 @@
+O1  self-adjointness of L^n in [.,.]
+  [PASS] [F, L^n G] - [L^n F, G] = 0, n = 0..6 [0, 0, 0, 0, 0, 0, 0]
+O2  bilinear form of L
+  [PASS] [F, L G] closed form 
+  [PASS] M0[L G] = M1[G] (since M1[F_M] = 0) 
+O3  P L and P L^{-1}
+  [PASS] P L G = u G - (u F_M/Lambda) M0 - (F_M/Lambda) M1 
+  [PASS] L (G/u + F_M N/(Lambda-1)) = G for G(0) = 0 
+  [PASS] P L^{-1} G = G/u exactly (no Lambda) 
+O4  orthogonal split
+  [PASS] [G,G] = int (G - M0 F_M)^2/F_M + (1 - 1/Lambda) M0^2 
+  [PASS] <G - M0 F_M, F_M> = 0 
+O5  norms
+  [PASS] <F_M, F_M> = 1 
+  [PASS] <u F_M, u F_M> = 1/2 
+O6  Lambda = 1 and 0 < Lambda < 1
+  [PASS] Lambda = 1: L F_M = 0 
+  [PASS] Lambda = 1: [F_M, G] = 0 for the random G 
+  [PASS] [F_M, F_M] = 1 - 1/Lambda 
+O7  Hermite matrix of L and of [.,.]
+  [PASS] exact A_mn = ladder formula (m, n <= 10) 
+  [PASS] L e_10 has e_11 coefficient sqrt(11/2) (dropped by the zero closure) 
+  [PASS] [e_m, e_n] = diag(1 - 1/Lambda, 1, 1, ...) 
+O8  P0 A symmetric
+  [PASS] P0 A - (P0 A)^T = 0 
+O9  comparison with GANDALF (krmhd.hermite.compute_streaming_matrix)
+  [PASS] krmhd 0.6.0 streaming matrix == A (max abs diff 0.0e+00) 
+O10 norm equivalence
+  [PASS] min(1,1-1/Lambda) <= [G,G]/<G,G> <= max(1,1-1/Lambda) (1000 random G, 5 Lambda) 
+ALL s02 CHECKS PASSED

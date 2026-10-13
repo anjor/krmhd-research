@@ -1,0 +1,141 @@
+\section{The compressive sector of KRMHD}\label{sec:model}
+
+Kinetic reduced magnetohydrodynamics (KRMHD) describes anisotropic fluctuations ($k_\parallel\ll k_\perp$) of a magnetised plasma with one ion species and isothermal electrons, at frequencies small compared with the ion cyclotron frequency, in the limit $k_\perp\rho_i\to0$ of gyrokinetics \citep{Schekochihin2009}. Its Alfv\'enic part is reduced magnetohydrodynamics (RMHD), which does not involve the compressive fluctuations. Its compressive part is a kinetic equation for the ion distribution function, in which the density and field-strength fluctuations are velocity moments of the distribution itself. This section sets out these equations in the form used in the rest of the paper. We follow CMM \citep{Chandran2026}, whose section~3.2 and appendix~B restate and extend the analysis of S09 \citep{Schekochihin2009}. Equation numbers of CMM refer to arXiv:2607.27981v1, and those of S09 to the published article. Table~\ref{tab:conventions} compares the conventions of this paper with those of CMM, S09 and the GANDALF code \citep{Kanekar2025}.
+
+\subsection{Alfv\'enic fields}\label{mod:alfven}
+
+We measure velocities in units of the Alfv\'en speed, $v_A=1$, unless stated otherwise, and take the mean magnetic field along $\zhat$. The stream function $\Phi$ and the flux function $\Psi$ give the $\boldsymbol E\times\boldsymbol B$ velocity and the perpendicular magnetic fluctuation,
+\begin{equation*}
+  \uE=\zhat\times\nabla_\perp\Phi,\qquad
+  \boldsymbol b_\perp\equiv\frac{\delta\boldsymbol B_\perp}{\sqrt{4\pi n_im_i}}=\zhat\times\nabla_\perp\Psi ,
+\end{equation*}
+and to first order in the fluctuation amplitude the unit vector along the total magnetic field is $\bhat=\zhat+\boldsymbol b_\perp$. With the bracket $\{f,h\}=\partial_xf\,\partial_yh-\partial_yf\,\partial_xh=\zhat\cdot(\nabla f\times\nabla h)$, advection by $\uE$ and the derivative along the total field are $\uE\cdot\nabla=\{\Phi,\cdot\}$ and $\gradpar\equiv\bhat\cdot\nabla=\partial_z+\{\Psi,\cdot\}$, and both $\uE$ and $\bhat$ are divergence-free. The RMHD equations are \citep[eqs~17--18]{Schekochihin2009}
+\begin{equation}\label{eq:rmhd}
+  \partial_t\Psi+\{\Phi,\Psi\}=\partial_z\Phi,\qquad
+  \partial_t\nabla_\perp^2\Phi+\{\Phi,\nabla_\perp^2\Phi\}=\gradpar\nabla_\perp^2\Psi .
+\end{equation}
+The first is the induction equation, equivalently $\partial_t\Psi=\gradpar\Phi$, and the second is the vorticity equation. They are CMM's eqs~(3.23)--(3.24) written with $\vth^2=\beta_iv_A^2$, and they do not contain the compressive fluctuations. In terms of the Elsasser potentials $z^\pm=\Phi\pm\Psi$, the linearised equations are $\partial_tz^\pm=\pm\partial_zz^\pm$, so $z^+$ propagates toward $-z$, antiparallel to the mean field, and $z^-$ propagates toward $+z$. A field with $z^-=0$ (or with $z^+=0$) is an exact solution of (\ref{eq:rmhd}) that propagates without change of shape \citep[\S2.3]{Schekochihin2009}. This direction of propagation is that of S09's eq.~(21), of CMM's eqs~(3.23)--(3.24) and of the equations integrated by GANDALF.\footnote{The text of S09's \S2.3, for $z^\pm$, and of their \S2.5, for the slow-wave Elsasser fields, gives the solutions in the form $f^\pm(x,y,z\mp v_At)$, and GANDALF's documentation describes $z^+$ as propagating along $+\boldsymbol B_0$. Both statements have the opposite sign to the equations. We checked the direction given here against S09's eq.~(21), against CMM's equations, and against GANDALF's right-hand side and time step.\label{mod:fndir}}
+
+\subsection{Kinetic equation and the two branches}\label{mod:branches}
+
+The ion thermal speed is $\vth=(2T_i/m_i)^{1/2}$, so that $s\equiv\vth/v_A=\beta_i^{1/2}$ with $\beta_i=8\pi n_iT_i/B_0^2$. We write $\tau=T_i/T_e$ and $Z=q_i/e$. The compressive part $g$ of the ion distribution (S09's $g$ and CMM's $g_{09}$) obeys
+\begin{equation}\label{mod:kinetic}
+  \frac{\dd g}{\dd t}+v_\parallel\gradpar\Big[g+\Big(\frac{Z}{\tau}\frac{\delta n}{n}+\frac{v_\perp^2}{\vth^2}\frac{\delta B}{B}\Big)F_0\Big]=0,
+  \qquad \frac{\dd}{\dd t}=\partial_t+\{\Phi,\cdot\},
+\end{equation}
+which is CMM's eq.~(3.25) and the collisionless form of S09's eq.~(157). Here $F_0$ is the three-dimensional Maxwellian, and $\delta n/n$ and $\delta B/B$ are the relative fluctuations of the density and of the magnetic-field strength. The term in $\delta n/n$ comes from the parallel electric field and the term in $\delta B/B$ from the mirror force. Both fluctuations are fixed by two velocity moments of $g$ (CMM eqs~3.27--3.28; equivalently S09 eqs~158--159),
+\begin{equation}\label{mod:fields}
+  \overline{g}=\frac{\delta n}{n}-\frac{\delta B}{B},\qquad
+  \overline{\frac{v_\perp^2}{\vth^2}\,g}=-\frac{Z}{\tau}\frac{\delta n}{n}-2\Big(1+\frac{1}{\beta_i}\Big)\frac{\delta B}{B},
+  \qquad \overline{(\cdots)}\equiv\frac{1}{n_i}\int\dd^3v\,(\cdots),
+\end{equation}
+which express quasineutrality and perpendicular pressure balance. These relations are algebraic: $\delta n/n$ and $\delta B/B$ at a point are linear functionals of $g$ at the same point, with coefficients that do not depend on the wavenumber. At finite $k_\perp\rho_i$ the corresponding relations contain gyroaveraging factors that depend on $k_\perp\rho_i$ \citep{Schekochihin2009}, and this property is lost.
+
+Following S09 (eq.~205) and CMM (eq.~B8), we expand the dependence of $g$ on $v_\perp^2/\vth^2$ in Laguerre polynomials $L_l$, with coefficients $G_l(v_\parallel)$ (appendix~\ref{app:branches}). The coefficients with $l\ge2$ obey $\dd G_l/\dd t+v_\parallel\gradpar G_l=0$ (CMM eq.~B10; S09 eq.~210), and S09 describe this part of $g$ as a passively mixed, undamped ballistic mode that contributes to neither $\delta n$ nor $\delta B$ (their eq.~212). The coefficients with $l=0$ and $l=1$ are coupled through $\delta n/n$ and $\delta B/B$, and S09 (\S6.2.1) diagonalised this coupling. With the distributions $G_n$ and $G_B$ of density and field strength, defined in appendix~\ref{app:branches} so that $\int G_n\,\dd v_\parallel=\delta n/n$ and $\int G_B\,\dd v_\parallel=\delta B/B$, the two combinations
+\begin{equation*}
+  G^+=G_B+\frac{1+Z/\tau}{\sigma}\,G_n,\qquad
+  G^-=G_n+\frac{2\tau}{\sigma Z\beta_i}\,G_B,\qquad
+  \sigma=1+\frac{\tau}{Z}+\frac{1}{\beta_i}+\kappa,
+\end{equation*}
+obey closed equations (CMM eqs~B4--B6; S09 eqs~181 and 183--184),
+\begin{equation}\label{mod:Gpm}
+  \frac{\dd G^\pm}{\dd t}+v_\parallel\gradpar G^\pm
+  =\frac{v_\parallel F_M(v_\parallel)}{\Lambda^\pm}\,\gradpar\int G^\pm(v_\parallel')\,\dd v_\parallel',
+\end{equation}
+where $F_M(v_\parallel)=\pi^{-1/2}\vth^{-1}e^{-v_\parallel^2/\vth^2}$ is the one-dimensional Maxwellian and
+\begin{equation}\label{eq:Lambdapm}
+  \Lambda^\pm=-\frac{\tau}{Z}+\frac{1}{\beta_i}\pm\kappa,\qquad
+  \kappa=\Big[\Big(1+\frac{\tau}{Z}\Big)^2+\frac{1}{\beta_i^2}\Big]^{1/2}
+\end{equation}
+(CMM eq.~B7; S09 eqs~182 and~204).\footnote{CMM's eq.~(B16) prints $\kappa=[(1+\tau/Z)+\beta_i^{-2}]^{1/2}$, without the square on $1+\tau/Z$. With that $\kappa$ their decompositions (B15) and (B17) of the compressive free energy and phase-space helicity do not hold; with the square, as in S09's eq.~(204), they do (appendix~\ref{app:branches}). CMM's eqs~(B6)--(B7) contain the correct square root.} We call the right-hand side of (\ref{mod:Gpm}) the Landau coupling. Through it the velocity integral of each branch acts back on that branch, and in linear theory it produces the collisionless damping of the compressive fluctuations (S09, \S6.2.2). The branches are coupled neither to each other nor to the coefficients with $l\ge2$, so the compressive sector consists of independent kinetic equations for $G^+$, for $G^-$ and for each $G_l$ with $l\ge2$, all advected by the same Alfv\'enic fields.
+
+Since $\kappa>1+\tau/Z$ and $\kappa>1/\beta_i$,
+\begin{equation*}
+  \Lambda^+-1=\frac{1}{\beta_i}+\kappa-\Big(1+\frac{\tau}{Z}\Big)>\frac{1}{\beta_i},\qquad
+  \Lambda^-=\frac{1}{\beta_i}-\kappa-\frac{\tau}{Z}<-\frac{\tau}{Z},
+\end{equation*}
+so that $\Lambda^+>1$ and $\Lambda^-<0$ for all $\beta_i>0$ and $\tau/Z>0$. S09 state both inequalities (below their eq.~200) and note that they make the branch free energies positive definite (section~\ref{sec:slices}). At $\beta_i=\tau=Z=1$, $\Lambda^\pm=\pm\sqrt5$. For $\beta_i\gg1$, $\Lambda^+-1\simeq\beta_i^{-1}$ and $\Lambda^-\to-1-2\tau/Z$; for $\beta_i\ll1$, $\Lambda^+-1\simeq2\beta_i^{-1}$ and $\Lambda^-\to-\tau/Z$ (S09 eqs~187--188 and~191--192). The equation for $G_l$ with $l\ge2$ is (\ref{mod:Gpm}) with $1/\Lambda=0$, and we refer to these coefficients as the sector $\Lambda=\infty$.
+
+\subsection{One branch in the variable \texorpdfstring{$u$}{u}}\label{mod:onebranch}
+
+From here on we drop the branch label. We measure the parallel velocity by $u=v_\parallel/\vth$ and write $F_M(u)=\pi^{-1/2}e^{-u^2}$ and $M_k[G]=\int u^kG\,\dd u$, so that $F_M(v_\parallel)\,\dd v_\parallel=F_M(u)\,\dd u$ and $G(v_\parallel)\,\dd v_\parallel=G(u)\,\dd u$. Since $v_\parallel=su$ when $v_A=1$, equation (\ref{mod:Gpm}) becomes
+\begin{equation}\label{eq:branch}
+  \partial_tG+\{\Phi,G\}+s\,\gradpar(LG)=0,
+\end{equation}
+with the operator
+\begin{equation}\label{eq:L}
+  LG=uG-\frac{uF_M}{\Lambda}\,M_0[G]
+\end{equation}
+acting on the velocity variable only. The two branches are (\ref{eq:branch}) with $\Lambda=\Lambda^+$ and with $\Lambda=\Lambda^-$, and each $G_l$ with $l\ge2$ obeys (\ref{eq:branch}) with $\Lambda=\infty$, for which $L$ is multiplication by $u$. The operator $L$ contains no wavenumber. The reason is that the field relations (\ref{mod:fields}) are algebraic, so the Landau coupling enters through the number $\Lambda$, which is the same at every point and on every scale.
+
+For given $\Phi$ and $\Psi$, equation (\ref{eq:branch}) is linear in $G$. The nonlinear terms of the full system are the products of the Alfv\'enic fields with $G$: the advection $\{\Phi,G\}$ and the part $s\{\Psi,LG\}$ of the streaming, which follows the perturbed field lines. The Alfv\'enic fields obey (\ref{eq:rmhd}) independently of $G$, so the compressive sector is passive: it is advected by the Alfv\'enic fluctuations and does not act back on them. This passivity holds only in the limit $k_\perp\rho_i\to0$.
+
+The density and field-strength fluctuations are linear combinations of $M_0[G^+]$ and $M_0[G^-]$, given in (\ref{appA:dndB}); they are one half of the right-hand sides of S09's eqs~(202)--(203), as CMM found (footnote to their eq.~B15). The parallel ion flow involves $M_1[G^\pm]$ and the pressure perturbations involve $M_0[G^\pm]$ and $M_2[G^\pm]$ (appendix~\ref{app:branches}). The sector $\Lambda=\infty$ contributes to none of these moments.
+
+\subsection{Hermite representation}\label{mod:hermite}
+
+Following CMM (eqs~B27 and~B30), we expand
+\begin{equation*}
+  G=\sum_{m\ge0}g_m\,\frac{H_m(u)F_M(u)}{\sqrt{2^mm!}},\qquad
+  g_m=\int\frac{H_m(u)}{\sqrt{2^mm!}}\,G\,\dd u,
+\end{equation*}
+where $H_m$ are the Hermite polynomials. Equivalently, $G/F_M^{1/2}=\sum_mg_m\psi_m(u)$ with the orthonormal Hermite functions $\psi_m(u)=H_m(u)e^{-u^2/2}/(2^mm!\sqrt\pi)^{1/2}$. The coefficients $g_m$ are CMM's $\tilde G_m$ and the Hermite moments evolved by GANDALF; in particular $M_0[G]=g_0$ and $M_1[G]=g_1/\sqrt2$. In this basis (\ref{eq:branch}) is the hierarchy
+\begin{equation}\label{mod:hierarchy}
+  \partial_tg+\{\Phi,g\}+s\,\gradpar(Ag)=0,\qquad g=(g_0,g_1,g_2,\dots)^{\mathsf T},
+\end{equation}
+where $A$, the matrix of $L$, is tridiagonal with zero diagonal:
+\begin{equation}\label{mod:ladder}
+  A_{m,m+1}=A_{m+1,m}=\sqrt{\frac{m+1}{2}}\quad\text{except}\quad A_{10}=\frac{1-1/\Lambda}{\sqrt2}.
+\end{equation}
+The diagonal weight matrix $\Pw=\mathrm{diag}(p_m)$, with $p_0=1-1/\Lambda$ and $p_m=1$ for $m\ge1$, symmetrises it, $\Pw A=(\Pw A)^{\mathsf T}$, and the quadratic form $\sum_mp_mg_m^2=\int G^2F_M^{-1}\,\dd u-M_0[G]^2/\Lambda$ is the integrand of CMM's branch free energy $W^\pm$ (their eqs~B13 and~B31). A truncation at $m=M$ needs a closure for $g_{M+1}$. Unless stated otherwise we use the zero closure $g_{M+1}=0$, which keeps the first $M+1$ rows and columns of $A$.
+
+GANDALF \citep{Kanekar2025} integrates the RMHD equations for $z^\pm$ together with (\ref{mod:hierarchy}) for one branch, truncated at $m=M$, with either the zero closure or the closure $g_{M+1}=g_{M-1}$, which GANDALF calls symmetric and we call the copy closure (appendix~\ref{app:truncated}); the copy closure changes only the entry $A_{M,M-1}$ of the truncated matrix. For the zero closure GANDALF's streaming matrix equals the truncation of (\ref{mod:ladder}) exactly, and we checked to round-off that its right-hand side is (\ref{mod:hierarchy}), with the bracket and $\gradpar$ defined above, for both signs of $\Lambda$ and both closures. GANDALF takes $\Lambda$ and $\beta_i$ as independent inputs. For $\tau=Z=1$, the value $\Lambda=\sqrt5$ is the $+$ branch at $\beta_i=1$ and at no other $\beta_i$. GANDALF's thermal-speed parameter does not enter the right-hand side; the velocity normalisation enters only through $s=\beta_i^{1/2}$.
+
+The rest of the paper concerns one branch, (\ref{eq:branch}) with $\Lambda\notin[0,1]$, which covers $\Lambda^+$, $\Lambda^-$ and the sector $\Lambda=\infty$. The compressive sector is collisionless and unforced except where collisions, hypercollisions or forcing are stated explicitly.
+
+\begin{remark}[Formal correspondence with Vlasov--Poisson]\label{mod:vp}
+Linearising (\ref{eq:branch}) with $\Phi=\Psi=0$ and $G\propto e^{\ii(kz-\omega t)}$ gives $(u-\zeta)G=(uF_M/\Lambda)M_0[G]$ with $\zeta=\omega/(ks)$. For $\mathrm{Im}\,\zeta>0$, integration over $u$ gives the dispersion relation $\eps(\zeta)=1-[1+\zeta Z(\zeta)]/\Lambda=0$, which is S09's eq.~(185); here $\eps$ is the dielectric function (\ref{eq:eps}) of section~\ref{sec:slices}, and $Z(\zeta)=\int F_M(x)\,(x-\zeta)^{-1}\dd x$ is the plasma dispersion function of \citet{FriedConte1961}, not to be confused with the charge number $Z$. For a Maxwellian, the dielectric function of the electrostatic Vlasov--Poisson system is $1+[1+\zeta Z(\zeta)]/(k\lambda_D)^2$, with $\lambda_D$ the Debye length, and that of a self-gravitating collisionless system is $1-[1+\zeta Z(\zeta)]/(k/k_J)^2$, with $k_J$ the Jeans wavenumber. A branch with $\Lambda<0$ therefore has the Vlasov--Poisson dielectric function at the fixed value $(k\lambda_D)^2=|\Lambda|$, and a branch with $\Lambda>1$ has that of a self-gravitating system on the stable side of the Jeans threshold, at $(k/k_J)^2=\Lambda$. The range $0<\Lambda<1$, which no KRMHD branch reaches, corresponds to the Jeans-unstable side, and $\Lambda=1$ to the marginal case. The KRMHD branches differ from both systems in that $\Lambda$ does not depend on $k$, which is the property used in section~\ref{sec:slices}.
+\end{remark}
+
+\begin{table}[t]
+  \centering
+  \caption{Conventions of this paper compared with those of CMM \citep{Chandran2026}, S09 \citep{Schekochihin2009} and the GANDALF code \citep[version 0.6.0;][]{Kanekar2025}. Equation numbers in parentheses are those of the respective papers; ``same'' means identical to this paper.}
+  \label{tab:conventions}
+  \small
+  \begin{tabular}{@{}p{0.29\textwidth}p{0.24\textwidth}p{0.17\textwidth}p{0.22\textwidth}@{}}
+    \toprule
+    \raggedright This paper & \raggedright CMM & \raggedright S09 & \raggedright GANDALF \tabularnewline
+    \midrule
+    \raggedright $\vth=(2T_i/m_i)^{1/2}$, $s=\vth/v_A=\beta_i^{1/2}$
+      & \raggedright same ($v_{\mathrm{th}i}$)
+      & \raggedright same ($v_{\mathrm{th}i}$)
+      & \raggedright only $s=\beta_i^{1/2}$ enters$^{a}$ \tabularnewline[3pt]
+    \raggedright $F_M(u)=\pi^{-1/2}e^{-u^2}$, $u=v_\parallel/\vth$
+      & \raggedright $F_M(v_\parallel)=\pi^{-1/2}\vth^{-1}e^{-v_\parallel^2/\vth^2}$ (below B4)
+      & \raggedright as CMM (below 180)
+      & \raggedright implied by the basis functions $\psi_m(u)$ \tabularnewline[3pt]
+    \raggedright $z^+=\Phi+\Psi$ propagates toward $-z$
+      & \raggedright same (3.23)--(3.24)
+      & \raggedright same by (21)$^{b}$
+      & \raggedright same$^{b}$ \tabularnewline[3pt]
+    \raggedright $\Psi=-A_\parallel/(4\pi n_im_i)^{1/2}$
+      & \raggedright same; $A=A_\parallel/(\rho_iB_0)=-\Psi/(\rho_iv_A)$ (3.2)
+      & \raggedright same (135)
+      & \raggedright $\Psi=(z^+-z^-)/2$, called $A_\parallel$ in the documentation$^{c}$ \tabularnewline[3pt]
+    \raggedright $\Lambda=\Lambda^\pm$ of (\ref{eq:Lambdapm}); $\Lambda=\infty$ for $l\ge2$
+      & \raggedright same (B7)
+      & \raggedright same (182)
+      & \raggedright input, independent of $\beta_i$ \tabularnewline[3pt]
+    \raggedright $g_m=(2^mm!)^{-1/2}\int H_m(u)\,G\,\dd u$
+      & \raggedright same, written $\tilde G^\pm_m$ (B27, B30)
+      & \raggedright not used
+      & \raggedright same \tabularnewline
+    \bottomrule
+  \end{tabular}
+  \par\medskip
+  \begin{minipage}{0.96\textwidth}\footnotesize
+    $^{a}$GANDALF's documentation describes $g$ as an electron distribution with thermal speed $(T_e/m_e)^{1/2}$. The code integrates the ion branch equation in the form (\ref{mod:hierarchy}), and its thermal-speed parameter does not enter the right-hand side.
+    $^{b}$The text of S09's \S\S2.3 and~2.5 and GANDALF's documentation state the opposite direction (footnote~\ref{mod:fndir}).
+    $^{c}$The documentation writes $\boldsymbol B_\perp=\zhat\times\nabla A_\parallel$, whereas the vector potential gives $\delta\boldsymbol B_\perp=-\zhat\times\nabla_\perp A_\parallel$.
+  \end{minipage}
+\end{table}

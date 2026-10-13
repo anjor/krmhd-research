@@ -1,0 +1,22 @@
+N1  CMM integrands (dimensional) versus Q_phi members
+  [PASS] (B13) = (nT/2)[G,G], (B25) = (v_th/2)[G,LG], (B18) = (nT/(2 v_th)) P int G^2/(u F_M) max rel 8.3e-16
+N2  Hermite forms (B31), (B32)
+paper/phase-velocity-slices/derivations/review/continuum/c04_cmm_invariants_flux.py:36: IntegrationWarning: The occurrence of roundoff error is detected, which prevents 
+  the requested tolerance from being achieved.  The error may be 
+  underestimated.
+  val = quad(f, a, b, limit=400, epsabs=1e-14, epsrel=1e-13)[0]
+    Lambda=+2.236: |G~_61| = 4.8e-18
+    Lambda=-2.236: |G~_61| = 4.8e-18
+  [PASS] (B31) and (B32) reproduce (B13) and (B25) max rel 8.4e-16
+N3  (B24) coefficient
+  [PASS] int v^2 F_M dv = v_th^2/2 1.445000000000000 vs 1.445000000000000
+N4  local law in Hermite form (SymPy)
+  [PASS] P0 A symmetric (zero closure) 
+  [PASS] d_t w + {Phi, w} + grad_par gamma = 0 pointwise (generic fields) 
+  [PASS] {Phi, w} + grad_par gamma = div(w u_E + gamma bhat) 
+  [PASS] control: with the symmetric closure the identity fails (non-vacuous) 
+N5  Gamma/W as mean phase velocity
+    Lambda=+2.236: [G,LG]/[G,G] = 1.323279739709, int u rho T^2/int rho T^2 = 1.323279739709
+    Lambda=-2.236: [G,LG]/[G,G] = 1.284739770447, int u rho T^2/int rho T^2 = 1.284739770447
+  [PASS] Gamma/W (per v_th/(nT)) = energy-weighted mean slice velocity rel 5.0e-16
+ALL c04 CHECKS PASSED

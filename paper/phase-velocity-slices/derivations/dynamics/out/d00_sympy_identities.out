@@ -1,0 +1,44 @@
+E1  flux equation <=> ideal induction equation
+  [PASS] (d_t B - curl(u x B))_x - (zhat x grad R)_x: residual = 0
+  [PASS] (d_t B - curl(u x B))_y - (zhat x grad R)_y: residual = 0
+  [PASS] (d_t B - curl(u x B))_z - (zhat x grad R)_z: residual = 0
+  [PASS] div u: residual = 0
+  [PASS] div B: residual = 0
+  [PASS] u . grad f = {Phi, f}: residual = 0
+  [PASS] B . grad f = d_z f + {Psi, f}: residual = 0
+E2  Jacobi commutator
+  [PASS] [D_t, grad_par] f - {R, f}: residual = 0
+E3  Cauchy's solution for a twisting flow Phi = Omega(z) r^2 / 2
+  [PASS] flow map: dX_0/dt - u_0(X): residual = 0
+  [PASS] flow map: dX_1/dt - u_1(X): residual = 0
+  [PASS] flow map: dX_2/dt - u_2(X): residual = 0
+  [PASS] (a) Cauchy B(X,t) = J B(xi,0), component x: residual = 0
+  [PASS] (a) Cauchy B(X,t) = J B(xi,0), component y: residual = 0
+  [PASS] (a) Cauchy B(X,t) = J B(xi,0), component z: residual = 0
+  [PASS] (b) Psi(t) solves d_t Psi + {Phi, Psi} - d_z Phi = 0: residual = 0
+  [PASS] (c) grad_par(t) U(t) h - U(t) grad_par(0) h  (modulo cos^2 + sin^2 = 1): residual = 0
+  [PASS] (d) shear: flux equation: residual = 0
+  [PASS] (d) shear: mode is advected (d_t + {Phi, .}) mode = 0: residual = 0
+  [PASS] (d) shear: Eulerian k_z(t) = k_z - S t k_x: residual = 0
+  [PASS] (d) shear: k_par(t) = k_z(t) + S t k_x = k_z(0): residual = 0
+E4  similarity lemma (symbolic tridiagonal A, M = 5)
+  [PASS] D^{-1}(iA)D is real: residual = 0
+  [PASS] S B S + B = 0: residual = 0
+  [PASS] S A S + A = 0: residual = 0
+  [PASS] F_{m0}^* F_{n1} = i^{m-n+1} R_{m0} R_{n1} for m, n <= 6: residual = 0
+E5  two-slice law (pointwise identity)
+  [PASS] d_t(a_u a_u') identity: residual = 0
+  [PASS] {Phi, F} = d_y(Phi_x F) - d_x(Phi_y F): residual = 0
+  [PASS] grad_par F = d_z F + d_y(Psi_x F) - d_x(Psi_y F): residual = 0
+E6  Elsasser forms
+  [PASS] Phi + s u Psi = [(1+su) z+ + (1-su) z-]/2: residual = 0
+  [PASS] su = -1 slice advected by z- only: residual = 0
+  [PASS] su = +1 slice advected by z+ only: residual = 0
+  [PASS] lap(NL+) = -{z-, lap z+} + {z+_x, z-_x} + {z+_y, z-_y}: residual = 0
+  [PASS] {z+_x, z-_x} + {z+_y, z-_y} = (Z-.grad) lap z+ - zhat.curl[(Z-.grad) Z+]: residual = 0
+  [PASS] (Z-.grad) f = {z-, f}: residual = 0
+E7  fourth-order algebra
+  [PASS] c_u^4 + c_-u^4 = 2 v^4 (p^4 + 6 p^2 delta^2 + delta^4): residual = 0
+  [PASS] E[X^4] = 3 sigma^4: residual = 0
+  [PASS] (1+g)^2 + (1-g)^2 = 2(1 + g^2): residual = 0
+ALL SYMPY CHECKS PASS: True

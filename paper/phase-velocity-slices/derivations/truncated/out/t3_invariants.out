@@ -1,0 +1,88 @@
+====================================================================================================
+A. The space of conserved quadratic forms
+   M= 5: dim{K: K A sym} = M+1, rank span{Pi A^k} = M+1, slice projectors in span (worst residual 2.9e-15)
+   M= 6: dim{K: K A sym} = M+1, rank span{Pi A^k} = M+1, slice projectors in span (worst residual 9.3e-15)
+   M= 9: dim{K: K A sym} = M+1, rank span{Pi A^k} = M+1, slice projectors in span (worst residual 2.0e-13)
+   M=10: dim{K: K A sym} = M+1, rank span{Pi A^k} = M+1, slice projectors in span (worst residual 5.1e-13)
+   M=13: dim{K: K A sym} = M+1, rank span{Pi A^k} = M+1, slice projectors in span (worst residual 1.2e-11)
+  [PASS] A1 conserved quadratic forms = span{Pi A^k} = {W diag(phi) W^T}, dimension M+1 (M = 5..13, both closures)
+====================================================================================================
+B. Conservation under krmhd_rhs (float64; brackets dominate streaming)
+   M= 9 Lam=+2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 1.1e-17; Pi A^-1: 3.2e-19
+   M= 9 Lam=+2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 1.9e-17; Pi A^-1: 9.6e-19; hermite_free_energy == g^T P_Lam g: 1.7e-16; its rel d/dt under the copy closure = 3.8e-04
+   M= 9 Lam=-2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 2.2e-17; Pi A^-1: 2.1e-18
+   M= 9 Lam=-2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 2.6e-17; Pi A^-1: 5.4e-18; hermite_free_energy == g^T P_Lam g: 5.0e-16; its rel d/dt under the copy closure = 2.7e-03
+   M=10 Lam=+2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 3.2e-17; Pi A^D (PV): 1.8e-18; control Galerkin(1/v) rel d/dt = 1.9e-04
+   M=10 Lam=+2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 1.8e-17; Pi A^D (PV): 5.1e-18; hermite_free_energy == g^T P_Lam g: 1.6e-16; its rel d/dt under the copy closure = 1.0e-03
+   M=10 Lam=-2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 2.0e-17; Pi A^D (PV): 1.1e-17; control Galerkin(1/v) rel d/dt = 2.1e-03
+   M=10 Lam=-2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 2.7e-17; Pi A^D (PV): 1.0e-17; hermite_free_energy == g^T P_Lam g: 3.0e-16; its rel d/dt under the copy closure = 8.2e-04
+  [PASS] B1 all g^T Pi A^k g (k = 0..M) and H (Pi A^-1 odd M, Pi A^D even M) are conserved by krmhd_rhs
+  [PASS] B2 controls fail: Galerkin 1/v at even M; zero-closure weight (hermite_free_energy) under the copy closure
+   M=9 Lam=+2.236: max_j rel d/dt int a_j^2 = 5.5e-17; min_j rel d/dt int a_j^4 = 1.9e-03
+   M=10 Lam=-2.236: max_j rel d/dt int a_j^2 = 5.5e-17; min_j rel d/dt int a_j^4 = 3.5e-03
+  [PASS] B3 per slice, int a_j^2 is conserved by krmhd_rhs but int a_j^4 is not (only quadratic Casimirs survive the Fourier-Galerkin truncation)
+====================================================================================================
+C. SymPy: continuum forms for G in the Hermite span, and CMM's normalisation
+   M=3: [G,G]-g^T Pi g = 0; [G,LG]-g^T Pi A g = 0; [G,L^2G]-g^T Pi A^2 g-(M+1)g_M^2/2 = 0; B25-Q_u/2 = 0; B32-Q_u/2 = 0; B31-Q_1/2 = 0
+   M=4: [G,G]-g^T Pi g = 0; [G,LG]-g^T Pi A g = 0; [G,L^2G]-g^T Pi A^2 g-(M+1)g_M^2/2 = 0; B25-Q_u/2 = 0; B32-Q_u/2 = 0; B31-Q_1/2 = 0
+  [PASS] C1 [G,G], [G,LG] exact on the span; [G,L^2G] misses (M+1)g_M^2/2; CMM W = Q_1/2, Gamma = Q_u/2
+====================================================================================================
+D. Phase-space helicity: Galerkin matrix of P(1/v) (SymPy exact)
+   M=2 (even): B_M == J^D + lambda_0 (e d^T + d e^T): True  (lambda_0 = 2/3)
+   M=3 (odd): B_M == J^-1: True; Pi A^-1 == J^-1 for symbolic Lam: True
+   M=4 (even): B_M == J^D + lambda_0 (e d^T + d e^T): True  (lambda_0 = 8/15)
+   M=5 (odd): B_M == J^-1: True; Pi A^-1 == J^-1 for symbolic Lam: True
+   M=6 (even): B_M == J^D + lambda_0 (e d^T + d e^T): True  (lambda_0 = 16/35)
+   M=7 (odd): B_M == J^-1: True; Pi A^-1 == J^-1 for symbolic Lam: True
+  [PASS] D1 odd M: Galerkin(P 1/v) = J^-1 = Pi A^-1 (any Lam); even M: = J^D + lambda_0 (e d^T + d e^T)
+   M=33: max|B_M - Pi A^-1| / max|B_M| = 4.2e-15 (Lam = +-sqrt5)
+   M=65: max|B_M - Pi A^-1| / max|B_M| = 4.7e-15 (Lam = +-sqrt5)
+   M=129: max|B_M - Pi A^-1| / max|B_M| = 7.4e-15 (Lam = +-sqrt5)
+  [PASS] D2 odd M = 33, 65, 129: Pi A^-1 equals the Galerkin projection of P(1/v) to round-off
+====================================================================================================
+E. Convergence to the continuum for G = F_M(v - a), a = 0.5 (all Hermite coefficients nonzero)
+   continuum: W = e^(2a^2) - 1/Lam, Q_u = 2a(e^(2a^2) - 1/Lam), H = P int G^2/(v F_M) = 2 e^(2a^2) D(2a) = 1.774286256750
+   Lam = +2.2361
+     M=  8: W err -5.7e-09; Q_u err -1.0e-07; H (even, PV) err -6.981e-01
+     M=  9: W err -2.8e-10; Q_u err -5.7e-09; H (odd, Pi A^-1) err +4.508e-06
+     M= 16: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -5.504e-01
+     M= 17: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err +4.538e-12
+     M= 32: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -4.206e-01
+     M= 33: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err -2.220e-16
+     M= 64: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -3.141e-01
+     M= 65: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err -2.220e-16
+     M=128: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -2.308e-01
+     M=129: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err -2.220e-16
+     M=256: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -1.677e-01
+     M=257: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err -2.220e-16
+   Lam = -2.2361
+     M=  8: W err -5.7e-09; Q_u err -1.0e-07; H (even, PV) err -3.738e-01
+     M=  9: W err -2.8e-10; Q_u err -5.7e-09; H (odd, Pi A^-1) err +4.508e-06
+     M= 16: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -2.656e-01
+     M= 17: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err +4.538e-12
+     M= 32: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -1.867e-01
+     M= 33: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err -2.220e-16
+     M= 64: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -1.308e-01
+     M= 65: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err -2.220e-16
+     M=128: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -9.172e-02
+     M=129: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err -2.220e-16
+     M=256: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -6.439e-02
+     M=257: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err -2.220e-16
+   Lam = +inf
+     M=  8: W err -5.7e-09; Q_u err -1.0e-07; H (even, PV) err -4.929e-01; predicted -2 lambda_0 (e.g)(d.g) = -4.928334e-01 (ratio 1.0001998824)
+     M=  9: W err -2.8e-10; Q_u err -5.7e-09; H (odd, Pi A^-1) err +4.508e-06
+     M= 16: W err +0.0e+00; Q_u err +4.4e-16; H (even, PV) err -3.634e-01; predicted -2 lambda_0 (e.g)(d.g) = -3.633584e-01 (ratio 1.0000000005)
+     M= 17: W err +0.0e+00; Q_u err +4.4e-16; H (odd, Pi A^-1) err +4.538e-12
+     M= 32: W err +0.0e+00; Q_u err +2.2e-16; H (even, PV) err -2.627e-01; predicted -2 lambda_0 (e.g)(d.g) = -2.626613e-01 (ratio 1.0000000000)
+     M= 33: W err +0.0e+00; Q_u err +2.2e-16; H (odd, Pi A^-1) err -2.220e-16
+     M= 64: W err +0.0e+00; Q_u err +2.2e-16; H (even, PV) err -1.879e-01; predicted -2 lambda_0 (e.g)(d.g) = -1.878520e-01 (ratio 1.0000000000)
+     M= 65: W err +0.0e+00; Q_u err +2.2e-16; H (odd, Pi A^-1) err -2.220e-16
+     M=128: W err +0.0e+00; Q_u err +2.2e-16; H (even, PV) err -1.336e-01; predicted -2 lambda_0 (e.g)(d.g) = -1.335999e-01 (ratio 1.0000000000)
+     M=129: W err +0.0e+00; Q_u err +2.2e-16; H (odd, Pi A^-1) err -2.220e-16
+     M=256: W err +0.0e+00; Q_u err +2.2e-16; H (even, PV) err -9.474e-02; predicted -2 lambda_0 (e.g)(d.g) = -9.474443e-02 (ratio 1.0000000000)
+     M=257: W err +0.0e+00; Q_u err +2.2e-16; H (odd, Pi A^-1) err -2.220e-16
+   Lam=+2.2361: even-M PV error ~ M^(-0.442) for M = 32..256; error x sqrt(M) = 2.379, 2.513, 2.612, 2.683
+   Lam=-2.2361: even-M PV error ~ M^(-0.512) for M = 32..256; error x sqrt(M) = 1.056, 1.047, 1.038, 1.030
+   Lam=+inf: even-M PV error ~ M^(-0.490) for M = 32..256; error x sqrt(M) = 1.486, 1.503, 1.512, 1.516
+  [PASS] E1 W, Q_u (all M) and H (odd M) converge spectrally; even-M PV H converges ~ M^-1/2 (local slopes within 0.1), with exactly the predicted node-zero error at Lam = inf (M >= 16)
+== t3_invariants: 8/8 checks passed (4.0 s)

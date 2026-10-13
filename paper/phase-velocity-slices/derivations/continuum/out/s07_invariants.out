@@ -1,0 +1,26 @@
+I1  CMM integrands in dimensional v_par (direct integrals, symbolic v_th)
+  [PASS] (B13) bracket in v_par = [G,G] in u 
+  [PASS] (B25) integrand gamma = (v_th/2)[G, L G] 
+  [PASS] (B18) integrand = (1/(2 v_th)) P int G^2/(u F_M) du 
+  [PASS] Q_{1/u} = [G, L^{-1} G] = P int G^2/(u F_M) (no Lambda term) 
+I2  Hermite forms (CMM B31, B32)
+  [PASS] [G,G] = sum g_m^2 - g_0^2/Lambda 
+  [PASS] (1/2)[G, L G] = (1/sqrt2)(sum sqrt(m+1) g_m g_{m+1} - g_0 g_1/Lambda) 
+I3  generating function and Q_{u^n}
+    1/eps = sum e_j z^-j: [1, 0, -1/(2*Lambda), 0, -3/(4*Lambda) + 1/(4*Lambda**2)]
+  [PASS] [G, L^n G] = closed form, n <= 8 [0, 0, 0, 0, 0, 0, 0, 0, 0]
+  [PASS] Q_{u^2} = int u^2 G^2/F_M - (2 M0 M2 + M1^2)/Lambda + M0^2/(2 Lambda^2) 
+  [PASS] Q_{u^3} = int u^3 G^2/F_M - 2(M0 M3 + M1 M2)/Lambda + M0 M1/Lambda^2 
+I4  conservation from the moment hierarchy
+  [PASS] d/dt int d^3r Q_{u^n} = 0, n <= 8 (moment hierarchy only) [0, 0, 0, 0, 0, 0, 0, 0, 0]
+  [PASS] control: d/dt int d^3r int u^2 G^2/F_M alone != 0 
+  [PASS] c_1 = 0 (B23) and v_th^2 c_2 = v_th^2/2 (B24) 
+  [PASS] int u^k L G du = M_{k+1} - c_{k+1} M_0/Lambda (k <= 6) 
+I5  local field-aligned flux law
+  [PASS] [G, grad_par L G] = grad_par((1/2)[G, L G]) (generic fields, cubic G) 
+  [PASS] {Phi, w} + grad_par gamma = div(w u_E + gamma bhat) 
+I6  the u = 0 slice
+  [PASS] (L G)(u = 0) = 0 
+I7  products at equal u
+  [PASS] (d_t + U.grad)(a b) = a (d_t + U.grad) b + b (d_t + U.grad) a 
+ALL s07 CHECKS PASSED

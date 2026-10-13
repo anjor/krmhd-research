@@ -13,13 +13,13 @@
 \graphicspath{{figures/}}
 
 \newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
 \newtheorem{corollary}{Corollary}
 \newtheorem{lemma}{Lemma}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
 
-\newcommand{\vth}{v_{\mathrm{th}}}
-\newcommand{\gradpar}{\nabla_\parallel}
-\newcommand{\kperp}{k_\perp}
-\newcommand{\zpm}{z^{\pm}}
+\input{macros}
 
 \title{Kinetic reduced magnetohydrodynamics as a continuum of passive scalars in phase velocity}
 \author{A. Kanekar}
@@ -29,54 +29,26 @@
 \maketitle
 
 \begin{abstract}
-% Written last.
+\IfFileExists{sections/00-abstract.tex}{\input{sections/00-abstract}}{}
 \end{abstract}
 
-\section{Introduction}
-\label{sec:intro}
-% Compressive fluctuations in KRMHD; phase mixing, nonlinear advection and echoes;
-% the invariants of Chandran, Mallet & Meyrand (2026); what this paper shows.
+\IfFileExists{sections/01-intro.tex}{\input{sections/01-intro}}{\section{Introduction}\label{sec:intro}}
+\IfFileExists{sections/02-model.tex}{\input{sections/02-model}}{\section{The compressive sector of KRMHD}\label{sec:model}}
+\IfFileExists{sections/03-slices.tex}{\input{sections/03-slices}}{\section{Phase-velocity slices}\label{sec:slices}}
+\IfFileExists{sections/04-invariants.tex}{\input{sections/04-invariants}}{\section{Invariants}\label{sec:invariants}}
+\IfFileExists{sections/05-decorrelation.tex}{\input{sections/05-decorrelation}}{\section{Phase mixing as decorrelation of slices}\label{sec:decorrelation}}
+\IfFileExists{sections/06-lagrangian.tex}{\input{sections/06-lagrangian}}{\section{Lagrangian linearity}\label{sec:lagrangian}}
+\IfFileExists{sections/07-symmetry.tex}{\input{sections/07-symmetry}}{\section{Symmetry and special slices}\label{sec:symmetry}}
+\IfFileExists{sections/08-truncated.tex}{\input{sections/08-truncated}}{\section{Truncated Hermite hierarchies}\label{sec:truncated}}
+\IfFileExists{sections/09-numerics.tex}{\input{sections/09-numerics}}{\section{Checks with GANDALF}\label{sec:numerics}}
+\IfFileExists{sections/10-discussion.tex}{\input{sections/10-discussion}}{\section{Discussion}\label{sec:discussion}}
 
-\section{The compressive sector of KRMHD}
-\label{sec:model}
-% CMM Appendix B form: two branches G^\pm with \Lambda^\pm, the Laguerre l >= 2 sector,
-% fluid moments, conventions (z^+ direction, v_th, s = \sqrt{\beta_i}).
-
-\section{Phase-velocity slices}
-\label{sec:slices}
-% The operator L_\Lambda, the free-energy inner product, its spectrum, the Case--Van Kampen
-% transform, and the slice equation: each slice is a passive scalar advected by
-% \Phi + s u \Psi and streamed at s u v_A.
-
-\section{Invariants}
-\label{sec:invariants}
-% Q_\phi = [G, \phi(L) G]; W, \Gamma, H as \phi = 1, u, 1/u; \Gamma as the field-aligned
-% free-energy flux; per-slice invariants; what survives at finite k_\perp \rho_i.
-
-\section{Lagrangian linearity}
-\label{sec:frozen}
-% The frozen-line theorem and its corollaries for single-point statistics; forcing;
-% what breaks it; what it implies for echoes.
-
-\section{Phase mixing as decorrelation of slices}
-\label{sec:decorrelation}
-% Two-slice law; Hermite-spectrum dictionary and the m^{-1/2} prefactor; the Hermite flux;
-% the sgn(k_z) decomposition under field-line tilt.
-
-\section{Symmetry and special slices}
-\label{sec:symmetry}
-% Mirror symmetry and balanced turbulence; the s u = \pm 1 slices; u = 0; the fluid limit.
-
-\section{Truncated Hermite hierarchies}
-\label{sec:truncated}
-% M+1 slices; eigenvalues and u_max(M); CFL; the zero slice at even M; hypercollisions as
-% the only coupling between slices.
-
-\section{Checks with GANDALF}
-\label{sec:numerics}
-
-\section{Discussion}
-\label{sec:discussion}
+\appendix
+\IfFileExists{sections/A-branches.tex}{\input{sections/A-branches}}{\section{The two compressive branches}\label{app:branches}}
+\IfFileExists{sections/B-spectral.tex}{\input{sections/B-spectral}}{\section{Spectral theory of the branch operator}\label{app:spectral}}
+\IfFileExists{sections/C-truncated.tex}{\input{sections/C-truncated}}{\section{The truncated hierarchy}\label{app:truncated}}
+\IfFileExists{sections/D-timestepping.tex}{\input{sections/D-timestepping}}{\section{Time stepping and diagnostics in slice variables}\label{app:timestepping}}
+\IfFileExists{sections/E-tilt.tex}{\input{sections/E-tilt}}{\section{The $k_z$-based decomposition under field-line tilt}\label{app:tilt}}
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

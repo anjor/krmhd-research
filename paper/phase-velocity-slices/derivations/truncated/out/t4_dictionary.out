@@ -1,0 +1,58 @@
+====================================================================================================
+A. delta-correlated slices with density F_M: exact Hermite spectrum
+  [PASS] A1 int F_M psi_m^2 du = Gamma(m+1/2)/(sqrt2 pi m!), m = 0..12 (SymPy exact)
+   m=50: quadrature/exact - 1 = 0.0; x pi sqrt(2m) = 0.997503164 (1 - 1/(8m) = 0.9975000000)
+   m=200: quadrature/exact - 1 = -1.97e-31; x pi sqrt(2m) = 0.9993751959 (1 - 1/(8m) = 0.9993750000)
+  [PASS] A2 the same at m = 50, 200 (mpmath); W(m) pi sqrt(2m) = 1 - 1/(8m) + O(m^-2)
+====================================================================================================
+B. Kanekar et al. 2015 eq. (4.10) at alpha = 0 is the delta-correlated slice spectrum
+paper/phase-velocity-slices/derivations/truncated/t4_dictionary.py:86: IntegrationWarning: The maximum number of subdivisions (400) has been achieved.
+  If increasing the limit yields no improvement it is advised to analyze 
+  the integrand in order to determine the difficulties.  If the position of a 
+  local difficulty can be determined (singularity, discontinuity) one will 
+  probably gain from splitting up the interval and calling the integrator 
+  on the subranges.  Perhaps a special-purpose integrator should be used.
+  val = sum(quad(f, a_, b_, limit=400)[0] for a_, b_ in [(-60, -6), (-6, 0), (0, 6), (6, 60)])
+   m=1: (1/(2^m m!)) int |Z^(m)|^2 = 3.9374024857; sqrt2 pi Gamma(m+1/2)/m! = 3.9374024864
+   m=2: (1/(2^m m!)) int |Z^(m)|^2 = 2.9530518648; sqrt2 pi Gamma(m+1/2)/m! = 2.9530518648
+   m=3: (1/(2^m m!)) int |Z^(m)|^2 = 2.4608765540; sqrt2 pi Gamma(m+1/2)/m! = 2.4608765540
+   m=5: (1/(2^m m!)) int |Z^(m)|^2 = 1.9379402863; sqrt2 pi Gamma(m+1/2)/m! = 1.9379402863
+   m=8: (1/(2^m m!)) int |Z^(m)|^2 = 1.5464590674; sqrt2 pi Gamma(m+1/2)/m! = 1.5464590454
+  [PASS] B1 (1/(2^m m!)) int |Z^(m)(zeta)|^2 dzeta = sqrt2 pi Gamma(m+1/2)/m! (Kanekar 4.10 at alpha = 0)
+====================================================================================================
+C. Finite Lam: Kramers-Kronig normalisation and the Lam-independent asymptote
+   Lam=+2.2361: int F_M/|eps|^2 dz = 1.809016994375; 1/(1 - 1/Lam) = 1.809016994375
+   Lam=-2.2361: int F_M/|eps|^2 dz = 0.690983005625; 1/(1 - 1/Lam) = 0.690983005625
+   Lam=+4.0000: int F_M/|eps|^2 dz = 1.333333333333; 1/(1 - 1/Lam) = 1.333333333333
+   Lam=-0.3000: int F_M/|eps|^2 dz = 0.230769230769; 1/(1 - 1/Lam) = 0.230769230769
+  [PASS] C1 int F_M(z)/|eps(z + i0)|^2 dz = 1/(1 - 1/Lam) (Kanekar 4.15 in GANDALF variables)
+   Lam=+inf: W(m)|k| s sqrt(2m)/eps_W at m = [1, 2, 4, 8, 16, 32, 64, 128, 200]: [0.8865, 0.9402, 0.9695, 0.9847, 0.9924, 0.9963, 0.9983, 0.9992, 0.9996]; vs exact Kanekar(4.10) at alpha=0: max rel dev = 3.1e-04
+   Lam=+2.2361: W(m)|k| s sqrt(2m)/eps_W at m = [1, 2, 4, 8, 16, 32, 64, 128, 200]: [0.8445, 0.915, 0.956, 0.9777, 0.9889, 0.9945, 0.9973, 0.9987, 0.9992]
+   Lam=-2.2361: W(m)|k| s sqrt(2m)/eps_W at m = [1, 2, 4, 8, 16, 32, 64, 128, 200]: [0.933, 0.9672, 0.9836, 0.9918, 0.996, 0.9982, 0.9992, 0.9998, 1.0]
+  [PASS] C2 GANDALF operator, outgoing closure, M = 600: W(m) -> eps_W/(|k| s sqrt(2m)) for Lam = inf, +-sqrt5; Lam = inf matches Kanekar (4.10) exactly
+====================================================================================================
+D. Large-m dictionary and the power-law correspondence
+   chat = 1 (delta): Fourier-route W(m) vs Gamma(m+1/2)/(sqrt2 pi m!): max rel dev 3.6e-13
+   chat = (1+kappa^2 l^2)^(-p/2), l=0.15, p=0.5: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [0.966, 0.982, 0.991, 0.995, 0.998, 0.999, 0.999, 1.0, 1.0]; slope m=128..400: -0.726 (of the prediction -0.727; pure power law -0.750)
+   chat = (1+kappa^2 l^2)^(-p/2), l=0.15, p=1.0: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [0.962, 0.98, 0.99, 0.996, 0.998, 0.999, 1.0, 1.0, 1.0]; slope m=128..400: -0.953 (of the prediction -0.953; pure power law -1.000)
+   chat = (1+kappa^2 l^2)^(-p/2), l=0.15, p=1.5: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [0.959, 0.978, 0.99, 0.996, 0.999, 1.0, 1.0, 1.0, 1.0]; slope m=128..400: -1.180 (of the prediction -1.180; pure power law -1.250)
+   chat = (1+kappa^2 l^2)^(-p/2), l=0.15, p=2.0: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [0.957, 0.977, 0.99, 0.998, 1.001, 1.001, 1.001, 1.001, 1.001]; slope m=128..400: -1.407 (of the prediction -1.407; pure power law -1.500)
+   chat = (1+kappa^2 l^2)^(-p/2), l=0.15, p=2.5: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [0.955, 0.976, 0.991, 1.0, 1.003, 1.003, 1.002, 1.002, 1.001]; slope m=128..400: -1.635 (of the prediction -1.633; pure power law -1.750)
+   chat = (1+kappa^2 l^2)^(-p/2), l=1.0, p=0.5: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [0.971, 0.987, 0.994, 0.997, 0.999, 0.999, 1.0, 1.0, 1.0]; slope m=128..400: -0.749 (of the prediction -0.749; pure power law -0.750)
+   chat = (1+kappa^2 l^2)^(-p/2), l=1.0, p=1.0: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [0.985, 0.996, 0.999, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]; slope m=128..400: -0.999 (of the prediction -0.999; pure power law -1.000)
+   chat = (1+kappa^2 l^2)^(-p/2), l=1.0, p=1.5: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [1.011, 1.013, 1.008, 1.004, 1.002, 1.001, 1.001, 1.001, 1.0]; slope m=128..400: -1.249 (of the prediction -1.248; pure power law -1.250)
+   chat = (1+kappa^2 l^2)^(-p/2), l=1.0, p=2.0: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [1.051, 1.037, 1.021, 1.011, 1.006, 1.003, 1.002, 1.001, 1.001]; slope m=128..400: -1.499 (of the prediction -1.498; pure power law -1.500)
+   chat = (1+kappa^2 l^2)^(-p/2), l=1.0, p=2.5: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [1.108, 1.07, 1.038, 1.02, 1.01, 1.005, 1.003, 1.002, 1.002]; slope m=128..400: -1.750 (of the prediction -1.747; pure power law -1.750)
+  [PASS] D1 W(m) ~ [int e] chat(sqrt(2m))/(pi sqrt(2m)); chat ~ kappa^-p gives W ~ m^-(p+1)/2 (p = 0.5..2.5)
+   p=1.5: S_2(dv) slope for dv << l = 0.506 (predicted p - 1 = 0.500)
+   p=2.0: S_2(dv) slope for dv << l = 1.000 (predicted p - 1 = 1.000)
+   p=2.5: S_2(dv) slope for dv << l = 1.490 (predicted p - 1 = 1.500)
+  [PASS] D2 S_2(dv) ~ dv^(p-1) for 1 < p < 3
+====================================================================================================
+E. Truncated form of the dictionary
+  [PASS] E1 W(m) = p_m sum_jl R_mj R_ml C_jl/(n_j n_l) exactly (both closures)
+   Lam=+inf: |<W(m)>_t - p_m sum_j E_j R_mj^2/n_j| / max = 8.8e-05; W(m) pi sqrt(2m)/sum_j E_j Delta_j at m=[4, 8, 16, 32, 48, 64]: [0.969, 0.985, 0.992, 0.996, 0.997, 0.998]; W(m) 2 sqrt(M m)/W_tot: [0.965, 0.98, 0.987, 0.991, 0.993, 0.993]
+   Lam=+2.2361: |<W(m)>_t - p_m sum_j E_j R_mj^2/n_j| / max = 1.4e-04; W(m) pi sqrt(2m)/sum_j E_j Delta_j at m=[4, 8, 16, 32, 48, 64]: [0.947, 0.973, 0.987, 0.994, 1.001, 1.018]; W(m) 2 sqrt(M m)/W_tot: [0.91, 0.936, 0.949, 0.956, 0.962, 0.978]
+   Lam=-2.2361: |<W(m)>_t - p_m sum_j E_j R_mj^2/n_j| / max = 2.1e-04; W(m) pi sqrt(2m)/sum_j E_j Delta_j at m=[4, 8, 16, 32, 48, 64]: [0.982, 0.991, 0.996, 0.998, 0.999, 0.999]; W(m) 2 sqrt(M m)/W_tot: [0.987, 0.997, 1.001, 1.003, 1.004, 1.004]
+  [PASS] E2 closed system: time average = slice-diagonal spectrum, level [sum_j E_j Delta_j]/(pi sqrt(2m)) (~ W_tot/(2 sqrt(M m)))
+== t4_dictionary: 9/9 checks passed (8.7 s)

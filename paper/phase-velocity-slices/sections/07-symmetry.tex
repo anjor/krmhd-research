@@ -1,0 +1,142 @@
+\section{Symmetry and special slices}\label{sec:symmetry}
+
+This section describes a discrete symmetry of KRMHD and two slices with special transport properties. The symmetry is the reflection of the plasma in a plane perpendicular to the guide field. It exchanges the slices $u$ and $-u$, divides the invariants and diagnostics of the previous sections into even and odd ones, and gives exact statements about what the injection of $\Gamma$ can change (sections~\ref{sym:map}--\ref{sym:parity}). The special slices are those with $su=\pm1$, each of which is advected by a single Elsasser field (section~\ref{sym:vA}). Section~\ref{sym:fluid} relates them, and the slice $u=0$, to the slow waves and the entropy mode of the fluid theory. Throughout this section $\langle\cdot\rangle$ denotes the average over the periodic box, $\mathrm E$ an ensemble mean, and $S$ the reflection of the velocity variable, $(SG)(u)=G(-u)$. In Hermite variables $S=\mathrm{diag}\big((-1)^m\big)$, because $H_m(-u)=(-1)^mH_m(u)$.
+
+\subsection{The mirror map}\label{sym:map}
+
+We define the mirror map $\mathcal M$ by
+\begin{equation}\label{eq:mirror}
+  \Phi'(\boldsymbol x)=\Phi(\tilde{\boldsymbol x}),\qquad
+  \Psi'(\boldsymbol x)=-\Psi(\tilde{\boldsymbol x}),\qquad
+  G'(\boldsymbol x,u)=G(\tilde{\boldsymbol x},-u),\qquad
+  \tilde{\boldsymbol x}=(x,y,-z),
+\end{equation}
+where primes denote the mirrored state and the last relation applies to both compressive branches and to the Laguerre sector $l\ge2$. In Elsasser and Hermite variables, $z^{\pm\prime}(\boldsymbol x)=z^\mp(\tilde{\boldsymbol x})$ and $g'_m(\boldsymbol x)=(-1)^mg_m(\tilde{\boldsymbol x})$, that is, $g'=S\tilde g$, where a tilde on a field denotes $\tilde f(\boldsymbol x)=f(\tilde{\boldsymbol x})$. The map is the reflection of the plasma in the plane $z=0$: the flow $\uE$ transforms as a polar vector and the magnetic perturbation $\boldsymbol b_\perp$ as an axial vector, the guide field is unchanged, and $v_\parallel$ changes sign. $\mathcal M$ is an involution and reverses every direction of propagation along the guide field. In particular, $z^+$, which propagates toward $-z$, is mapped to a field that propagates toward $+z$, as $z^-$ does.
+
+The map preserves the KRMHD equations. Let $\gradpar'=\partial_z+\{\Psi',\cdot\}$ be the derivative along the mirrored field lines. For every field $f$,
+\begin{equation}\label{sym:gradpar}
+  \{\Phi',\tilde f\}=\widetilde{\{\Phi,f\}},\qquad
+  \gradpar'\tilde f=-\widetilde{\gradpar f},
+\end{equation}
+because the bracket involves only $x$ and $y$, while $\partial_z$ and $\Psi$ both change sign. Every term of the induction equation in (\ref{eq:rmhd}) therefore changes sign and every term of the vorticity equation keeps it, so both equations are invariant. In the kinetic equation (\ref{eq:branch}) the streaming term changes sign twice, once through $\gradpar$ and once through $L$. Since $F_M$ is even and $M_0[SG]=M_0[G]$, the operator (\ref{eq:L}) satisfies
+\begin{equation}\label{sym:SLS}
+  SLS=-L .
+\end{equation}
+In Hermite variables this is $SAS=-A$, which holds for the zero closure and for the copy closure, because in both the matrix $A$ has non-zero entries only next to the diagonal. The equations therefore commute with $\mathcal M$ whenever the collision operator commutes with $S$ and the dissipation of $\Phi$, $\Psi$ and $g$ has Fourier multipliers that depend on $k_z$ only through $k_z^2$ (for $g$, multipliers that also commute with $S$). Operators that are diagonal in $m$, such as GANDALF's hypercollisions $\nu(m/M)^n$, commute with $S$. GANDALF's perpendicular hyperdissipation and its parallel dissipation $\eta_z$, which act in the same way on $z^+$, $z^-$ and every $g_m$, satisfy the condition on the multipliers. We checked that one GANDALF time step commutes with $\mathcal M$ to round-off, for both time integrators and both closures and with all dissipation terms switched on (section~\ref{sec:numerics}).
+
+For $\Lambda\notin[0,1]$ the map acts on the slices in a simple way. By (\ref{sym:SLS}), $SF_u$ is a Case--Van Kampen mode with phase velocity $-u$, and $M_0[SF_u]=M_0[F_u]=1$, so $SF_u=F_{-u}$. The reflection preserves the free-energy product, $\fe{Sf}{Sh}=\fe{f}{h}$, and $\varrho$ is even, because $\eps(-u+\ii0)$ is the complex conjugate of $\eps(u+\ii0)$. Hence $\Tr[SG](u)=\Tr[G](-u)$, and the unit-weight amplitudes (\ref{eq:aunit}) of the mirrored state are
+\begin{equation}\label{sym:slices}
+  a_u[\mathcal MX](\boldsymbol x)=a_{-u}[X](\tilde{\boldsymbol x}),
+\end{equation}
+where $X=(\Phi,\Psi,G)$ denotes the state. The mirror exchanges slice $u$ with slice $-u$, and with them their advecting potentials: by (\ref{eq:mirror}), $\Phi'+su\Psi'$ is the reflection of $\Phi-su\Psi$, the potential of slice $-u$ in (\ref{eq:slice}). The slice energies $\langle a_u^2\rangle$ and $\langle a_{-u}^2\rangle$ are exchanged, and the slice $u=0$, which is advected by $\uE$ alone, is mapped to itself. In a truncated hierarchy the slice speeds come in pairs $\pm u_j$, and for even $M$ the zero-speed slice is mapped to itself (section~\ref{sec:truncated}).
+
+A statistic $O$, that is, a functional of the state at one time or of its history, is mirror-even if $O(\mathcal MX)=O(X)$ for every $X$ and mirror-odd if $O(\mathcal MX)=-O(X)$. By (\ref{sym:gradpar}), the quadratic single-point statistic $\langle g_m\gradpar^qg_n\rangle$ is multiplied by $(-1)^{q+m+n}$ under $\mathcal M$. By (\ref{sym:SLS}) and (\ref{sym:slices}), the invariant $\Qphi$ of (\ref{eq:Qphi}) is mapped to $Q_{\check\varphi}$ with $\check\varphi(u)=\varphi(-u)$, and the Casimir $\int C(a_u)\,\dd^3\boldsymbol x$ of slice $u$ to that of slice $-u$. This gives the following classification. In it, $\Wc(m)\propto p_m\langle g_m^2\rangle$ is the Hermite spectrum, $\Gamma(m)\propto p_mA_{m,m+1}\langle g_mg_{m+1}\rangle$ is the contribution of the Hermite pair $(m,m+1)$ to $\Gamma$ (CMM's eq.~B32), $\Pi_{m+1/2}$ is the field-aligned Hermite flux (\ref{eq:fluxCD}), $\eps_\nu$ is the collisional dissipation rate, and $E^\pm=\langle|\nabla_\perp z^\pm|^2\rangle/4$ are the Elsasser energies.
+\begin{itemize}
+  \item Mirror-even: $\Wc(m)$ and $\Wc$; $\Pi_{m+1/2}$; the $k_z$-based Hermite flux summed separately over the Fourier modes in which it is positive and over those in which it is negative (the mirror permutes the per-mode fluxes, $\boldsymbol k\to\tilde{\boldsymbol k}$); $\eps_\nu$; the spectrum $\Wc(k_\perp)$; $Q_{u^{2n}}$; the sum of $\langle a_u^4\rangle$ over all slices; $\langle g_m^4\rangle$; $E^++E^-$.
+  \item Mirror-odd: $\Gamma\propto Q_u$ and every $\Gamma(m)$; $H\propto Q_{1/u}$; $Q_{u^3}$; $\sum_{\boldsymbol k}\mathrm{sgn}(k_z)\,|g_m(\boldsymbol k)|^2$; the cross-helicity $E^+-E^-$.
+\end{itemize}
+Every state that is its own mirror image therefore has $\Gamma=H=0$ and $\Gamma(m)=0$ for every $m$, whatever its Hermite spectrum; proposition~\ref{prop:nofjortoft} uses this. That $H$ is odd under $v_\parallel\to-v_\parallel$ is also explicit in CMM's eq.~(2.19), which writes the real part of the gyrokinetic helicity with the product of the parts of the distribution that are even and odd in $v_\parallel$.
+
+\subsection{Mirror-symmetric forced ensembles}\label{sym:ensembles}
+
+A correlation between the forcing of $g_0$ and that of $g_1$ injects $\Gamma$, whose density $\fe{G}{LG}$ contains $g_0$ and $g_1$ only through the product $\sqrt2\,p_0g_0g_1$. We consider the pair forcing
+\begin{equation}\label{sym:pair}
+  F_\phi[f_0]=\big(f_0,\;r\,\mathcal R_\phi f_0,\;0,\;0,\;\dots\big),\qquad
+  \mathcal R_\phi=\cos\phi+\sin\phi\,\mathcal J_x ,
+\end{equation}
+added to the right-hand side of the Hermite hierarchy of one compressive branch. Here $f_0(\boldsymbol x,t)$ is a real random field, $r>0$ and $\phi$ are constants, and $\mathcal J_x$ is the real antisymmetric operator with Fourier multiplier $\ii\,\mathrm{sgn}\,k_x$ (zero at $k_x=0$), which is the Hilbert transform in $x$ up to sign. Because $\langle f_0\,\mathcal J_xf_0\rangle=0$, the correlation $\langle F_0F_1\rangle=r\cos\phi\,\langle f_0^2\rangle$ comes from the $\cos\phi$ part alone, and only this part injects $\Gamma$. If the phase is implemented by multiplying by $e^{\ii\phi}$ the stored coefficients of a real-to-complex transform, which holds the modes with $k_x\ge0$, the real field obtained by Hermitian completion is $r\mathcal R_\phi f_0$ at every $k_x\neq0$, so its $\sin\phi$ part is a transform in $x$, not in $z$. On the plane $k_x=0$ the multiplied coefficients do not satisfy the reality condition unless $\sin\phi=0$; relation (\ref{sym:MF}) below holds for the stored coefficients in either case. GANDALF's \texttt{force\_hermite\_moments} with \texttt{forced\_moments=(0,1)} adds the same pattern to $g_0$ and $g_1$, which is (\ref{sym:pair}) with $r=1$ and $\phi=0$.
+
+\begin{theorem}[Mirror symmetry of forced ensembles]\label{thm:mirror}
+Consider KRMHD, or a Fourier--Hermite truncation of it with either closure advanced by a time-stepping scheme that commutes with $\mathcal M$ (such as GANDALF's), with a collision operator that commutes with $S$ and dissipation whose Fourier multipliers depend on $k_z$ only through $k_z^2$ and commute with $S$. Let $(z^+,z^-)$ be forced by a random forcing $F_A=(F^+,F^-)$, let the compressive branch be forced by the pair forcing (\ref{sym:pair}), and assume that the solution is a deterministic function of the initial state and of the realisation of the forcing. Denote by $X^\phi$ the resulting state, a random process in time, and by $\mathrm E_\phi$ the mean over its law. Assume that
+\begin{enumerate}
+  \item[(a)] the law of $F_A$ is invariant under $\mathcal M$, that is, $(\tilde F^-,\tilde F^+)$ has the law of $(F^+,F^-)$;
+  \item[(b)] the law of $f_0$ is invariant under $z\to-z$, that is, $\tilde f_0$ has the law of $f_0$;
+  \item[(c)] the initial state, $F_A$ and $f_0$ are independent, and the initial laws for the phases $\phi$ and $\phi+\pi$ are mirror images, $\mathrm{law}\,X^{\phi+\pi}(0)=\mathrm{law}\,\mathcal MX^\phi(0)$.
+\end{enumerate}
+Then
+\begin{equation}\label{sym:MF}
+  \mathcal MF_\phi[f_0]=F_{\phi+\pi}[\tilde f_0],
+\end{equation}
+$\mathrm{law}\,X^{\phi+\pi}=\mathrm{law}\,\mathcal MX^\phi$, and for every statistic $O$, of any order,
+\begin{equation}\label{sym:Ephi}
+  \mathrm E_{\phi+\pi}[O]=\mathrm E_\phi[O]\quad\text{if $O$ is mirror-even},\qquad
+  \mathrm E_{\phi+\pi}[O]=-\mathrm E_\phi[O]\quad\text{if $O$ is mirror-odd}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The forcing of $g$ transforms as $g$ does. By (\ref{sym:pair}), $S\widetilde{F_\phi[f_0]}=\big(\tilde f_0,\,-r\,\widetilde{\mathcal R_\phi f_0},\,0,\dots\big)$. The multiplier of $\mathcal J_x$ does not depend on $k_z$, so $\widetilde{\mathcal R_\phi f_0}=\mathcal R_\phi\tilde f_0$, and $-\mathcal R_\phi=\mathcal R_{\phi+\pi}$; this is (\ref{sym:MF}). Write the solution as $X^\phi=\mathcal S_\phi\big(X(0),F_A,f_0\big)$. Since every term of the equations commutes with $\mathcal M$ (section~\ref{sym:map}), (\ref{sym:MF}) gives $\mathcal S_{\phi+\pi}\big(\mathcal MX(0),\mathcal MF_A,\tilde f_0\big)=\mathcal M\,\mathcal S_\phi\big(X(0),F_A,f_0\big)$, with $\mathcal MF_A=(\tilde F^-,\tilde F^+)$. By (a)--(c), the inputs $\big(X^{\phi+\pi}(0),F_A,f_0\big)$ of the run at $\phi+\pi$ have the joint law of $\big(\mathcal MX^\phi(0),\mathcal MF_A,\tilde f_0\big)$, so $X^{\phi+\pi}$ has the law of $\mathcal MX^\phi$. Therefore $\mathrm E_{\phi+\pi}[O(X)]=\mathrm E_\phi[O(\mathcal MX)]$, which is (\ref{sym:Ephi}).
+\end{proof}
+
+GANDALF's Alfv\'enic forcing routines satisfy (a). The routine \texttt{force\_alfven\_modes} adds the same noise to $z^+$ and $z^-$, so that only $\Phi$ is forced, and \texttt{force\_alfven\_modes\_balanced} adds identically distributed noise to $z^+$ and $z^-$ (independent by default). In both routines the set of forced modes depends on $k_z$ only through $|\boldsymbol k|$ or $|k_z|$, and the rule that makes the coefficients on the plane $k_x=0$ real is applied index by index, so the law of the noise is invariant under $k_z\to-k_z$. The noise used by \texttt{force\_hermite\_moments} is generated in the same way and satisfies (b). Hypothesis (c) holds when both runs start from a mirror-invariant law, for example from zero fields. When the two runs start from the same state and that state is not mirror-symmetric, (c) fails, and the theorem applies only to the extent that the statistics have lost the memory of the initial state. In a GANDALF integration with pair forcing, hyper-resistivity and hypercollisions, a run started from $\mathcal MX$ with mirrored noise and phase $\phi+\pi$ remained the mirror image of the run at $\phi$ to $3.7\times10^{-15}$ after 200 steps, with equal $\Wc(m)$ and opposite $\Gamma$ (section~\ref{sec:numerics}).
+
+The theorem has a direct consequence for the injection of $\Gamma$. The phases $\phi=0$ and $\phi=\pi$ correspond to forcing $g_1$ with $+rf_0$ and with $-rf_0$: the two ensembles receive $\Gamma$ of opposite signs and the same free energy. By (\ref{sym:Ephi}) they have the same expectation of every mirror-even statistic, at every order and with all dissipation and collision terms included. In such mirror-symmetric (balanced) ensembles, the sign of the $\Gamma$ injection therefore cannot change the mean of $\Wc(m)$, of the field-aligned or $k_z$-based Hermite fluxes, of $\eps_\nu$ or of any other mirror-even statistic. Only mirror-odd statistics, beginning with $\Gamma$ itself, distinguish $\phi$ from $\phi+\pi$. A correlation through an operator that is odd under $z\to-z$ behaves differently. If $g_1$ is forced with $r\mathcal J_zf_0$, where $\mathcal J_z$ has the multiplier $\ii\,\mathrm{sgn}\,k_z$, the mirror maps the forcing to $(\tilde f_0,\,r\mathcal J_z\tilde f_0,\,0,\dots)$, so this part of a correlation is mirror-even. It carries no $\Gamma$, since $\langle f_0\,\mathcal J_zf_0\rangle=0$, but it injects a Hermite flux $\Pi_{1/2}$ whose sign changes with that of $r$, and the theorem does not constrain its effect.
+
+\subsection{A parity lemma under frozen-line dynamics}\label{sym:parity}
+
+Theorem~\ref{thm:mirror} concerns ensembles that are symmetric under $\mathcal M$. When the frozen-line theorem holds, a statement of the same kind holds for each Alfv\'enic realisation separately, for quadratic single-point statistics. Let $e_m$ denote the $m$th Hermite basis vector. An initial condition $g(0)=f\,(e_0+re_1)$, that is, $g_0=f$, $g_1=rf$ and $g_m=0$ for $m\ge2$, with $f$ a real field and $r$ real, is the $\Gamma$-injecting ($\cos\phi$) part of a pair correlation. It carries $Q_u=\sqrt2\,p_0r\int f^2\,\dd^3\boldsymbol x$, which changes sign with $r$, while its free energy does not depend on the sign of $r$.
+
+\begin{lemma}[Parity lemma]\label{lem:parity}
+Assume the hypotheses of theorem~\ref{thm:frozen}, with a collision operator $\mathcal C$ that is real and commutes with $S$ (for example, an operator diagonal in $m$). Let $g(0)=f\,(e_0+re_1)$ with $f$ a real field and $r$ real. Then at every time $t$ every mirror-even quadratic single-point statistic of $g$, that is, every linear combination of the $\langle g_m\gradpar^qg_n\rangle$ with $q+m+n$ even, is an even function of $r$. This includes $\Wc(m,t)$, $\eps_\nu(t)$ and the field-aligned flux $\Pi_{m+1/2}(t)$. Mirror-odd statistics, such as $\Gamma(m,t)$, have in general a part linear in $r$.
+\end{lemma}
+
+\begin{proof}
+By corollary~\ref{cor:singlepoint}, the single-point statistics of $g(t)$, computed with $\gradpar(t)$, equal those of $h=e^{-tL_0}g(0)$, computed with $\gradpar(0)$, so it suffices to treat the frozen linear problem. Write $\gradpar(0)=\ii K_\parallel$. Since $\gradpar(0)$ is a real antisymmetric operator, $K_\parallel$ is self-adjoint (corollary~\ref{cor:kpar}) and anticommutes with complex conjugation, so the spectral measure $\mu_f$ of the real field $f$ with respect to $K_\parallel$ is symmetric under $\kappa\to-\kappa$. In the spectral representation of $K_\parallel$, $e^{-tL_0}$ acts on the Hermite index as the matrix $\Theta(\kappa)=\exp[-t(\ii s\kappa A+\mathcal C)]$, so that
+\begin{equation*}
+  \langle h_m\gradpar(0)^qh_n\rangle=\int\mu_f(\dd\kappa)\,(\ii\kappa)^q\,
+  \big[\Theta_{m0}+r\Theta_{m1}\big]^*\big[\Theta_{n0}+r\Theta_{n1}\big].
+\end{equation*}
+The part linear in $r$ has the integrand $(\ii\kappa)^q\big[\Theta_{m0}^*\Theta_{n1}+\Theta_{m1}^*\Theta_{n0}\big]$. Let $D=\mathrm{diag}\big((-\ii)^m\big)$. Because $A$ has non-zero entries only next to the diagonal, $\hat A=D^{-1}(\ii A)D$ is real, with $\hat A_{m,m+1}=A_{m,m+1}$ and $\hat A_{m+1,m}=-A_{m+1,m}$, and $S\hat AS=-\hat A$. Because $\mathcal C$ is real and commutes with $S$, its entries vanish unless $m+n$ is even, so $\hat{\mathcal C}=D^{-1}\mathcal CD$ is real and commutes with $S$. Hence
+\begin{equation}\label{sym:similarity}
+  \Theta(\kappa)=D\,\Xi(\kappa)\,D^{-1},\qquad
+  \Xi(\kappa)=\exp[-t(s\kappa\hat A+\hat{\mathcal C})]\ \ \text{real},\qquad
+  \Xi(-\kappa)=S\,\Xi(\kappa)\,S,
+\end{equation}
+so that $\Theta_{ab}=\ii^{\,b-a}\,\Xi_{ab}$ and $\Xi_{ab}(-\kappa)=(-1)^{a+b}\,\Xi_{ab}(\kappa)$. Then $\Theta_{m0}^*\Theta_{n1}=\ii^{\,m-n+1}\,\Xi_{m0}\Xi_{n1}$ and $\Theta_{m1}^*\Theta_{n0}=\ii^{\,m-n-1}\,\Xi_{m1}\Xi_{n0}$, and the integrand acquires the factor $(-1)^{q+m+n+1}$ under $\kappa\to-\kappa$. When $q+m+n$ is even, which is the condition for $\langle g_m\gradpar^qg_n\rangle$ to be mirror-even, the integrand is odd and its integral against the symmetric measure $\mu_f$ vanishes.
+\end{proof}
+
+The lemma holds for every Alfv\'enic realisation that satisfies (H1)--(H3) of (\ref{eq:hyp}); no symmetry of the Alfv\'enic fields is assumed. The similarity (\ref{sym:similarity}) is where the structure of the hierarchy enters: the streaming couples only neighbouring Hermite moments, and the collisions do not couple moments of opposite parity. In GANDALF's semi-discrete system the frozen problem satisfies the lemma to round-off, because the discrete $\gradpar(0)$ is a real antisymmetric operator on the dealiased fields; $\Wc(m)$ and $\Pi_{m+1/2}$ for $\pm r$ agreed to $3.4\times10^{-15}$ at every resolution. In integrations of ideal KRMHD with GANDALF's right-hand side ($M=8$, $\Lambda=\sqrt5$, $r=0.8$), the relative difference between the runs with $+r$ and $-r$ decreased with resolution: for $\Wc(m)$ at $t=0.062$ it was $2.8\times10^{-5}$, $2.6\times10^{-6}$, $1.1\times10^{-6}$ and $2.0\times10^{-7}$ for $N=16$, 24, 32 and~48, while $\Gamma$ took opposite values in the two runs. Perpendicular hyperdiffusion of $g$, which violates (H2), left a difference of $3.5\%$ at $t=0.124$ that did not decrease with $N$.
+
+Together with corollary~\ref{cor:forcing}, the lemma extends to forcing. Let $g$ be forced by $F(t)=f(t)\,(e_0+re_1)$, where $f$ is a real, zero-mean field that is white in time and independent of $g(0)$ and of the Alfv\'enic history. For every Alfv\'enic realisation that satisfies (H1)--(H3), the mean over the $g$ forcing of a quadratic single-point statistic is the sum of the contribution of $g(0)$ and of the frozen-line responses to the individual injections (corollary~\ref{cor:forcing}), and the lemma applies to each injection with the field lines frozen at its injection time. The mean over the $g$ forcing of every mirror-even quadratic single-point statistic is therefore even in $r$. It also equals the mean obtained when $g_0$ and $g_1$ are forced by independent patterns with the same variances, because for each injection the part linear in $r$ vanishes and the remaining parts are those of separate injections into $g_0$ and $g_1$. The correlation that injects $\Gamma$ thus has no effect on these means. The statement holds for $g$ forcing that is white in time and independent of the Alfv\'enic history, and for the mean over the $g$ forcing. Forcing with a finite correlation time is not covered: the response to two correlated injections at different times contains the relabelling by the flow between them (corollary~\ref{cor:forcing}), to which the lemma does not apply.
+
+The lemma and its extension concern quadratic statistics. At fourth order, mirror-even statistics can distinguish a correlated injection from an uncorrelated one with the same variances, already at the moment of injection. By (\ref{eq:sliceforcing}), the correlated injection $g_0=f$, $g_1=rf$ loads slice $u$ with $a_u=\varrho(u)^{1/2}(p_0+\delta_u)f$, where $\delta_u=\sqrt2\,ru$. The uncorrelated injection $g_0=f$, $g_1=rf'$, with $f'$ independent of $f$ and identically distributed, loads it with $a_u=\varrho(u)^{1/2}(p_0f+\delta_uf')$. The two injections give the same mirror-even second-order statistics, such as $\Wc(m)$ and the free energy, which is $p_0+r^2$ per unit variance of $f$. Their slice energies differ: $\mathrm E\langle a_u^2\rangle$ differs between them by $2\varrho(u)p_0\delta_u$, which is odd in $u$ and whose first moment in $u$ is the injected $Q_u$. For statistically homogeneous Gaussian $f$ and $f'$ of unit variance, the mirror-even fourth-order statistic of the slice pair $\pm u$ differs by
+\begin{equation}\label{sym:fourth}
+  \mathrm E\big\langle a_u^4+a_{-u}^4\big\rangle_{\rm corr}-\mathrm E\big\langle a_u^4+a_{-u}^4\big\rangle_{\rm uncorr}
+  =24\,\varrho(u)^2\,p_0^2\,\delta_u^2 .
+\end{equation}
+In a truncated hierarchy the same algebra holds node by node, with $\varrho(u)$ replaced by the Christoffel number of the node (section~\ref{sec:truncated}). The difference (\ref{sym:fourth}) is even in $r$. Fourth-order slice statistics therefore respond to the presence of the $\Gamma$-injecting correlation, through $r^2$, but not to its sign. No mirror-even statistic separates $\phi=0$ from $\phi=\pi$, in agreement with theorem~\ref{thm:mirror}, whereas the mirror-odd ones, beginning with $\Gamma$, separate them already at second order.
+
+\subsection{The slices at \texorpdfstring{$v_\parallel=\pm v_A$}{v = +-vA}}\label{sym:vA}
+
+\begin{proposition}\label{prop:elsasser}
+Under the hypotheses of theorem~\ref{thm:slice}, the slices with $su=-1$ and $su=+1$, that is, with $v_\parallel=u\vth=-v_A$ and $+v_A$, obey
+\begin{equation}\label{sym:elsasser}
+  (\partial_t-\partial_z)\,a_u+\{z^-,a_u\}=0\quad(su=-1),\qquad
+  (\partial_t+\partial_z)\,a_u+\{z^+,a_u\}=0\quad(su=+1).
+\end{equation}
+Each is advected by a single Elsasser field and streams with the other: the slice $su=-1$ moves toward $-z$ with $z^+$ and is advected by $z^-$ alone, and the slice $su=+1$ moves toward $+z$ with $z^-$ and is advected by $z^+$ alone.
+\end{proposition}
+
+\begin{proof}
+By (\ref{eq:elsasserpot}), the advecting potential $\Phi+su\Psi=\frac12\big[(1+su)z^++(1-su)z^-\big]$ is $z^-$ at $su=-1$ and $z^+$ at $su=+1$. Substituting in (\ref{eq:slice}) gives (\ref{sym:elsasser}).
+\end{proof}
+
+The slice with $su=-1$ is a passive counterpart of the Elsasser field $z^+$. By (\ref{eq:rmhd}), the Elsasser vorticity $\nabla_\perp^2z^+$ obeys
+\begin{equation}\label{sym:vorticity}
+  \big(\partial_t-\partial_z+\{z^-,\cdot\}\big)\,\nabla_\perp^2z^+
+  =\{\partial_xz^+,\partial_xz^-\}+\{\partial_yz^+,\partial_yz^-\},
+\end{equation}
+and the operator on the left is the transport operator of (\ref{sym:elsasser}) at $su=-1$. The right-hand side arises because $\boldsymbol Z^\pm=\zhat\times\nabla_\perp z^\pm$ are vector fields. It equals $(\boldsymbol Z^-\cdot\nabla)\nabla_\perp^2z^+-\zhat\cdot\nabla\times\big[(\boldsymbol Z^-\cdot\nabla)\boldsymbol Z^+\big]$, the difference between the advection of the vorticity of $\boldsymbol Z^+$ and the curl of the advection term in the Elsasser equation $\partial_t\boldsymbol Z^+-\partial_z\boldsymbol Z^++(\boldsymbol Z^-\cdot\nabla)\boldsymbol Z^+=-\nabla p$, and it vanishes when either Elsasser field vanishes. The slice is transported by the same operator without this term, and the slice with $su=+1$ is in the same way a passive counterpart of $z^-$. Like the Elsasser fields, each of the two slices is distorted only by the counter-propagating field. When $z^-=0$, any $z^+=f(x,y,z+t)$ is an exact solution of (\ref{eq:rmhd}). The slice with $su=-1$ then obeys $(\partial_t-\partial_z)a_u=0$ and translates rigidly with $z^+$, while every other slice is advected by $\frac12(1+su)z^+$ and is distorted.
+
+In the continuum the two slices exist at every $\beta_i$, at $u=\pm\beta_i^{-1/2}$. They lie in the bulk of the distribution for $\beta_i\gtrsim1$ and in its tail for $\beta_i\ll1$. In a truncated hierarchy the slice speeds are the eigenvalues $u_j$ of $A$ (theorem~\ref{thm:trunc}), so exact slices with $su=\pm1$ exist only when $\beta_i=u_j^{-2}$ for some $j$. We checked proposition~\ref{prop:elsasser} against GANDALF with $M=8$, $\Lambda=\sqrt5$ and $\beta_i=2.486$, for which $su_j=-1$ at the eigenvalue $u_j=-0.634$. The projection of GANDALF's right-hand side onto this slice equals $\partial_za_j-\{z^-,a_j\}$ to $5.5\times10^{-16}$ and does not change when $z^+$ is replaced by an unrelated field. A GANDALF integration from $z^-=0$ to $t=0.5$ kept $z^-=0$, translated $z^+$ rigidly, and translated this slice rigidly to $1.4\times10^{-14}$. Every other slice departed from rigid streaming by 1.35 to 1.4 in relative norm, close to the value $\sqrt2$ for a field uncorrelated with its rigidly streamed initial state.
+
+In the fluid limit the corresponding property is known at high $\beta$. \citet[\S2.5]{Schekochihin2009} showed from their eq.~(30) that only for $\beta\gg1$ do the slow waves interact exclusively with the counter-propagating Alfv\'en waves, so that setting one Elsasser potential to zero gives finite-amplitude slow-wave packets; their footnote~15 adds that such solutions exist in the Lagrangian frame of the Alfv\'en waves. \citet[\S2.4]{LithwickGoldreich2001} described high-$\beta$ slow waves as travelling along the field lines at the Alfv\'en speed and being distorted by oppositely directed Alfv\'en waves. At finite $\beta$ the fluid slow waves are also scattered by the co-propagating Alfv\'en waves \citep[\S2.7]{Schekochihin2009}. What is new here is that the collisionless compressive sector contains, at every $\beta_i$, two kinetic slices, at $v_\parallel=\pm v_A$, that have the high-$\beta$ property exactly.
+
+\subsection{Fluid slow waves and the entropy mode}\label{sym:fluid}
+
+The fluid equations for the compressive fluctuations have the same structure. S09 (their eqs~26--30) introduced the generalised Elsasser fields of the slow waves, which in units $v_A=1$ are $z_\parallel^\pm=u_\parallel\pm(1+v_A^2/c_s^2)^{1/2}\,\delta B_\parallel/B_0$, with $c_s$ the sound speed, and showed that they obey $\dd z_\parallel^\pm/\dd t\mp c\,\bhat\cdot\nabla z_\parallel^\pm=0$ with $c=(1+v_A^2/c_s^2)^{-1/2}$, so that $cv_A$ is the phase speed of the slow waves. Written out, and together with the entropy mode $\delta s$ of their eq.~(23), these equations are
+\begin{equation}\label{eq:fluidslices}
+  \partial_tz_\parallel^\pm+\{\Phi\mp c\Psi,\,z_\parallel^\pm\}\mp c\,\partial_zz_\parallel^\pm=0,\qquad
+  \partial_t\,\delta s+\{\Phi,\delta s\}=0 ,
+\end{equation}
+which is the slice equation (\ref{eq:slice}) at $su=\mp c$ and at $u=0$. This is a formal correspondence between equations: the slow-wave fields and the entropy mode obey the equation of a slice with the same speed. It is not a derived collisional limit of the kinetic slices. S09 showed that the kinetic equation reduces to their fluid equations when collisions dominate (their \S2.4 and appendix~D), but in the collisional system the continuum of slice speeds is replaced by the three characteristic speeds $-c$, $0$ and $c$, and we have not shown how the kinetic slices pass over into $z_\parallel^\pm$ and $\delta s$. For $\beta\gg1$, $c\to1$ and the fluid fields move to $su=\mp1$, the speeds of the slices of proposition~\ref{prop:elsasser}; this is the high-$\beta$ statement of S09 and of \citet{LithwickGoldreich2001} recalled above. The slice $u=0$ is advected by $\uE$ alone at every $\beta_i$, which is consistent with the identification by \citet{Schekochihin2019} of a passively advected kinetic field at low $\beta_i$ with the kinetic analogue of the entropy mode.

@@ -1,0 +1,30 @@
+----------------------------------------------------------------------------------------------------
+1. Matrix of L in CMM's basis by quadrature (mpmath, 30 digits)
+   M = 12: max |quadrature matrix of L - compute_streaming_matrix| over Lam = +-sqrt5, 3, inf (and copy-closure difference) = 2.2e-16
+  [PASS] c01.1 GANDALF's A is the matrix of L G = uG - u F_M M0/Lam in CMM's basis H_m F_M/sqrt(2^m m!) (u = v/v_th, F_M ~ e^-u^2) :: 2.2e-16
+----------------------------------------------------------------------------------------------------
+2. GANDALF's Hermite basis functions
+W1013 17:28:40.195518 43039392 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+   orthonormality 4.2e-14; <psi_m|x|psi_n> - A(Lam=inf) 9.1e-14; basis vs H_m e^(-x^2/2)/norm 8.3e-16
+  [PASS] c01.2 hermite_basis_function = H_m(x) e^{-x^2/2}/sqrt(2^m m! sqrt pi) (= G/sqrt(F_M) basis, F_M ~ e^{-x^2}) and its x-matrix is A(Lam = inf)
+----------------------------------------------------------------------------------------------------
+3. Sign of GANDALF's Poisson bracket
+  [PASS] c01.3 {f,h} = d_x f d_y h - d_y f d_x h :: 2.3e-15
+----------------------------------------------------------------------------------------------------
+4. Streaming factor s = sqrt(beta_i)
+   beta = 0.37: |krmhd_rhs.g - (-sqrt(beta) d_z A g)| / max = 6.7e-17
+   beta = 4.0: |krmhd_rhs.g - (-sqrt(beta) d_z A g)| / max = 4.2e-17
+  [PASS] c01.4 streaming term = -sqrt(beta_i) d_z (A g)
+----------------------------------------------------------------------------------------------------
+5. z+ propagation direction through gandalf_step
+   imex_rk222: phase of z+(k) after t = 0.07: +0.439822971503; +k_z t = +0.439822971503
+   lawson_rk4: phase of z+(k) after t = 0.07: +0.439822971503; +k_z t = +0.439822971503
+  [PASS] c01.5 z+ ~ exp(i k_z (z + t)): propagates toward -z under gandalf_step (both schemes)
+----------------------------------------------------------------------------------------------------
+6. Alfvenic equations: d_t Psi = grad_par Phi, d_t lap Phi = -{Phi, lap Phi} + grad_par lap Psi
+   |Psi_dot - (d_z Phi + {Psi,Phi})| = 2.8e-16; |lap Phi_dot - (...)| = 4.6e-16 (bracket share 0.93)
+  [PASS] c01.6 krmhd_rhs: d_t Psi = grad_par Phi and the vorticity equation with CMM's signs (B0 along +z)
+GANDALF integrations (scheme, steps, dt, wall s), grid 8^3, M = 4, Lam = sqrt5, single z+ mode:
+   imex_rk222 steps=7 dt=1.00e-02 wall=0.7s
+   lawson_rk4 steps=7 dt=1.00e-02 wall=0.7s
+== c01_conventions: 6/6 passed (33.4 s)

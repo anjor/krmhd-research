@@ -1,0 +1,20 @@
+K1  triad formula
+  [PASS] dQ/dt = 4 (p x q) Re[chi_p theta_{q+p}^dag (K_{q+p} - K_q) theta_q] direct -22.864869412054, formula -22.864869412054
+  [PASS] gyroaveraged: dQ/dt = 4 (p x q) Re[chi_p theta_{q+p}^dag (K_{q+p} M_p - M_p K_q) theta_q] direct 25.690895779882, formula 25.690895779882
+K2  four cases on a random state
+    (a) -1.249e-15  (b) -3.449e+00  (c) +1.613e-16  (d) -2.165e+00
+  [PASS] (a) K const, flat advection: dQ/dt = 0 
+  [PASS] (b) K_k = K0 + |k|^2 K1/10: dQ/dt != 0 
+  [PASS] (c) K = diag(w(v)), gyroaveraged advection: dQ/dt = 0 
+  [PASS] (d) K const, nonlocal in v_perp, gyroaveraged advection: dQ/dt != 0 
+K3  toy model with k-dependent Lambda_k (illustration)
+    dW/dt = +1.028e-01, dGamma/dt = -2.195e-01, dH/dt = -2.380e-13; control with constant Lambda: dW/dt = -5.329e-13
+  [PASS] k-dependent Lambda_k: W-form and Gamma-form not conserved by advection |dW|/scale = 2.8e-06, |dGamma|/scale = 2.2e-06
+  [PASS] H-form (kernel 1/(u F_M), Lambda-free) conserved; W-form conserved when Lambda is constant |dH|/scale = 1.8e-17, |dW0|/scale = 1.5e-17
+K4  orders of the finite-k_perp rho_i corrections (CMM ITEF, eq:J0J1, eq:Gamma0)
+  [PASS] J0(a) = 1 - a^2/4 + ... 1 - a**2/4
+  [PASS] 2 J1(a)/a = 1 - a^2/8 + ... 1 - a**2/8
+  [PASS] Gamma0 = I0 e^-alpha = 1 - alpha + ..., Gamma1 = 1 - 3 alpha/2 + ... (alpha = k^2 rho^2/2) 1 - alpha; 1 - 3*alpha/2
+    KRMHD ordering phi ~ (dB/B)/(k_perp rho_i) (CMM sec. 3.2): the advection of g by vperp^2 J1 dB/B in CMM eq:dgdt
+    is O(k_perp rho_i) relative to E x B advection; gyroaveraging corrections are O(k_perp^2 rho_i^2).
+ALL s09 CHECKS PASSED

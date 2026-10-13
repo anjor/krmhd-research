@@ -1,0 +1,42 @@
+----------------------------------------------------------------------------------------------------
+a/b/c. Slice equation, symmetriser and two-slice law on krmhd_rhs with GANDALF's eigenvectors
+   M=64 Lam=-2.236 zero      beta=0.37: slice eq. 8.1e-15 (max bracket share 1.00); 1-|cos(w_j, Pi r_j)| 4.4e-16; two-slice law 3.3e-15 (d_z-only control 1.09)
+   M=64 Lam=-2.236 symmetric beta=0.37: slice eq. 1.2e-14 (max bracket share 1.00); 1-|cos(w_j, Pi r_j)| 4.4e-16; two-slice law 2.7e-15 (d_z-only control 0.79)
+   M=64 Lam=+3.000 zero      beta=0.37: slice eq. 1.0e-14 (max bracket share 1.00); 1-|cos(w_j, Pi r_j)| 4.4e-16; two-slice law 4.4e-15 (d_z-only control 0.77)
+   M=64 Lam=+3.000 symmetric beta=0.37: slice eq. 7.9e-15 (max bracket share 1.00); 1-|cos(w_j, Pi r_j)| 3.3e-16; two-slice law 3.4e-15 (d_z-only control 1.06)
+   M=65 Lam=-2.236 zero      beta=0.37: slice eq. 8.4e-15 (max bracket share 0.97); 1-|cos(w_j, Pi r_j)| 4.4e-16; two-slice law 4.5e-15 (d_z-only control 0.90)
+   M=65 Lam=-2.236 symmetric beta=0.37: slice eq. 7.8e-15 (max bracket share 0.96); 1-|cos(w_j, Pi r_j)| 4.4e-16; two-slice law 3.9e-15 (d_z-only control 0.80)
+   M=65 Lam=+3.000 zero      beta=0.37: slice eq. 8.6e-15 (max bracket share 0.97); 1-|cos(w_j, Pi r_j)| 4.4e-16; two-slice law 3.0e-15 (d_z-only control 0.84)
+   M=65 Lam=+3.000 symmetric beta=0.37: slice eq. 1.1e-14 (max bracket share 0.97); 1-|cos(w_j, Pi r_j)| 4.4e-16; two-slice law 2.7e-15 (d_z-only control 0.75)
+  [PASS] c02.a slice equation on krmhd_rhs with GANDALF's own left eigenvectors (M = 64, 65; Lam = -sqrt5, 3; both closures)
+  [PASS] c02.b GANDALF's left eigenvectors are Pi r_j (Pi = D_c P_Lam)
+  [PASS] c02.c two-slice law dC_jl/dt = -s (u_j - u_l) int a_l grad_par a_j (E x B absent); control without {Psi,.} fails
+  [PASS] c02.a' the slice equation also holds for z+- with power outside the 2/3 band (bilinearity only) :: 1.6e-14
+----------------------------------------------------------------------------------------------------
+d. gandalf_step: slice leakage at M = 64 (copy closure, Lam = -sqrt5, beta = 2.3), 40 steps
+W1013 17:28:54.601937 43039650 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+   u_max = 11.0012; fastest-slice speed bound 12.75; dt = 5.297e-04 (GANDALF dt_cfl = 1.558e-02)
+   imex_rk222 start in slice u = +0.000, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 8.46e-16 (40 steps, 7.6 s)
+   imex_rk222 start in slice u = +0.000, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 3.20e-03 (40 steps, 1.2 s)
+   imex_rk222 start in slice u = +11.001, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 4.77e-15 (40 steps, 1.0 s)
+   imex_rk222 start in slice u = +11.001, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 4.92e-03 (40 steps, 0.8 s)
+   lawson_rk4 start in slice u = +0.000, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 1.53e-14 (40 steps, 16.8 s)
+   lawson_rk4 start in slice u = +0.000, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 3.20e-03 (40 steps, 1.7 s)
+   lawson_rk4 start in slice u = +11.001, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 1.11e-14 (40 steps, 1.7 s)
+   lawson_rk4 start in slice u = +11.001, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 4.93e-03 (40 steps, 1.6 s)
+  [PASS] c02.d nu = 0: no leakage between slices through gandalf_step (IMEX, Lawson; eta, eta_z, copy closure, M = 64)
+   imex_rk222 u = +0.000: measured leakage 3.2034e-03, first-order nu T max|(P_inv D P)_(l j0)| = 3.2311e-03 (ratio 0.9914); diagonal damping nu (P_inv D P)_jj = 1.607e-01
+   imex_rk222 u = +11.001: measured leakage 4.9219e-03, first-order nu T max|(P_inv D P)_(l j0)| = 4.9465e-03 (ratio 0.9950); diagonal damping nu (P_inv D P)_jj = 1.580e+00
+   lawson_rk4 u = +0.000: measured leakage 3.2033e-03, first-order nu T max|(P_inv D P)_(l j0)| = 3.2311e-03 (ratio 0.9914); diagonal damping nu (P_inv D P)_jj = 1.607e-01
+   lawson_rk4 u = +11.001: measured leakage 4.9320e-03, first-order nu T max|(P_inv D P)_(l j0)| = 4.9465e-03 (ratio 0.9971); diagonal damping nu (P_inv D P)_jj = 1.580e+00
+  [PASS] c02.e with hypercollisions the leakage is the first-order coupling nu T (P_inv D P)_{l j0}
+GANDALF integrations: grid 16^3, M = 64, Lam = -sqrt5, copy closure, beta = 2.3, eta = 1 (r = 2), eta_z = 0.5:
+   imex_rk222 start slice 32 nu=0.0 steps=40 dt=5.30e-04 wall=7.6s
+   imex_rk222 start slice 32 nu=2.0 steps=40 dt=5.30e-04 wall=1.2s
+   imex_rk222 start slice 64 nu=0.0 steps=40 dt=5.30e-04 wall=1.0s
+   imex_rk222 start slice 64 nu=2.0 steps=40 dt=5.30e-04 wall=0.8s
+   lawson_rk4 start slice 32 nu=0.0 steps=40 dt=5.30e-04 wall=16.8s
+   lawson_rk4 start slice 32 nu=2.0 steps=40 dt=5.30e-04 wall=1.7s
+   lawson_rk4 start slice 64 nu=0.0 steps=40 dt=5.30e-04 wall=1.7s
+   lawson_rk4 start slice 64 nu=2.0 steps=40 dt=5.30e-04 wall=1.6s
+== c02_slices: 6/6 passed (40.1 s)

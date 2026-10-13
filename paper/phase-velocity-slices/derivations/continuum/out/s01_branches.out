@@ -1,0 +1,60 @@
+B1  Laguerre moments
+  [PASS] int e^-x x^k L_l = 0 for l > k (l <= 12, k <= 6) 
+  [PASS] int e^-x x^k L_k = (-1)^k k! 
+  [PASS] orthonormality int e^-x L_l L_m = delta (sympy laguerre, l,m <= 5) 
+  [PASS] P_l[1] = delta_l0; P_l[x] = (1,-1,0,..); P_l[x^2] = (2,-4,2,0,..) 
+B2  field relations
+  [PASS] int G_n = dn/n 
+  [PASS] int G_B = dB/B 
+  [PASS] G_n - G_B = G_0 
+  [PASS] G_1 = (1 + Z/tau)(G_n - G_B) + D G_B 
+B3  G_n, G_B equations
+  [PASS] Schekochihin et al. 2009 eq. (179): dGn/dt + v grad Gn = -D^-1 v F grad[(Z/tau)(1+2/beta) n + (2/beta) b] 
+  [PASS] Schekochihin et al. 2009 eq. (180): dGB/dt + v grad GB = +D^-1 v F grad[(Z/tau)(1+Z/tau) n + (2+Z/tau) b] 
+    K = Matrix([[(-beta - 2)/(2*beta*r + beta + 2*r), -2*r/(2*beta*r + beta + 2*r)], [beta*(r + 1)/(r*(2*beta*r + beta + 2*r)), beta*(2*r + 1)/(2*beta*r + beta + 2*r)]])
+B4  diagonalisation
+  [PASS] l+ K = l+ / Lambda+ 
+  [PASS] l- K = l- / Lambda- 
+  [PASS] trace K = 1/L+ + 1/L- 
+  [PASS] det K = 1/(L+ L-) 
+  [PASS] Lambda+-(1,1) = +-sqrt5 
+B5  ranges, sum, product, limits
+  [PASS] Lambda+ - 1 - 1/beta = q - (1 + tau/Z) > 0 since q > 1 + tau/Z 
+  [PASS] Lambda- = 1/beta - q - tau/Z < 0 since q > 1/beta 
+  [PASS] Lambda+ + Lambda- = 2(1/beta - tau/Z) 
+  [PASS] Lambda+ Lambda- = -(1 + 2 (tau/Z)(1 + 1/beta)) 
+  [PASS] random sweep beta, tau/Z in [1e-4,1e4]: Lambda+ > 1, Lambda- < 0 
+  [PASS] high beta: Lambda+ - 1 = 1/beta + O(1/beta^2) (Schekochihin et al. 2009 eq. 188) e
+  [PASS] high beta: Lambda- - 1 -> -2(1 + tau/Z) (Schekochihin et al. 2009 eq. 187) -2*r - 2
+  [PASS] low beta: beta (Lambda+ - 1) -> 2 (Schekochihin et al. 2009 eq. 192) 2
+  [PASS] low beta: Lambda- - 1 -> -(1 + tau/Z) (Schekochihin et al. 2009 eq. 191) -r - 1
+B6  moments through the branches
+    det S at beta=tau=Z=1 = 5/2 - 3*sqrt(5)/2 = -0.854101966249685
+  [PASS] sigma^-1(1 + Z/tau) at beta=tau=Z=1 = (3 - sqrt5)/2 = 0.381966 
+  [PASS] 2 tau/(sigma Z beta) at beta=tau=Z=1 = (3 - sqrt5)/2 
+  [PASS] det S = 0.381966^2 - 1 = -0.854102 at beta=tau=Z=1 (|det| = 0.854102) 
+  [PASS] beta=tau=Z=1: G_0 = G_n - G_B = golden ratio x (G- - G+) -sqrt(5)*G_+/2 - G_+/2 + G_-/2 + sqrt(5)*G_-/2
+    beta=tau=Z=1: G_1 = sqrt(5)*G_+/2 + 3*G_+/2 + G_-
+    beta=tau=Z=1: G_n = -sqrt(5)*G_+/5 + G_-/2 + 3*sqrt(5)*G_-/10 ; G_B = G_+/2 + 3*sqrt(5)*G_+/10 - sqrt(5)*G_-/5
+  [PASS] dp_perp/p = (N0 - N1) + 2 dB/B = -(Z/tau) dn/n - (2/beta) dB/B 
+  [PASS] mean(vhat_par^2 x F0) = 1/2 (enters dp_par) 
+B7  free-energy and H decompositions
+  [PASS] (24): l = 0,1 part of W_compr/(nT/2) = int(G0^2+G1^2)/F + (Z/tau) n^2 - 2(Z/tau) n b - 2(1+1/beta) b^2 
+  [PASS] local identity G0^2 + G1^2 = c+ G+^2 + c- G-^2 (cross term vanishes) 
+  [PASS] moment identity with the same c+- 
+  [PASS] (B15) coefficients exact with kappa = sqrt((1+tau/Z)^2 + 1/beta^2) (Schekochihin et al. 2009 eq. 204) 
+    with kappa as printed in (B16), max |c_exact - c_(B15)| on 4 points = 4.3679
+  [PASS] (B16) as printed (no square on 1 + tau/Z) does not satisfy (B15) 
+    exact c+ (beta=tau=Z=1) = 2*sqrt(5) + 5 = 9.47213595500 ; c- = sqrt(5)/2 + 5/2 = 3.61803398875
+  [PASS] Schekochihin et al. 2009 eq. (213) coefficients = 4 x exact c+ and 4 x exact c- (CMM's footnote) 
+  [PASS] (B17) H decomposition: same local identity, same c+- 
+B8  Schekochihin et al. 2009 eqs (202)-(203) vs exact inversion
+  [PASS] exact dn/n = (1/2) Schekochihin et al. 2009 eq. (202) 
+  [PASS] exact dB/B = (1/2) Schekochihin et al. 2009 eq. (203) 
+    exact at beta=tau=Z=1: dn/n = M0m/2 + 3*sqrt(5)*M0m/10 - sqrt(5)*M0p/5 ; dB/B = -sqrt(5)*M0m/5 + M0p/2 + 3*sqrt(5)*M0p/10
+  [PASS] |det S| = 1 - 2(1 + tau/Z)/(beta sigma^2) = 2 kappa/sigma, kappa = q 
+  [PASS] G_n = [sigma G- - (2 tau/(Z beta)) G+]/(2 kappa) 
+  [PASS] G_B = [sigma G+ - (1 + Z/tau) G-]/(2 kappa) 
+B9  l >= 2
+  [PASS] P_l[(Z/tau) n + x b] = 0 for l = 2..10 
+ALL s01 CHECKS PASSED

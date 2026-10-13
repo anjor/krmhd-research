@@ -1,0 +1,99 @@
+====================================================================================================
+A. Ray picture
+  [PASS] A1 int_0^{t_w} nu (m(t)/M)^n dt = nu t_w/(2n+1) with m(t) = M (t/t_w)^2 :: nu*t_w/(2*n + 1)
+   t=0.2: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 1.4e-16; mean m = 0.789568 vs (k s t)^2/2 = 0.789568
+   t=0.5: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 7.8e-16; mean m = 4.934802 vs (k s t)^2/2 = 4.934802
+   t=1.0: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 1.9e-15; mean m = 19.739209 vs (k s t)^2/2 = 19.739209
+   t=1.5: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 5.8e-15; mean m = 44.413220 vs (k s t)^2/2 = 44.413220
+  [PASS] A2 free streaming from g_0 (Lam = inf, GANDALF operator, before the packet reaches M): |g_m|^2 Poisson, mean m = (k s t)^2/2
+====================================================================================================
+B. Mode picture: first-order slice damping and revival time
+   Lam=+inf n=2: gamma_0 (2n+1)/nu at M = 64:1.0232 256:1.0054 1024:1.0013 2048:1.0007
+   Lam=+inf n=4: gamma_0 (2n+1)/nu at M = 64:1.0562 256:1.0136 1024:1.0034 2048:1.0017
+   Lam=+inf n=6: gamma_0 (2n+1)/nu at M = 64:1.0889 256:1.0215 1024:1.0053 2048:1.0027
+   Lam=+2.2361 n=2: gamma_0 (2n+1)/nu at M = 64:0.9859 256:0.9656 1024:0.9743 2048:0.9802
+   Lam=+2.2361 n=4: gamma_0 (2n+1)/nu at M = 64:1.0177 256:0.9735 1024:0.9763 2048:0.9812
+   Lam=+2.2361 n=6: gamma_0 (2n+1)/nu at M = 64:1.0493 256:0.9811 1024:0.9782 2048:0.9821
+  [PASS] B1 first-order damping of the slices near u = 0 -> nu/(2n+1): Lam = inf to 0.3% at M = 2048 (O(1/M)); Lam = sqrt5 within 3% (slower approach from below)
+   M=64 Lam=+inf: spacing at u=0 = 0.274505; T_rec/(2 t_w) = 1.0116
+   M=64 Lam=+2.2361: spacing at u=0 = 0.248574; T_rec/(2 t_w) = 1.1171
+   M=64 Lam=-2.2361: spacing at u=0 = 0.287727; T_rec/(2 t_w) = 0.9651
+   M=128 Lam=+inf: spacing at u=0 = 0.195213; T_rec/(2 t_w) = 1.0058
+   M=128 Lam=+2.2361: spacing at u=0 = 0.180669; T_rec/(2 t_w) = 1.0868
+   M=128 Lam=-2.2361: spacing at u=0 = 0.201951; T_rec/(2 t_w) = 0.9723
+   M=256 Lam=+inf: spacing at u=0 = 0.138436; T_rec/(2 t_w) = 1.0029
+   M=256 Lam=+2.2361: spacing at u=0 = 0.130620; T_rec/(2 t_w) = 1.0629
+   M=256 Lam=-2.2361: spacing at u=0 = 0.141826; T_rec/(2 t_w) = 0.9789
+   M=1024 Lam=+inf: spacing at u=0 = 0.069369; T_rec/(2 t_w) = 1.0007
+   M=1024 Lam=+2.2361: spacing at u=0 = 0.067271; T_rec/(2 t_w) = 1.0320
+   M=1024 Lam=-2.2361: spacing at u=0 = 0.070216; T_rec/(2 t_w) = 0.9887
+  [PASS] B2 Lam = inf: T_rec = 2 pi/(k s Delta_0) = 2 sqrt(2M+3)/(k s) ~ 2 t_w (finite Lam shifts Delta_0 by O(1/Lam))
+====================================================================================================
+C. Exact revival versus the law and versus the first-order mode sum
+   41 of 360 cases unresolved (revival peak below 20x the non-recurrent |g_0| at 0.75 T_rec): 39 at Lam = sqrt5 (Landau-damped direct response; M <= 64 or X >= 1.4), 2 at Lam = inf (X >= 15.3); they are excluded below
+   selected cases (Lam, M, n, nu, n_z): X = 2 nu t_w/(2n+1) | R_exact | R_mode (1st order) | R_law = e^-X
+     Lam=+inf M= 32 n=6 nu=  1.0 nz=1: X= 0.196 | 0.7891 | 0.7893 | 0.8221   (collisionless revival peak 0.999)
+     Lam=+inf M= 32 n=6 nu=  1.0 nz=4: X= 0.049 | 0.9425 | 0.9425 | 0.9522   (collisionless revival peak 0.999)
+     Lam=+inf M= 32 n=6 nu=  3.0 nz=1: X= 0.588 | 0.4914 | 0.4923 | 0.5556   (collisionless revival peak 0.999)
+     Lam=+inf M= 32 n=6 nu=  3.0 nz=4: X= 0.147 | 0.8372 | 0.8373 | 0.8634   (collisionless revival peak 0.999)
+     Lam=+inf M= 32 n=6 nu= 30.0 nz=1: X= 5.876 | 0.0010 | 0.0010 | 0.0028   (collisionless revival peak 0.999)
+     Lam=+inf M= 32 n=6 nu= 30.0 nz=4: X= 1.469 | 0.1697 | 0.1713 | 0.2301   (collisionless revival peak 0.999)
+     Lam=+inf M=128 n=6 nu=  1.0 nz=1: X= 0.392 | 0.6627 | 0.6628 | 0.6759   (collisionless revival peak 1.000)
+     Lam=+inf M=128 n=6 nu=  1.0 nz=4: X= 0.098 | 0.9022 | 0.9023 | 0.9067   (collisionless revival peak 1.000)
+     Lam=+inf M=128 n=6 nu=  3.0 nz=1: X= 1.175 | 0.2910 | 0.2914 | 0.3087   (collisionless revival peak 1.000)
+     Lam=+inf M=128 n=6 nu=  3.0 nz=4: X= 0.294 | 0.7345 | 0.7345 | 0.7454   (collisionless revival peak 1.000)
+     Lam=+inf M=128 n=6 nu= 30.0 nz=1: X=11.753 | 0.0000 | 0.0000 | 0.0000   (collisionless revival peak 1.000)
+     Lam=+inf M=128 n=6 nu= 30.0 nz=4: X= 2.938 | 0.0457 | 0.0461 | 0.0530   (collisionless revival peak 1.000)
+     Lam=+2.236 M= 32 n=6 nu=  1.0 nz=1: X= 0.196 | 0.7898 | 0.7933 | 0.8221   (collisionless revival peak 0.933)
+     Lam=+2.236 M= 32 n=6 nu=  1.0 nz=4: X= 0.049 | 0.9427 | 0.9437 | 0.9522   (collisionless revival peak 0.933)
+     Lam=+2.236 M= 32 n=6 nu=  3.0 nz=1: X= 0.588 | 0.4930 | 0.5007 | 0.5556   (collisionless revival peak 0.933)
+     Lam=+2.236 M= 32 n=6 nu=  3.0 nz=4: X= 0.147 | 0.8378 | 0.8405 | 0.8634   (collisionless revival peak 0.933)
+     Lam=+2.236 M=128 n=6 nu=  1.0 nz=1: X= 0.392 | 0.6629 | 0.6659 | 0.6759   (collisionless revival peak 0.934)
+     Lam=+2.236 M=128 n=6 nu=  1.0 nz=4: X= 0.098 | 0.9023 | 0.9033 | 0.9067   (collisionless revival peak 0.934)
+     Lam=+2.236 M=128 n=6 nu=  3.0 nz=1: X= 1.175 | 0.2913 | 0.2960 | 0.3087   (collisionless revival peak 0.934)
+     Lam=+2.236 M=128 n=6 nu=  3.0 nz=4: X= 0.294 | 0.7346 | 0.7371 | 0.7454   (collisionless revival peak 0.934)
+     Lam=+2.236 M=128 n=6 nu= 30.0 nz=4: X= 2.938 | 0.0458 | 0.0484 | 0.0530   (collisionless revival peak 0.934)
+   relative error of the exponent, |ln R_law/R_exact| / X, by M and by X (all n, nu, n_z; Lam = inf and sqrt5):
+     M= 32: median 0.139, max 0.209; for X < 3: median 0.140, max 0.209
+     M= 64: median 0.068, max 0.102; for X < 3: median 0.069, max 0.102
+     M=128: median 0.033, max 0.050; for X < 3: median 0.034, max 0.050
+     M=256: median 0.017, max 0.025; for X < 3: median 0.017, max 0.025
+     M>=128, 0 <= X < 0.5: law exponent error median 0.025 max 0.050; first-order mode sum exponent error median 0.004 max 0.012  (64 cases)
+     M>=128, 0.5 <= X < 1.5: law exponent error median 0.021 max 0.050; first-order mode sum exponent error median 0.005 max 0.014  (36 cases)
+     M>=128, 1.5 <= X < 3: law exponent error median 0.025 max 0.050; first-order mode sum exponent error median 0.006 max 0.018  (22 cases)
+     M>=128, 3 <= X < 6: law exponent error median 0.024 max 0.050; first-order mode sum exponent error median 0.009 max 0.026  (22 cases)
+     M>=128, 6 <= X < 100: law exponent error median 0.016 max 0.044; first-order mode sum exponent error median 0.007 max 0.028  (21 cases)
+  [PASS] C1 the law fixes the exponent to within 5% for M >= 128 and X < 3 (error ~ 1/M: 14%, 7%, 3.4%, 1.7% median at M = 32..256) :: max exponent error 0.050
+  [PASS] C2 the first-order mode sum (exact u_j, gamma_j) reproduces the exact exponent to within 2% for M >= 128, X < 1.5 :: max 0.014
+   exponent error of the law binned by delta = nu/(|k| s sqrt(2M)) (all M, n, nu, n_z, Lam):
+     0 <= delta < 0.01: median 0.034, max 0.209 (144 cases, X up to 1.4)
+     0.01 <= delta < 0.03: median 0.043, max 0.209 (72 cases, X up to 4.3)
+     0.03 <= delta < 0.1: median 0.049, max 0.209 (64 cases, X up to 14.4)
+     0.1 <= delta < 0.3: median 0.065, max 0.207 (34 cases, X up to 30.6)
+     0.3 <= delta < 3: median 0.089, max 0.179 (5 cases, X up to 21.6)
+   the same for M >= 128:
+     0 <= delta < 0.03: median 0.021, max 0.050 (120 cases, X up to 4.3)
+     0.03 <= delta < 0.1: median 0.025, max 0.050 (32 cases, X up to 14.4)
+     0.1 <= delta < 0.3: median 0.024, max 0.049 (13 cases, X up to 30.6)
+  [PASS] C3 M >= 128 and delta = nu/(|k| s sqrt(2M)) < 0.1: exponent error <= 6% at any X (here up to 14) :: max 0.050, X up to 14.4
+  [PASS] C4 the residual error is a finite-M effect: the median exponent error halves per doubling of M, at any X and delta = nu/(|k| s sqrt(2M)) tested (X up to 30, delta up to 0.6) :: medians [0.1387, 0.0677, 0.0335, 0.0168]
+   exponent bias: R_exact < R_law in 319 of 319 cases
+====================================================================================================
+D. Forced steady state at M = 128, n = 6, nu = 3, Lam = sqrt5, k_z = 2 pi, s = 1: what the reflection does to W(m)
+   X = 2 nu t_w/(2n+1) = 1.1753 (R = 0.3087); measured revival ratio 0.2913 -> X_meas = 1.2335
+     m  | W_zero |k|s sqrt(2m)/eps_W | W_open ... | W_copy ... | W_zero/W_open | law, X | law, X_meas
+      2 | 1.0844 | 0.9150 | 1.1082 | 1.1852 | 1.2107 | 1.1854
+      4 | 1.1330 | 0.9560 | 1.1579 | 1.1852 | 1.2107 | 1.1854
+      8 | 1.1588 | 0.9777 | 1.1842 | 1.1852 | 1.2107 | 1.1854
+     16 | 1.1722 | 0.9888 | 1.1979 | 1.1854 | 1.2107 | 1.1854
+     32 | 1.1797 | 0.9943 | 1.2057 | 1.1865 | 1.2107 | 1.1854
+     48 | 1.1842 | 0.9942 | 1.2107 | 1.1911 | 1.2111 | 1.1858
+     64 | 1.1874 | 0.9840 | 1.2157 | 1.2067 | 1.2135 | 1.1880
+     80 | 1.1835 | 0.9428 | 1.2166 | 1.2554 | 1.2230 | 1.1968
+     96 | 1.1664 | 0.8292 | 1.2117 | 1.4067 | 1.2567 | 1.2283
+    112 | 1.1841 | 0.6001 | 1.2611 | 1.9733 | 1.3880 | 1.3538
+    120 | 1.2402 | 0.4492 | 1.3339 | 2.7608 | 1.5994 | 1.5619
+    128 | 1.2702 | 0.2991 | 0.6810 | 4.2475 | 2.2107 | 2.1854
+  [PASS] D1 W_zero/W_open follows [1 + e^(-2X(1-mu))]/(1 - e^(-2X)) within 1% for 2 <= m <= 48 (X from the exact revival)
+   (the law with the WKB X gives coth(X) = 1.2107 at low m; with X_meas coth = 1.1854)
+== t6_reflection: 9/9 checks passed (40.8 s)

@@ -1,0 +1,23 @@
+E1  RMHD conventions (CMM) and direction of propagation
+  [PASS] CMM d/dt = d_t + {Phi, .} 
+  [PASS] CMM grad_par = d_z + (1/v_A){Psi, .} 
+  [PASS] (3.23) -> d_t Psi = v_A grad_par Phi 
+  [PASS] (3.24) with v_th^2 = beta_i v_A^2 -> d(lap Phi)/dt = v_A grad_par lap Psi 
+  [PASS] linear: d_t z+ = +v_A d_z z+ is solved by z+ = f(z + v_A t) (toward -z) 
+  [PASS] linear: d_t z- = -v_A d_z z- is solved by z- = f(z - v_A t) (toward +z) 
+  [PASS] GANDALF: d_t z+ = +i k_z v_A z+ for a pure z+ wave (z+ propagates toward -z) ratio = 0.000+1.000j, k_z = 1.0
+  [PASS] GANDALF: d_t z- = -i k_z v_A z- (z- propagates toward +z) ratio = 0.000-1.000j
+E2  slow-wave Elsasser fields and the entropy mode (Schekochihin et al. 2009, sec. 2.4-2.5)
+  [PASS] Schekochihin et al. 2009 eq. (29): d z+/dt - c bhat.grad z = 0 
+  [PASS]    ... equals Schekochihin et al. 2009 eq. (30) for z+ 
+  [PASS]    ... equals the slice equation with s u = -c 
+  [PASS] Schekochihin et al. 2009 eq. (29): d z-/dt + c bhat.grad z = 0 
+  [PASS]    ... equals Schekochihin et al. 2009 eq. (30) for z- 
+  [PASS]    ... equals the slice equation with s u = +c 
+  [PASS] entropy mode d ds/dt = 0 is the slice equation at s u = 0 
+  [PASS] c = (1 + v_A^2/c_s^2)^{-1/2} -> 1 as c_s -> inf (high beta), -> c_s/v_A as c_s -> 0 
+E3  slices advected by one Elsasser field
+  [PASS] s u = +1: Phi + s u Psi = z+ 
+  [PASS] s u = -1: Phi + s u Psi = z- 
+  [PASS] free streaming: a(z - s u t) solves d_t a + s u d_z a = 0 (s u = +1 moves toward +z, with z-) 
+ALL s08 CHECKS PASSED

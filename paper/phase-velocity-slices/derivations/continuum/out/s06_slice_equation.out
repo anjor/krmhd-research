@@ -1,0 +1,23 @@
+SL1 identities (SymPy)
+  [PASS] {Phi + s u Psi, a} + s u d_z a = U_u . grad a 
+  [PASS] div U_u = 0 
+  [PASS] Phi + s u Psi = [(1+su) z+ + (1-su) z-]/2 with Phi = (z+ + z-)/2, Psi = (z+ - z-)/2 
+  [PASS] C'(a){A,a} = {A, C(a)} 
+  [PASS] {A, a^2/2} = a {A, a} and {A,B} = div(B zhat x grad A) 
+  [PASS] int_box [{A, a^4} + d_z a^4] = 0 (trig example) 
+SL2 slice decomposition of the Hermite right-hand side (own NumPy code)
+  [PASS] Lambda=+2.236, s=1.000: slice projection of Hermite RHS = slice RHS (with hyperdiffusion) rel err 1.7e-15, max|{Phi,g}|/max|s d_z A g| = 10.0
+    hypercollisions (m/M)^6 in slice coordinates: max off-diagonal/max diagonal = 0.40
+  [PASS] Lambda=+2.236, s=0.707: slice projection of Hermite RHS = slice RHS (with hyperdiffusion) rel err 1.1e-15, max|{Phi,g}|/max|s d_z A g| = 10.8
+    hypercollisions (m/M)^6 in slice coordinates: max off-diagonal/max diagonal = 0.40
+  [PASS] Lambda=-2.236, s=1.000: slice projection of Hermite RHS = slice RHS (with hyperdiffusion) rel err 1.5e-15, max|{Phi,g}|/max|s d_z A g| = 9.2
+    hypercollisions (m/M)^6 in slice coordinates: max off-diagonal/max diagonal = 0.40
+  [PASS] Lambda=-2.236, s=0.707: slice projection of Hermite RHS = slice RHS (with hyperdiffusion) rel err 1.5e-15, max|{Phi,g}|/max|s d_z A g| = 9.7
+    hypercollisions (m/M)^6 in slice coordinates: max off-diagonal/max diagonal = 0.40
+  [PASS] m-dependent collision operator is not diagonal in slices 
+SL3 GANDALF's right-hand side (krmhd 0.6.0, float64)
+  [PASS] GANDALF Lambda=+2.236, beta_i=1.0: slices of dg/dt = slice RHS rel err 1.3e-15; max|{Phi,g_3}|/max|s d_z g_3| = 4.75; max|z+-| (physical) = 16.07
+  [PASS] GANDALF Lambda=+2.236, beta_i=0.5: slices of dg/dt = slice RHS rel err 1.4e-15; max|{Phi,g_3}|/max|s d_z g_3| = 6.71; max|z+-| (physical) = 16.07
+  [PASS] GANDALF Lambda=-2.236, beta_i=1.0: slices of dg/dt = slice RHS rel err 9.4e-16; max|{Phi,g_3}|/max|s d_z g_3| = 4.75; max|z+-| (physical) = 16.07
+  [PASS] GANDALF Lambda=-2.236, beta_i=0.5: slices of dg/dt = slice RHS rel err 1.0e-15; max|{Phi,g_3}|/max|s d_z g_3| = 6.71; max|z+-| (physical) = 16.07
+ALL s06 CHECKS PASSED

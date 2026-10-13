@@ -1,0 +1,61 @@
+  [PASS] jpp.cls: main (section.n) rule True, appendix (B n) rule True, reset at \section True; paper calls \nosectioneqnreset: False
+         label                   number  role
+  [PASS] eq:poissonbracket          2.9  Poisson bracket {f,g} = z.(grad f x grad g)
+  [PASS] eq:WGK                    2.13  gyrokinetic free energy W
+  [PASS] eq:defHGK                 2.15  gyrokinetic helicity H
+  [PASS] eq:realimag               2.17  Plemelj split of H into P-integral and i pi (psi^2/F)_{v=0}
+  [PASS] eq:GKvpar0                2.22  v_par = 0 equation
+  [PASS] eq:ImHcons                2.23  conservation of Im H
+  [PASS] eq:kperprhoe               3.1  contains tau = T_0i/T_0e
+  [PASS] eq:defphiA                 3.2  normalised potentials varphi, A
+  [PASS] eq:ddt                     3.3  d/dt = d_t + u_perp.grad
+  [PASS] eq:gradpar                 3.4  grad_par = d_z + b_perp.grad/v_A
+  [PASS] eq:J0J1                   3.11  J0 and 2J1/a expansions
+  [PASS] eq:Gamma0                 3.13  Gamma0, Gamma1 expansions
+  [PASS] eq:dgdt                   3.16  ITEF ion kinetic equation
+  [PASS] eq:gkeKRMHD               3.23  KRMHD induction
+  [PASS] eq:vorticity              3.24  KRMHD vorticity
+  [PASS] eq:KRMHDdgdt              3.25  KRMHD ion kinetic equation for g_09
+  [PASS] eq:defg09                 3.26  g_09 = g_i - vperp^2 dB/B F0
+  [PASS] eq:dnKRMHD                3.27  overline g_09 = dn/n - dB/B
+  [PASS] eq:perpAmpereKRMHD        3.28  perpendicular pressure balance
+  [PASS] eq:KRMHDWcompr            3.31  compressive free energy
+  [PASS] eq:HnAKRMHD               3.33  H_ph-sp in KRMHD
+  [PASS] eq:KRMHDdndB                B1  dn/n = int G_n, dB/B = int G_B
+  [PASS] eq:Gn                       B2  G_n
+  [PASS] eq:GB                       B3  G_B
+  [PASS] eq:dGpmdt                   B4  branch equation
+  [PASS] eq:GpGm                     B5  G+ and G-
+  [PASS] eq:g09sigma                 B6  sigma
+  [PASS] eq:Lambdapm                 B7  Lambda+-
+  [PASS] eq:Gl                       B8  Laguerre expansion
+  [PASS] eq:dGldt                   B10  l >= 2 free streaming
+  [PASS] eq:Wpmcompr                B13  W+-
+  [PASS] eq:defWtilde               B14  W tilde
+  [PASS] eq:Wcomprtotal             B15  W_compr decomposition
+  [PASS] eq:defkappa                B16  kappa
+  [PASS] eq:Hentrtotal              B17  H decomposition
+  [PASS] eq:Hpm                     B18  H+-
+  [PASS] eq:Hentrtilde              B19  H tilde
+  [PASS] eq:Khel0                   B20  d/dt int G^2 v/(2F)
+  [PASS] eq:Khel1                   B21  same, integrated by parts
+  [PASS] eq:Mn                      B22  moments M_n
+  [PASS] eq:dM0dt                   B23  dM0/dt
+  [PASS] eq:dM1dt                   B24  dM1/dt
+  [PASS] eq:Gammapm                 B25  Gamma+-
+  [PASS] eq:Gammacons               B26  dGamma/dt = 0
+  [PASS] eq:hermiteexp              B27  Hermite expansion
+  [PASS] eq:orthogonality           B29  Hermite orthogonality
+  [PASS] eq:valGm                   B30  Hermite coefficients
+  [PASS] eq:WcomprHerm              B31  W+- in Hermite form
+  [PASS] eq:GammapmHerm             B32  Gamma+- in Hermite form
+  [PASS] string check Lambda+- (B7)               : found
+  [PASS] string check sigma (B6)                  : found
+  [PASS] string check G+ (B5)                     : found
+  [PASS] string check G- (B5)                     : found
+  [PASS] string check kappa (B16) as printed      : found
+  [PASS] string check tau definition              : found
+  [PASS] string check F_M definition              : found
+  [PASS] string check v_th definition             : found
+total labels parsed: 146; appendix B labels: eq:KRMHDdndB=B1, eq:Gn=B2, eq:GB=B3, eq:dGpmdt=B4, eq:GpGm=B5, eq:g09sigma=B6, eq:Lambdapm=B7, eq:Gl=B8, eq:formulaGl=B9, eq:dGldt=B10, eq:defgtilde=B11, eq:Wpmcons=B12, eq:Wpmcompr=B13, eq:defWtilde=B14, eq:Wcomprtotal=B15, eq:defkappa=B16, eq:Hentrtotal=B17, eq:Hpm=B18, eq:Hentrtilde=B19, eq:Khel0=B20, eq:Khel1=B21, eq:Mn=B22, eq:dM0dt=B23, eq:dM1dt=B24, eq:Gammapm=B25, eq:Gammacons=B26, eq:hermiteexp=B27, eq:recurrence=B28, eq:orthogonality=B29, eq:valGm=B30, eq:WcomprHerm=B31, eq:GammapmHerm=B32
+ALL s00 CHECKS PASSED
