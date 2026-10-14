@@ -1,21 +1,21 @@
 Lambda = 0.5: gamma = 0.4327515994
   [PASS] U1 Lambda=0.5: eps(i gamma) = 0 and eps(-conj z) = conj eps(z) |eps(i gamma)| = 0.0e+00, symmetry 0.0e+00
-  [PASS] U2 Lambda=0.5: M0[F_+-] = 1 and L F_+- = +-i gamma F_+- |M0 - 1| = 2.2e-16, eigen-relation 2.6e-16
-  [PASS] U3 Lambda=0.5: [F_+, F_-] = 0 and T[F_+](u) = [F_u, F_+] = 0 at real u |[F+,F-]| = 0.0e+00, max |T[F+]|/|F+/F_M| = 1.0e-15
+  [PASS] U2 Lambda=0.5: M0[F_+-] = 1 and L F_+- = +-i gamma F_+- |M0 - 1| = 4.4e-16, eigen-relation 4.3e-16
+  [PASS] U3 Lambda=0.5: [F_+, F_-] = 0 and T[F_+](u) = [F_u, F_+] = 0 at real u |[F+,F-]| = 1.3e-15, max |T[F+]|/|F+/F_M| = 1.0e-15
   [PASS] U4 Lambda=0.5 G1: G = eR c + eI Hc[c] + 2 Re(alpha_+ F_+), alpha_+ = -pi res_G max rel 8.1e-16 (discrete part 1.64 of max|G|)
-  [PASS] U5 Lambda=0.5 G1: alpha_+ = [F_+,G]/[F_+,F_+]; [F_+,F_+] = (Lambda - 1 + 2 gamma^2 Lambda)/Lambda^2 alpha 8.5e-16, [F+,F+] 5.3e-16, [F+,G] = (i gamma/Lambda) int G/(v - i gamma) 4.6e-16
-  [PASS] U6 Lambda=0.5 G1: [G,G] = int rho T^2 + 2 Re([F_+,G]^2/[F_+,F_+]) [G,G] = -0.802783, continuum +0.527241, pair -1.330024, rel 8.3e-16
-  [PASS] U4 Lambda=0.5 G2: G = eR c + eI Hc[c] + 2 Re(alpha_+ F_+), alpha_+ = -pi res_G max rel 1.4e-15 (discrete part 1.40 of max|G|)
-  [PASS] U5 Lambda=0.5 G2: alpha_+ = [F_+,G]/[F_+,F_+]; [F_+,F_+] = (Lambda - 1 + 2 gamma^2 Lambda)/Lambda^2 alpha 8.5e-16, [F+,F+] 5.3e-16, [F+,G] = (i gamma/Lambda) int G/(v - i gamma) 3.2e-16
-  [PASS] U6 Lambda=0.5 G2: [G,G] = int rho T^2 + 2 Re([F_+,G]^2/[F_+,F_+]) [G,G] = +1.623855, continuum +1.446684, pair +0.177171, rel 6.5e-16
+  [PASS] U5 Lambda=0.5 G1: alpha_+ = [F_+,G]/[F_+,F_+]; [F_+,F_+] = (Lambda - 1 + 2 gamma^2 Lambda)/Lambda^2 alpha 4.5e-16, [F+,F+] 1.8e-16, [F+,G] = (i gamma/Lambda) int G/(v - i gamma) 6.9e-16
+  [PASS] U6 Lambda=0.5 G1: [G,G] = int rho T^2 + 2 Re([F_+,G]^2/[F_+,F_+]) [G,G] = -0.802783, continuum +0.527241, pair -1.330024, rel 5.5e-16
+  [PASS] U4 Lambda=0.5 G2: G = eR c + eI Hc[c] + 2 Re(alpha_+ F_+), alpha_+ = -pi res_G max rel 1.7e-15 (discrete part 1.40 of max|G|)
+  [PASS] U5 Lambda=0.5 G2: alpha_+ = [F_+,G]/[F_+,F_+]; [F_+,F_+] = (Lambda - 1 + 2 gamma^2 Lambda)/Lambda^2 alpha 5.1e-16, [F+,F+] 1.8e-16, [F+,G] = (i gamma/Lambda) int G/(v - i gamma) 5.2e-16
+  [PASS] U6 Lambda=0.5 G2: [G,G] = int rho T^2 + 2 Re([F_+,G]^2/[F_+,F_+]) [G,G] = +1.623855, continuum +1.446684, pair +0.177171, rel 1.2e-15
 Lambda = 0.2: gamma = 1.1752164113
   [PASS] U1 Lambda=0.2: eps(i gamma) = 0 and eps(-conj z) = conj eps(z) |eps(i gamma)| = 8.9e-16, symmetry 0.0e+00
-  [PASS] U2 Lambda=0.2: M0[F_+-] = 1 and L F_+- = +-i gamma F_+- |M0 - 1| = 6.7e-16, eigen-relation 1.1e-15
+  [PASS] U2 Lambda=0.2: M0[F_+-] = 1 and L F_+- = +-i gamma F_+- |M0 - 1| = 6.7e-16, eigen-relation 1.2e-15
   [PASS] U3 Lambda=0.2: [F_+, F_-] = 0 and T[F_+](u) = [F_u, F_+] = 0 at real u |[F+,F-]| = 3.6e-15, max |T[F+]|/|F+/F_M| = 1.4e-15
   [PASS] U4 Lambda=0.2 G1: G = eR c + eI Hc[c] + 2 Re(alpha_+ F_+), alpha_+ = -pi res_G max rel 6.0e-16 (discrete part 1.06 of max|G|)
-  [PASS] U5 Lambda=0.2 G1: alpha_+ = [F_+,G]/[F_+,F_+]; [F_+,F_+] = (Lambda - 1 + 2 gamma^2 Lambda)/Lambda^2 alpha 7.0e-16, [F+,F+] 1.3e-15, [F+,G] = (i gamma/Lambda) int G/(v - i gamma) 5.8e-16
+  [PASS] U5 Lambda=0.2 G1: alpha_+ = [F_+,G]/[F_+,F_+]; [F_+,F_+] = (Lambda - 1 + 2 gamma^2 Lambda)/Lambda^2 alpha 7.0e-16, [F+,F+] 1.3e-15, [F+,G] = (i gamma/Lambda) int G/(v - i gamma) 5.7e-16
   [PASS] U6 Lambda=0.2 G1: [G,G] = int rho T^2 + 2 Re([F_+,G]^2/[F_+,F_+]) [G,G] = -3.802783, continuum +0.935808, pair -4.738590, rel 0.0e+00
-  [PASS] U4 Lambda=0.2 G2: G = eR c + eI Hc[c] + 2 Re(alpha_+ F_+), alpha_+ = -pi res_G max rel 8.6e-16 (discrete part 1.17 of max|G|)
-  [PASS] U5 Lambda=0.2 G2: alpha_+ = [F_+,G]/[F_+,F_+]; [F_+,F_+] = (Lambda - 1 + 2 gamma^2 Lambda)/Lambda^2 alpha 7.9e-16, [F+,F+] 1.3e-15, [F+,G] = (i gamma/Lambda) int G/(v - i gamma) 6.4e-16
-  [PASS] U6 Lambda=0.2 G2: [G,G] = int rho T^2 + 2 Re([F_+,G]^2/[F_+,F_+]) [G,G] = +0.543855, continuum +1.526223, pair -0.982368, rel 2.9e-16
+  [PASS] U4 Lambda=0.2 G2: G = eR c + eI Hc[c] + 2 Re(alpha_+ F_+), alpha_+ = -pi res_G max rel 7.1e-16 (discrete part 1.17 of max|G|)
+  [PASS] U5 Lambda=0.2 G2: alpha_+ = [F_+,G]/[F_+,F_+]; [F_+,F_+] = (Lambda - 1 + 2 gamma^2 Lambda)/Lambda^2 alpha 9.1e-16, [F+,F+] 1.3e-15, [F+,G] = (i gamma/Lambda) int G/(v - i gamma) 7.8e-16
+  [PASS] U6 Lambda=0.2 G2: [G,G] = int rho T^2 + 2 Re([F_+,G]^2/[F_+,F_+]) [G,G] = +0.543855, continuum +1.526223, pair -0.982368, rel 7.3e-16
 ALL s10 CHECKS PASSED

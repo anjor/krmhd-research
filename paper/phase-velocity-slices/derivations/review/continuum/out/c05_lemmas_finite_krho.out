@@ -1,22 +1,22 @@
 A1  triad formula by direct mode sums
   [PASS] dQ/dt = 4 (p x q)_z Re[chi_p theta_{q+p}^H (K_{q+p} - K_q) theta_q] (3D wavevectors) direct -11.739856717957, formula -11.739856717957
 A2  k_perp = 0 modes: K there is unconstrained
-  [PASS] K_k = K' (k_perp = 0, 4 modes populated), K (otherwise): dQ/dt = 0 dQ/dt = 2.5e-13 (k-dependent control 1.77e+02)
+  [PASS] K_k = K' (k_perp = 0, 4 modes populated), K (otherwise): dQ/dt = 0 dQ/dt = 6.3e-13 (k-dependent control 1.77e+02)
   [PASS] control: K depending on k_z at k_perp != 0 is not conserved (so K must be constant on k_perp != 0) dQ/dt = -2.05e+01
 A3  Lemma A': gyroaveraged advection, kernels local / nonlocal in v_perp
-  [PASS] block-diagonal K (local in v_perp, nonlocal in v_par): conserved 1.1e-12 (scale 3.89e+02)
+  [PASS] block-diagonal K (local in v_perp, nonlocal in v_par): conserved 4.3e-13 (scale 3.89e+02)
   [PASS] K coupling different v_perp: not conserved -6.61e+02
 B1  Lemma B from L = U Pi
   [PASS] L = U Pi; D Pi L^{-1} = diag(w/(u F_M)) for every Lambda; D Pi, D Pi L symmetric 
   [PASS] W kernel D Pi depends on Lambda (rank-one part), so a k-dependent Lambda_k changes it max|D Pi - D| = 3.81e-06..1.56e-02
 C1  W conserved although its kernel is not a multiplication operator (KRMHD, GANDALF RHS)
-  [PASS] d/dt sum_k g^H P0 g = 0 with GANDALF's RHS (W kernel = identity minus rank one, not a multiplication) |dW/dt|/scale = 1.0e-18
+  [PASS] d/dt sum_k g^H P0 g = 0 with GANDALF's RHS (W kernel = identity minus rank one, not a multiplication) |dW/dt|/scale = 7.7e-18
 C2/C3  electrostatic gyrokinetic toy (2D, Boltzmann electrons)
-    rho = 0.3: self-consistent dE2/dt = 3.18e-12, dE1/dt = -4.19e-13; passive chi: dE2/dt = -2.68e+05
+    rho = 0.3: self-consistent dE2/dt = 8.64e-12, dE1/dt = -9.70e-13; passive chi: dE2/dt = -2.68e+05
   [PASS] C2 field energy (k-dependent, v-nonlocal kernel) conserved by the self-consistent nonlinearity 
   [PASS] C2 ... and not by the same advection with a prescribed chi 
     |dGamma/dt| vs rho: rho=0.0025: 4.509e-03 (scale 8.94e+02, Gamma -1.248e+03), rho=0.0050: 1.801e-02 (scale 8.93e+02, Gamma -1.248e+03), rho=0.0100: 7.165e-02 (scale 8.91e+02, Gamma -1.248e+03), rho=0.0200: 2.803e-01 (scale 8.81e+02, Gamma -1.248e+03);  slope 1.987
     rho=0.1: |dGamma/dt| = 3.810e+00 = 5.73e-03 of the field-term scale
     rho=0.3: |dGamma/dt| = 2.110e+00 = 8.38e-03 of the field-term scale
-  [PASS] C3 Gamma conserved at rho = 0 (round-off) and broken at finite rho with |dGamma/dt| ~ rho^2 in this toy rho=0: |dGamma/dt|/scale = 2.2e-15
+  [PASS] C3 Gamma conserved at rho = 0 (round-off) and broken at finite rho with |dGamma/dt| ~ rho^2 in this toy rho=0: |dGamma/dt|/scale = 4.7e-15
 ALL c05 CHECKS PASSED

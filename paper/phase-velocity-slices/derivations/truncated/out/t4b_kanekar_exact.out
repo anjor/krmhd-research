@@ -33,4 +33,4 @@ E. The antisymmetric part of the forced correlation carries eps_W through every 
    Lam=2.23607: Pi_(m+1/2)/eps_W at m = 0, 1, 3, 6: ['1.0', '1.0', '1.0', '1.0']
    Lam=-2.23607: Pi_(m+1/2)/eps_W at m = 0, 1, 3, 6: ['1.0', '1.0', '1.0', '1.0']
   [PASS] E1 Pi_(m+1/2) = eps_W = (1 - 1/Lam) eps_k for every m (Lam = +-sqrt5)
-== t4b_kanekar_exact: 5/5 checks passed (183.4 s)
+== t4b_kanekar_exact: 5/5 checks passed (495.7 s)

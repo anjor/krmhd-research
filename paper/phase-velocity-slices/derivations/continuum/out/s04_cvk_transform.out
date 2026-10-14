@@ -3,15 +3,15 @@ C1  resolvent and generating function (SymPy algebra)
   [PASS] Q(z) = I_GG - (z/Lambda) C_G^2/eps(z) 
 C2  Stone formula (SymPy algebra)
   [PASS] -(1/pi) Im Q(u+i0) = (eR G - eI Hc G)^2/(F_M |eps|^2) 
-  [PASS] closed-form Q(z) = Hermite resolvent g^T P0 (z-A)^{-1} g (M=800, Im z = +-0.6..0.9) max rel 3.5e-16
+  [PASS] closed-form Q(z) = Hermite resolvent g^T P0 (z-A)^{-1} g (M=800, Im z = +-0.6..0.9) max rel 4.5e-16
 C3  CVK modes and eigen-relation
   [PASS] M0[F_u] = 1 and M1[F_u] = u (PV quadrature, 3 Lambda x 3 u) 5.17e-26
   [PASS] T[F_M](u) = 1 - 1/Lambda for all u 8.9e-16
   [PASS] T[L G] = u T[G] 1.9e-16
 C4  Parseval and spectral forms
   [PASS] [G1,G2] = int rho T[G1] T[G2] du (5 Lambda x 4 pairs) max rel 4.9e-16
-  [PASS] Q_u = [G,LG], Q_{u^2} = [LG,LG], Q_{1/u} = P int G^2/(uF_M) equal int phi rho T^2 max rel 7.0e-16
-  [PASS] Q(z) = int rho T^2/(z - u) du (Stieltjes transform of the spectral density) max rel 3.7e-16
+  [PASS] Q_u = [G,LG], Q_{u^2} = [LG,LG], Q_{1/u} = P int G^2/(uF_M) equal int phi rho T^2 max rel 5.6e-16
+  [PASS] Q(z) = int rho T^2/(z - u) du (Stieltjes transform of the spectral density) max rel 4.6e-16
   [PASS] rho(0) T[G](0)^2 = G(0)^2/F_M(0) (u = 0 slice density, Lambda-independent) 4.4e-16
 C5  inverse o forward (completeness)
 paper/phase-velocity-slices/derivations/continuum/s04_cvk_transform.py:44: IntegrationWarning: The occurrence of roundoff error is detected, which prevents 

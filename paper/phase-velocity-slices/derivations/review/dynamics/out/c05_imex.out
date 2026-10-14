@@ -5,15 +5,14 @@
   [PASS] I3 the full advecting field gives a larger explicit eigenvalue than the Psi-only bound  (1.81 vs 1.51)
   [PASS] I2 the implicit streaming does not stabilise it  (max |R| = 2.160)
     dt = 0.001: y (Psi only, as in d03) = 0.75, |R| = 1.040;  y with the full advecting field Phi + s u_j Psi = 0.91, |R| = 1.081;  with implicit streaming |w| <= 0.20: max |R| = 1.111
-W1013 20:49:09.313869 43225712 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
-  imex_rk222 dt = 0.002: BLOW-UP at t = 0.208; t, W/W0, cutoff-shell share of g energy: 0.016 1 2.2e-06; 0.048 1 6.9e-04; 0.080 1 6.0e-03; 0.112 1.01 2.8e-02; 0.144 96.4 9.9e-01; 0.176 6.96e+04 1.0e+00; 0.208 9.27e+06 1.0e+00
+  imex_rk222 dt = 0.002: BLOW-UP at t = 0.208; t, W/W0, cutoff-shell share of g energy: 0.016 1 2.1e-06; 0.048 1 6.8e-04; 0.080 1 6.0e-03; 0.112 1.01 2.7e-02; 0.144 85.4 9.8e-01; 0.176 6.51e+04 1.0e+00; 0.208 9.03e+06 1.0e+00
   lawson_rk4 dt = 0.002: t, W/W0, cutoff-shell share of g energy: 0.016 1 2.1e-06; 0.048 1 6.7e-04; 0.080 1 5.9e-03; 0.112 1 1.8e-02; 0.144 1 3.7e-02; 0.176 1 6.1e-02; 0.208 1 8.8e-02; 0.240 1 1.2e-01; 0.272 1 1.5e-01; 0.304 1 1.9e-01; 0.336 1 2.3e-01; 0.368 1 2.8e-01; 0.400 1 3.2e-01
-  imex_rk222 dt = 0.001: t, W/W0, cutoff-shell share of g energy: 0.016 1 2.2e-06; 0.048 1 6.8e-04; 0.080 1 6.0e-03; 0.112 1 1.8e-02; 0.144 1 3.7e-02; 0.176 1 6.1e-02; 0.208 1 8.9e-02; 0.240 1 1.2e-01; 0.272 1 1.5e-01; 0.304 1 1.9e-01; 0.336 1 2.3e-01; 0.368 1 2.8e-01; 0.400 1 3.2e-01
+  imex_rk222 dt = 0.001: t, W/W0, cutoff-shell share of g energy: 0.016 1 2.1e-06; 0.048 1 6.7e-04; 0.080 1 5.9e-03; 0.112 1 1.8e-02; 0.144 1 3.7e-02; 0.176 1 6.1e-02; 0.208 1 8.8e-02; 0.240 1 1.2e-01; 0.272 1 1.5e-01; 0.304 1 1.9e-01; 0.336 1 2.3e-01; 0.368 1 2.8e-01; 0.400 1 3.2e-01
   [PASS] I4 Lawson-RK4 at dt = 0.002 keeps W conserved to the end (reference)  (W/W0 at t = 0.400: 1.0000)
-    IMEX dt = 0.002: W/W0 at t = 0.128: [2.5342813804029536], final 9.27e+06 at t = 0.208
+    IMEX dt = 0.002: W/W0 at t = 0.128: [2.320606661760341], final 9.03e+06 at t = 0.208
   [PASS] I4 IMEX at dt = 0.002 is unstable: W (conserved by the equations) grows without bound after t = 0.128  (blow-up at t = 0.208)
-    imex_rk222: self-convergence at t = 0.064 (dt = 1e-3, 5e-4, 2.5e-4): g field 1.20e-03, 5.98e-04 -> order 1.01;  W(m) 4.70e-05, 2.07e-05 -> order 1.18;  z+ 4.26e-05, 1.06e-05 -> order 2.00
+    imex_rk222: self-convergence at t = 0.064 (dt = 1e-3, 5e-4, 2.5e-4): g field 1.01e-04, 2.53e-05 -> order 2.00;  W(m) 1.45e-05, 3.69e-06 -> order 1.98;  z+ 4.26e-05, 1.06e-05 -> order 2.00
     lawson_rk4: self-convergence at t = 0.064 (dt = 1e-3, 5e-4, 2.5e-4): g field 2.42e-05, 6.06e-06 -> order 2.00;  W(m) 6.59e-07, 1.64e-07 -> order 2.01;  z+ 4.26e-05, 1.06e-05 -> order 2.00
-  [PASS] I5 IMEX-RK222: the g field converges at first order in dt (gandalf#158)  (order 1.01)
+  [PASS] I5 IMEX-RK222: the g field converges at second order in dt (krmhd >= 0.7.0, gandalf#158; first order in <= 0.6.0)  (order 2.00)
   [PASS] I5 Lawson-RK4: the g field converges at (at least) second order  (order 2.00)
 SUMMARY: 9/9 checks passed

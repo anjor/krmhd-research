@@ -1,0 +1,116 @@
+=== nu = 0.0 (hyper_n = 4), M = 8, Lambda = sqrt5, s = 1, rms|grad Phi| = rms|grad Psi| = 1.0, dt = 0.002, T = 0.25
+  N = 16: wall 22s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 24: wall 33s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 32: wall 68s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 48: wall 275s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  quantile difference NL vs FR at N=48, t=0.062 vs sampling refinement: pad 2: 2.2e-04, pad 3: 3.0e-04, pad 4: 6.7e-05
+  [PASS] quantile difference shrinks as the sampling grid is refined (sampling-limited, not dynamical)  (2.2e-04, 3.0e-04, 6.7e-05)
+  t = 0.062:  relative difference NL vs FR (frozen-line prediction) [NL vs LZ in brackets]
+    W(m)                         N=16:  3.4e-04 [6.1e-02]  N=24:  2.0e-05 [6.1e-02]  N=32:  8.9e-06 [6.1e-02]  N=48:  2.2e-07 [6.1e-02]
+    C(j,j') slice corr.          N=16:  2.5e-04 [3.2e-02]  N=24:  1.6e-05 [3.2e-02]  N=32:  1.1e-05 [3.2e-02]  N=48:  3.2e-07 [3.2e-02]
+    Pi_m (full grad_par)         N=16:  4.1e-03 [4.4e-01]  N=24:  5.1e-04 [4.5e-01]  N=32:  1.7e-04 [4.5e-01]  N=48:  5.3e-06 [4.5e-01]
+    <g_m^4>                      N=16:  4.9e-03 [8.1e-02]  N=24:  2.5e-04 [8.6e-02]  N=32:  5.3e-05 [8.6e-02]  N=48:  8.8e-07 [8.6e-02]
+    quantiles g_m(x)             N=16:  5.8e-03 [3.4e-02]  N=24:  6.1e-04 [3.2e-02]  N=32:  4.8e-04 [3.1e-02]  N=48:  3.0e-04 [3.1e-02]
+    W(k_perp)  [not 1-pt]        N=16:  2.1e-01 [3.2e-01]  N=24:  2.1e-01 [3.2e-01]  N=32:  2.1e-01 [3.2e-01]  N=48:  2.1e-01 [3.2e-01]
+    W(|k_z|)   [not 1-pt]        N=16:  1.5e-01 [2.0e-01]  N=24:  1.5e-01 [2.0e-01]  N=32:  1.5e-01 [2.0e-01]  N=48:  1.5e-01 [2.0e-01]
+    Pi_m (k_z only) [not 1-pt]   N=16:  6.9e-02 [1.9e-01]  N=24:  6.9e-02 [1.9e-01]  N=32:  6.9e-02 [1.9e-01]  N=48:  6.9e-02 [1.9e-01]
+  t = 0.124:  relative difference NL vs FR (frozen-line prediction) [NL vs LZ in brackets]
+    W(m)                         N=16:  2.4e-03 [1.3e-01]  N=24:  2.8e-04 [1.3e-01]  N=32:  2.4e-04 [1.3e-01]  N=48:  5.2e-05 [1.3e-01]
+    C(j,j') slice corr.          N=16:  2.7e-03 [8.9e-02]  N=24:  5.6e-04 [9.0e-02]  N=32:  3.6e-04 [9.0e-02]  N=48:  7.5e-05 [9.0e-02]
+    Pi_m (full grad_par)         N=16:  1.7e-02 [3.7e-01]  N=24:  2.6e-03 [3.8e-01]  N=32:  1.4e-03 [3.8e-01]  N=48:  4.3e-04 [3.8e-01]
+    <g_m^4>                      N=16:  2.0e-02 [1.7e-01]  N=24:  3.5e-03 [1.9e-01]  N=32:  1.5e-03 [1.9e-01]  N=48:  1.3e-04 [1.9e-01]
+    quantiles g_m(x)             N=16:  1.5e-02 [6.4e-02]  N=24:  5.6e-03 [6.1e-02]  N=32:  3.9e-03 [6.0e-02]  N=48:  1.4e-03 [6.1e-02]
+    W(k_perp)  [not 1-pt]        N=16:  3.8e-01 [6.5e-01]  N=24:  3.8e-01 [6.5e-01]  N=32:  3.8e-01 [6.5e-01]  N=48:  3.8e-01 [6.5e-01]
+    W(|k_z|)   [not 1-pt]        N=16:  2.6e-01 [4.0e-01]  N=24:  2.6e-01 [4.1e-01]  N=32:  2.6e-01 [4.1e-01]  N=48:  2.6e-01 [4.1e-01]
+    Pi_m (k_z only) [not 1-pt]   N=16:  1.2e-01 [2.6e-01]  N=24:  1.4e-01 [2.8e-01]  N=32:  1.4e-01 [2.8e-01]  N=48:  1.4e-01 [2.8e-01]
+  t = 0.25:  relative difference NL vs FR (frozen-line prediction) [NL vs LZ in brackets]
+    W(m)                         N=16:  1.4e-02 [1.2e-01]  N=24:  4.3e-03 [1.3e-01]  N=32:  2.1e-03 [1.3e-01]  N=48:  1.4e-03 [1.3e-01]
+    C(j,j') slice corr.          N=16:  1.2e-02 [9.9e-02]  N=24:  3.2e-03 [1.0e-01]  N=32:  2.2e-03 [1.0e-01]  N=48:  1.2e-03 [1.0e-01]
+    Pi_m (full grad_par)         N=16:  1.3e-01 [4.4e-01]  N=24:  4.3e-02 [4.1e-01]  N=32:  3.1e-02 [4.0e-01]  N=48:  1.6e-02 [4.0e-01]
+    <g_m^4>                      N=16:  1.0e-02 [1.7e-01]  N=24:  2.9e-02 [1.6e-01]  N=32:  1.8e-02 [1.7e-01]  N=48:  1.0e-02 [1.7e-01]
+    quantiles g_m(x)             N=16:  5.3e-02 [1.1e-01]  N=24:  3.1e-02 [9.2e-02]  N=32:  2.7e-02 [8.6e-02]  N=48:  9.8e-03 [7.3e-02]
+    W(k_perp)  [not 1-pt]        N=16:  5.1e-01 [9.9e-01]  N=24:  5.1e-01 [1.0e+00]  N=32:  5.0e-01 [9.9e-01]  N=48:  4.9e-01 [9.8e-01]
+    W(|k_z|)   [not 1-pt]        N=16:  2.6e-01 [5.4e-01]  N=24:  2.9e-01 [5.9e-01]  N=32:  2.9e-01 [6.0e-01]  N=48:  2.9e-01 [6.0e-01]
+    Pi_m (k_z only) [not 1-pt]   N=16:  9.7e-02 [4.6e-01]  N=24:  1.5e-01 [4.3e-01]  N=32:  1.5e-01 [4.3e-01]  N=48:  1.6e-01 [4.1e-01]
+  [PASS] nu=0.0 t=0.062 W: NL - FR falls >10x from N=16 to N=48 and is small  (3.4e-04 -> 2.0e-05 -> 8.9e-06 -> 2.2e-07)
+  [PASS] nu=0.0 t=0.062 W: k_z-only linear prediction is far off  (NL-LZ = 6.1e-02 .. 6.1e-02)
+  [PASS] nu=0.0 t=0.062 C: NL - FR falls >10x from N=16 to N=48 and is small  (2.5e-04 -> 1.6e-05 -> 1.1e-05 -> 3.2e-07)
+  [PASS] nu=0.0 t=0.062 C: k_z-only linear prediction is far off  (NL-LZ = 3.2e-02 .. 3.2e-02)
+  [PASS] nu=0.0 t=0.062 Pi: NL - FR falls >10x from N=16 to N=48 and is small  (4.1e-03 -> 5.1e-04 -> 1.7e-04 -> 5.3e-06)
+  [PASS] nu=0.0 t=0.062 Pi: k_z-only linear prediction is far off  (NL-LZ = 4.4e-01 .. 4.5e-01)
+  [PASS] nu=0.0 t=0.062 q4: NL - FR falls >10x from N=16 to N=48 and is small  (4.9e-03 -> 2.5e-04 -> 5.3e-05 -> 8.8e-07)
+  [PASS] nu=0.0 t=0.062 quantiles: NL - FR decreases with N (sampling-limited)  (5.8e-03 -> 6.1e-04 -> 4.8e-04 -> 3.0e-04)
+  [PASS] nu=0.0 t=0.062 Wkp: NL - FR does NOT vanish (not a single-point statistic)  (2.1e-01 -> 2.1e-01 -> 2.1e-01 -> 2.1e-01)
+  [PASS] nu=0.0 t=0.062 Wkz: NL - FR does NOT vanish (not a single-point statistic)  (1.5e-01 -> 1.5e-01 -> 1.5e-01 -> 1.5e-01)
+  [PASS] nu=0.0 t=0.062 Pz: NL - FR does NOT vanish (not a single-point statistic)  (6.9e-02 -> 6.9e-02 -> 6.9e-02 -> 6.9e-02)
+  [PASS] nu=0.0 t=0.124 W: NL - FR falls >10x from N=16 to N=48 and is small  (2.4e-03 -> 2.8e-04 -> 2.4e-04 -> 5.2e-05)
+  [PASS] nu=0.0 t=0.124 W: k_z-only linear prediction is far off  (NL-LZ = 1.3e-01 .. 1.3e-01)
+  [PASS] nu=0.0 t=0.124 C: NL - FR falls >10x from N=16 to N=48 and is small  (2.7e-03 -> 5.6e-04 -> 3.6e-04 -> 7.5e-05)
+  [PASS] nu=0.0 t=0.124 C: k_z-only linear prediction is far off  (NL-LZ = 8.9e-02 .. 9.0e-02)
+  [PASS] nu=0.0 t=0.124 Pi: NL - FR falls >10x from N=16 to N=48 and is small  (1.7e-02 -> 2.6e-03 -> 1.4e-03 -> 4.3e-04)
+  [PASS] nu=0.0 t=0.124 Pi: k_z-only linear prediction is far off  (NL-LZ = 3.7e-01 .. 3.8e-01)
+  [PASS] nu=0.0 t=0.124 q4: NL - FR falls >10x from N=16 to N=48 and is small  (2.0e-02 -> 3.5e-03 -> 1.5e-03 -> 1.3e-04)
+  [PASS] nu=0.0 t=0.124 quantiles: NL - FR decreases with N (sampling-limited)  (1.5e-02 -> 5.6e-03 -> 3.9e-03 -> 1.4e-03)
+  [PASS] nu=0.0 t=0.124 Wkp: NL - FR does NOT vanish (not a single-point statistic)  (3.8e-01 -> 3.8e-01 -> 3.8e-01 -> 3.8e-01)
+  [PASS] nu=0.0 t=0.124 Wkz: NL - FR does NOT vanish (not a single-point statistic)  (2.6e-01 -> 2.6e-01 -> 2.6e-01 -> 2.6e-01)
+  [PASS] nu=0.0 t=0.124 Pz: NL - FR does NOT vanish (not a single-point statistic)  (1.2e-01 -> 1.4e-01 -> 1.4e-01 -> 1.4e-01)
+=== nu = 20.0 (hyper_n = 4), M = 8, Lambda = sqrt5, s = 1, rms|grad Phi| = rms|grad Psi| = 1.0, dt = 0.002, T = 0.25
+  N = 16: wall 20s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 24: wall 35s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 32: wall 60s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 48: wall 189s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  t = 0.062:  relative difference NL vs FR (frozen-line prediction) [NL vs LZ in brackets]
+    W(m)                         N=16:  3.2e-04 [6.0e-02]  N=24:  1.9e-05 [6.0e-02]  N=32:  8.7e-06 [6.0e-02]  N=48:  2.1e-07 [6.0e-02]
+    C(j,j') slice corr.          N=16:  2.3e-04 [3.1e-02]  N=24:  1.5e-05 [3.1e-02]  N=32:  1.1e-05 [3.1e-02]  N=48:  2.9e-07 [3.1e-02]
+    Pi_m (full grad_par)         N=16:  4.1e-03 [4.4e-01]  N=24:  5.1e-04 [4.4e-01]  N=32:  1.6e-04 [4.4e-01]  N=48:  5.0e-06 [4.4e-01]
+    <g_m^4>                      N=16:  4.9e-03 [8.1e-02]  N=24:  2.5e-04 [8.6e-02]  N=32:  5.3e-05 [8.6e-02]  N=48:  8.9e-07 [8.6e-02]
+    quantiles g_m(x)             N=16:  5.9e-03 [3.4e-02]  N=24:  5.7e-04 [3.2e-02]  N=32:  5.1e-04 [3.1e-02]  N=48:  2.8e-04 [3.1e-02]
+    eps_nu                       N=16:  2.6e-02 [3.4e+00]  N=24:  4.1e-04 [3.5e+00]  N=32:  8.2e-05 [3.5e+00]  N=48:  5.3e-06 [3.5e+00]
+    W(k_perp)  [not 1-pt]        N=16:  2.1e-01 [3.2e-01]  N=24:  2.1e-01 [3.2e-01]  N=32:  2.1e-01 [3.2e-01]  N=48:  2.1e-01 [3.2e-01]
+    W(|k_z|)   [not 1-pt]        N=16:  1.5e-01 [2.0e-01]  N=24:  1.5e-01 [2.0e-01]  N=32:  1.5e-01 [2.0e-01]  N=48:  1.5e-01 [2.0e-01]
+    Pi_m (k_z only) [not 1-pt]   N=16:  6.9e-02 [1.9e-01]  N=24:  7.0e-02 [1.9e-01]  N=32:  6.9e-02 [1.9e-01]  N=48:  6.9e-02 [1.9e-01]
+  t = 0.124:  relative difference NL vs FR (frozen-line prediction) [NL vs LZ in brackets]
+    W(m)                         N=16:  2.0e-03 [1.2e-01]  N=24:  2.9e-04 [1.2e-01]  N=32:  2.4e-04 [1.2e-01]  N=48:  5.2e-05 [1.2e-01]
+    C(j,j') slice corr.          N=16:  2.4e-03 [7.4e-02]  N=24:  5.7e-04 [7.4e-02]  N=32:  3.4e-04 [7.4e-02]  N=48:  5.7e-05 [7.4e-02]
+    Pi_m (full grad_par)         N=16:  1.4e-02 [3.9e-01]  N=24:  3.4e-03 [4.0e-01]  N=32:  1.5e-03 [3.9e-01]  N=48:  5.0e-04 [3.9e-01]
+    <g_m^4>                      N=16:  2.0e-02 [1.7e-01]  N=24:  3.5e-03 [1.9e-01]  N=32:  1.5e-03 [1.9e-01]  N=48:  1.2e-04 [1.9e-01]
+    quantiles g_m(x)             N=16:  1.5e-02 [6.4e-02]  N=24:  6.2e-03 [6.1e-02]  N=32:  3.6e-03 [6.0e-02]  N=48:  1.3e-03 [6.1e-02]
+    eps_nu                       N=16:  1.2e-03 [2.7e+00]  N=24:  1.9e-03 [2.7e+00]  N=32:  8.0e-04 [2.7e+00]  N=48:  9.2e-05 [2.7e+00]
+    W(k_perp)  [not 1-pt]        N=16:  3.9e-01 [6.5e-01]  N=24:  3.9e-01 [6.5e-01]  N=32:  3.9e-01 [6.5e-01]  N=48:  3.9e-01 [6.5e-01]
+    W(|k_z|)   [not 1-pt]        N=16:  2.6e-01 [3.9e-01]  N=24:  2.6e-01 [4.0e-01]  N=32:  2.6e-01 [4.0e-01]  N=48:  2.6e-01 [4.0e-01]
+    Pi_m (k_z only) [not 1-pt]   N=16:  1.2e-01 [2.6e-01]  N=24:  1.4e-01 [2.8e-01]  N=32:  1.4e-01 [2.8e-01]  N=48:  1.4e-01 [2.8e-01]
+  t = 0.25:  relative difference NL vs FR (frozen-line prediction) [NL vs LZ in brackets]
+    W(m)                         N=16:  6.5e-03 [1.5e-01]  N=24:  4.9e-03 [1.5e-01]  N=32:  4.8e-03 [1.5e-01]  N=48:  2.3e-03 [1.5e-01]
+    C(j,j') slice corr.          N=16:  6.2e-03 [9.6e-02]  N=24:  3.1e-03 [9.4e-02]  N=32:  3.4e-03 [9.5e-02]  N=48:  1.3e-03 [9.5e-02]
+    Pi_m (full grad_par)         N=16:  3.7e-02 [1.7e-01]  N=24:  2.9e-02 [1.5e-01]  N=32:  2.4e-02 [1.5e-01]  N=48:  1.3e-02 [1.5e-01]
+    <g_m^4>                      N=16:  1.7e-02 [2.5e-01]  N=24:  2.4e-02 [2.3e-01]  N=32:  1.3e-02 [2.4e-01]  N=48:  6.3e-03 [2.4e-01]
+    quantiles g_m(x)             N=16:  5.6e-02 [1.4e-01]  N=24:  3.3e-02 [1.1e-01]  N=32:  2.4e-02 [1.1e-01]  N=48:  7.4e-03 [9.1e-02]
+    eps_nu                       N=16:  6.7e-04 [2.3e-01]  N=24:  2.2e-02 [2.5e-01]  N=32:  1.7e-02 [2.4e-01]  N=48:  9.4e-03 [2.3e-01]
+    W(k_perp)  [not 1-pt]        N=16:  5.2e-01 [9.4e-01]  N=24:  5.1e-01 [9.4e-01]  N=32:  5.0e-01 [9.3e-01]  N=48:  5.0e-01 [9.2e-01]
+    W(|k_z|)   [not 1-pt]        N=16:  2.5e-01 [4.8e-01]  N=24:  2.8e-01 [5.4e-01]  N=32:  2.8e-01 [5.4e-01]  N=48:  2.8e-01 [5.4e-01]
+    Pi_m (k_z only) [not 1-pt]   N=16:  1.6e-01 [2.4e-01]  N=24:  1.8e-01 [2.0e-01]  N=32:  1.8e-01 [2.0e-01]  N=48:  1.7e-01 [1.9e-01]
+  [PASS] nu=20.0 t=0.062 W: NL - FR falls >10x from N=16 to N=48 and is small  (3.2e-04 -> 1.9e-05 -> 8.7e-06 -> 2.1e-07)
+  [PASS] nu=20.0 t=0.062 W: k_z-only linear prediction is far off  (NL-LZ = 6.0e-02 .. 6.0e-02)
+  [PASS] nu=20.0 t=0.062 C: NL - FR falls >10x from N=16 to N=48 and is small  (2.3e-04 -> 1.5e-05 -> 1.1e-05 -> 2.9e-07)
+  [PASS] nu=20.0 t=0.062 C: k_z-only linear prediction is far off  (NL-LZ = 3.1e-02 .. 3.1e-02)
+  [PASS] nu=20.0 t=0.062 Pi: NL - FR falls >10x from N=16 to N=48 and is small  (4.1e-03 -> 5.1e-04 -> 1.6e-04 -> 5.0e-06)
+  [PASS] nu=20.0 t=0.062 Pi: k_z-only linear prediction is far off  (NL-LZ = 4.4e-01 .. 4.4e-01)
+  [PASS] nu=20.0 t=0.062 q4: NL - FR falls >10x from N=16 to N=48 and is small  (4.9e-03 -> 2.5e-04 -> 5.3e-05 -> 8.9e-07)
+  [PASS] nu=20.0 t=0.062 quantiles: NL - FR decreases with N (sampling-limited)  (5.9e-03 -> 5.7e-04 -> 5.1e-04 -> 2.8e-04)
+  [PASS] nu=20.0 t=0.062 eps: NL - FR falls >10x from N=16 to N=48 and is small  (2.6e-02 -> 4.1e-04 -> 8.2e-05 -> 5.3e-06)
+  [PASS] nu=20.0 t=0.062 Wkp: NL - FR does NOT vanish (not a single-point statistic)  (2.1e-01 -> 2.1e-01 -> 2.1e-01 -> 2.1e-01)
+  [PASS] nu=20.0 t=0.062 Wkz: NL - FR does NOT vanish (not a single-point statistic)  (1.5e-01 -> 1.5e-01 -> 1.5e-01 -> 1.5e-01)
+  [PASS] nu=20.0 t=0.062 Pz: NL - FR does NOT vanish (not a single-point statistic)  (6.9e-02 -> 7.0e-02 -> 6.9e-02 -> 6.9e-02)
+  [PASS] nu=20.0 t=0.124 W: NL - FR falls >10x from N=16 to N=48 and is small  (2.0e-03 -> 2.9e-04 -> 2.4e-04 -> 5.2e-05)
+  [PASS] nu=20.0 t=0.124 W: k_z-only linear prediction is far off  (NL-LZ = 1.2e-01 .. 1.2e-01)
+  [PASS] nu=20.0 t=0.124 C: NL - FR falls >10x from N=16 to N=48 and is small  (2.4e-03 -> 5.7e-04 -> 3.4e-04 -> 5.7e-05)
+  [PASS] nu=20.0 t=0.124 C: k_z-only linear prediction is far off  (NL-LZ = 7.4e-02 .. 7.4e-02)
+  [PASS] nu=20.0 t=0.124 Pi: NL - FR falls >10x from N=16 to N=48 and is small  (1.4e-02 -> 3.4e-03 -> 1.5e-03 -> 5.0e-04)
+  [PASS] nu=20.0 t=0.124 Pi: k_z-only linear prediction is far off  (NL-LZ = 3.9e-01 .. 4.0e-01)
+  [PASS] nu=20.0 t=0.124 q4: NL - FR falls >10x from N=16 to N=48 and is small  (2.0e-02 -> 3.5e-03 -> 1.5e-03 -> 1.2e-04)
+  [PASS] nu=20.0 t=0.124 quantiles: NL - FR decreases with N (sampling-limited)  (1.5e-02 -> 6.2e-03 -> 3.6e-03 -> 1.3e-03)
+  [PASS] nu=20.0 t=0.124 eps: NL - FR falls >10x from N=16 to N=48 and is small  (1.2e-03 -> 1.9e-03 -> 8.0e-04 -> 9.2e-05)
+  [PASS] nu=20.0 t=0.124 Wkp: NL - FR does NOT vanish (not a single-point statistic)  (3.9e-01 -> 3.9e-01 -> 3.9e-01 -> 3.9e-01)
+  [PASS] nu=20.0 t=0.124 Wkz: NL - FR does NOT vanish (not a single-point statistic)  (2.6e-01 -> 2.6e-01 -> 2.6e-01 -> 2.6e-01)
+  [PASS] nu=20.0 t=0.124 Pz: NL - FR does NOT vanish (not a single-point statistic)  (1.2e-01 -> 1.4e-01 -> 1.4e-01 -> 1.4e-01)
+SUMMARY: 47/47 checks passed

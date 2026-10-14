@@ -1,10 +1,10 @@
 ====================================================================================================
 A. Ray picture
   [PASS] A1 int_0^{t_w} nu (m(t)/M)^n dt = nu t_w/(2n+1) with m(t) = M (t/t_w)^2 :: nu*t_w/(2*n + 1)
-   t=0.2: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 1.4e-16; mean m = 0.789568 vs (k s t)^2/2 = 0.789568
-   t=0.5: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 7.8e-16; mean m = 4.934802 vs (k s t)^2/2 = 4.934802
-   t=1.0: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 1.9e-15; mean m = 19.739209 vs (k s t)^2/2 = 19.739209
-   t=1.5: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 5.8e-15; mean m = 44.413220 vs (k s t)^2/2 = 44.413220
+   t=0.2: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 1.7e-16; mean m = 0.789568 vs (k s t)^2/2 = 0.789568
+   t=0.5: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 6.1e-16; mean m = 4.934802 vs (k s t)^2/2 = 4.934802
+   t=1.0: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 2.1e-15; mean m = 19.739209 vs (k s t)^2/2 = 19.739209
+   t=1.5: max | |g_m| - kappa^m e^(-kappa^2/4)/sqrt(2^m m!) | = 4.1e-15; mean m = 44.413220 vs (k s t)^2/2 = 44.413220
   [PASS] A2 free streaming from g_0 (Lam = inf, GANDALF operator, before the packet reaches M): |g_m|^2 Poisson, mean m = (k s t)^2/2
 ====================================================================================================
 B. Mode picture: first-order slice damping and revival time
@@ -96,4 +96,4 @@ D. Forced steady state at M = 128, n = 6, nu = 3, Lam = sqrt5, k_z = 2 pi, s = 1
     128 | 1.2702 | 0.2991 | 0.6810 | 4.2475 | 2.2107 | 2.1854
   [PASS] D1 W_zero/W_open follows [1 + e^(-2X(1-mu))]/(1 - e^(-2X)) within 1% for 2 <= m <= 48 (X from the exact revival)
    (the law with the WKB X gives coth(X) = 1.2107 at low m; with X_meas coth = 1.1854)
-== t6_reflection: 9/9 checks passed (40.1 s)
+== t6_reflection: 9/9 checks passed (185.5 s)

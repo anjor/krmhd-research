@@ -1,19 +1,19 @@
-N = 24: rms|grad Phi| during run 1.00 .. 1.19; wall 12s
-  [PASS] N=24 F1 combined forced run = sum of single responses  (4.5e-16)
+N = 24: rms|grad Phi| during run 1.00 .. 1.19; wall 32s
+  [PASS] N=24 F1 combined forced run = sum of single responses  (4.7e-16)
   injection at t=0.00: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 2.36e-03
   injection at t=0.04: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 3.14e-03
   injection at t=0.08: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 1.04e-03
   pathwise: W(m) of a forced run differs from sum of single responses by 0.05 .. 0.11 (sum |diff| / sum W) over the 2^K sign patterns
-  sign-averaged W(m) vs sum of single NL responses: 9.6e-16;  vs sum of frozen-line responses: 1.90e-03
+  sign-averaged W(m) vs sum of single NL responses: 8.5e-16;  vs sum of frozen-line responses: 1.90e-03
   [PASS] N=24 F3 pathwise cross terms are not small  (max 0.11)
-  [PASS] N=24 F3 sign average = sum of single responses (exact algebra)  (9.6e-16)
+  [PASS] N=24 F3 sign average = sum of single responses (exact algebra)  (8.5e-16)
   correlated forcing, gap 0.04: response to the second injection vs frozen-at-t_1 2.5e-03; cross term sum|2<y_A,y_B>_m| = 0.90 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.03 (relative)
   [PASS] N=24 F4 correlated forcing: the cross term survives the average and is O(1)  (0.90)
   correlated forcing, gap 0.08: response to the second injection vs frozen-at-t_1 1.8e-03; cross term sum|2<y_A,y_B>_m| = 0.69 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.12 (relative)
   correlated forcing, gap 0.12: response to the second injection vs frozen-at-t_1 3.4e-04; cross term sum|2<y_A,y_B>_m| = 0.49 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.38 (relative)
   [PASS] N=24 F4 the cross term needs the relabelling: the no-relabelling estimate gets worse with the gap and is off by > 10% at gap 0.12  (0.03, 0.12, 0.38)
-N = 32: rms|grad Phi| during run 1.00 .. 1.19; wall 22s
-  [PASS] N=32 F1 combined forced run = sum of single responses  (4.2e-16)
+N = 32: rms|grad Phi| during run 1.00 .. 1.19; wall 66s
+  [PASS] N=32 F1 combined forced run = sum of single responses  (3.4e-16)
   injection at t=0.00: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 1.13e-03
   injection at t=0.04: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 2.30e-03
   injection at t=0.08: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 6.55e-04
@@ -26,15 +26,15 @@ N = 32: rms|grad Phi| during run 1.00 .. 1.19; wall 22s
   correlated forcing, gap 0.08: response to the second injection vs frozen-at-t_1 9.8e-04; cross term sum|2<y_A,y_B>_m| = 0.69 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.12 (relative)
   correlated forcing, gap 0.12: response to the second injection vs frozen-at-t_1 2.3e-04; cross term sum|2<y_A,y_B>_m| = 0.49 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.38 (relative)
   [PASS] N=32 F4 the cross term needs the relabelling: the no-relabelling estimate gets worse with the gap and is off by > 10% at gap 0.12  (0.03, 0.12, 0.38)
-N = 48: rms|grad Phi| during run 1.00 .. 1.19; wall 82s
-  [PASS] N=48 F1 combined forced run = sum of single responses  (5.0e-16)
+N = 48: rms|grad Phi| during run 1.00 .. 1.19; wall 177s
+  [PASS] N=48 F1 combined forced run = sum of single responses  (4.5e-16)
   injection at t=0.00: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 4.19e-04
   injection at t=0.04: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 7.21e-04
   injection at t=0.08: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 2.26e-04
   pathwise: W(m) of a forced run differs from sum of single responses by 0.05 .. 0.11 (sum |diff| / sum W) over the 2^K sign patterns
-  sign-averaged W(m) vs sum of single NL responses: 2.5e-15;  vs sum of frozen-line responses: 3.03e-04
+  sign-averaged W(m) vs sum of single NL responses: 2.3e-15;  vs sum of frozen-line responses: 3.03e-04
   [PASS] N=48 F3 pathwise cross terms are not small  (max 0.11)
-  [PASS] N=48 F3 sign average = sum of single responses (exact algebra)  (2.5e-15)
+  [PASS] N=48 F3 sign average = sum of single responses (exact algebra)  (2.3e-15)
   correlated forcing, gap 0.04: response to the second injection vs frozen-at-t_1 2.8e-04; cross term sum|2<y_A,y_B>_m| = 0.90 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.03 (relative)
   [PASS] N=48 F4 correlated forcing: the cross term survives the average and is O(1)  (0.90)
   correlated forcing, gap 0.08: response to the second injection vs frozen-at-t_1 2.6e-04; cross term sum|2<y_A,y_B>_m| = 0.69 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.12 (relative)

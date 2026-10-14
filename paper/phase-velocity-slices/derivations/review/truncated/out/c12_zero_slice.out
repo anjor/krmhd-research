@@ -1,7 +1,7 @@
    M=64: max |w0^T A|/max|w0| over Lam = +-sqrt5, 0.5 and both closures < 1e-13: True
    M=128: max |w0^T A|/max|w0| over Lam = +-sqrt5, 0.5 and both closures < 1e-13: True
   [PASS] c12.a left null vector psi_m(0) (x p_M at m = M for the copy closure), any Lam, M = 64, 128
-   M=64 Lam=+2.236 zero: |d_t a0 + {Phi, a0}|/max = 1.6e-15; relative d/dt of sum|a0|^2 = 1.2e-16
-   M=64 Lam=-2.236 symmetric: |d_t a0 + {Phi, a0}|/max = 1.8e-15; relative d/dt of sum|a0|^2 = 1.8e-16
+   M=64 Lam=+2.236 zero: |d_t a0 + {Phi, a0}|/max = 1.9e-15; relative d/dt of sum|a0|^2 = 1.9e-16
+   M=64 Lam=-2.236 symmetric: |d_t a0 + {Phi, a0}|/max = 2.0e-15; relative d/dt of sum|a0|^2 = 1.4e-16
   [PASS] c12.b u = 0 slice is advected by Phi only and (pi/2) sum|a_0|^2 is conserved on krmhd_rhs (beta = 1.9)
-== c12_zero_slice: 2/2 passed (5.6 s)
+== c12_zero_slice: 2/2 passed (18.6 s)

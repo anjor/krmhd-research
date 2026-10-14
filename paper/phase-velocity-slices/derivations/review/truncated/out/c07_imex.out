@@ -7,14 +7,13 @@ a. Scalar non-autonomous test of ARS(2,2,2) stage times
   [PASS] c07.a stage time 1/2 -> first order, gamma -> second order; |y|^2 drift second order for both
 ----------------------------------------------------------------------------------------------------
 b. GANDALF: single z+ wave, 8^3, M = 8, Lam = -sqrt5, beta = 2
-W1013 20:34:41.545023 43193435 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
-   Lawson-RK4 reference (2048 steps, 5.3 s); Lawson errors at T/128, T/256: 1.29e-07, 8.06e-09 (order 4.00)
-   IMEX (8176 steps, 15.0 s): g(T) errors ['8.62e-02', '2.28e-02', '7.07e-03', '2.74e-03', '1.25e-03', '6.09e-04', '3.02e-04', '1.51e-04', '7.54e-05']; orders [1.917, 1.691, 1.369, 1.132, 1.037, 1.01, 1.003, 1.001]
-   IMEX signed W drift (W(T)-W(0))/W(0) ['+1.24e-02', '+1.26e-03', '+1.12e-04', '+2.86e-06', '-2.42e-06', '-9.97e-07', '-2.98e-07', '-8.07e-08', '-2.09e-08']; local orders [3.303, 3.493, 5.291, 0.239, 1.28, 1.741, 1.886, 1.946]
-  [PASS] c07.b gandalf_step IMEX: g(T) first order (single wave, Lam = -sqrt5, beta = 2)
-  [PASS] c07.c W drift of gandalf_step IMEX tends to second order (local order of the finest pair within 0.15 of 2) :: finest local order 1.946
-GANDALF integrations: 8^3, M = 8: Lawson reference 2048 steps + 384 steps, IMEX 8176 steps; total 20.3 s
-   lawson_rk4 reference steps=2048 dt=1.221e-04 wall=5.3s
-   lawson_rk4 steps=128+256 wall=0.7s
-   imex_rk222 steps=16+32+64+128+256+512+1024+2048+4096 = 8176 wall=15.0s
-== c07_imex: 3/3 passed (22.3 s)
+   Lawson-RK4 reference (2048 steps, 12.0 s); Lawson errors at T/128, T/256: 1.29e-07, 8.06e-09 (order 4.00)
+   IMEX (8176 steps, 37.3 s): g(T) errors ['8.37e-02', '2.07e-02', '5.17e-03', '1.29e-03', '3.23e-04', '8.09e-05', '2.02e-05', '5.05e-06', '1.26e-06']; orders [2.016, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+   IMEX signed W drift (W(T)-W(0))/W(0) ['+1.18e-02', '+1.21e-03', '+1.09e-04', '+3.57e-06', '-2.08e-06', '-8.92e-07', '-2.70e-07', '-7.32e-08', '-1.90e-08']; local orders [3.289, 3.461, 4.94, 0.775, 1.223, 1.727, 1.881, 1.944]
+  [PASS] c07.b gandalf_step IMEX: g(T) second order (krmhd >= 0.7.0, gandalf#158; first order in <= 0.6.0) (single wave, Lam = -sqrt5, beta = 2) :: finest order 2.000
+  [PASS] c07.c W drift of gandalf_step IMEX tends to second order (local order of the finest pair within 0.15 of 2) :: finest local order 1.944
+GANDALF integrations: 8^3, M = 8: Lawson reference 2048 steps + 384 steps, IMEX 8176 steps; total 49.3 s
+   lawson_rk4 reference steps=2048 dt=1.221e-04 wall=12.0s
+   lawson_rk4 steps=128+256 wall=1.5s
+   imex_rk222 steps=16+32+64+128+256+512+1024+2048+4096 = 8176 wall=37.3s
+== c07_imex: 3/3 passed (52.8 s)
