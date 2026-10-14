@@ -23,16 +23,12 @@ derivations/truncated/t2_eigenvalues.py, cached in data/computed/fig_spectrum.np
 cache to figures/spectrum.pdf and .png.
 
 Usage (from the repository root):
-    uv run python paper/phase-velocity-slices/analysis/fig_spectrum.py [--recompute] [--tag TAG]
+    uv run python paper/phase-velocity-slices/analysis/fig_spectrum.py [--recompute]
 """
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
 import os
-import platform
-import subprocess
 import sys
 import time
 from typing import Any
@@ -42,108 +38,19 @@ import numpy as np  # noqa: E402
 import jax  # noqa: E402
 
 jax.config.update("jax_enable_x64", True)
-import yaml  # noqa: E402
 from scipy.integrate import quad  # noqa: E402
 from scipy.linalg import eigh_tridiagonal  # noqa: E402
 from scipy.special import ai_zeros, wofz  # noqa: E402
 
 from krmhd.hermite import compute_streaming_matrix  # noqa: E402
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-PAPER = os.path.dirname(HERE)
-CONFIG = os.path.join(PAPER, "configs", "figures.yaml")
-CACHE_DIR = os.path.join(PAPER, "data", "computed")
-FIG_DIR = os.path.join(PAPER, "figures")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from figstyle import (Checks, config_hash, environment, lam_tex, lam_value, load_figures_config,  # noqa: E402
+                      panel_label, read_cache_meta, render, write_cache, cache_paths, FIGURES_YAML, REPO)
+
 NAME = "spectrum"
 GATES = {g: "not applicable: deterministic computation, no time integration"
          for g in ("energy_conservation", "energy_balance", "steady_state", "spectral_sanity")}
-
-
-# ------------------------------------------------------------------------------------------------------------------
-# configuration, metadata, cache
-# ------------------------------------------------------------------------------------------------------------------
-def lam_value(x: Any) -> float:
-    """Landau parameter Lambda from the config: a number or one of 'sqrt5', '-sqrt5', 'inf', '-inf'."""
-    if isinstance(x, str):
-        t = x.strip().lower()
-        sign = -1.0 if t.startswith("-") else 1.0
-        t = t.lstrip("+-")
-        if t == "inf":
-            return sign * np.inf
-        if t.startswith("sqrt"):
-            return sign * float(np.sqrt(float(t[4:])))
-        return sign * float(t)
-    return float(x)
-
-
-def lam_tex(lam: float) -> str:
-    """LaTeX label of a Landau parameter."""
-    if np.isinf(lam):
-        return r"\infty" if lam > 0 else r"-\infty"
-    if abs(abs(lam) - np.sqrt(5.0)) < 1e-12:
-        return r"\sqrt{5}" if lam > 0 else r"-\sqrt{5}"
-    return f"{lam:g}"
-
-
-def load_config() -> tuple[dict, dict]:
-    """This figure's section of configs/figures.yaml and the shared style section."""
-    with open(CONFIG) as fh:
-        cfg = yaml.safe_load(fh)
-    return cfg[NAME], cfg["style"]
-
-
-def config_hash(section: dict) -> str:
-    """Short hash of a config section; the cache is reused only if it matches."""
-    return hashlib.sha256(json.dumps(section, sort_keys=True, default=str).encode()).hexdigest()[:16]
-
-
-def environment() -> dict:
-    """Versions, precision and hardware recorded with the cached numbers."""
-    import krmhd
-    import mpmath
-    import scipy
-    try:
-        cpu = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True,
-                             timeout=5).stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        cpu = platform.processor()
-    return dict(krmhd=getattr(krmhd, "__version__", "unknown"), jax=jax.__version__, numpy=np.__version__,
-                scipy=scipy.__version__, mpmath=mpmath.__version__, python=platform.python_version(),
-                precision="float64 (jax_enable_x64 = True)", hardware=f"{platform.system()} {platform.machine()}, {cpu}")
-
-
-def cache_paths() -> tuple[str, str]:
-    return os.path.join(CACHE_DIR, f"fig_{NAME}.npz"), os.path.join(CACHE_DIR, f"fig_{NAME}.json")
-
-
-def read_meta() -> dict | None:
-    npz, js = cache_paths()
-    if not (os.path.exists(npz) and os.path.exists(js)):
-        return None
-    with open(js) as fh:
-        return json.load(fh)
-
-
-def write_meta(meta: dict) -> None:
-    with open(cache_paths()[1], "w") as fh:
-        json.dump(meta, fh, indent=1, default=float)
-
-
-class Checks:
-    """Named pass/fail comparisons, printed and stored with the cache."""
-
-    def __init__(self) -> None:
-        self.rows: list[dict] = []
-
-    def __call__(self, name: str, ok: bool, detail: str = "") -> bool:
-        ok = bool(ok)
-        self.rows.append(dict(name=name, passed=ok, detail=detail))
-        print(f"  [{'PASS' if ok else 'FAIL'}] {name}" + (f" :: {detail}" if detail else ""), flush=True)
-        return ok
-
-    @property
-    def all_passed(self) -> bool:
-        return all(r["passed"] for r in self.rows)
 
 
 # ------------------------------------------------------------------------------------------------------------------
@@ -235,7 +142,7 @@ def nu_of(M: np.ndarray, closure: str) -> np.ndarray:
 # ------------------------------------------------------------------------------------------------------------------
 # computation
 # ------------------------------------------------------------------------------------------------------------------
-def compute(cfg: dict, tag: str | None, chash: str) -> dict:
+def compute(cfg: dict, chash: str) -> dict:
     """Compute and check every number of the figure; write the cache; return the metadata."""
     t0 = time.time()
     start = time.strftime("%Y%m%d_%H%M%S")
@@ -343,14 +250,10 @@ def compute(cfg: dict, tag: str | None, chash: str) -> dict:
         asym3_zero=umax_asymptotic(Mc, "zero", 3), asym2_zero=umax_asymptotic(Mc, "zero", 2),
         asym3_copy=umax_asymptotic(Mc, "symmetric", 3), asym2_copy=umax_asymptotic(Mc, "symmetric", 2))
     wall = time.time() - t0
-    label = f"fig-{NAME}"
-    meta = dict(figure=NAME, label=label, run_id=(f"{tag}_{label}_{start}" if tag else f"{label}_{start}"),
-                start_local=start, config_file=os.path.relpath(CONFIG, os.path.dirname(os.path.dirname(PAPER))),
-                config=cfg, config_hash=chash, environment=environment(), wall_s=round(wall, 2), gates=GATES,
-                checks=chk.rows, all_checks_pass=chk.all_passed, key_numbers=key)
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    np.savez(cache_paths()[0], **arrays)
-    write_meta(meta)
+    meta = dict(figure=NAME, computed_local=start, config_file=str(FIGURES_YAML.relative_to(REPO)), config=cfg,
+                config_hash=chash, environment=environment(), wall_s=round(wall, 2), gates=GATES, checks=chk.rows,
+                all_checks_pass=chk.all_passed, key_numbers=key)
+    write_cache(NAME, arrays, meta)
     print(f"computed in {wall:.1f} s; {sum(r['passed'] for r in chk.rows)}/{len(chk.rows)} checks passed")
     return meta
 
@@ -358,39 +261,19 @@ def compute(cfg: dict, tag: str | None, chash: str) -> dict:
 # ------------------------------------------------------------------------------------------------------------------
 # plotting (from the cache only)
 # ------------------------------------------------------------------------------------------------------------------
-def setup_style(style: dict, usetex: bool):
-    """JPP figure style: 10 pt serif text, LaTeX rendering, inward ticks."""
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    fs = style["font_size_pt"]
-    plt.rcParams.update({
-        "text.usetex": usetex, "font.family": "serif", "font.serif": ["Computer Modern Roman"],
-        "mathtext.fontset": "cm", "font.size": fs, "axes.labelsize": fs, "xtick.labelsize": fs,
-        "ytick.labelsize": fs, "legend.fontsize": style["legend_font_size_pt"], "axes.linewidth": 0.6,
-        "lines.linewidth": 1.2, "lines.markersize": 4.0, "xtick.direction": "in", "ytick.direction": "in",
-        "xtick.top": True, "ytick.right": True, "xtick.major.width": 0.6, "ytick.major.width": 0.6,
-        "xtick.minor.width": 0.5, "ytick.minor.width": 0.5, "legend.frameon": False,
-        "legend.handlelength": 1.8, "savefig.pad_inches": 0.02,
-        "text.latex.preamble": r"\usepackage{amsmath}"})
-    return plt
-
-
 def plot(style: dict) -> str:
     """Draw the figure from the cached numbers; returns the rendering mode used."""
-    d = np.load(cache_paths()[0])
+    d = np.load(cache_paths(NAME)[0])
     pal = style["palette"]
     black = style["reference_color"]
-    rendering = "usetex"
-    for usetex in ((True, False) if style["usetex"] else (False,)):
-        plt = setup_style(style, usetex)
-        fig, (axa, axb) = plt.subplots(1, 2, figsize=(style["double_width_in"], 2.65),
-                                       gridspec_kw=dict(wspace=0.32))
+
+    def draw(plt):
+        fig, (axa, axb) = plt.subplots(1, 2, figsize=(style["double_width_in"], 2.6),
+                                       gridspec_kw=dict(wspace=0.3))
         # (a) spectral density and Gauss weights
         marks = ["o", "s", "^"]
         for i, L in enumerate(d["Lambda"]):
-            lab = rf"$\Lambda = {lam_tex(float(L))}$"
-            axa.plot(d["u"], d["rho"][i], color=pal[i], lw=1.2, label=lab, zorder=2)
+            axa.plot(d["u"], d["rho"][i], color=pal[i], lw=1.2, label=rf"$\Lambda = {lam_tex(float(L))}$", zorder=2)
             axa.plot(d["nodes"][i], d["weights_over_du"][i], ls="none", marker=marks[i], ms=4.2, mfc="white",
                      mec=pal[i], mew=1.0, zorder=3)
         axa.plot([], [], ls="none", marker="o", ms=4.2, mfc="white", mec=black, mew=1.0,
@@ -401,7 +284,7 @@ def plot(style: dict) -> str:
         axa.set_xlabel(r"$u$")
         axa.set_ylabel(r"$\varrho(u)$")
         axa.legend(loc="upper right", handlelength=1.6)
-        # (b) u_max - sqrt(2M + 3)
+        # (b) u_max - (2M + 3)^(1/2)
         Mc = d["M_curve"]
         ref = np.sqrt(2.0 * Mc + 3.0)
         Ml = d["M_list"]
@@ -417,43 +300,34 @@ def plot(style: dict) -> str:
         axb.set_xscale("log")
         axb.set_xlim(3.5, 1200)
         axb.set_xlabel(r"$M$")
-        axb.set_ylabel(r"$u_{\max} - \sqrt{2M + 3}$")
+        axb.set_ylabel(r"$u_{\max} - (2M + 3)^{1/2}$")
         leg = axb.legend(handles=hm, loc="upper left")
         axb.add_artist(leg)
         axb.legend(handles=hl, loc="lower right")
-        for ax, lab in ((axa, "(a)"), (axb, "(b)")):
-            ax.text(0.0, 1.025, lab, transform=ax.transAxes, ha="left", va="bottom")
-        os.makedirs(FIG_DIR, exist_ok=True)
-        try:
-            fig.savefig(os.path.join(FIG_DIR, f"{NAME}.pdf"), bbox_inches="tight")
-            fig.savefig(os.path.join(FIG_DIR, f"{NAME}.png"), dpi=style["png_dpi"], bbox_inches="tight")
-            plt.close(fig)
-            rendering = "usetex" if usetex else "mathtext"
-            break
-        except (RuntimeError, OSError) as exc:      # LaTeX unavailable: fall back to mathtext
-            print(f"LaTeX rendering failed ({exc}); falling back to mathtext")
-            plt.close(fig)
-    return rendering
+        panel_label(axa, "(a)")
+        panel_label(axb, "(b)")
+        return fig
+
+    return render(draw, NAME, style)
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--recompute", action="store_true", help="recompute even if the cache matches the config")
-    ap.add_argument("--tag", default=None, help="prefix of the run ID stored with the cache")
     args = ap.parse_args()
-    cfg, style = load_config()
+    cfg, style = load_figures_config(NAME)
     chash = config_hash(cfg)
-    meta = read_meta()
+    meta = read_cache_meta(NAME)
     if args.recompute or meta is None or meta.get("config_hash") != chash:
-        meta = compute(cfg, args.tag, chash)
+        meta = compute(cfg, chash)
     else:
-        print(f"using cached numbers from {meta['run_id']} ({cache_paths()[0]})")
+        print(f"using cached numbers computed {meta.get('computed_local')} ({cache_paths(NAME)[0]})")
     if not meta["all_checks_pass"]:
         print("FAILED CHECKS:", *[r["name"] for r in meta["checks"] if not r["passed"]], sep="\n  ")
         return 1
     meta["rendering"] = plot(style)
-    write_meta(meta)
-    print(f"wrote {os.path.join(FIG_DIR, NAME)}.pdf/.png ({meta['rendering']}); run {meta['run_id']}")
+    write_cache(NAME, None, meta)
+    print(f"wrote figures/{NAME}.pdf and .png ({meta['rendering']})")
     return 0
 
 
