@@ -3,4 +3,4 @@
    M=128 n=2: gamma_j/nu at u = -0.00: 0.1856, +0.96: 0.2077, +2.94: 0.2117, +6.00: 0.2498, +15.36: 0.8982; nu/(2n+1) = 0.2000
    M=128 n=6: gamma_j/nu at u = -0.00: 0.0737, +0.96: 0.0824, +2.94: 0.0833, +6.00: 0.0946, +15.36: 0.7313; nu/(2n+1) = 0.0769
   [PASS] hypercollisional damping of the u_max slice exceeds that of the u ~ 0 slice by > 4x and is > 0.6 nu (n = 2, 6; M = 64, 128)
-== c11_coll_damping: 1/1 passed (0.5 s)
+== c11_coll_damping: 1/1 passed (0.3 s)

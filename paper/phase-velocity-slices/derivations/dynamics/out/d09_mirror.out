@@ -1,8 +1,8 @@
-W1013 20:39:59.535978 43203746 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+W1014 23:40:43.055959 44411302 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
   [PASS] M1 gandalf_step(M X) = M gandalf_step(X): IMEX/Lawson x zero/symmetric x Lambda = +-sqrt5, nu, eta, eta_z on  (max rel mismatch 6.2e-16)
-    forced pathwise test: mismatch |M X_a - X_b| / |X| after 50, 100, 150, 200 steps: 7.0e-16, 1.9e-15, 2.1e-15, 3.7e-15;  W: 8.0e-16,  Gamma_a = -2.8494e-02, Gamma_b = 2.8494e-02
-  [PASS] M1 forced run from M X with mirrored noise and phase phi + pi stays the mirror image  (3.7e-15)
-  [PASS] M1 ... W(m) equal and Gamma opposite in the two runs  (W 8.0e-16, Gamma_a + Gamma_b = 0.0e+00)
+    forced pathwise test: mismatch |M X_a - X_b| / |X| after 50, 100, 150, 200 steps: 6.7e-16, 1.8e-15, 1.9e-15, 3.9e-15;  W: 8.0e-16,  Gamma_a = -2.8675e-02, Gamma_b = 2.8675e-02
+  [PASS] M1 forced run from M X with mirrored noise and phase phi + pi stays the mirror image  (3.9e-15)
+  [PASS] M1 ... W(m) equal and Gamma opposite in the two runs  (W 8.0e-16, Gamma_a + Gamma_b = -3.5e-17)
   [PASS] M2 M=8: spectrum symmetric and S v_u = +- v_(-u)  (6.1e-16)
   [PASS] M2 M=9: spectrum symmetric and S v_u = +- v_(-u)  (5.0e-16)
   [PASS] M2 M=128: spectrum symmetric and S v_u = +- v_(-u)  (5.3e-15)

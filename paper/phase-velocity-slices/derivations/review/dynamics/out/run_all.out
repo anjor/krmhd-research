@@ -1,8 +1,8 @@
-paper/phase-velocity-slices/derivations/review/dynamics: 2026-10-13 20:41:13, Python 3.14.3
-c01_lagrangian_pointwise: PASS (exit 0; checks passed 10, failed 0), started 20261013_204113, wall 40 s
-c01_lagrangian_pointwise_strong: PASS (exit 0; checks passed 4, failed 0), started 20261013_204153, wall 189 s
-c02_forcing_same_instant: PASS (exit 0; checks passed 5, failed 0), started 20261013_204502, wall 225 s
-c04_tilt_landau: PASS (exit 0; checks passed 8, failed 0), started 20261013_204847, wall 19 s
-c05_imex: PASS (exit 0; checks passed 9, failed 0), started 20261013_204906, wall 38 s
-c06_algebra: PASS (exit 0; checks passed 15, failed 0), started 20261013_204944, wall 4 s
-overall: PASS, total wall 515 s
+paper/phase-velocity-slices/derivations/review/dynamics: 2026-10-14 23:46:47, Python 3.14.3
+c01_lagrangian_pointwise: PASS (exit 0; checks passed 10, failed 0), started 20261014_234647, wall 37 s
+c01_lagrangian_pointwise_strong: PASS (exit 0; checks passed 4, failed 0), started 20261014_234724, wall 167 s
+c02_forcing_same_instant: PASS (exit 0; checks passed 5, failed 0), started 20261014_235011, wall 198 s
+c04_tilt_landau: PASS (exit 0; checks passed 8, failed 0), started 20261014_235329, wall 18 s
+c05_imex: PASS (exit 0; checks passed 9, failed 0), started 20261014_235347, wall 34 s
+c06_algebra: PASS (exit 0; checks passed 15, failed 0), started 20261014_235421, wall 4 s
+overall: PASS, total wall 458 s

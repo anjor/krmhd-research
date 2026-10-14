@@ -1,11 +1,11 @@
 """Shared helpers for the checks in this folder, which verify the dynamical consequences of the phase-velocity
 slice structure (Sections 5, 6 and 7 and Appendix E of the paper).  The module wraps GANDALF's grid, Poisson
-bracket, Hermite ladder and right-hand side (krmhd 0.6.0, used read-only) and provides volume averages, the slice
+bracket, Hermite ladder and right-hand side (krmhd 0.7.0, used read-only) and provides volume averages, the slice
 decomposition, RK4 steppers built on GANDALF's right-hand side, diagnostics, a pass/fail collector and a run log of
 the GANDALF time integrations.  Numerical output goes to paper/phase-velocity-slices/data/derivations/dynamics/,
 which is git-ignored.
 
-Conventions (checked in d01 against GANDALF/krmhd 0.6.0):
+Conventions (checked in d01 against GANDALF/krmhd 0.7.0):
   v_A = 1, B0 = 1;  Phi = (z+ + z-)/2,  Psi = (z+ - z-)/2;  {f, h} = f_x h_y - f_y h_x;
   u_perp = zhat x grad Phi,  b_perp = zhat x grad Psi;  D_t = d_t + {Phi, .};  grad_par = d_z + {Psi, .};
   one compressive branch in GANDALF's Hermite variables:  d_t g + {Phi, g} + s grad_par (A g) = -C g,
@@ -260,7 +260,8 @@ def flux_full(box: Box, g, psi, s: float, A: np.ndarray, p: np.ndarray) -> np.nd
 
 
 def flux_kz(box: Box, g, s: float, A: np.ndarray, p: np.ndarray, per_mode: bool = False):
-    """k_z-only Hermite flux -2 s p_m A_{m,m+1} k_z Im(conj(g_m) g_{m+1}), i.e. s p_m times krmhd's hermite_flux."""
+    """k_z-only Hermite flux -2 s p_m A_{m,m+1} k_z Im(conj(g_m) g_{m+1}).  With Psi = 0 this is twice krmhd 0.7.0's
+    hermite_flux per mode (gandalf#159, PR #162: it includes s, p_m and {Psi, .}, for the budget of (1/2) p_m <g_m^2>)."""
     g = np.asarray(g)
     M = g.shape[-1] - 1
     coef = 2 * s * p[:M] * np.array([A[m, m + 1] for m in range(M)])

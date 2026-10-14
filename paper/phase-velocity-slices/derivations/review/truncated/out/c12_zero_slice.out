@@ -4,4 +4,4 @@
    M=64 Lam=+2.236 zero: |d_t a0 + {Phi, a0}|/max = 1.6e-15; relative d/dt of sum|a0|^2 = 1.2e-16
    M=64 Lam=-2.236 symmetric: |d_t a0 + {Phi, a0}|/max = 1.8e-15; relative d/dt of sum|a0|^2 = 1.8e-16
   [PASS] c12.b u = 0 slice is advected by Phi only and (pi/2) sum|a_0|^2 is conserved on krmhd_rhs (beta = 1.9)
-== c12_zero_slice: 2/2 passed (5.6 s)
+== c12_zero_slice: 2/2 passed (3.6 s)

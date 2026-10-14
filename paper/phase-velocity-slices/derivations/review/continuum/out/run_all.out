@@ -1,9 +1,9 @@
-paper/phase-velocity-slices/derivations/review/continuum: 2026-10-13 17:29:04, Python 3.14.3
-c01_gandalf_conventions: PASS (exit 0; checks passed 29, failed 0), started 20261013_172904, wall 7 s
-c02_branches: PASS (exit 0; checks passed 20, failed 0), started 20261013_172911, wall 1 s
-c03_spectral_volterra: PASS (exit 0; checks passed 23, failed 0), started 20261013_172912, wall 16 s
-c04_cmm_invariants_flux: PASS (exit 0; checks passed 8, failed 0), started 20261013_172928, wall 5 s
-c05_lemmas_finite_krho: PASS (exit 0; checks passed 11, failed 0), started 20261013_172933, wall 3 s
-c06_zero_eigenvalue: PASS (exit 0; checks passed 12, failed 0), started 20261013_172936, wall 23 s
-c07_fluid_and_elsasser_slices: PASS (exit 0; checks passed 9, failed 0), started 20261013_172959, wall 3 s
-overall: PASS, total wall 58 s
+paper/phase-velocity-slices/derivations/review/continuum: 2026-10-14 23:41:45, Python 3.14.3
+c01_gandalf_conventions: PASS (exit 0; checks passed 29, failed 0), started 20261014_234145, wall 3 s
+c02_branches: PASS (exit 0; checks passed 20, failed 0), started 20261014_234148, wall 1 s
+c03_spectral_volterra: PASS (exit 0; checks passed 23, failed 0), started 20261014_234149, wall 12 s
+c04_cmm_invariants_flux: PASS (exit 0; checks passed 8, failed 0), started 20261014_234201, wall 4 s
+c05_lemmas_finite_krho: PASS (exit 0; checks passed 11, failed 0), started 20261014_234205, wall 2 s
+c06_zero_eigenvalue: PASS (exit 0; checks passed 12, failed 0), started 20261014_234207, wall 19 s
+c07_fluid_and_elsasser_slices: PASS (exit 0; checks passed 9, failed 0), started 20261014_234226, wall 2 s
+overall: PASS, total wall 43 s

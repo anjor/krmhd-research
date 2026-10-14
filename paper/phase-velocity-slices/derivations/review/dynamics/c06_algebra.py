@@ -11,8 +11,11 @@ A1 (two-slice law and Hermite flux) Christoffel-Darboux in matrix form, symbolic
    +-p_m A_{m,m+1} at (m, m+1), (m+1, m).  Sandwiching with the eigenvectors gives (u_j' - u_j) K_m(j,j') =
    p_m A_{m,m+1}[v_j(m)v_j'(m+1) - v_j(m+1)v_j'(m)], and with a field-aligned derivative it gives the collisionless
    budget d/dt sum_{n<=m} p_n <g_n^2> = -Pi_m.
-A2 (flux convention) krmhd.diagnostics.hermite_flux versus the p_m- and s-weighted k_z flux used in d06 and d07:
-   the ratio is 1/(s p_0) at m = 0 and 1/s at m >= 1.
+A2 (flux convention) krmhd.diagnostics.hermite_flux versus the p_m- and s-weighted flux
+   2 s p_m A_{m,m+1} Re[g_m^* grad_par g_{m+1}] per mode (with z+- = 0 the k_z flux used in d06 and d07): krmhd 0.7.0
+   (gandalf#159, PR #162) includes s, p_m and the field-line term {Psi, .} and is normalised to the budget of
+   (1/2) p_m <g_m^2>, so the ratio is 1/2 at every m, m = 0 included, with z+- = 0 and with Psi != 0.  (krmhd 0.6.0
+   returned the k_z part without s and p_0: ratio 1/(s p_0) at m = 0 and 1/s at m >= 1.)
 A3 (fourth-order statement, Section 7) correlated (f, rho f) and uncorrelated injections with equal variances: W(m)
    equal, but slice energies and Gamma differ at second order (E_j differ by 2 sqrt2 p_0 rho u_j v_j(0)^2;
    Gamma = sqrt2 p_0 rho vs 0).
@@ -83,21 +86,29 @@ s = np.sqrt(beta)
 g = np.zeros((12, 12, 7, M + 1), complex)
 for m in range(M + 1):
     g[..., m] = mode_field(grid, *random_modes(rng))
-st = KRMHDState(z_plus=jnp.zeros((12, 12, 7), complex), z_minus=jnp.zeros((12, 12, 7), complex), g=jnp.asarray(g), M=M,
-                beta_i=beta, v_th=1.0, nu=0.0, Lambda=Lam, time=0.0, grid=grid.g)
-hf = np.asarray(hermite_flux(st))
 Al = ladder(M, Lam)
 pl = pw(M, Lam)
-ratios = []
-for m in range(M):
-    mine = -grid.KZ * 2 * s * pl[m] * Al[m, m + 1] * np.imag(np.conj(g[..., m]) * g[..., m + 1])
-    sel = np.abs(mine) > 1e-8 * np.abs(mine).max()
-    ratios.append(np.median(hf[..., m][sel] / mine[sel]))
-ratios = np.array(ratios)
-print(f"    hermite_flux / (p_m s k_z-weighted flux), m = 0..{M - 1}: " + ", ".join(f"{r:.4f}" for r in ratios)
-      + f";  1/(s p_0) = {1 / (s * pl[0]):.4f}, 1/s = {1 / s:.4f}")
-chk("A2 GANDALF's hermite_flux omits s and, at m = 0, p_0", abs(ratios[0] - 1 / (s * pl[0])) < 1e-10
-    and np.abs(ratios[1:] - 1 / s).max() < 1e-10)
+psi_a2 = mode_field(grid, *random_modes(rng))
+ok_a2 = True
+for lab, psi in (("z+- = 0", np.zeros_like(psi_a2)), ("Psi != 0 (z+ = -z- = Psi)", psi_a2)):
+    st = KRMHDState(z_plus=jnp.asarray(psi), z_minus=jnp.asarray(-psi), g=jnp.asarray(g), M=M, beta_i=beta, v_th=1.0,
+                    nu=0.0, Lambda=Lam, time=0.0, grid=grid.g)
+    hf = np.asarray(hermite_flux(st))
+    ratios, dev = [], 0.0
+    for m in range(M):
+        gp = 1j * grid.KZ * g[..., m + 1] + np.asarray(poisson_bracket_3d(
+            jnp.asarray(psi), jnp.asarray(g[..., m + 1]), grid.jk[0], grid.jk[1], 12, 12, 12, grid.jk[3]))
+        mine = 2 * s * pl[m] * Al[m, m + 1] * np.real(np.conj(g[..., m]) * gp)
+        sel = np.abs(mine) > 1e-8 * np.abs(mine).max()
+        ratios.append(np.median(hf[..., m][sel] / mine[sel]))
+        dev = max(dev, np.abs(hf[..., m] - mine / 2).max() / np.abs(mine).max())
+    ratios = np.array(ratios)
+    print(f"    {lab}: hermite_flux / (2 s p_m A_(m,m+1) Re[g_m^* grad_par g_(m+1)]), m = 0..{M - 1}: "
+          + ", ".join(f"{r:.4f}" for r in ratios) + f";  max per-mode deviation from 1/2 x {dev:.1e}"
+          + f"  (krmhd 0.6.0 with z+- = 0: 1/(s p_0) = {1 / (s * pl[0]):.4f}, 1/s = {1 / s:.4f})")
+    ok_a2 = ok_a2 and np.abs(ratios - 0.5).max() < 1e-10 and dev < 1e-12
+chk("A2 krmhd 0.7.0's hermite_flux (gandalf#159, PR #162) is 1/2 x the p_m- and s-weighted field-aligned flux at every m, "
+    "m = 0 included (z+- = 0 and Psi != 0)", ok_a2)
 
 # ------------------------------------------------------------------------------------------------ A3
 for M in (8, 64):

@@ -5,7 +5,7 @@
   [PASS] E1 s u = +1 slice: d_t a = -{z+, a} - d_z a (GANDALF RHS)  (5.5e-16)
   [PASS] E1 s u = +1 slice: unchanged when z- is replaced  (6.9e-16)
   [PASS] E2 every other slice sees both z+ and z-  (min sensitivity 0.63)
-W1013 20:41:11.422490 43206255 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+W1014 23:41:43.691924 44412306 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
     E3 t = 0.5: |z+(t) - z+(0) e^(i k_z t)| = 4.7e-15, max|z-(t)| = 0.0e+00
     E3 deviation of each slice from rigid streaming along z, ||a_j(t) - a_j(0) e^(-i s u_j k_z t)|| / ||a_j(0)||:
        su=-5.031: 1.4e+00  su=-3.570: 1.4e+00  su=-2.267: 1.4e+00  su=-1.000: 1.4e-14  su=+0.000: 1.4e+00  su=+1.000: 1.4e+00  su=+2.267: 1.4e+00  su=+3.570: 1.4e+00  su=+5.031: 1.4e+00

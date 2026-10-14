@@ -1,25 +1,28 @@
-"""t7b_imex_order: checks why GANDALF's IMEX-RK222 step couples g to z+- only at first order in dt: the order
-conditions of the ARS(2,2,2) tableau with the stage-2 Elsasser fields taken at t + dt/2, the first-order convergence
-of g(T) through gandalf_step against a Lawson-RK4 reference, a re-implementation of the step from krmhd's own
-functions that reproduces gandalf_step and recovers second order when the stage time is gamma dt, and the
-second-order drift of the invariants. Supports Appendix D of the paper (summarised in Section 8).
+"""t7b_imex_order: checks the order in dt at which GANDALF's IMEX-RK222 step couples g to z+-: the order conditions of
+the ARS(2,2,2) tableau, which need the stage-2 Elsasser fields at t + gamma dt, as krmhd 0.7.0 takes them (gandalf#158,
+PR #163; krmhd 0.6.0 took them at t + dt/2, which is first order); the second-order convergence of g(T) through
+gandalf_step against a Lawson-RK4 reference; a re-implementation of the step from krmhd's own functions that
+reproduces gandalf_step with the stage time gamma dt and drops to first order with t + dt/2; and the second-order
+drift of the invariants. It concerns the time-stepping appendix of an earlier draft, not the current paper.
 
 A  (SymPy) ARS(2,2,2) explicit tableau with GANDALF's gamma = 1 - 1/sqrt2, delta = 1 - 1/(2 gamma): weights
    b~ = (delta, 1 - delta, 0), stage time c~_2 = gamma, sum b~ c~ = (1 - delta) gamma = 1/2 (second order). GANDALF
-   evaluates the stage-2 explicit term with z+- at t + dt/2 (the Elsasser midpoint predictor), so the time-dependence
-   of N(g, z(t)) is sampled with sum b~ c_z = (1 - delta)/2 = 1/(4 gamma) = 1/2 + sqrt2/4: the local error contains
+   evaluates the stage-2 explicit term with z+- predicted to t + gamma dt, which satisfies this condition. With z+- at
+   t + dt/2 (the Elsasser midpoint predictor, as in krmhd 0.6.0) the time-dependence of N(g, z(t)) would be sampled
+   with sum b~ c_z = (1 - delta)/2 = 1/(4 gamma) = 1/2 + sqrt2/4: the local error then contains
    (sqrt2/4) dt^2 (dN/dz) dz/dt, a first-order global error.
 B  GANDALF measurement (float64, 8^3, M = 6, Lam = sqrt5): self-convergence of g(T) for gandalf_step IMEX against a
-   Lawson-RK4 reference: order 1 for a single propagating z+ (z- = 0, the Elsasser update is then exact) and for
+   Lawson-RK4 reference: order 2 for a single propagating z+ (z- = 0, the Elsasser update is then exact) and for
    general nonlinear z+-; Lawson-RK4 is order 4 in the first case.
 C  Mechanism: a re-implementation of one IMEX step from krmhd's own pieces (_krmhd_rhs_jit, build_implicit_operator,
-   factor_imex_operator, imex_solve) reproduces gandalf_step to round-off when the stage-2 z+- is taken at t + dt/2;
-   taking it at t + gamma dt instead restores second order.
-D  The first-order defect is a pure phase error (it advects every slice with an incompressible field taken at the wrong
-   time), so it does not change the invariants at leading order. For non-autonomous advection both the GANDALF step and
-   the consistent variant change |g|^2 by O(dt^3) per step (SymPy, scalar oscillator with omega(t) = omega0 + omega1 t:
-   |R|^2 = 1 + c' omega0 omega1 dt^3 + O(dt^4)), so W and Gamma drift at second order in dt asymptotically, with a
-   third-order part that dominates at coarse dt; the trajectory error of g is first order.
+   factor_imex_operator, imex_solve) reproduces gandalf_step to round-off when the stage-2 z+- is taken at
+   t + gamma dt; taking it at t + dt/2 instead (the krmhd 0.6.0 step) drops g(T) to first order.
+D  The first-order defect of the t + dt/2 variant is a pure phase error (it advects every slice with an incompressible
+   field taken at the wrong time), so it does not change the invariants at leading order. For non-autonomous
+   advection both stage times change |g|^2 by O(dt^3) per step (SymPy, scalar oscillator with
+   omega(t) = omega0 + omega1 t: |R|^2 = 1 + c' omega0 omega1 dt^3 + O(dt^4)), so W and Gamma drift at second order
+   in dt asymptotically, with a third-order part that dominates at coarse dt, for GANDALF's step and the t + dt/2
+   variant alike; the trajectory error of g is second order for GANDALF's step and first order for the variant.
 """
 from __future__ import annotations
 
@@ -49,7 +52,8 @@ print(f"   gamma = {sp.nsimplify(g_)} ({float(g_)!r} vs GANDALF {_IMEX_GAMMA!r})
       f"({float(d_)!r} vs {_IMEX_DELTA!r})")
 print(f"   sum b~ = {s1}; sum b~ c~ (stage time gamma) = {s2}; with z at t + dt/2: (1 - delta)/2 = {sp.simplify(s2z)} "
       f"= 1/2 + {defect}")
-C.check("A1 consistent stage times give sum b~ c~ = 1/2; GANDALF's z at t + dt/2 gives 1/(4 gamma) = 1/2 + sqrt2/4",
+C.check("A1 consistent stage times (GANDALF's gamma, delta) give sum b~ c~ = 1/2; z at t + dt/2 (krmhd 0.6.0) gives "
+        "1/(4 gamma) = 1/2 + sqrt2/4",
         s1 == 1 and s2 == sp.Rational(1, 2) and sp.simplify(defect - sp.sqrt(2) / 4) == 0
         and abs(_IMEX_GAMMA - float(g_)) < 1e-16 and abs(_IMEX_DELTA - float(d_)) < 1e-15)
 
@@ -79,8 +83,9 @@ mask = jnp.asarray(grid.dealias_mask)
 
 
 def imex_variant(state, dt: float, cz: float):
-    """One ARS(2,2,2) step assembled from krmhd's own functions exactly as _gandalf_step_imex222_jit does, except that
-    the stage-2 explicit term uses z+- predicted to t + cz dt (GANDALF: cz = 1/2). eta = eta_z = nu = 0."""
+    """One ARS(2,2,2) step assembled from krmhd's own functions as _gandalf_step_imex222_jit does, with the stage-2
+    explicit term evaluated with z+- predicted to t + cz dt (krmhd 0.7.0: cz = gamma; krmhd 0.6.0: cz = 1/2).
+    eta = eta_z = nu = 0."""
     f = _fields_from_state(state)
     kx, ky, kz = grid.kx, grid.ky, grid.kz
     kz3 = kz[:, None, None]
@@ -149,18 +154,18 @@ for case in ("single z+ (z- = 0)", "general z+-"):
     stream = np.stack([dz(grid, np.einsum("mn,zyxn->zyxm", A, np.asarray(g))[..., m]) for m in range(M + 1)], -1)
     print(f"   case: {case}; max|grad_perp z+| = {maxgrad(grid, zp):.3f}, max|grad_perp z-| = {maxgrad(grid, zm):.3f}; "
           f"|N(g)| / |s d_z(A g)| = {np.linalg.norm(Nfull) / np.linalg.norm(stream):.3f}")
-    # C1: the variant with cz = 1/2 reproduces gandalf_step
+    # C1: the variant with cz = gamma reproduces gandalf_step
     t0 = time.time()
     a = gandalf_step(st0, 0.01, eta=0.0, v_A=1.0, nu=0.0, scheme="imex_rk222")
     np.asarray(a.g)
     runs.append(("imex single step (C1)", case, 1, 0.01, time.time() - t0))
     t0 = time.time()
-    bb = imex_variant(st0, 0.01, 0.5)
+    bb = imex_variant(st0, 0.01, _IMEX_GAMMA)
     np.asarray(bb.g)
-    runs.append(("var_half single step (C1)", case, 1, 0.01, time.time() - t0))
+    runs.append(("var_gamma single step (C1)", case, 1, 0.01, time.time() - t0))
     rep = max(float(np.abs(np.asarray(a.g) - np.asarray(bb.g)).max() / np.abs(np.asarray(a.g)).max()),
               float(np.abs(np.asarray(a.z_plus) - np.asarray(bb.z_plus)).max() / np.abs(np.asarray(a.z_plus)).max()))
-    print(f"     re-implemented step (z at t + dt/2) vs gandalf_step: max relative difference {rep:.1e}")
+    print(f"     re-implemented step (z at t + gamma dt) vs gandalf_step: max relative difference {rep:.1e}")
     okC = okC and rep < 1e-13
     T = 0.2
     t0 = time.time()
@@ -190,21 +195,22 @@ for case in ("single z+ (z- = 0)", "general z+-"):
         if how != "lawson":
             print(f"                |W(T)-W(0)|/W(0): " + " ".join(f"{e:.2e}" for e in dW) + f"; orders {np.round(oW, 2).tolist()};"
                   f" |Gamma(T)-Gamma(0)|/|Gamma(0)|: " + " ".join(f"{e:.2e}" for e in dG))
-    okB = okB and abs(res["imex"][0][-1] - 1.0) < 0.1 and abs(res["var_half"][0][-1] - 1.0) < 0.1
-    okC = okC and abs(res["var_gamma"][0][-1] - 2.0) < 0.15
+    okB = okB and abs(res["imex"][0][-1] - 2.0) < 0.15
+    okC = okC and abs(res["var_gamma"][0][-1] - 2.0) < 0.15 and abs(res["var_half"][0][-1] - 1.0) < 0.1
     if case.startswith("single"):
         okB = okB and res["lawson"][0][-1] > 3.5
     if case.startswith("single"):
-        oW_i, oW_g = res["imex"][1], res["var_gamma"][1]
-        dWr = np.array(res["imex"][3]) / np.array(res["var_gamma"][3])
-        print(f"     W-drift ratio GANDALF/consistent variant at each dt: {np.round(dWr, 3).tolist()}")
-        okD = okD and np.all(oW_i > 1.9) and np.all(np.diff(oW_i) < 0) and abs(oW_i[-1] - oW_g[-1]) < 0.05 \
+        oW_i, oW_h = res["imex"][1], res["var_half"][1]
+        dWr = np.array(res["var_half"][3]) / np.array(res["imex"][3])
+        print(f"     W-drift ratio t + dt/2 variant / GANDALF at each dt: {np.round(dWr, 3).tolist()}")
+        okD = okD and np.all(oW_i > 1.9) and np.all(np.diff(oW_i) < 0) and abs(oW_i[-1] - oW_h[-1]) < 0.05 \
             and np.all(np.abs(dWr - 1) < 0.35)
-C.check("B1 gandalf_step IMEX: g(T) converges at first order (z- = 0 and general z+-); Lawson-RK4 at fourth order "
-        "for z- = 0", okB)
-C.check("C1 the re-implemented step reproduces gandalf_step; moving the stage-2 z+- from t + dt/2 to t + gamma dt "
-        "restores second order", okC)
-C.check("D1 single-wave case: the W drift converges at local orders 2.6 -> 2.1 (second order asymptotically) for GANDALF and the consistent variant alike, while g(T) converges at first order", okD)
+C.check("B1 gandalf_step IMEX: g(T) converges at second order (z- = 0 and general z+-; krmhd 0.7.0, gandalf#158, "
+        "PR #163); Lawson-RK4 at fourth order for z- = 0", okB)
+C.check("C1 the re-implemented step with the stage-2 z+- at t + gamma dt reproduces gandalf_step and is second order; "
+        "with z+- at t + dt/2 (krmhd 0.6.0) it is first order", okC)
+C.check("D1 single-wave case: the W drift converges at local orders 2.6 -> 2.1 (second order asymptotically) for "
+        "GANDALF's step and the t + dt/2 variant alike, while g(T) of the variant converges at first order", okD)
 print("GANDALF integrations (what, case, steps, dt, wall s), grid 8^3, M = 6, Lam = sqrt5, T = 0.2:")
 for r in runs:
     print(f"   {r[0]} | {r[1]} | steps={r[2]} | dt={r[3] if r[3] is None else f'{r[3]:.2e}'} | wall={r[4]:.1f}s")

@@ -15,11 +15,16 @@ Slices a_j = w_j . g (left eigenvectors of A), C(j,j') = <a_j a_j'> (volume aver
  L3 Hermite flux:  Pi_m = 2 s p_m A_{m,m+1} <g_m grad_par g_{m+1}> = -sum_{j,j'} K_m(j,j') dC(j,j')/dt,
     K_m(j,j') = sum_{n<=m} p_n v_j(n) v_j'(n)  (Christoffel-Darboux kernel), with the CD identity
     (u_j' - u_j) K_m(j,j') = p_m A_{m,m+1} [v_j(m) v_j'(m+1) - v_j(m+1) v_j'(m)];
-    per mode, the k_z-only flux (dcore.flux_kz, i.e. s p_m times krmhd's hermite_flux) is the CD-filtered linear
-    dephasing:
+    per mode, the k_z-only flux (dcore.flux_kz; with Psi = 0 it is twice krmhd 0.7.0's hermite_flux) is the
+    CD-filtered linear dephasing:
     Pi^z_m(k) = -sum K_m(j,j') Re[-i s k_z (u_j - u_j') C_k(j,j')].
  L4 frozen field lines: in the frozen-line problem C(j,j'; t) = <a_j(0), T_{s(u_j' - u_j) t} a_j'(0)>, with
-    T_l = exp(-l grad_par(0)) the translation along the frozen field lines (checked for one pair).
+    T_l = exp(-l grad_par(0)) the translation along the frozen field lines (checked for the pair u_i = -u_j, with
+    classical RK4 and GANDALF's bracket).  The discrete grad_par(0) is anti-Hermitian (2/3-dealiased bracket) and the
+    RK4 polynomial R4 has real coefficients, so R4(-c dt L)^H = R4(c dt L) for L = -grad_par(0); for u_i = -u_j the
+    two transported slices then give exactly the relative transport computed with dt/2:
+    <a_i(t) a_j(t)>_dt = <a_i(0), T a_j(0)>_{dt/2} to round-off.  The mismatch at equal dt is therefore the RK4 error
+    of the transport T alone, and falls at fourth order in dt.
 """
 import os
 import sys
@@ -141,7 +146,7 @@ def make_transport(dt):
     return transport
 
 
-errs = []
+errs, lhs_dt, rhs_dt = [], [], []
 for dt in (0.001, 0.0005, 0.00025):
     transport = make_transport(dt)
     fi, fj, fr = jnp.asarray(a0[..., 0]), jnp.asarray(a0[..., 1]), jnp.asarray(a0[..., 1])
@@ -155,9 +160,20 @@ for dt in (0.001, 0.0005, 0.00025):
     lhs = box.inner(np.asarray(fi), np.asarray(fj))
     rhs = box.inner(a0[..., 0], np.asarray(fr))
     errs.append(abs(lhs - rhs) / abs(rhs))
+    lhs_dt.append(lhs)
+    rhs_dt.append(rhs)
     print(f"    L4 dt = {dt}: <a_i(t) a_j(t)> = {lhs:.10e}, <a_i(0), T a_j(0)> = {rhs:.10e}, rel diff {errs[-1]:.2e}")
 rate = np.log2(errs[0] / errs[1]), np.log2(errs[1] / errs[2])
-chk(f"L4 frozen lines: <a_i(t) a_j(t)> = <a_i(0), T_(s (u_j - u_i) t) a_j(0)> (u_i={u[i]:.3f}, u_j={u[j]:.3f}); "
-    "mismatch is RK4 time error (4th order)", errs[-1] < 1e-9 and min(rate) > 3.5,
-    f"rel diff {errs[0]:.1e} -> {errs[1]:.1e} -> {errs[2]:.1e}, observed orders {rate[0]:.2f}, {rate[1]:.2f}")
+# exact discrete identity for the pair u_i = -u_j: <a_i a_j> with step dt equals <a_i(0), T a_j(0)> with step dt/2
+half = max(abs(lhs_dt[k] - rhs_dt[k + 1]) / abs(rhs_dt[k + 1]) for k in range(2))
+print(f"    L4 <a_i(t) a_j(t)> at dt vs <a_i(0), T a_j(0)> at dt/2: max rel diff {half:.1e}")
+# krmhd 0.6.0 (2/3 mask with 3|n| <= N, one more shell at N = 24): rel diff 2.1e-7 -> 1.4e-8 -> 8.6e-10 (orders 3.94,
+# 3.98). The earlier absolute bound 1e-9 at dt = 0.00025 was not part of the statement; it failed at 1.9e-9 with the
+# corrected mask of krmhd 0.7.0 (gandalf#172), which changes the transported fields near the cutoff (<a_i(t) a_j(t)>
+# moves from 3.912e-4 to 4.059e-4), and with them the size of the RK4 error
+chk(f"L4 frozen lines: <a_i(t) a_j(t)> = <a_i(0), T_(s (u_j - u_i) t) a_j(0)> (u_i={u[i]:.3f}, u_j={u[j]:.3f}); the "
+    "mismatch is the RK4 error of the transport (equal to round-off with dt/2 for the transport, 4th order in dt)",
+    abs(u[i] + u[j]) < 1e-12 and half < 1e-12 and min(rate) > 3.5,
+    f"rel diff {errs[0]:.1e} -> {errs[1]:.1e} -> {errs[2]:.1e}, observed orders {rate[0]:.2f}, {rate[1]:.2f}; "
+    f"dt vs dt/2 for the transport {half:.1e}")
 chk.finish()

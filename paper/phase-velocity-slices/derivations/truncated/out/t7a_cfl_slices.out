@@ -11,48 +11,57 @@ A. The explicit term in slice variables
   [PASS] A1 explicit term (GANDALF's _krmhd_rhs_jit at k_z = 0) = -{Phi + s u_j Psi, a_j} slice by slice
 ====================================================================================================
 B. GANDALF's CFL speed versus the slice speeds
-   M= 16 Lam=+2.236: u_max = 4.8713; GANDALF v_max = 1.000 (dt_cfl reproduced: 0.0e+00); slice speeds max|grad(Phi + u Psi)| at u = -u_max, +u_max, 0: 0.453, 0.488, 0.092; ratio fastest slice / v_max = 0.49; bound |grad Phi| + u_max |grad Psi| = 0.551
-   M= 16 Lam=-2.236: u_max = 4.8713; GANDALF v_max = 1.000 (dt_cfl reproduced: 0.0e+00); slice speeds max|grad(Phi + u Psi)| at u = -u_max, +u_max, 0: 0.453, 0.488, 0.092; ratio fastest slice / v_max = 0.49; bound |grad Phi| + u_max |grad Psi| = 0.551
-   M= 64 Lam=+2.236: u_max = 10.6160; GANDALF v_max = 1.000 (dt_cfl reproduced: 0.0e+00); slice speeds max|grad(Phi + u Psi)| at u = -u_max, +u_max, 0: 0.982, 0.958, 0.082; ratio fastest slice / v_max = 0.98; bound |grad Phi| + u_max |grad Psi| = 1.052
-   M= 64 Lam=-2.236: u_max = 10.6160; GANDALF v_max = 1.000 (dt_cfl reproduced: 0.0e+00); slice speeds max|grad(Phi + u Psi)| at u = -u_max, +u_max, 0: 0.982, 0.958, 0.082; ratio fastest slice / v_max = 0.98; bound |grad Phi| + u_max |grad Psi| = 1.052
-   M=128 Lam=+2.236: u_max = 15.3550; GANDALF v_max = 1.000 (dt_cfl reproduced: 0.0e+00); slice speeds max|grad(Phi + u Psi)| at u = -u_max, +u_max, 0: 1.370, 1.378, 0.084; ratio fastest slice / v_max = 1.38; bound |grad Phi| + u_max |grad Psi| = 1.458
-   M=128 Lam=-2.236: u_max = 15.3550; GANDALF v_max = 1.000 (dt_cfl reproduced: 0.0e+00); slice speeds max|grad(Phi + u Psi)| at u = -u_max, +u_max, 0: 1.370, 1.378, 0.084; ratio fastest slice / v_max = 1.38; bound |grad Phi| + u_max |grad Psi| = 1.458
-  [PASS] B1 compute_cfl_timestep = 0.3 dx / max(v_A, |grad z+-|, s|grad Psi|) (no u_j); fastest slice speed obeys the bound and exceeds v_max by ~u_max
+   M= 16 Lam=+2.236 zero     : u_max = 4.8713; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 1.907 at u = +4.8713 (bound |grad Phi| + s u_max |grad Psi| = 2.116); GANDALF dt_cfl reproduced with v_max = V_g: 2.2e-16; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 1.91
+   M= 16 Lam=+2.236 symmetric: u_max = 5.3021; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 2.067 at u = +5.3021 (bound |grad Phi| + s u_max |grad Psi| = 2.276); GANDALF dt_cfl reproduced with v_max = V_g: 2.2e-16; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 2.07
+   M= 16 Lam=-2.236 zero     : u_max = 4.8713; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 1.907 at u = +4.8713 (bound |grad Phi| + s u_max |grad Psi| = 2.116); GANDALF dt_cfl reproduced with v_max = V_g: 0.0e+00; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 1.91
+   M= 16 Lam=-2.236 symmetric: u_max = 5.3021; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 2.067 at u = +5.3021 (bound |grad Phi| + s u_max |grad Psi| = 2.276); GANDALF dt_cfl reproduced with v_max = V_g: 0.0e+00; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 2.07
+   M= 64 Lam=+2.236 zero     : u_max = 10.6160; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 3.867 at u = -10.6160 (bound |grad Phi| + s u_max |grad Psi| = 4.098); GANDALF dt_cfl reproduced with v_max = V_g: 2.2e-16; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 3.87
+   M= 64 Lam=+2.236 symmetric: u_max = 11.0012; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 4.005 at u = -11.0012 (bound |grad Phi| + s u_max |grad Psi| = 4.237); GANDALF dt_cfl reproduced with v_max = V_g: 0.0e+00; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 4.01
+   M= 64 Lam=-2.236 zero     : u_max = 10.6160; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 3.867 at u = -10.6160 (bound |grad Phi| + s u_max |grad Psi| = 4.098); GANDALF dt_cfl reproduced with v_max = V_g: 0.0e+00; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 3.87
+   M= 64 Lam=-2.236 symmetric: u_max = 11.0012; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 4.005 at u = -11.0012 (bound |grad Phi| + s u_max |grad Psi| = 4.237); GANDALF dt_cfl reproduced with v_max = V_g: 2.2e-16; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 4.01
+   M=128 Lam=+2.236 zero     : u_max = 15.3550; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 5.434 at u = +15.3550 (bound |grad Phi| + s u_max |grad Psi| = 5.699); GANDALF dt_cfl reproduced with v_max = V_g: 0.0e+00; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 5.43
+   M=128 Lam=+2.236 symmetric: u_max = 15.7123; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 5.560 at u = +15.7123 (bound |grad Phi| + s u_max |grad Psi| = 5.825); GANDALF dt_cfl reproduced with v_max = V_g: 0.0e+00; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 5.56
+   M=128 Lam=-2.236 zero     : u_max = 15.3550; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 5.434 at u = +15.3550 (bound |grad Phi| + s u_max |grad Psi| = 5.699); GANDALF dt_cfl reproduced with v_max = V_g: 0.0e+00; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 5.43
+   M=128 Lam=-2.236 symmetric: u_max = 15.7123; max(v_A, |grad z+-|) = 1.000; fastest slice speed V_g = 5.560 at u = +15.7123 (bound |grad Phi| + s u_max |grad Psi| = 5.825); GANDALF dt_cfl reproduced with v_max = V_g: 0.0e+00; dt_cfl V_g / dx = 0.300; krmhd 0.6.0 v_max (no u_j) = 1.000, V_g / that = 5.56
+  [PASS] B1 compute_cfl_timestep = 0.3 dx / max(v_A, |grad z+-|, max_j |grad(Phi + s u_j Psi)|) for both closures (krmhd 0.7.0, gandalf#157, PR #161): the fastest slice, at an extreme u_j, sets dt_cfl and obeys dt_cfl V_g = 0.3 dx
 ====================================================================================================
 C. Stage polynomials
    GANDALF constants gamma = 0.2928932188134524, delta = -0.7071067811865479; R2(z) = -sqrt(2)*z**2/(4 - 2*sqrt(2)) + z**2/(2 - sqrt(2)) + z + 1; |R2(iy)|^2 = y**4/4 + 1; |R4(iy)|^2 = y**8/576 - y**6/72 + 1
   [PASS] C1 explicit IMEX part R2 = 1 + z + z^2/2, |R2(iy)|^2 = 1 + y^4/4; RK4 |R4(iy)|^2 = 1 - y^6/72 + y^8/576
 ====================================================================================================
 D. GANDALF shear-flow test: per-step growth of every slice
-   M = 64, Lam = sqrt5, max|grad Psi| = 2.000, max|grad Phi| = 0.600; fastest slice speed max|f_j'| = 21.832; GANDALF dt_cfl(0.3) = 3.606e-03; y_fast(dt_cfl) = 4.90
-W1014 16:29:53.606849 44043240 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
-   imex_rk222, eta=0, dt=5.892e-04 (y_fast=0.8, 0.163 dt_cfl), 60 steps (4.9s): max relative deviation of every slice trajectory from the predicted linear map = 6.6e-14
+   M = 64, Lam = sqrt5, max|grad Psi| = 2.000, max|grad Phi| = 0.600; fastest slice speed max|f_j'| = 21.832; GANDALF dt_cfl(0.3) = 4.294e-04; y_fast(dt_cfl) = 0.58
+W1014 23:32:34.508251 44403005 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+   imex_rk222, eta=0, dt=5.892e-04 (y_fast=0.8, 1.372 dt_cfl), 60 steps (4.8s): max relative deviation of every slice trajectory from the predicted linear map = 6.6e-14
      u_j                         :     0.000     3.056     6.060     9.987    10.616
      |a_j(n)|/|a_j(0)| (GANDALF) : 1.000e+00 1.010e+00 1.112e+00 6.355e+00 6.497e+00
      spectral radius per step    :   1.00000   1.00046   1.00588   1.03960   1.04995
-   imex_rk222, eta=2000, dt=5.892e-04 (y_fast=0.8, 0.163 dt_cfl), 60 steps (1.0s): max relative deviation of every slice trajectory from the predicted linear map = 4.4e-14
+   imex_rk222, eta=2000, dt=5.892e-04 (y_fast=0.8, 1.372 dt_cfl), 60 steps (1.0s): max relative deviation of every slice trajectory from the predicted linear map = 4.4e-14
      u_j                         :     0.000     3.056     6.060     9.987    10.616
      |a_j(n)|/|a_j(0)| (GANDALF) : 4.770e-09 2.789e-09 1.203e-09 1.010e-08 1.362e-08
      spectral radius per step    :   0.74089   0.73112   0.72889   0.74555   0.75176
-   lawson_rk4, eta=0, dt=1.915e-03 (y_fast=2.6, 0.531 dt_cfl), 60 steps (8.5s): max relative deviation of every slice trajectory from the predicted linear map = 4.9e-14
+   lawson_rk4, eta=0, dt=1.915e-03 (y_fast=2.6, 4.459 dt_cfl), 60 steps (7.8s): max relative deviation of every slice trajectory from the predicted linear map = 4.9e-14
      u_j                         :     0.000     3.056     6.060     9.987    10.616
      |a_j(n)|/|a_j(0)| (GANDALF) : 1.000e+00 9.718e-01 7.345e-01 4.787e-01 5.685e-01
      spectral radius per step    :   1.00000   1.00000   1.00000   1.00000   1.00000
-   lawson_rk4, eta=0, dt=2.283e-03 (y_fast=3.1, 0.633 dt_cfl), 20 steps (0.5s): max relative deviation of every slice trajectory from the predicted linear map = 7.0e-14
+   lawson_rk4, eta=0, dt=2.283e-03 (y_fast=3.1, 5.317 dt_cfl), 20 steps (0.5s): max relative deviation of every slice trajectory from the predicted linear map = 7.0e-14
      u_j                         :     0.000     3.056     6.060     9.987    10.616
      |a_j(n)|/|a_j(0)| (GANDALF) : 1.000e+00 9.737e-01 7.435e-01 5.040e+01 6.044e+04
      spectral radius per step    :   1.00000   1.00000   1.00000   1.25561   1.86566
   [PASS] D1 every slice trajectory through gandalf_step equals the derived per-slice linear map D_eta R(dt N_j) (IMEX and Lawson, eta on/off) to round-off
   [PASS] D2 when unstable, the fastest-growing slice is at |u_j| ~ u_max
-   IMEX, eta = 2000: slice u = +10.616: first unstable dt (any k_x plane) = 1.2534e-03; small-y formula (8 eta)^(1/3)/(k_perp,max V_j)^(4/3) = 1.0558e-03; GANDALF dt_cfl = 3.606e-03
-   IMEX, eta = 2000: slice u = +0.000: first unstable dt (any k_x plane) = 2.0699e-01; small-y formula (8 eta)^(1/3)/(k_perp,max V_j)^(4/3) = 1.2730e-01; GANDALF dt_cfl = 3.606e-03
-  [PASS] D3 IMEX, eta = 2000: GANDALF's dt_cfl exceeds the stability threshold of the fastest slice (formula within 25%) but not that of u ~ 0
-   gandalf_step at dt_cfl, eta = 2000, 15 steps (trajectory deviation from the linear map 1.5e-14): amplitude ratio at u = +0.00: 3.34e-13, +3.06: 3.03e-11, +6.06: 3.30e-05, +9.99: 1.30e+02, +10.62: 7.65e+02
-  [PASS] D4 at GANDALF's dt_cfl the u_max slices blow up while the u ~ 0 slice decays
+   limit without the factor u_j: 0.3 dx / max(v_A, |grad z+-|, s |grad Psi|) = 3.6058e-03 (8.40 GANDALF dt_cfl)
+   IMEX, eta = 2000: slice u = +10.616: first unstable dt (any k_x plane) = 1.2534e-03; small-y formula (8 eta)^(1/3)/(k_perp,max V_j)^(4/3) = 1.0558e-03; GANDALF dt_cfl = 4.294e-04; limit without u_j = 3.606e-03
+   IMEX, eta = 2000: slice u = +0.000: first unstable dt (any k_x plane) = 2.0699e-01; small-y formula (8 eta)^(1/3)/(k_perp,max V_j)^(4/3) = 1.2730e-01; GANDALF dt_cfl = 4.294e-04; limit without u_j = 3.606e-03
+  [PASS] D3 IMEX, eta = 2000: the stability threshold of the fastest slice (formula within 25%) lies above GANDALF's dt_cfl (krmhd 0.7.0, gandalf#157, PR #161) and below the limit without u_j; that of u ~ 0 lies above both
+   gandalf_step at GANDALF's dt_cfl (dt = 4.294e-04), eta = 2000, 15 steps (trajectory deviation from the linear map 5.1e-15): amplitude ratio at u = +0.00: 1.94e-02, +3.06: 1.98e-02, +6.06: 1.58e-02, +9.99: 2.14e-02, +10.62: 1.86e-02; largest over all slices 2.40e-02 at u = -0.25
+   gandalf_step at the limit without u_j (dt = 3.606e-03), eta = 2000, 15 steps (trajectory deviation from the linear map 1.5e-14): amplitude ratio at u = +0.00: 3.34e-13, +3.06: 3.03e-11, +6.06: 3.30e-05, +9.99: 1.30e+02, +10.62: 7.65e+02; largest over all slices 7.65e+02 at u = +10.62
+  [PASS] D4 eta = 2000: at GANDALF's dt_cfl every slice decays; at the limit without u_j the u_max slices blow up while the u ~ 0 slice decays
 GANDALF integrations (scheme, dt, eta, steps, wall s), grid 32x32x2, M = 64, Lam = sqrt5, shear flow:
-   imex_rk222 dt=5.892e-04 eta=0 steps=60 wall=4.9s
+   imex_rk222 dt=5.892e-04 eta=0 steps=60 wall=4.8s
    imex_rk222 dt=5.892e-04 eta=2000 steps=60 wall=1.0s
-   lawson_rk4 dt=1.915e-03 eta=0 steps=60 wall=8.5s
+   lawson_rk4 dt=1.915e-03 eta=0 steps=60 wall=7.8s
    lawson_rk4 dt=2.283e-03 eta=0 steps=20 wall=0.5s
-   imex_rk222 dt=3.606e-03 eta=2000 steps=15 wall=3.7s
-== t7a_cfl_slices: 7/7 checks passed (23.6 s)
+   imex_rk222 dt=4.294e-04 eta=2000 steps=15 wall=3.7s
+   imex_rk222 dt=3.606e-03 eta=2000 steps=15 wall=0.3s
+== t7a_cfl_slices: 7/7 checks passed (23.1 s)

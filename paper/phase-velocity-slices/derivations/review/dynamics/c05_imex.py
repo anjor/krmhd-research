@@ -3,12 +3,13 @@ script derives the stability function of the coded ARS(2,2,2) stages symbolicall
 bound with the full advecting field Phi + s u_j Psi, continues the run of d03 with gandalf_step to t = 0.4
 (IMEX-RK222 at dt = 0.002 and 0.001, Lawson-RK4 at dt = 0.002), where IMEX-RK222 at dt = 0.002 blows up while the
 conserved free energy stays constant in the reference runs, and it measures self-convergence orders in dt.  It
-supports Section 6 (the frozen-line test through gandalf_step) and the time-stepping analysis of Appendix D.
+concerns the time-stepping analysis of an earlier draft (the runs of the current paper use Lawson-RK4).
 
 Statement under test: the explicit part of ARS(2,2,2) integrates the slice advection s u_j {Psi, a_j} with
 R(z) = 1 + z + z^2/2, unstable on the imaginary axis; at N = 32, dt = 0.002, y = s u_max max|grad Psi| k_perp,max dt
-= 1.51, and d03 sees a departure from the frozen-line prediction by t = 0.128, where it stops; first order in dt
-otherwise.
+= 1.51, and d03 sees a departure from the frozen-line prediction by t = 0.128, where it stops; second order in dt
+otherwise, since krmhd 0.7.0 couples g to z+- at the stage time t + gamma dt (gandalf#158, PR #163; krmhd 0.6.0
+coupled them at t + dt/2 and the g field converged at first order, self-convergence order 1.01).
 
 I1 symbolic: the stage structure of krmhd's _gandalf_step_imex222_jit with GANDALF's own (gamma, delta) gives
    R(zE, zI); R(zE, 0) = 1 + zE + zE^2/2 exactly; |R(iy, 0)|^2 = 1 + y^4/4.
@@ -17,7 +18,7 @@ I3 the explicit advection bound with the full advecting field Phi + s u_j Psi (d
 I4 numerical: d03's setup (its initial fields, built with derivations/dynamics/dcore.py), gandalf_step IMEX at
    dt = 0.002 continued beyond t = 0.128, with Lawson-RK4 at dt = 0.002 and IMEX at dt = 0.001 as references; the
    conserved free energy W = sum p_m <g_m^2> (eta = nu = 0) and the share of g energy near the cutoff are monitored.
-I5 self-convergence orders at t = 0.064 for both schemes (dt = 1e-3, 5e-4, 2.5e-4).
+I5 self-convergence orders at t = 0.064 for both schemes (dt = 1e-3, 5e-4, 2.5e-4): second order for both.
 """
 import math
 import os
@@ -179,8 +180,8 @@ for scheme in ("imex_rk222", "lawson_rk4"):
     orders[scheme] = (o_g, o_W, o_z)
     print(f"    {scheme}: self-convergence at t = {T5} (dt = 1e-3, 5e-4, 2.5e-4): g field {e_g[0]:.2e}, {e_g[1]:.2e} -> order "
           f"{o_g:.2f};  W(m) {e_W[0]:.2e}, {e_W[1]:.2e} -> order {o_W:.2f};  z+ {e_z[0]:.2e}, {e_z[1]:.2e} -> order {o_z:.2f}")
-chk("I5 IMEX-RK222: the g field converges at first order in dt (gandalf#158)", 0.8 < orders["imex_rk222"][0] < 1.3,
-    f"order {orders['imex_rk222'][0]:.2f}")
+chk("I5 IMEX-RK222: the g field converges at second order in dt (krmhd 0.7.0, gandalf#158, PR #163)",
+    1.8 < orders["imex_rk222"][0] < 2.3, f"order {orders['imex_rk222'][0]:.2f}")
 chk("I5 Lawson-RK4: the g field converges at (at least) second order", orders["lawson_rk4"][0] > 1.8,
     f"order {orders['lawson_rk4'][0]:.2f}")
 chk.finish()

@@ -24,7 +24,7 @@ O7  Hermite matrix of L and of [.,.]
 O8  P0 A symmetric
   [PASS] P0 A - (P0 A)^T = 0 
 O9  comparison with GANDALF (krmhd.hermite.compute_streaming_matrix)
-  [PASS] krmhd 0.6.0 streaming matrix == A (max abs diff 0.0e+00) 
+  [PASS] krmhd 0.7.0 streaming matrix == A (max abs diff 0.0e+00) 
 O10 norm equivalence
   [PASS] min(1,1-1/Lambda) <= [G,G]/<G,G> <= max(1,1-1/Lambda) (1000 random G, 5 Lambda) 
 ALL s02 CHECKS PASSED

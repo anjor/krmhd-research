@@ -14,16 +14,16 @@ a/b/c. Slice equation, symmetriser and two-slice law on krmhd_rhs with GANDALF's
   [PASS] c02.a' the slice equation also holds for z+- with power outside the 2/3 band (bilinearity only) :: 1.6e-14
 ----------------------------------------------------------------------------------------------------
 d. gandalf_step: slice leakage at M = 64 (copy closure, Lam = -sqrt5, beta = 2.3), 40 steps
-   u_max = 11.0012; fastest-slice speed bound 12.75; dt = 5.297e-04 (GANDALF dt_cfl = 1.558e-02)
-W1013 20:31:39.556438 43188659 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
-   imex_rk222 start in slice u = +0.000, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 8.46e-16 (40 steps, 7.3 s)
-   imex_rk222 start in slice u = +0.000, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 3.20e-03 (40 steps, 1.0 s)
-   imex_rk222 start in slice u = +11.001, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 4.77e-15 (40 steps, 1.0 s)
-   imex_rk222 start in slice u = +11.001, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 4.92e-03 (40 steps, 1.1 s)
-   lawson_rk4 start in slice u = +0.000, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 1.53e-14 (40 steps, 14.0 s)
-   lawson_rk4 start in slice u = +0.000, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 3.20e-03 (40 steps, 1.7 s)
-   lawson_rk4 start in slice u = +11.001, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 1.11e-14 (40 steps, 1.6 s)
-   lawson_rk4 start in slice u = +11.001, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 4.93e-03 (40 steps, 1.6 s)
+   u_max = 11.0012; fastest-slice speed bound 12.75; dt = 5.297e-04 (GANDALF dt_cfl = 1.592e-03)
+W1014 23:43:12.447279 44414446 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+   imex_rk222 start in slice u = +0.000, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 8.47e-16 (40 steps, 6.0 s)
+   imex_rk222 start in slice u = +0.000, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 3.20e-03 (40 steps, 0.7 s)
+   imex_rk222 start in slice u = +11.001, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 4.78e-15 (40 steps, 0.7 s)
+   imex_rk222 start in slice u = +11.001, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 4.92e-03 (40 steps, 0.7 s)
+   lawson_rk4 start in slice u = +0.000, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 1.53e-14 (40 steps, 10.0 s)
+   lawson_rk4 start in slice u = +0.000, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 3.20e-03 (40 steps, 1.3 s)
+   lawson_rk4 start in slice u = +11.001, nu = 0.0: max_(l != j0) |a_l|/|a_j0| = 1.11e-14 (40 steps, 1.3 s)
+   lawson_rk4 start in slice u = +11.001, nu = 2.0: max_(l != j0) |a_l|/|a_j0| = 4.93e-03 (40 steps, 1.3 s)
   [PASS] c02.d nu = 0: no leakage between slices through gandalf_step (IMEX, Lawson; eta, eta_z, copy closure, M = 64)
    imex_rk222 u = +0.000: measured leakage 3.2034e-03, first-order nu T max|(P_inv D P)_(l j0)| = 3.2311e-03 (ratio 0.9914); diagonal damping nu (P_inv D P)_jj = 1.607e-01
    imex_rk222 u = +11.001: measured leakage 4.9219e-03, first-order nu T max|(P_inv D P)_(l j0)| = 4.9465e-03 (ratio 0.9950); diagonal damping nu (P_inv D P)_jj = 1.580e+00
@@ -31,12 +31,12 @@ W1013 20:31:39.556438 43188659 cpp_gen_intrinsics.cc:74] Empty bitcode string pr
    lawson_rk4 u = +11.001: measured leakage 4.9320e-03, first-order nu T max|(P_inv D P)_(l j0)| = 4.9465e-03 (ratio 0.9971); diagonal damping nu (P_inv D P)_jj = 1.580e+00
   [PASS] c02.e with hypercollisions the leakage is the first-order coupling nu T (P_inv D P)_{l j0}
 GANDALF integrations: grid 16^3, M = 64, Lam = -sqrt5, copy closure, beta = 2.3, eta = 1 (r = 2), eta_z = 0.5:
-   imex_rk222 start slice 32 nu=0.0 steps=40 dt=5.30e-04 wall=7.3s
-   imex_rk222 start slice 32 nu=2.0 steps=40 dt=5.30e-04 wall=1.0s
-   imex_rk222 start slice 64 nu=0.0 steps=40 dt=5.30e-04 wall=1.0s
-   imex_rk222 start slice 64 nu=2.0 steps=40 dt=5.30e-04 wall=1.1s
-   lawson_rk4 start slice 32 nu=0.0 steps=40 dt=5.30e-04 wall=14.0s
-   lawson_rk4 start slice 32 nu=2.0 steps=40 dt=5.30e-04 wall=1.7s
-   lawson_rk4 start slice 64 nu=0.0 steps=40 dt=5.30e-04 wall=1.6s
-   lawson_rk4 start slice 64 nu=2.0 steps=40 dt=5.30e-04 wall=1.6s
-== c02_slices: 6/6 passed (38.3 s)
+   imex_rk222 start slice 32 nu=0.0 steps=40 dt=5.30e-04 wall=6.0s
+   imex_rk222 start slice 32 nu=2.0 steps=40 dt=5.30e-04 wall=0.7s
+   imex_rk222 start slice 64 nu=0.0 steps=40 dt=5.30e-04 wall=0.7s
+   imex_rk222 start slice 64 nu=2.0 steps=40 dt=5.30e-04 wall=0.7s
+   lawson_rk4 start slice 32 nu=0.0 steps=40 dt=5.30e-04 wall=10.0s
+   lawson_rk4 start slice 32 nu=2.0 steps=40 dt=5.30e-04 wall=1.3s
+   lawson_rk4 start slice 64 nu=0.0 steps=40 dt=5.30e-04 wall=1.3s
+   lawson_rk4 start slice 64 nu=2.0 steps=40 dt=5.30e-04 wall=1.3s
+== c02_slices: 6/6 passed (29.5 s)

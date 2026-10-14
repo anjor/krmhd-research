@@ -1,20 +1,20 @@
   N=16 t=0.0620: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 3.5e-16 NL 2.8e-05;  Pi: FR 1.3e-16 NL 3.2e-04;  <g^4>: FR 5.7e-03 NL 6.3e-03;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254;  W sin-type 3.7e-01, W with g damping 5.0e-03
   N=16 t=0.1240: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 3.2e-16 NL 3.1e-04;  Pi: FR 1.5e-17 NL 2.3e-03;  <g^4>: FR 2.2e-02 NL 1.2e-02;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254;  W sin-type 4.3e-01, W with g damping 2.7e-02
-  N=24 t=0.0620: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 1.3e-15 NL 2.6e-06;  Pi: FR 1.3e-16 NL 3.4e-05;  <g^4>: FR 5.6e-03 NL 5.8e-03;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254;  W sin-type 3.7e-01, W with g damping 5.8e-03
-  N=24 t=0.1240: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 2.7e-16 NL 2.1e-04;  Pi: FR 1.1e-16 NL 1.0e-03;  <g^4>: FR 2.2e-02 NL 2.1e-02;  Gamma(+r), Gamma(-r) = +0.6255, -0.6254;  W sin-type 4.3e-01, W with g damping 3.5e-02
+  N=24 t=0.0620: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 6.6e-16 NL 3.2e-06;  Pi: FR 1.0e-16 NL 7.3e-05;  <g^4>: FR 5.6e-03 NL 6.0e-03;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254;  W sin-type 3.7e-01, W with g damping 5.7e-03
+  N=24 t=0.1240: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 1.0e-15 NL 3.0e-04;  Pi: FR 7.6e-17 NL 1.7e-03;  <g^4>: FR 2.3e-02 NL 1.8e-02;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254;  W sin-type 4.3e-01, W with g damping 3.4e-02
   N=32 t=0.0620: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 3.4e-15 NL 1.1e-06;  Pi: FR 1.7e-17 NL 2.6e-05;  <g^4>: FR 5.6e-03 NL 5.7e-03;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254;  W sin-type 3.7e-01, W with g damping 5.9e-03
   N=32 t=0.1240: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 1.1e-15 NL 1.2e-04;  Pi: FR 1.5e-17 NL 9.3e-04;  <g^4>: FR 2.3e-02 NL 2.2e-02;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254;  W sin-type 4.3e-01, W with g damping 3.5e-02
-  N=48 t=0.0620: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 2.2e-15 NL 2.0e-07;  Pi: FR 1.1e-16 NL 4.7e-06;  <g^4>: FR 5.6e-03 NL 5.6e-03;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254
-  N=48 t=0.1240: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 1.5e-15 NL 3.0e-05;  Pi: FR 8.8e-17 NL 3.4e-04;  <g^4>: FR 2.3e-02 NL 2.3e-02;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254
+  N=48 t=0.0620: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 3.0e-15 NL 2.7e-07;  Pi: FR 1.8e-16 NL 7.2e-06;  <g^4>: FR 5.6e-03 NL 5.6e-03;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254
+  N=48 t=0.1240: |X(+r)-X(-r)|/|X(+r)+X(-r)|  W: FR 1.6e-15 NL 2.4e-05;  Pi: FR 4.6e-17 NL 2.1e-04;  <g^4>: FR 2.3e-02 NL 2.3e-02;  Gamma(+r), Gamma(-r) = +0.6254, -0.6254
   [PASS] PL1 frozen field: W(m) and Pi_m identical for +r and -r (exact lemma, every N)  (max 3.4e-15)
-  [PASS] PL2 t=0.062: NL W_+ - W_- decreases monotonically and falls >10x from N=16 to N=48  (2.8e-05 -> 2.6e-06 -> 1.1e-06 -> 2.0e-07)
-  [PASS] PL2 t=0.062: NL Pi_+ - Pi_- decreases monotonically and falls >10x from N=16 to N=48  (3.2e-04 -> 3.4e-05 -> 2.6e-05 -> 4.7e-06)
+  [PASS] PL2 t=0.062: NL W_+ - W_- decreases monotonically and falls >10x from N=16 to N=48  (2.8e-05 -> 3.2e-06 -> 1.1e-06 -> 2.7e-07)
+  [PASS] PL2 t=0.062: NL Pi_+ - Pi_- decreases monotonically and falls >10x from N=16 to N=48  (3.2e-04 -> 7.3e-05 -> 2.6e-05 -> 7.2e-06)
   [PASS] PL2 t=0.062: Gamma differs between +r and -r (mirror-odd)  (+0.6254 vs -0.6254)
-  [PASS] PL2 t=0.124: NL W_+ - W_- decreases monotonically and falls >5x from N=16 to N=48  (3.1e-04 -> 2.1e-04 -> 1.2e-04 -> 3.0e-05)
-  [PASS] PL2 t=0.124: NL Pi_+ - Pi_- decreases monotonically and falls >5x from N=16 to N=48  (2.3e-03 -> 1.0e-03 -> 9.3e-04 -> 3.4e-04)
+  [PASS] PL2 t=0.124: NL W_+ - W_- decreases monotonically and falls >5x from N=16 to N=48  (3.1e-04 -> 3.0e-04 -> 1.2e-04 -> 2.4e-05)
+  [PASS] PL2 t=0.124: NL Pi_+ - Pi_- decreases monotonically and falls >5x from N=16 to N=48  (2.3e-03 -> 1.7e-03 -> 9.3e-04 -> 2.1e-04)
   [PASS] PL2 t=0.124: Gamma differs between +r and -r (mirror-odd)  (+0.6254 vs -0.6254)
   [PASS] PL3 sin (k_z-odd) correlation changes W(m) at a finite level  (4.3e-01, 4.3e-01, 4.3e-01)
-  [PASS] PL4 perpendicular damping of g breaks the lemma at a finite level  (2.7e-02, 3.5e-02, 3.5e-02)
-  [PASS] PL5 <g_m^4> (fourth order, outside the lemma) has a part linear in r (finite, N-independent) in the frozen problem  (2.2e-02, 2.2e-02, 2.3e-02, 2.3e-02)
-  [PASS] PL5 ... and in the NL runs it exceeds the W_+ - W_- residual by > 30x at the largest N  (2.3e-02 vs 3.0e-05)
+  [PASS] PL4 perpendicular damping of g breaks the lemma at a finite level  (2.7e-02, 3.4e-02, 3.5e-02)
+  [PASS] PL5 <g_m^4> (fourth order, outside the lemma) has a part linear in r (finite, N-independent) in the frozen problem  (2.2e-02, 2.3e-02, 2.3e-02, 2.3e-02)
+  [PASS] PL5 ... and in the NL runs it exceeds the W_+ - W_- residual by > 30x at the largest N  (2.3e-02 vs 2.4e-05)
 SUMMARY: 11/11 checks passed

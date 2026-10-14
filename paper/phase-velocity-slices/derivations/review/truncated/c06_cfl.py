@@ -1,11 +1,15 @@
 """c06_cfl: independent check of the time-step limit set by the fastest slices, on a 3-D random state through
 gandalf_step (independent of the 2-D shear-flow test in ../../truncated/t7a_cfl_slices.py), and of the IMEX
-hyper-resistive stability threshold for r = 1, 2, 4. Supports Appendix D of the paper (summarised in Section 8).
+hyper-resistive stability threshold for r = 1, 2, 4. Supports Sections 7 and 8 (the time-step limit of the fastest
+slices); the IMEX threshold part concerns the time-stepping appendix of an earlier draft.
 
-a. A 3-D random (turbulence-like) state, 16^3, M = 64, Lam = sqrt5, beta = 1, max|grad_perp z+-| ~ 5 (so GANDALF's v_max
-   is set by |grad z+-|, not v_A): Lawson-RK4 through gandalf_step at GANDALF's dt_cfl. Prediction: the fastest slices
-   (|u| ~ u_max = 10.6) blow up within a few tens of steps, the slow ones (|u| < 2) do not; at dt_cfl/8 nothing grows.
-   Also IMEX-RK222 at dt_cfl with eta = 0: fastest slices grow.
+a. A 3-D random (turbulence-like) state, 16^3, M = 64, Lam = sqrt5, beta = 1, max|grad_perp z+-| ~ 5. GANDALF's
+   dt_cfl (krmhd 0.7.0, gandalf#157, PR #161) is set by the fastest slice, max_j |grad(Phi + s u_j Psi)| (u_max =
+   10.6), which here exceeds v_A and |grad z+-| by a factor 6.6. Predictions: at dt_cfl, Lawson-RK4 and IMEX-RK222
+   (eta = 0) leave the slice energies as at dt_cfl/8; at the limit without the factor u_j,
+   0.3 dx / max(v_A, |grad z+-|, s |grad Psi|) (krmhd 0.6.0's dt_cfl, 6.6 times larger), IMEX-RK222 blows up the
+   fastest slices (|u| ~ u_max) within 30 steps but not the slow ones (|u| < 2); Lawson-RK4 is stable for
+   y_eff = dt rho_fast <= 2 sqrt2, with rho_fast the spectral radius of the discrete advection of the fastest slice.
 b. The per-mode amplification of the explicit IMEX stage with a hyper-resistive factor, exact versus the small-y formula
    dt^3 <= 8 eta/(k_max V)^4 (r = 2), and what happens for r = 1 and r = 4 (k-dependence of the threshold).
 """
@@ -42,10 +46,17 @@ zp, zm = zp * sc, zm * sc
 g0 = rand_field(g16, rng, slope=-1.0, extra=(M + 1,)) * 1e-3
 st0 = state(g16, M, Lam, zp, zm, g0, beta=beta)
 dtc = compute_cfl_timestep(st0, v_A=1.0)
-Vfast = maxgrad((zp + zm) / 2 + u[-1] * (zp - zm) / 2)
-kmax = 2 * np.pi * (N // 3) * np.sqrt(2)
+Vj = np.array([maxgrad((zp + zm) / 2 + uj * (zp - zm) / 2) for uj in u])      # every slice (s = 1)
+Vfast = Vj.max()
+vz = max(1.0, maxgrad(zp), maxgrad(zm))
+dt_nou = 0.3 * (1.0 / N) / max(vz, maxgrad((zp - zm) / 2))     # limit without the factor u_j (krmhd 0.6.0's dt_cfl)
+kmax = 2 * np.pi * ((N - 1) // 3) * np.sqrt(2)                 # largest retained k_perp (2/3 mask, 3|n| < N)
 print(f"   max|grad z+| = {maxgrad(zp):.2f}, max|grad z-| = {maxgrad(zm):.2f}, s max|grad Psi| = {maxgrad((zp - zm) / 2):.2f}; "
-      f"dt_cfl = {dtc:.3e}; fastest slice speed {Vfast:.2f}; y = dt_cfl k_max V = {dtc * kmax * Vfast:.2f} (RK4 limit 2.83)")
+      f"fastest slice speed {Vfast:.2f} at u = {u[np.argmax(Vj)]:+.3f}; dt_cfl = {dtc:.3e} (0.3 dx / fastest slice speed "
+      f"= {0.3 / N / Vfast:.3e}); y = dt_cfl k_max V = {dtc * kmax * Vfast:.2f} (RK4 limit 2.83); limit without u_j "
+      f"{dt_nou:.3e} = {dt_nou / dtc:.2f} dt_cfl")
+C("c06.a1 GANDALF's dt_cfl (krmhd 0.7.0, gandalf#157, PR #161) is 0.3 dx / max_j |grad(Phi + s u_j Psi)|, set here by "
+  "the fastest slice", abs(dtc * Vfast * N / 0.3 - 1) < 1e-10 and Vfast > vz and np.argmax(Vj) in (0, M))
 fast = np.abs(u) > 8.0
 slow = np.abs(u) < 2.0
 
@@ -57,7 +68,8 @@ def slice_E(st):
 
 runs = []
 res = {}
-for scheme, dt, nst in (("lawson_rk4", dtc, 30), ("lawson_rk4", dtc / 8, 240), ("imex_rk222", dtc, 30)):
+for scheme, dt, nst in (("lawson_rk4", dtc, 30), ("lawson_rk4", dtc / 8, 240), ("imex_rk222", dtc, 30),
+                        ("imex_rk222", dt_nou, 30)):
     st = st0
     E0 = slice_E(st)
     t0 = time.time()
@@ -113,11 +125,16 @@ for fac, nst in ((1.25, 40), (0.85, 40)):
     runs.append(("lawson_rk4", dt, nst, wall))
     print(f"   lawson_rk4, dt = {dt:.3e} (y_eff = {dt * rho_fast:.2f}, {dt / dtc:.2f} dt_cfl), {nst} steps: fast-slice energy "
           f"ratio {res[('lawson_y', fac)][0]:.3e}, slow {res[('lawson_y', fac)][1]:.3e}  [{wall:.1f} s]")
-okA = (res[("imex_rk222", dtc)][0] > 1e3 and res[("imex_rk222", dtc)][1] < 10 and
-       res[("lawson_y", 1.25)][0] > 1e3 and res[("lawson_y", 0.85)][0] < 10 and res[("lawson_y", 1.25)][1] < 10)
-C("c06.a IMEX at dt_cfl: fastest slices blow up, slow ones do not. Lawson-RK4 obeys y_eff = dt rho_fast <= 2 sqrt2, with "
-  "rho_fast the spectral radius of the discrete advection of the fastest slice (here GANDALF's dt_cfl happens to be "
-  "Lawson-stable because y_eff(dt_cfl) < 2 sqrt2 although k_max V dt_cfl > 2 sqrt2)", okA)
+ref = res[("lawson_rk4", dtc / 8)]
+dev = max(abs(res[(sch, dtc)][k] / ref[k] - 1) for sch in ("lawson_rk4", "imex_rk222") for k in (0, 1))
+print(f"   at dt_cfl, largest relative change of the fast or slow slice energies from those at dt_cfl/8 (Lawson-RK4, "
+      f"IMEX-RK222): {dev:.1e}")
+C("c06.a2 at GANDALF's dt_cfl, Lawson-RK4 and IMEX-RK222 (eta = 0) leave the fast and slow slice energies within 1% "
+  "of those at dt_cfl/8; at the limit without u_j, IMEX-RK222 blows up the fastest slices but not the slow ones",
+  dev < 1e-2 and res[("imex_rk222", dt_nou)][0] > 1e3 and res[("imex_rk222", dt_nou)][1] < 10, f"{dev:.1e}")
+C("c06.a3 Lawson-RK4 obeys y_eff = dt rho_fast <= 2 sqrt2, with rho_fast the spectral radius of the discrete advection "
+  "of the fastest slice", res[("lawson_y", 1.25)][0] > 1e3 and res[("lawson_y", 0.85)][0] < 10
+  and res[("lawson_y", 1.25)][1] < 10)
 print("GANDALF integrations (scheme, dt, steps, wall s), 16^3, M = 64, Lam = sqrt5:")
 for r in runs:
     print(f"   {r[0]} dt={r[1]:.3e} steps={r[2]} wall={r[3]:.1f}s")

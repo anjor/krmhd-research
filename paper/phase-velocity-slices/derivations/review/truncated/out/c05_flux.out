@@ -15,4 +15,4 @@ e. Sine kernel at Lam = inf, M = 1024 (independent of the M = 512 check in t5_fl
    m=128: max pair weight |K(u_j-u_l)|/sqrt(D_j D_l n_j n_l) for 2.0 <= |u_j-u_l| < 4.0: 0.3563 (1/pi = 0.3183)
    m=128: max pair weight |K(u_j-u_l)|/sqrt(D_j D_l n_j n_l) for 4.0 <= |u_j-u_l| < 6.0: 0.3695 (1/pi = 0.3183)
   [PASS] c05.f the pair weight in the flux does not decay with |u_j - u_l| (envelope ~1/pi out to |u_j - u_l| = 6): it is a sine transform at kappa = sqrt(2m+1), not a filter localised at |u_j - u_l| ~ 1/sqrt(2m)
-== c05_flux: 5/5 passed (4.6 s)
+== c05_flux: 5/5 passed (3.9 s)

@@ -1,7 +1,7 @@
 """Shared helpers for the truncated-hierarchy check scripts in this folder (t1_*.py ... t7b_*.py), which support
 Sections 5 and 8 and Appendices C and D of the paper.
 
-Every GANDALF-specific object is taken from the installed krmhd package (krmhd 0.6.0):
+Every GANDALF-specific object is taken from the installed krmhd package (krmhd 0.7.0):
 the streaming ("ladder") matrix A comes from krmhd.hermite.compute_streaming_matrix, the right-hand
 side from krmhd.timestepping.krmhd_rhs, brackets and derivatives from krmhd.physics / krmhd.spectral.
 What is re-derived here (and checked in t1) is the weight that symmetrises A and the slice basis.

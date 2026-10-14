@@ -5,12 +5,12 @@ T1  free streaming is pure phase mixing; truncated GANDALF ladder vs the Poisson
   [PASS] T1 Landau case (Lambda = sqrt5) from g_0 is also pure phase mixing (flux >= 0)  (0.0e+00)
 T2  per-mode identities through GANDALF's diagnostics on an exact tilted-field solution
     N = 32, M = 256, b0 = 0.5 (alpha = 45 deg), spectral cut |k_par| < 29.0; weight on modes with k_z k_par < 0: 0.104
-  [PASS] T2 tau=1.5: hermite_flux = (k_z/k_par) x field-aligned flux, every mode and m  (1.5e-16)
+  [PASS] T2 tau=1.5: 2 x hermite_flux = (k_z/k_par) x field-aligned flux, every mode and m (krmhd 0.7.0 normalisation, gandalf#159, PR #162)  (3.0e-16)
   [PASS] T2 tau=1.5: field-aligned flux >= 0 on every mode (pure phase mixing)  (min/max = -1.9e-31)
   [PASS] T2 tau=1.5: |g+|^2 - |g-|^2 = -sgn(kappa) Im(g_m^* g_m+1)  (5.6e-17)
   [PASS] T2 tau=1.5: k_z split swaps + and - exactly on modes with k_z k_par < 0  (0.0e+00)
     tau = 1.5 (t = 0.1125); true backward flux = 0; GANDALF k_z diagnostics: m=1: unmixing energy share 0.101, backward flux share 0.054; m=2: unmixing energy share 0.058, backward flux share 0.028; m=4: unmixing energy share 0.024, backward flux share 0.010; m=8: unmixing energy share 0.006, backward flux share 0.002; m=16: unmixing energy share 0.001, backward flux share 0.000
-  [PASS] T2 tau=6.0: hermite_flux = (k_z/k_par) x field-aligned flux, every mode and m  (1.4e-16)
+  [PASS] T2 tau=6.0: 2 x hermite_flux = (k_z/k_par) x field-aligned flux, every mode and m (krmhd 0.7.0 normalisation, gandalf#159, PR #162)  (1.4e-16)
   [PASS] T2 tau=6.0: field-aligned flux >= 0 on every mode (pure phase mixing)  (min/max = -2.0e-30)
   [PASS] T2 tau=6.0: |g+|^2 - |g-|^2 = -sgn(kappa) Im(g_m^* g_m+1)  (4.4e-16)
   [PASS] T2 tau=6.0: k_z split swaps + and - exactly on modes with k_z k_par < 0  (0.0e+00)

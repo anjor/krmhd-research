@@ -89,4 +89,4 @@ E. Convergence to the continuum for G = F_M(v - a), a = 0.5 (all Hermite coeffic
   [PASS] E1 W, Q_u (all M) and H (odd M) converge spectrally; even-M PV H converges ~ M^-1/2 (local slopes within 0.1), with exactly the predicted node-zero error at Lam = inf (M >= 16)
    |even-M PV error|/H at M = 64, 128: Lam=+2.2361 M=64: 17.7%; Lam=+2.2361 M=128: 13.0%; Lam=-2.2361 M=64: 7.4%; Lam=-2.2361 M=128: 5.2%; Lam=+inf M=64: 10.6%; Lam=+inf M=128: 7.5%
   [PASS] E2 at M = 64 and 128 the even-M PV helicity error is between 5% and 18% of H (Lam = sqrt5, -sqrt5, inf) :: min 5.2%, max 17.7%
-== t3_invariants: 10/10 checks passed (3.8 s)
+== t3_invariants: 10/10 checks passed (3.6 s)

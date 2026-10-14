@@ -1,5 +1,5 @@
 """d01: the conventions used in these checks and in the paper, checked against GANDALF's own right-hand side (krmhd
-0.6.0).  The script verifies that GANDALF's induction equation is the ideal one (no other sign choice fits), that
+0.7.0).  The script verifies that GANDALF's induction equation is the ideal one (no other sign choice fits), that
 each eigenvector of the Hermite ladder gives a slice advected by Phi + s u_j Psi and streaming at s u_j, that the z+
 equation has the Elsasser vorticity form, that z+ propagates toward -z, and that every slice energy is conserved by
 the g right-hand side.  It supports Section 6 (GANDALF's induction equation is ideal, as the frozen-line theorem

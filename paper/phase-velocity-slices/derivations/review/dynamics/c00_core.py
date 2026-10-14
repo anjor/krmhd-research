@@ -5,7 +5,7 @@ paper/phase-velocity-slices/data/derivations/review/dynamics/, which is git-igno
 Differences from dcore on purpose: box of side L = 2 pi (integer wavenumbers), fields built from an explicit list of
 Fourier modes with random amplitudes (the same physical field at every N, no embedding), point evaluation of the
 Fourier series at arbitrary positions (for Lagrangian tracking), and separate RK4 wrappers.  The physics (right-hand
-side, stepper, ladder matrix) is GANDALF's (installed krmhd 0.6.0, read-only).
+side, stepper, ladder matrix) is GANDALF's (installed krmhd 0.7.0, read-only).
 
 Conventions checked in the krmhd source: z+ = Phi + Psi, z- = Phi - Psi; {f,h} = f_x h_y - f_y h_x;
 u_perp = zhat x grad Phi = (-Phi_y, Phi_x, 0); b_perp = zhat x grad Psi; grad_par = d_z + {Psi, .};

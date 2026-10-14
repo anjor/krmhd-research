@@ -1,12 +1,12 @@
-paper/phase-velocity-slices/derivations/truncated: 2026-10-14 16:25:09, Python 3.14.3
-t1_hierarchy: PASS (exit 0; checks passed 12, failed 0), started 20261014_162510, wall 19 s
-t2_eigenvalues: PASS (exit 0; checks passed 19, failed 0), started 20261014_162529, wall 12 s
-t3_invariants: PASS (exit 0; checks passed 10, failed 0), started 20261014_162541, wall 5 s
-t4_dictionary: PASS (exit 0; checks passed 9, failed 0), started 20261014_162546, wall 10 s
-t4b_kanekar_exact: PASS (exit 0; checks passed 5, failed 0), started 20261014_162556, wall 184 s
-t5_flux_cd: PASS (exit 0; checks passed 6, failed 0), started 20261014_162900, wall 3 s
-t5b_pair_weight: PASS (exit 0; checks passed 4, failed 0), started 20261014_162903, wall 2 s
-t6_reflection: PASS (exit 0; checks passed 9, failed 0), started 20261014_162905, wall 41 s
-t7a_cfl_slices: PASS (exit 0; checks passed 7, failed 0), started 20261014_162947, wall 24 s
-t7b_imex_order: PASS (exit 0; checks passed 5, failed 0), started 20261014_163011, wall 16 s
-overall: PASS, total wall 318 s
+paper/phase-velocity-slices/derivations/truncated: 2026-10-14 23:27:53, Python 3.14.3
+t1_hierarchy: PASS (exit 0; checks passed 12, failed 0), started 20261014_232753, wall 20 s
+t2_eigenvalues: PASS (exit 0; checks passed 19, failed 0), started 20261014_232813, wall 12 s
+t3_invariants: PASS (exit 0; checks passed 10, failed 0), started 20261014_232825, wall 4 s
+t4_dictionary: PASS (exit 0; checks passed 9, failed 0), started 20261014_232829, wall 10 s
+t4b_kanekar_exact: PASS (exit 0; checks passed 5, failed 0), started 20261014_232839, wall 182 s
+t5_flux_cd: PASS (exit 0; checks passed 6, failed 0), started 20261014_233141, wall 3 s
+t5b_pair_weight: PASS (exit 0; checks passed 4, failed 0), started 20261014_233144, wall 2 s
+t6_reflection: PASS (exit 0; checks passed 9, failed 0), started 20261014_233146, wall 41 s
+t7a_cfl_slices: PASS (exit 0; checks passed 7, failed 0), started 20261014_233227, wall 25 s
+t7b_imex_order: PASS (exit 0; checks passed 5, failed 0), started 20261014_233252, wall 15 s
+overall: PASS, total wall 314 s

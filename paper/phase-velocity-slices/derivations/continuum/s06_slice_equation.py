@@ -116,8 +116,9 @@ for Lam in (SQRT5, -SQRT5):
 check("m-dependent collision operator is not diagonal in slices", off > 0.05)
 
 # --------------------------------------------------------------------------------------------------------- SL3
-print("SL3 GANDALF's right-hand side (krmhd 0.6.0, float64)")
 try:
+    import krmhd
+    print(f"SL3 GANDALF's right-hand side (krmhd {krmhd.__version__}, float64)")
     import jax
     jax.config.update("jax_enable_x64", True)
     import jax.numpy as jnp

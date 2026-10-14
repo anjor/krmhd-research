@@ -1,5 +1,5 @@
 N = 32, M = 8, Lambda = sqrt5, s = 1, amp = 1.0; NL = gandalf_step (eta = eta_z = 0), FR = frozen-line prediction (RK4, dt = 5e-4)
-W1013 20:33:41.251746 43191738 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+W1014 23:35:18.944000 44405813 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
     lawson_rk4 dt=0.002: max|g| at t=0.128: 6.363e+03 (initial 9.783e+03)
     lawson_rk4 dt=0.001: max|g| at t=0.128: 6.362e+03 (initial 9.783e+03)
     lawson_rk4 dt=0.0005: max|g| at t=0.128: 6.362e+03 (initial 9.783e+03)
@@ -10,10 +10,10 @@ W1013 20:33:41.251746 43191738 cpp_gen_intrinsics.cc:74] Empty bitcode string pr
     imex_rk222 dt=0.002: max|g| at t=0.128: 6.362e+03 (initial 9.783e+03)
     imex_rk222 dt=0.001: max|g| at t=0.128: 6.362e+03 (initial 9.783e+03)
     imex_rk222 dt=0.0005: max|g| at t=0.128: 6.362e+03 (initial 9.783e+03)
-  nu= 0.0 imex_rk222 t=0.0640: W(m) rel.diff dt=0.0020: 1.98e-04  dt=0.0010: 8.46e-05  dt=0.0005: 4.18e-05   | Pi_m: 1.37e-03  6.97e-04  3.53e-04
-  nu= 0.0 imex_rk222 t=0.1280: W(m) rel.diff dt=0.0020: 1.09e+00  dt=0.0010: 4.00e-04  dt=0.0005: 3.25e-04   | Pi_m: 1.51e-02  2.04e-03  1.82e-03
-  [PASS] nu=0.0 imex_rk222: W(m) NL - FR at t=0.128 does not grow when dt is reduced  (1.09e+00 -> 3.25e-04)
-  [PASS] nu=0.0 imex_rk222: W(m) NL - FR at t=0.128 below 1e-3 at dt=5e-4 (N=32)  (3.25e-04)
+  nu= 0.0 imex_rk222 t=0.0640: W(m) rel.diff dt=0.0020: 7.65e-05  dt=0.0010: 2.23e-05  dt=0.0005: 1.17e-05   | Pi_m: 1.65e-04  1.68e-04  1.90e-04
+  nu= 0.0 imex_rk222 t=0.1280: W(m) rel.diff dt=0.0020: 9.37e-01  dt=0.0010: 2.77e-04  dt=0.0005: 2.68e-04   | Pi_m: 1.26e-02  1.55e-03  1.58e-03
+  [PASS] nu=0.0 imex_rk222: W(m) NL - FR at t=0.128 does not grow when dt is reduced  (9.37e-01 -> 2.68e-04)
+  [PASS] nu=0.0 imex_rk222: W(m) NL - FR at t=0.128 below 1e-3 at dt=5e-4 (N=32)  (2.68e-04)
     lawson_rk4 dt=0.002: max|g| at t=0.128: 6.363e+03 (initial 9.783e+03)
     lawson_rk4 dt=0.001: max|g| at t=0.128: 6.363e+03 (initial 9.783e+03)
     lawson_rk4 dt=0.0005: max|g| at t=0.128: 6.363e+03 (initial 9.783e+03)
@@ -21,20 +21,20 @@ W1013 20:33:41.251746 43191738 cpp_gen_intrinsics.cc:74] Empty bitcode string pr
   nu=20.0 lawson_rk4 t=0.1280: W(m) rel.diff dt=0.0020: 8.05e-04  dt=0.0010: 4.97e-04  dt=0.0005: 3.60e-04   | Pi_m: 3.59e-03  1.69e-03  1.70e-03
   [PASS] nu=20.0 lawson_rk4: W(m) NL - FR at t=0.128 does not grow when dt is reduced  (8.05e-04 -> 3.60e-04)
   [PASS] nu=20.0 lawson_rk4: W(m) NL - FR at t=0.128 below 1e-3 at dt=5e-4 (N=32)  (3.60e-04)
-    imex_rk222 dt=0.002: max|g| at t=0.128: 6.363e+03 (initial 9.783e+03)
+    imex_rk222 dt=0.002: max|g| at t=0.128: 6.362e+03 (initial 9.783e+03)
     imex_rk222 dt=0.001: max|g| at t=0.128: 6.363e+03 (initial 9.783e+03)
     imex_rk222 dt=0.0005: max|g| at t=0.128: 6.363e+03 (initial 9.783e+03)
-  nu=20.0 imex_rk222 t=0.0640: W(m) rel.diff dt=0.0020: 1.94e-04  dt=0.0010: 8.34e-05  dt=0.0005: 4.11e-05   | Pi_m: 1.37e-03  6.98e-04  3.53e-04
-  nu=20.0 imex_rk222 t=0.1280: W(m) rel.diff dt=0.0020: 1.55e-01  dt=0.0010: 3.98e-04  dt=0.0005: 3.25e-04   | Pi_m: 2.96e-01  2.17e-03  1.94e-03
-  [PASS] nu=20.0 imex_rk222: W(m) NL - FR at t=0.128 does not grow when dt is reduced  (1.55e-01 -> 3.25e-04)
-  [PASS] nu=20.0 imex_rk222: W(m) NL - FR at t=0.128 below 1e-3 at dt=5e-4 (N=32)  (3.25e-04)
-  nu=0.0: t=0.064 W(m) differences  Lawson-RK4 9.68e-06, 9.31e-06, 9.91e-06;  IMEX-RK222 1.98e-04, 8.46e-05, 4.18e-05 (ratios 2.34, 2.03)
+  nu=20.0 imex_rk222 t=0.0640: W(m) rel.diff dt=0.0020: 7.44e-05  dt=0.0010: 2.17e-05  dt=0.0005: 1.15e-05   | Pi_m: 1.58e-04  1.63e-04  1.85e-04
+  nu=20.0 imex_rk222 t=0.1280: W(m) rel.diff dt=0.0020: 1.33e-01  dt=0.0010: 2.84e-04  dt=0.0005: 2.77e-04   | Pi_m: 2.54e-01  1.67e-03  1.69e-03
+  [PASS] nu=20.0 imex_rk222: W(m) NL - FR at t=0.128 does not grow when dt is reduced  (1.33e-01 -> 2.77e-04)
+  [PASS] nu=20.0 imex_rk222: W(m) NL - FR at t=0.128 below 1e-3 at dt=5e-4 (N=32)  (2.77e-04)
+  nu=0.0: t=0.064 W(m) differences from FR  Lawson-RK4 9.68e-06, 9.31e-06, 9.91e-06;  IMEX-RK222 7.65e-05, 2.23e-05, 1.17e-05;  IMEX-RK222 self-convergence |W(dt) - W(dt/2)|: 5.64e-05, 1.45e-05 (order 1.96)
   [PASS] Lawson-RK4 (nu = 0): stepper error below the spatial floor at every dt (difference flat in dt)  (9.68e-06, 9.31e-06, 9.91e-06)
-  [PASS] IMEX-RK222 (nu = 0.0): first-order convergence in dt (gandalf#158)  (ratios 2.34, 2.03)
-  [PASS] IMEX-RK222 (nu = 0.0) at dt = 0.002 departs from the frozen-line prediction by t = 0.128 (instability)  (1.09e+00)
-  nu=20.0: t=0.064 W(m) differences  Lawson-RK4 7.54e-05, 3.76e-05, 2.37e-05;  IMEX-RK222 1.94e-04, 8.34e-05, 4.11e-05 (ratios 2.33, 2.03)
-  [PASS] IMEX-RK222 (nu = 20.0): first-order convergence in dt (gandalf#158)  (ratios 2.33, 2.03)
-  [PASS] IMEX-RK222 (nu = 20.0) at dt = 0.002 departs from the frozen-line prediction by t = 0.128 (instability)  (1.55e-01)
+  [PASS] IMEX-RK222 (nu = 0.0): second-order convergence in dt (krmhd 0.7.0, gandalf#158, PR #163): W(m) self-convergence at t = 0.064  (order 1.96)
+  [PASS] IMEX-RK222 (nu = 0.0) at dt = 0.002 departs from the frozen-line prediction by t = 0.128 (instability)  (9.37e-01)
+  nu=20.0: t=0.064 W(m) differences from FR  Lawson-RK4 7.54e-05, 3.76e-05, 2.37e-05;  IMEX-RK222 7.44e-05, 2.17e-05, 1.15e-05;  IMEX-RK222 self-convergence |W(dt) - W(dt/2)|: 5.48e-05, 1.41e-05 (order 1.96)
+  [PASS] IMEX-RK222 (nu = 20.0): second-order convergence in dt (krmhd 0.7.0, gandalf#158, PR #163): W(m) self-convergence at t = 0.064  (order 1.96)
+  [PASS] IMEX-RK222 (nu = 20.0) at dt = 0.002 departs from the frozen-line prediction by t = 0.128 (instability)  (1.33e-01)
   slice-advection bound: s u_max max|grad Psi| k_perp,max dt = 1 x 3.19 x 2.66 x 88.9 x 0.002 = 1.51;  explicit RK2 |R(iy)| = 1.515;  RK4 |R(iy)| = 0.940
   slice-advection bound: s u_max max|grad Psi| k_perp,max dt = 1 x 3.19 x 2.66 x 88.9 x 0.001 = 0.75;  explicit RK2 |R(iy)| = 1.040;  RK4 |R(iy)| = 0.999
   slice-advection bound: s u_max max|grad Psi| k_perp,max dt = 1 x 3.19 x 2.66 x 88.9 x 0.0005 = 0.38;  explicit RK2 |R(iy)| = 1.003;  RK4 |R(iy)| = 1.000

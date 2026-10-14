@@ -2,8 +2,9 @@
   [PASS] A1 Christoffel-Darboux with GANDALF's ladder, M = 8, Lambda = +2.236 (general eig solver)  (4.6e-15)
   [PASS] A1 Christoffel-Darboux with GANDALF's ladder, M = 9, Lambda = -2.236 (general eig solver)  (4.8e-15)
   [PASS] A1 Christoffel-Darboux with GANDALF's ladder, M = 64, Lambda = +2.236 (general eig solver)  (4.6e-14)
-    hermite_flux / (p_m s k_z-weighted flux), m = 0..5: 1.2792, 0.7071, 0.7071, 0.7071, 0.7071, 0.7071;  1/(s p_0) = 1.2792, 1/s = 0.7071
-  [PASS] A2 GANDALF's hermite_flux omits s and, at m = 0, p_0
+    z+- = 0: hermite_flux / (2 s p_m A_(m,m+1) Re[g_m^* grad_par g_(m+1)]), m = 0..5: 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000;  max per-mode deviation from 1/2 x 0.0e+00  (krmhd 0.6.0 with z+- = 0: 1/(s p_0) = 1.2792, 1/s = 0.7071)
+    Psi != 0 (z+ = -z- = Psi): hermite_flux / (2 s p_m A_(m,m+1) Re[g_m^* grad_par g_(m+1)]), m = 0..5: 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000;  max per-mode deviation from 1/2 x 2.0e-16  (krmhd 0.6.0 with z+- = 0: 1/(s p_0) = 1.2792, 1/s = 0.7071)
+  [PASS] A2 krmhd 0.7.0's hermite_flux (gandalf#159, PR #162) is 1/2 x the p_m- and s-weighted field-aligned flux at every m, m = 0 included (z+- = 0 and Psi != 0)
     M = 8, rho = 0.5: W(m) at injection equal (both (1, rho^2, 0, ...)); sum_j E_j: 0.802786 vs 0.802786;  max_j |E_j(corr) - E_j(uncorr)| = 0.1766 (largest E_j 0.3572);  Gamma = sum u_j E_j: 0.390879 vs -1.8e-16 (sqrt2 p0 rho = 0.390879)
   [PASS] A3 M=8 rho=0.5: second-order statistics are NOT all identical (slice energies, Gamma differ)
     M = 8, rho = 1.0: W(m) at injection equal (both (1, rho^2, 0, ...)); sum_j E_j: 1.552786 vs 1.552786;  max_j |E_j(corr) - E_j(uncorr)| = 0.3533 (largest E_j 0.7488);  Gamma = sum u_j E_j: 0.781758 vs -5.7e-16 (sqrt2 p0 rho = 0.781758)

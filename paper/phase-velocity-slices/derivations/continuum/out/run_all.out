@@ -1,13 +1,13 @@
-paper/phase-velocity-slices/derivations/continuum: 2026-10-14 16:18:45, Python 3.14.3
-s00_cmm_labels: PASS (exit 0; checks passed 64, failed 0), started 20261014_161845, wall 0 s
-s01_branches: PASS (exit 0; checks passed 43, failed 0), started 20261014_161845, wall 19 s
-s02_operator: PASS (exit 0; checks passed 19, failed 0), started 20261014_161904, wall 6 s
-s03_dispersion: PASS (exit 0; checks passed 25, failed 0), started 20261014_161910, wall 43 s
-s04_cvk_transform: PASS (exit 0; checks passed 19, failed 0), started 20261014_161953, wall 3 s
-s05_ladder_ops: PASS (exit 0; checks passed 19, failed 0), started 20261014_161956, wall 27 s
-s06_slice_equation: PASS (exit 0; checks passed 15, failed 0), started 20261014_162023, wall 3 s
-s07_invariants: PASS (exit 0; checks passed 17, failed 0), started 20261014_162026, wall 2 s
-s08_fluid_slices: PASS (exit 0; checks passed 19, failed 0), started 20261014_162028, wall 2 s
-s09_finite_krho: PASS (exit 0; checks passed 11, failed 0), started 20261014_162030, wall 0 s
-s10_unstable_pair: PASS (exit 0; checks passed 18, failed 0), started 20261014_162030, wall 1 s
-overall: PASS, total wall 106 s
+paper/phase-velocity-slices/derivations/continuum: 2026-10-14 23:26:13, Python 3.14.3
+s00_cmm_labels: PASS (exit 0; checks passed 64, failed 0), started 20261014_232613, wall 0 s
+s01_branches: PASS (exit 0; checks passed 43, failed 0), started 20261014_232613, wall 17 s
+s02_operator: PASS (exit 0; checks passed 19, failed 0), started 20261014_232630, wall 5 s
+s03_dispersion: PASS (exit 0; checks passed 25, failed 0), started 20261014_232635, wall 42 s
+s04_cvk_transform: PASS (exit 0; checks passed 19, failed 0), started 20261014_232717, wall 3 s
+s05_ladder_ops: PASS (exit 0; checks passed 19, failed 0), started 20261014_232720, wall 25 s
+s06_slice_equation: PASS (exit 0; checks passed 15, failed 0), started 20261014_232745, wall 3 s
+s07_invariants: PASS (exit 0; checks passed 17, failed 0), started 20261014_232748, wall 2 s
+s08_fluid_slices: PASS (exit 0; checks passed 19, failed 0), started 20261014_232750, wall 2 s
+s09_finite_krho: PASS (exit 0; checks passed 11, failed 0), started 20261014_232752, wall 0 s
+s10_unstable_pair: PASS (exit 0; checks passed 18, failed 0), started 20261014_232752, wall 1 s
+overall: PASS, total wall 100 s

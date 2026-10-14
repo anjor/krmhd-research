@@ -19,6 +19,13 @@ Initial fields are the same physical fields at every N (generated on an 8^3 grid
 difference must converge to zero with N for single-point statistics, and must not for the others
 (W(k_perp), the k_z spectrum, the k_z-based Hermite flux).
 Cases: nu = 0 and nu = 20 with GANDALF's (m/M)^4 hypercollisions.
+The collisional dissipation rate is tested through its spectrum eps_nu(m) = 2 nu_m p_m <g_m^2> (m >= 2), with the
+relative L1 difference used for W(m); this bounds the relative difference of the total eps_nu = sum_m eps_nu(m), which
+is printed as well.  The total alone is not a robust convergence measure: it sums per-moment differences of both
+signs, largest at the highest m, which converge more slowly than W(m).  At t = 0.124 the total falls from 1.2e-3 at
+N = 16 (where the moments partly cancel) to 1.25e-4 at N = 48 with krmhd 0.7.0's 2/3 mask (3|n| < N, gandalf#172), and
+to 9.2e-5 with krmhd 0.6.0's mask, which kept one more shell at N = 24 and 48; the spectrum falls monotonically, from
+9.8e-3 to 5.6e-4.
 
 Usage: python d02_frozen_line.py [N list, default 16,24,32,48] [T, default 0.25]
 """
@@ -100,10 +107,10 @@ def run(N: int, nu: float) -> dict:
             res["padtest"] = padtest
         if n in outs:
             psiN = np.asarray(zp - zm) / 2
+            # eps: dissipation spectrum eps_nu(m) = 2 nu_m p_m <g_m^2>; its sum is the total eps_nu
             res[outs[n]] = dict(NL=stats(box, gN, psiN), FR=stats(box, gF, psi), LZ=stats(box, gZ, 0 * psi),
-                                eps=dict(NL=2 * float(np.sum(coll * P * W_m(box, gN))),
-                                         FR=2 * float(np.sum(coll * P * W_m(box, gF))),
-                                         LZ=2 * float(np.sum(coll * P * W_m(box, gZ)))))
+                                eps=dict(NL=2 * coll * P * W_m(box, gN), FR=2 * coll * P * W_m(box, gF),
+                                         LZ=2 * coll * P * W_m(box, gZ)))
         if n == nsteps:
             break
         zp, zm, gN = step_full(zp, zm, gN)
@@ -144,25 +151,30 @@ for nu in (0.0, 20.0):
               + ", ".join(f"pad {p_}: {e_:.1e}" for p_, e_ in pt), flush=True)
         chk("quantile difference shrinks as the sampling grid is refined (sampling-limited, not dynamical)",
             pt[-1][1] < pt[0][1], ", ".join(f"{e_:.1e}" for _, e_ in pt))
-    keys = SP_KEYS + ("eps",) + NSP_KEYS
+    keys = SP_KEYS + ("eps", "epst") + NSP_KEYS
     for t in TOUT:
         print(f"  t = {t}:  relative difference NL vs FR (frozen-line prediction) [NL vs LZ in brackets]", flush=True)
         for key in keys:
             row = []
             for N in NS:
                 r = allres[(nu, N)][t]
-                if key == "eps":
+                if key in ("eps", "epst"):
                     if nu == 0:
                         continue
-                    e1 = abs(r["eps"]["NL"] - r["eps"]["FR"]) / r["eps"]["FR"]
-                    e2 = abs(r["eps"]["NL"] - r["eps"]["LZ"]) / r["eps"]["LZ"]
+                    eN, eF, eL = r["eps"]["NL"], r["eps"]["FR"], r["eps"]["LZ"]
+                    if key == "eps":        # spectrum, relative L1 difference (as for W(m))
+                        e1, e2 = relerr(eN, eF), relerr(eN, eL)
+                    else:                   # total eps_nu (printed only)
+                        e1 = abs(eN.sum() - eF.sum()) / eF.sum()
+                        e2 = abs(eN.sum() - eL.sum()) / eL.sum()
                 else:
                     e1 = err(key, r["NL"], r["FR"])
                     e2 = err(key, r["NL"], r["LZ"])
                 row.append((N, e1, e2))
             if row:
                 lab = {"W": "W(m)", "C": "C(j,j') slice corr.", "Pi": "Pi_m (full grad_par)", "q4": "<g_m^4>",
-                       "qq": "quantiles g_m(x)", "eps": "eps_nu", "Wkp": "W(k_perp)  [not 1-pt]",
+                       "qq": "quantiles g_m(x)", "eps": "eps_nu(m) spectrum", "epst": "eps_nu total [printed]",
+                       "Wkp": "W(k_perp)  [not 1-pt]",
                        "Wkz": "W(|k_z|)   [not 1-pt]", "Pz": "Pi_m (k_z only) [not 1-pt]"}[key]
                 print(f"    {lab:28s} " + "  ".join(f"N={N:2d}: {e1:8.1e} [{e2:7.1e}]" for N, e1, e2 in row), flush=True)
                 allres[(nu, "tab", t, key)] = row
@@ -179,7 +191,8 @@ for nu in (0.0, 20.0):
                     " -> ".join(f"{x:.1e}" for x in e))
                 continue
             ok = e[-1] < e[0] / 10 and e[-1] < (1e-3 if t > 0.07 else 1e-4)
-            chk(f"nu={nu} t={t} {key}: NL - FR falls >10x from N={NS[0]} to N={NS[-1]} and is small", ok,
+            name = "eps_nu(m) (dissipation spectrum, bounds the total)" if key == "eps" else key
+            chk(f"nu={nu} t={t} {name}: NL - FR falls >10x from N={NS[0]} to N={NS[-1]} and is small", ok,
                 " -> ".join(f"{x:.1e}" for x in e))
             lz = [e2 for _, _, e2 in row]
             if key in ("W", "C", "Pi"):

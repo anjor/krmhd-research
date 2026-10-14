@@ -1,6 +1,6 @@
 \section{Checks with GANDALF}\label{sec:numerics}
 
-We checked the results of sections~\ref{sec:slices} to~\ref{sec:truncated} with the GANDALF code \citep{Kanekar2025}, % TODO(author): cite the GANDALF release used for the final runs.
+We checked the results of sections~\ref{sec:slices} to~\ref{sec:truncated} with the GANDALF code \citep[version 0.7.0;][]{Kanekar2025},
 which integrates (\ref{eq:rmhd}) with the truncated Hermite hierarchy of one branch (section~\ref{sec:model}). All computations are in double precision on a CPU, and the GANDALF runs use its fourth-order Lawson--Runge--Kutta time step \citep[Lawson-RK4;][]{Lawson1967}. The box is periodic, with side length 1 and $k_1=2\pi$. As section~\ref{sec:truncated} requires, the fastest slice sets the time step: $\Delta t$ is chosen with a safety factor of one half on the smaller of the Alfv\'enic limit and $2\sqrt2/\rho$, the stability limit of RK4 on the imaginary axis, with $\rho=k_{\perp,\max}\max_j|\nabla_\perp(\Phi+su_j\Psi)|$. The configuration files and scripts accompany the paper.
 
 \subsection{Spectral density and phase velocities}\label{num:spectrum}

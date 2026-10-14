@@ -1,7 +1,7 @@
 """t5_flux_cd: checks the Hermite flux Pi_{m+1/2} of the truncated hierarchy as Christoffel-Darboux-filtered
-dephasing of slice pairs: the collisionless budget on krmhd_rhs with the field-line part of grad_par (and what
-krmhd.diagnostics.hermite_flux omits), the generalised Christoffel-Darboux identity, the slice form of the flux, and
-the sine-kernel limit of the kernel. Supports Section 5 (Christoffel-Darboux and sine-transform forms of the flux)
+dephasing of slice pairs: the collisionless budget on krmhd_rhs with the field-line part of grad_par (and that
+krmhd.diagnostics.hermite_flux is this flux), the generalised Christoffel-Darboux identity, the slice form of the
+flux, and the sine-kernel limit of the kernel. Supports Section 5 (Christoffel-Darboux and sine-transform forms of the flux)
 and Section 8 and Appendix C of the paper.
 
 Definitions (real-space integrals over the periodic box; Pi the weight, b_m = (Pi A)_{m,m+1}):
@@ -9,7 +9,11 @@ Definitions (real-space integrals over the periodic box; Pi the weight, b_m = (P
   grad_par = d_z + {Psi, .},  C_jl = int a_j a_l,  Cdot_jl = -s (u_j - u_l) int a_l grad_par a_j,
   K_m(j,l) = sum_{n<=m} p_n R_nj R_nl  (generalised Christoffel-Darboux kernel).
 A  Collisionless budget on krmhd_rhs: dE_{<=m}/dt = -Pi_{m+1/2} exactly (E x B advection drops out), with the
-   field-line part {Psi,.} included; s * krmhd.diagnostics.hermite_flux reproduces only the d_z part (m >= 1).
+   field-line part {Psi,.} included; the d_z part alone does not close it. krmhd.diagnostics.hermite_flux (krmhd 0.7.0,
+   gandalf#159, PR #162) is the per-mode flux s p_m sqrt((m+1)/2) Re[g_m^* grad_par g_{m+1}] with the full grad_par,
+   the factor s and p_0 = 1 - 1/Lam, normalised to the budget of (1/2) p_m <g_m^2>, so 2 sum_k w_k hermite_flux =
+   Pi_{m+1/2} for every m, m = 0 included. (krmhd 0.6.0 returned the d_z part without s and p_0, so that
+   s * hermite_flux equalled the d_z part only for m >= 1.)
 B  Christoffel-Darboux identity b_m (R_mj R_{m+1,l} - R_{m+1,j} R_ml) = (u_l - u_j) K_m(j,l) (both closures), hence
    Pi_{m+1/2} = -sum_{jl} K_m(j,l) Cdot_jl / (n_j n_l), and Cdot_jl = dC_jl/dt on krmhd_rhs.
 C  The kernel is a low-pass filter: for |u| << sqrt(2m), K_m(j,l)/sqrt(n_j n_l) ~ sqrt(D_j D_l) sin(k_m (u_j-u_l))/(pi (u_j-u_l)),
@@ -71,10 +75,11 @@ for M in (9, 12):
             scale = np.abs(Pi_full).max()
             e1 = np.abs(dE + Pi_full).max() / scale
             e1z = np.abs(dE + Pi_z).max() / scale
-            # GANDALF diagnostic: per-k flux -k_z sqrt(2(m+1)) Im[g_{m+1} g_m^*]; summed with rfft weights, times s
+            # GANDALF diagnostic (krmhd 0.7.0): per-k flux s p_m sqrt((m+1)/2) Re[g_m^* grad_par g_{m+1}] for the budget
+            # of (1/2) p_m <g_m^2>; twice its rfft-weighted k-sum is Pi_full, for every m
             hf = np.asarray(hermite_flux(st))
-            hf_sum = s * np.array([np.sum(wk * hf[..., m]) for m in range(M)])
-            e_hf = np.abs(hf_sum[1:] - Pi_z[1:]).max() / np.abs(Pi_z).max()
+            hf_sum = 2 * np.array([np.sum(wk * hf[..., m]) for m in range(M)])
+            e_hf = np.abs(hf_sum - Pi_full).max() / scale
             okA = okA and e1 < 1e-12
             okA2 = okA2 and e1z > 1e-3 and e_hf < 1e-12
             # slice form
@@ -102,12 +107,13 @@ for M in (9, 12):
             okB3 = okB3 and e3 < 1e-11
             print(f"   M={M} Lam={Lam:+.3f} {clo:9s}: |dE/dt + Pi| = {e1:.1e}; with d_z part only {e1z:.1e} "
                   f"(field-line share max|Pi_full - Pi_z|/max|Pi| = {np.abs(Pi_full - Pi_z).max() / scale:.2f}); "
-                  f"s*hermite_flux vs d_z part (m>=1) {e_hf:.1e}; m=0: hermite_flux/(Pi_z) = {hf_sum[0] / Pi_z[0]:.4f} "
-                  f"(1/(1-1/Lam) = {1 / (1 - 1 / Lam):.4f}); CD identity {worst_cd:.1e}; Cdot vs dynamics {e2:.1e}; "
+                  f"2 sum_k hermite_flux vs Pi (all m) {e_hf:.1e}, at m=0 ratio {hf_sum[0] / Pi_full[0]:.4f}; "
+                  f"CD identity {worst_cd:.1e}; Cdot vs dynamics {e2:.1e}; "
                   f"slice form vs direct {e3:.1e}")
 C.check("A1 dE_{<=m}/dt = -s b_m int(g_m gpar g_{m+1} - g_{m+1} gpar g_m) on krmhd_rhs (brackets on, both closures)",
         okA)
-C.check("A2 the d_z part alone does not close the budget; s * hermite_flux equals the d_z part for m >= 1", okA2)
+C.check("A2 the d_z part alone does not close the budget; 2 sum_k hermite_flux equals Pi_{m+1/2} with the full grad_par, s "
+        "and p_0 for every m (krmhd 0.7.0, gandalf#159, PR #162)", okA2)
 C.check("B1 generalised Christoffel-Darboux identity b_m(R_mj R_{m+1,l} - R_{m+1,j} R_ml) = (u_l - u_j) K_m(j,l)", okB1)
 C.check("B2 Cdot_jl = -s (u_j - u_l) int a_l gpar a_j equals dC_jl/dt on krmhd_rhs (E x B advection drops out)", okB2)
 C.check("B3 Pi_{m+1/2} = -sum_jl K_m(j,l) Cdot_jl / (n_j n_l) (CD-filtered slice dephasing)", okB3)
