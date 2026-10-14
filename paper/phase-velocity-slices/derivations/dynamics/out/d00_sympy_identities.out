@@ -1,3 +1,4 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
 E1  flux equation <=> ideal induction equation
   [PASS] (d_t B - curl(u x B))_x - (zhat x grad R)_x: residual = 0
   [PASS] (d_t B - curl(u x B))_y - (zhat x grad R)_y: residual = 0

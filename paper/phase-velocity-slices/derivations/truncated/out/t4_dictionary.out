@@ -32,7 +32,7 @@ C. Finite Lam: Kramers-Kronig normalisation and the Lam-independent asymptote
   [PASS] C2 GANDALF operator, outgoing closure, M = 600: W(m) -> eps_W/(|k| s sqrt(2m)) for Lam = inf, +-sqrt5; Lam = inf matches Kanekar (4.10) exactly
 ====================================================================================================
 D. Large-m dictionary and the power-law correspondence
-   chat = 1 (delta): Fourier-route W(m) vs Gamma(m+1/2)/(sqrt2 pi m!): max rel dev 3.6e-13
+   chat = 1 (delta): Fourier-route W(m) vs Gamma(m+1/2)/(sqrt2 pi m!): max rel dev 1.3e-13
    chat = (1+kappa^2 l^2)^(-p/2), l=0.15, p=0.5: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [0.966, 0.982, 0.991, 0.995, 0.998, 0.999, 0.999, 1.0, 1.0]; slope m=128..400: -0.726 (of the prediction -0.727; pure power law -0.750)
    chat = (1+kappa^2 l^2)^(-p/2), l=0.15, p=1.0: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [0.962, 0.98, 0.99, 0.996, 0.998, 0.999, 1.0, 1.0, 1.0]; slope m=128..400: -0.953 (of the prediction -0.953; pure power law -1.000)
    chat = (1+kappa^2 l^2)^(-p/2), l=0.15, p=1.5: W(m)/[chat(sqrt2m)/(pi sqrt2m)] at m=[4, 8, 16, 32, 64, 128, 200, 300, 400] = [0.959, 0.978, 0.99, 0.996, 0.999, 1.0, 1.0, 1.0, 1.0]; slope m=128..400: -1.180 (of the prediction -1.180; pure power law -1.250)
@@ -55,4 +55,4 @@ E. Truncated form of the dictionary
    Lam=+2.2361: |<W(m)>_t - p_m sum_j E_j R_mj^2/n_j| / max = 1.4e-04; W(m) pi sqrt(2m)/sum_j E_j Delta_j at m=[4, 8, 16, 32, 48, 64]: [0.947, 0.973, 0.987, 0.994, 1.001, 1.018]; W(m) 2 sqrt(M m)/W_tot: [0.91, 0.936, 0.949, 0.956, 0.962, 0.978]
    Lam=-2.2361: |<W(m)>_t - p_m sum_j E_j R_mj^2/n_j| / max = 2.1e-04; W(m) pi sqrt(2m)/sum_j E_j Delta_j at m=[4, 8, 16, 32, 48, 64]: [0.982, 0.991, 0.996, 0.998, 0.999, 0.999]; W(m) 2 sqrt(M m)/W_tot: [0.987, 0.997, 1.001, 1.003, 1.004, 1.004]
   [PASS] E2 closed system: time average = slice-diagonal spectrum, level [sum_j E_j Delta_j]/(pi sqrt(2m)) (~ W_tot/(2 sqrt(M m)))
-== t4_dictionary: 9/9 checks passed (8.3 s)
+== t4_dictionary: 9/9 checks passed (111.7 s)

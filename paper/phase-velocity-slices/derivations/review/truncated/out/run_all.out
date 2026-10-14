@@ -1,14 +1,14 @@
-paper/phase-velocity-slices/derivations/review/truncated: 2026-10-13 20:30:48, Python 3.14.3
-c00_cmm_numbering: PASS (exit 0; checks passed 16, failed 0), started 20261013_203048, wall 0 s
-c01_conventions: PASS (exit 0; checks passed 6, failed 0), started 20261013_203048, wall 38 s
-c02_slices: PASS (exit 0; checks passed 6, failed 0), started 20261013_203126, wall 39 s
-c03_invariants: PASS (exit 0; checks passed 7, failed 0), started 20261013_203205, wall 70 s
-c04_dictionary: PASS (exit 0; checks passed 4, failed 0), started 20261013_203315, wall 30 s
-c05_flux: PASS (exit 0; checks passed 5, failed 0), started 20261013_203345, wall 5 s
-c06_cfl: PASS (exit 0; checks passed 2, failed 0), started 20261013_203350, wall 48 s
-c07_imex: PASS (exit 0; checks passed 3, failed 0), started 20261013_203438, wall 23 s
-c08_spectrum: PASS (exit 0; checks passed 6, failed 0), started 20261013_203501, wall 18 s
-c09_reflection: PASS (exit 0; checks passed 3, failed 0), started 20261013_203519, wall 33 s
-c11_coll_damping: PASS (exit 0; checks passed 1, failed 0), started 20261013_203552, wall 1 s
-c12_zero_slice: PASS (exit 0; checks passed 2, failed 0), started 20261013_203553, wall 6 s
-overall: PASS, total wall 311 s
+paper/phase-velocity-slices/derivations/review/truncated: 2026-10-14 17:20:42, Python 3.13.16
+c00_cmm_numbering: SKIPPED (exit 0; checks passed 0, failed 0), started 20261014_172042, wall 1 s
+c01_conventions: PASS (exit 0; checks passed 6, failed 0), started 20261014_172043, wall 79 s
+c02_slices: PASS (exit 0; checks passed 6, failed 0), started 20261014_172202, wall 123 s
+c03_invariants: PASS (exit 0; checks passed 7, failed 0), started 20261014_172405, wall 142 s
+c04_dictionary: PASS (exit 0; checks passed 4, failed 0), started 20261014_172627, wall 52 s
+c05_flux: PASS (exit 0; checks passed 5, failed 0), started 20261014_172719, wall 18 s
+c06_cfl: PASS (exit 0; checks passed 3, failed 0), started 20261014_172737, wall 128 s
+c07_imex: PASS (exit 0; checks passed 3, failed 0), started 20261014_172945, wall 53 s
+c08_spectrum: PASS (exit 0; checks passed 6, failed 0), started 20261014_173038, wall 28 s
+c09_reflection: PASS (exit 0; checks passed 3, failed 0), started 20261014_173106, wall 441 s
+c11_coll_damping: PASS (exit 0; checks passed 1, failed 0), started 20261014_173827, wall 2 s
+c12_zero_slice: PASS (exit 0; checks passed 2, failed 0), started 20261014_173829, wall 19 s
+overall: PASS, total wall 1086 s

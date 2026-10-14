@@ -35,56 +35,55 @@ C. Positivity of Pi and reality / simplicity of the spectrum
   [PASS] C2 left eigenvectors w_j = Pi r_j: W^T A = U W^T, W^T R = N > 0, sum_j r_j w_j^T / n_j = I
 ====================================================================================================
 D. krmhd_rhs in matrix form and the exact slice equation
-   M= 2 Lam=+2.236 zero      zamp=    1: |rhs - matrix form| = 8.1e-17; slice mismatch = 2.0e-14; control without u_j Psi = 6.7e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.01/0.99/0.01
-   M= 2 Lam=+2.236 zero      zamp=  300: |rhs - matrix form| = 1.8e-16; slice mismatch = 4.4e-16; control without u_j Psi = 5.8e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.36/0.19/0.44
+   M= 2 Lam=+2.236 zero      zamp=    1: |rhs - matrix form| = 8.1e-17; slice mismatch = 3.4e-14; control without u_j Psi = 6.7e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.01/0.99/0.01
+   M= 2 Lam=+2.236 zero      zamp=  300: |rhs - matrix form| = 2.1e-16; slice mismatch = 3.9e-16; control without u_j Psi = 5.8e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.36/0.19/0.44
    M= 2 Lam=+2.236 symmetric zamp=    1: |rhs - matrix form| = 1.4e-16; slice mismatch = 7.5e-14; control without u_j Psi = 6.9e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M= 2 Lam=+2.236 symmetric zamp=  300: |rhs - matrix form| = 2.8e-16; slice mismatch = 7.0e-16; control without u_j Psi = 5.9e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.28/0.22/0.50
-   M= 2 Lam=-2.236 zero      zamp=    1: |rhs - matrix form| = 6.9e-17; slice mismatch = 4.6e-14; control without u_j Psi = 7.1e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.01/0.99/0.01
-   M= 2 Lam=-2.236 zero      zamp=  300: |rhs - matrix form| = 1.6e-16; slice mismatch = 4.7e-16; control without u_j Psi = 5.9e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.34/0.20/0.46
-   M= 2 Lam=-2.236 symmetric zamp=    1: |rhs - matrix form| = 1.4e-16; slice mismatch = 3.6e-14; control without u_j Psi = 6.6e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M= 2 Lam=-2.236 symmetric zamp=  300: |rhs - matrix form| = 3.7e-16; slice mismatch = 6.3e-16; control without u_j Psi = 6.6e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.27/0.22/0.51
-   M= 9 Lam=+2.236 zero      zamp=    1: |rhs - matrix form| = 4.3e-17; slice mismatch = 4.1e-15; control without u_j Psi = 8.6e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M= 9 Lam=+2.236 zero      zamp=  300: |rhs - matrix form| = 1.0e-16; slice mismatch = 1.0e-15; control without u_j Psi = 7.2e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.21/0.23/0.56
-   M= 9 Lam=+2.236 symmetric zamp=    1: |rhs - matrix form| = 3.1e-16; slice mismatch = 1.9e-15; control without u_j Psi = 8.9e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M= 9 Lam=+2.236 symmetric zamp=  300: |rhs - matrix form| = 3.9e-16; slice mismatch = 8.6e-16; control without u_j Psi = 7.4e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.19/0.24/0.57
-   M= 9 Lam=-2.236 zero      zamp=    1: |rhs - matrix form| = 4.1e-17; slice mismatch = 1.8e-15; control without u_j Psi = 9.6e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M= 9 Lam=-2.236 zero      zamp=  300: |rhs - matrix form| = 7.0e-17; slice mismatch = 8.9e-16; control without u_j Psi = 7.4e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.21/0.23/0.56
+   M= 2 Lam=+2.236 symmetric zamp=  300: |rhs - matrix form| = 2.4e-16; slice mismatch = 7.7e-16; control without u_j Psi = 5.9e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.28/0.22/0.50
+   M= 2 Lam=-2.236 zero      zamp=    1: |rhs - matrix form| = 6.9e-17; slice mismatch = 4.0e-14; control without u_j Psi = 7.1e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.01/0.99/0.01
+   M= 2 Lam=-2.236 zero      zamp=  300: |rhs - matrix form| = 1.8e-16; slice mismatch = 5.4e-16; control without u_j Psi = 5.9e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.34/0.20/0.46
+   M= 2 Lam=-2.236 symmetric zamp=    1: |rhs - matrix form| = 1.4e-16; slice mismatch = 4.1e-14; control without u_j Psi = 6.6e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M= 2 Lam=-2.236 symmetric zamp=  300: |rhs - matrix form| = 3.0e-16; slice mismatch = 5.8e-16; control without u_j Psi = 6.6e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.27/0.22/0.51
+   M= 9 Lam=+2.236 zero      zamp=    1: |rhs - matrix form| = 4.3e-17; slice mismatch = 3.5e-15; control without u_j Psi = 8.6e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M= 9 Lam=+2.236 zero      zamp=  300: |rhs - matrix form| = 7.9e-17; slice mismatch = 1.2e-15; control without u_j Psi = 7.2e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.21/0.23/0.56
+   M= 9 Lam=+2.236 symmetric zamp=    1: |rhs - matrix form| = 3.1e-16; slice mismatch = 2.5e-15; control without u_j Psi = 8.9e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M= 9 Lam=+2.236 symmetric zamp=  300: |rhs - matrix form| = 3.0e-16; slice mismatch = 9.0e-16; control without u_j Psi = 7.4e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.19/0.24/0.57
+   M= 9 Lam=-2.236 zero      zamp=    1: |rhs - matrix form| = 3.8e-17; slice mismatch = 2.4e-15; control without u_j Psi = 9.6e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M= 9 Lam=-2.236 zero      zamp=  300: |rhs - matrix form| = 8.0e-17; slice mismatch = 1.0e-15; control without u_j Psi = 7.4e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.21/0.23/0.56
    M= 9 Lam=-2.236 symmetric zamp=    1: |rhs - matrix form| = 1.8e-16; slice mismatch = 2.4e-15; control without u_j Psi = 1.1e-02; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M= 9 Lam=-2.236 symmetric zamp=  300: |rhs - matrix form| = 4.0e-16; slice mismatch = 1.1e-15; control without u_j Psi = 7.4e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.19/0.24/0.58
-   M=10 Lam=+2.236 zero      zamp=    1: |rhs - matrix form| = 5.1e-17; slice mismatch = 1.8e-13; control without u_j Psi = 8.7e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M=10 Lam=+2.236 zero      zamp=  300: |rhs - matrix form| = 1.0e-16; slice mismatch = 1.1e-15; control without u_j Psi = 7.1e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.21/0.23/0.56
-   M=10 Lam=+2.236 symmetric zamp=    1: |rhs - matrix form| = 2.1e-16; slice mismatch = 8.5e-14; control without u_j Psi = 8.3e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M=10 Lam=+2.236 symmetric zamp=  300: |rhs - matrix form| = 3.1e-16; slice mismatch = 8.7e-16; control without u_j Psi = 7.0e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.19/0.23/0.57
-   M=10 Lam=-2.236 zero      zamp=    1: |rhs - matrix form| = 2.4e-17; slice mismatch = 1.5e-13; control without u_j Psi = 7.5e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M=10 Lam=-2.236 zero      zamp=  300: |rhs - matrix form| = 1.1e-16; slice mismatch = 1.3e-15; control without u_j Psi = 7.4e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.21/0.24/0.55
+   M= 9 Lam=-2.236 symmetric zamp=  300: |rhs - matrix form| = 4.0e-16; slice mismatch = 1.0e-15; control without u_j Psi = 7.4e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.19/0.24/0.58
+   M=10 Lam=+2.236 zero      zamp=    1: |rhs - matrix form| = 5.1e-17; slice mismatch = 1.4e-13; control without u_j Psi = 8.7e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M=10 Lam=+2.236 zero      zamp=  300: |rhs - matrix form| = 7.8e-17; slice mismatch = 7.7e-16; control without u_j Psi = 7.1e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.21/0.23/0.56
+   M=10 Lam=+2.236 symmetric zamp=    1: |rhs - matrix form| = 2.1e-16; slice mismatch = 1.5e-13; control without u_j Psi = 8.3e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M=10 Lam=+2.236 symmetric zamp=  300: |rhs - matrix form| = 3.0e-16; slice mismatch = 9.5e-16; control without u_j Psi = 7.0e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.19/0.23/0.57
+   M=10 Lam=-2.236 zero      zamp=    1: |rhs - matrix form| = 2.4e-17; slice mismatch = 2.0e-13; control without u_j Psi = 7.5e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M=10 Lam=-2.236 zero      zamp=  300: |rhs - matrix form| = 1.1e-16; slice mismatch = 9.2e-16; control without u_j Psi = 7.4e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.21/0.24/0.55
    M=10 Lam=-2.236 symmetric zamp=    1: |rhs - matrix form| = 2.8e-16; slice mismatch = 1.8e-13; control without u_j Psi = 7.4e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M=10 Lam=-2.236 symmetric zamp=  300: |rhs - matrix form| = 3.3e-16; slice mismatch = 1.0e-15; control without u_j Psi = 7.7e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.20/0.24/0.56
-   M=16 Lam=+2.236 zero      zamp=    1: |rhs - matrix form| = 2.1e-17; slice mismatch = 1.8e-13; control without u_j Psi = 8.8e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M=16 Lam=+2.236 zero      zamp=  300: |rhs - matrix form| = 3.9e-17; slice mismatch = 1.6e-15; control without u_j Psi = 7.1e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.16/0.25/0.59
-   M=16 Lam=+2.236 symmetric zamp=    1: |rhs - matrix form| = 2.3e-16; slice mismatch = 1.3e-13; control without u_j Psi = 8.0e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M=16 Lam=+2.236 symmetric zamp=  300: |rhs - matrix form| = 3.3e-16; slice mismatch = 1.6e-15; control without u_j Psi = 7.1e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.15/0.25/0.59
-   M=16 Lam=-2.236 zero      zamp=    1: |rhs - matrix form| = 3.3e-17; slice mismatch = 1.6e-13; control without u_j Psi = 8.4e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M=16 Lam=-2.236 zero      zamp=  300: |rhs - matrix form| = 4.0e-17; slice mismatch = 1.7e-15; control without u_j Psi = 8.1e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.15/0.25/0.60
-   M=16 Lam=-2.236 symmetric zamp=    1: |rhs - matrix form| = 2.1e-16; slice mismatch = 1.2e-13; control without u_j Psi = 8.5e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
-   M=16 Lam=-2.236 symmetric zamp=  300: |rhs - matrix form| = 3.7e-16; slice mismatch = 1.5e-15; control without u_j Psi = 7.6e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.15/0.25/0.61
+   M=10 Lam=-2.236 symmetric zamp=  300: |rhs - matrix form| = 3.1e-16; slice mismatch = 1.1e-15; control without u_j Psi = 7.7e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.20/0.24/0.56
+   M=16 Lam=+2.236 zero      zamp=    1: |rhs - matrix form| = 2.1e-17; slice mismatch = 1.7e-13; control without u_j Psi = 8.8e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M=16 Lam=+2.236 zero      zamp=  300: |rhs - matrix form| = 5.2e-17; slice mismatch = 1.2e-15; control without u_j Psi = 7.1e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.16/0.25/0.59
+   M=16 Lam=+2.236 symmetric zamp=    1: |rhs - matrix form| = 2.3e-16; slice mismatch = 1.7e-13; control without u_j Psi = 8.0e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M=16 Lam=+2.236 symmetric zamp=  300: |rhs - matrix form| = 3.3e-16; slice mismatch = 1.7e-15; control without u_j Psi = 7.1e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.15/0.25/0.59
+   M=16 Lam=-2.236 zero      zamp=    1: |rhs - matrix form| = 3.3e-17; slice mismatch = 1.5e-13; control without u_j Psi = 8.4e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M=16 Lam=-2.236 zero      zamp=  300: |rhs - matrix form| = 4.5e-17; slice mismatch = 2.1e-15; control without u_j Psi = 8.1e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.15/0.25/0.60
+   M=16 Lam=-2.236 symmetric zamp=    1: |rhs - matrix form| = 2.1e-16; slice mismatch = 2.3e-13; control without u_j Psi = 8.5e-03; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.00/0.99/0.01
+   M=16 Lam=-2.236 symmetric zamp=  300: |rhs - matrix form| = 3.3e-16; slice mismatch = 1.6e-15; control without u_j Psi = 7.6e-01; shares {Phi,g}/s dz Ag/s{Psi,Ag} = 0.15/0.25/0.61
   [PASS] D1 krmhd_rhs == -{Phi,g} - s dz(A g) - s{Psi, A g} (beta_i = 1.7)
   [PASS] D2 every slice obeys d_t a_j = -{Phi + s u_j Psi, a_j} - s u_j d_z a_j
   [PASS] D3 control: dropping the u_j Psi advection fails
 ====================================================================================================
 E. Slice leakage through gandalf_step (one GANDALF integration per case, recorded below)
-W1014 16:25:24.231760 44038383 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
-   imex_rk222 zero      nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 6.21e-16  (wall 1.1 s incl. compile)
-   imex_rk222 zero      nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.02e-04  (wall 0.1 s incl. compile)
-   imex_rk222 zero      nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 2.04e-04  (wall 0.1 s incl. compile)
-   imex_rk222 symmetric nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 5.87e-16  (wall 0.9 s incl. compile)
-   imex_rk222 symmetric nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 8.68e-05  (wall 0.1 s incl. compile)
-   imex_rk222 symmetric nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.74e-04  (wall 0.1 s incl. compile)
-   lawson_rk4 zero      nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 3.15e-15  (wall 1.6 s incl. compile)
-   lawson_rk4 zero      nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.02e-04  (wall 0.1 s incl. compile)
-   lawson_rk4 zero      nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 2.04e-04  (wall 0.1 s incl. compile)
-   lawson_rk4 symmetric nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.28e-15  (wall 1.6 s incl. compile)
-   lawson_rk4 symmetric nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 8.68e-05  (wall 0.1 s incl. compile)
-   lawson_rk4 symmetric nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.74e-04  (wall 0.1 s incl. compile)
+   imex_rk222 zero      nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 6.72e-16  (wall 18.9 s incl. compile)
+   imex_rk222 zero      nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.02e-04  (wall 3.6 s incl. compile)
+   imex_rk222 zero      nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 2.04e-04  (wall 17.0 s incl. compile)
+   imex_rk222 symmetric nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 4.78e-16  (wall 24.8 s incl. compile)
+   imex_rk222 symmetric nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 8.68e-05  (wall 15.1 s incl. compile)
+   imex_rk222 symmetric nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.74e-04  (wall 12.2 s incl. compile)
+   lawson_rk4 zero      nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 3.30e-15  (wall 10.2 s incl. compile)
+   lawson_rk4 zero      nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.02e-04  (wall 0.7 s incl. compile)
+   lawson_rk4 zero      nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 2.04e-04  (wall 0.6 s incl. compile)
+   lawson_rk4 symmetric nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 2.20e-15  (wall 10.1 s incl. compile)
+   lawson_rk4 symmetric nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 8.68e-05  (wall 0.5 s incl. compile)
+   lawson_rk4 symmetric nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.74e-04  (wall 0.4 s incl. compile)
   [PASS] E1 nu = 0: no leakage between slices through gandalf_step (IMEX and Lawson, both closures, eta, eta_z on)
    imex_rk222 zero     : leakage(nu=1)/leakage(nu=0.5) = 1.9999 (linear in nu -> 2)
    imex_rk222 symmetric: leakage(nu=1)/leakage(nu=0.5) = 1.9999 (linear in nu -> 2)
@@ -94,16 +93,16 @@ W1014 16:25:24.231760 44038383 cpp_gen_intrinsics.cc:74] Empty bitcode string pr
    first-order estimate of the largest leakage at nu = 1: 2.037e-04; measured (IMEX, zero closure) 2.037e-04
   [PASS] E3 measured leakage matches the first-order collisional coupling nu T |(W^T C R)_{l j0}| / n_j0 :: ratio 0.9999
 GANDALF integrations (scheme, closure, nu, steps, wall s):
-   imex_rk222 zero nu=0.0 steps=20 wall=1.1s grid=16^3 M=10
-   imex_rk222 zero nu=0.5 steps=20 wall=0.1s grid=16^3 M=10
-   imex_rk222 zero nu=1.0 steps=20 wall=0.1s grid=16^3 M=10
-   imex_rk222 symmetric nu=0.0 steps=20 wall=0.9s grid=16^3 M=10
-   imex_rk222 symmetric nu=0.5 steps=20 wall=0.1s grid=16^3 M=10
-   imex_rk222 symmetric nu=1.0 steps=20 wall=0.1s grid=16^3 M=10
-   lawson_rk4 zero nu=0.0 steps=20 wall=1.6s grid=16^3 M=10
-   lawson_rk4 zero nu=0.5 steps=20 wall=0.1s grid=16^3 M=10
-   lawson_rk4 zero nu=1.0 steps=20 wall=0.1s grid=16^3 M=10
-   lawson_rk4 symmetric nu=0.0 steps=20 wall=1.6s grid=16^3 M=10
-   lawson_rk4 symmetric nu=0.5 steps=20 wall=0.1s grid=16^3 M=10
-   lawson_rk4 symmetric nu=1.0 steps=20 wall=0.1s grid=16^3 M=10
-== t1_hierarchy: 12/12 checks passed (18.9 s)
+   imex_rk222 zero nu=0.0 steps=20 wall=18.9s grid=16^3 M=10
+   imex_rk222 zero nu=0.5 steps=20 wall=3.6s grid=16^3 M=10
+   imex_rk222 zero nu=1.0 steps=20 wall=17.0s grid=16^3 M=10
+   imex_rk222 symmetric nu=0.0 steps=20 wall=24.8s grid=16^3 M=10
+   imex_rk222 symmetric nu=0.5 steps=20 wall=15.1s grid=16^3 M=10
+   imex_rk222 symmetric nu=1.0 steps=20 wall=12.2s grid=16^3 M=10
+   lawson_rk4 zero nu=0.0 steps=20 wall=10.2s grid=16^3 M=10
+   lawson_rk4 zero nu=0.5 steps=20 wall=0.7s grid=16^3 M=10
+   lawson_rk4 zero nu=1.0 steps=20 wall=0.6s grid=16^3 M=10
+   lawson_rk4 symmetric nu=0.0 steps=20 wall=10.1s grid=16^3 M=10
+   lawson_rk4 symmetric nu=0.5 steps=20 wall=0.5s grid=16^3 M=10
+   lawson_rk4 symmetric nu=1.0 steps=20 wall=0.4s grid=16^3 M=10
+== t1_hierarchy: 12/12 checks passed (410.0 s)

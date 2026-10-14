@@ -1,15 +1,16 @@
-  [PASS] C1 Lambda=+2.236, amp=1.0: d_t Psi + {Phi,Psi} - d_z Phi = 0  (1.7e-16; other signs: 2.0e+00, 8.2e-01, 2.0e+00; |{Phi,Psi}|/scale = 0.41)
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+  [PASS] C1 Lambda=+2.236, amp=1.0: d_t Psi + {Phi,Psi} - d_z Phi = 0  (1.6e-16; other signs: 2.0e+00, 8.2e-01, 2.0e+00; |{Phi,Psi}|/scale = 0.41)
   [PASS] C1 Lambda=+2.236, amp=1.0: wrong-sign variants fail
-  [PASS] C2 Lambda=+2.236, amp=1.0: slice equation through GANDALF RHS (M=8)  (max rel. mismatch 9.6e-16; ||bracket||/||streaming|| over slices with u != 0: 1.0 to 1.9)
-  [PASS] C5 Lambda=+2.236, amp=1.0: d/dt <a_j^2> = 0 for every slice  (max |d ln E_j/dt| = 2.9e-15)
-  [PASS] C1 Lambda=+2.236, amp=40.0: d_t Psi + {Phi,Psi} - d_z Phi = 0  (2.7e-16; other signs: 9.0e-02, 2.0e+00, 2.0e+00; |{Phi,Psi}|/scale = 1.00)
+  [PASS] C2 Lambda=+2.236, amp=1.0: slice equation through GANDALF RHS (M=8)  (max rel. mismatch 1.3e-15; ||bracket||/||streaming|| over slices with u != 0: 1.0 to 1.9)
+  [PASS] C5 Lambda=+2.236, amp=1.0: d/dt <a_j^2> = 0 for every slice  (max |d ln E_j/dt| = 3.2e-15)
+  [PASS] C1 Lambda=+2.236, amp=40.0: d_t Psi + {Phi,Psi} - d_z Phi = 0  (2.6e-16; other signs: 9.0e-02, 2.0e+00, 2.0e+00; |{Phi,Psi}|/scale = 1.00)
   [PASS] C1 Lambda=+2.236, amp=40.0: wrong-sign variants fail
-  [PASS] C2 Lambda=+2.236, amp=40.0: slice equation through GANDALF RHS (M=8)  (max rel. mismatch 7.9e-16; ||bracket||/||streaming|| over slices with u != 0: 41.5 to 76.4)
-  [PASS] C5 Lambda=+2.236, amp=40.0: d/dt <a_j^2> = 0 for every slice  (max |d ln E_j/dt| = 1.2e-13)
-  [PASS] C2 Lambda=-2.236, amp=1.0: slice equation through GANDALF RHS (M=8)  (max rel. mismatch 1.1e-15; ||bracket||/||streaming|| over slices with u != 0: 1.0 to 1.6)
-  [PASS] C5 Lambda=-2.236, amp=1.0: d/dt <a_j^2> = 0 for every slice  (max |d ln E_j/dt| = 4.6e-15)
-  [PASS] C2 Lambda=-2.236, amp=40.0: slice equation through GANDALF RHS (M=8)  (max rel. mismatch 1.1e-15; ||bracket||/||streaming|| over slices with u != 0: 40.3 to 67.2)
-  [PASS] C5 Lambda=-2.236, amp=40.0: d/dt <a_j^2> = 0 for every slice  (max |d ln E_j/dt| = 5.8e-14)
-  [PASS] C3 (d_t - d_z + {z-,.}) lap z+ = {z+_x, z-_x} + {z+_y, z-_y} in GANDALF  (3.3e-16)
+  [PASS] C2 Lambda=+2.236, amp=40.0: slice equation through GANDALF RHS (M=8)  (max rel. mismatch 8.0e-16; ||bracket||/||streaming|| over slices with u != 0: 41.5 to 76.4)
+  [PASS] C5 Lambda=+2.236, amp=40.0: d/dt <a_j^2> = 0 for every slice  (max |d ln E_j/dt| = 4.1e-14)
+  [PASS] C2 Lambda=-2.236, amp=1.0: slice equation through GANDALF RHS (M=8)  (max rel. mismatch 1.7e-15; ||bracket||/||streaming|| over slices with u != 0: 1.0 to 1.6)
+  [PASS] C5 Lambda=-2.236, amp=1.0: d/dt <a_j^2> = 0 for every slice  (max |d ln E_j/dt| = 1.1e-14)
+  [PASS] C2 Lambda=-2.236, amp=40.0: slice equation through GANDALF RHS (M=8)  (max rel. mismatch 1.6e-15; ||bracket||/||streaming|| over slices with u != 0: 40.3 to 67.2)
+  [PASS] C5 Lambda=-2.236, amp=40.0: d/dt <a_j^2> = 0 for every slice  (max |d ln E_j/dt| = 9.4e-14)
+  [PASS] C3 (d_t - d_z + {z-,.}) lap z+ = {z+_x, z-_x} + {z+_y, z-_y} in GANDALF  (3.4e-16)
   [PASS] C4 z- = 0 => d_t z+ = +i k_z z+ (z+ moves toward -z) and d_t z- = 0  (0.0e+00, max|d_t z-| = 0.0e+00)
 SUMMARY: 14/14 checks passed

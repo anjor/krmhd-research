@@ -1,8 +1,9 @@
-"""d03: frozen-line theorem through GANDALF's actual time stepper, gandalf_step (krmhd 0.6.0).  At N = 32 the script
+"""d03: frozen-line theorem through GANDALF's actual time stepper, gandalf_step (krmhd >= 0.7.0).  At N = 32 the script
 compares gandalf_step (Lawson-RK4 and IMEX-RK222 at dt = 0.002, 0.001, 0.0005, without and with hypercollisions) with
-the frozen-line prediction, and checks that the W(m) difference is set by the spatial resolution for Lawson-RK4, is
-first order in dt for IMEX-RK222, and that IMEX-RK222 at dt = 0.002 departs from the prediction by t = 0.128.  It
-supports Section 6 (frozen-line theorem through GANDALF's stepper); the IMEX results are also used in Appendix D.
+the frozen-line prediction, and checks that the W(m) difference is set by the spatial resolution for Lawson-RK4, that
+the IMEX-RK222 stepper error is second order in dt (krmhd >= 0.7.0, gandalf#158; first order in <= 0.6.0), and that
+IMEX-RK222 at dt = 0.002 departs from the prediction by t = 0.128.  It supports Section 6 (frozen-line theorem through
+GANDALF's stepper); the IMEX results are also used in Appendix D.
 
 NL run: gandalf_step with eta = 0, eta_z = 0 (ideal z+-, no spatial damping of g), scheme lawson_rk4 or imex_rk222,
         hypercollisions nu (m/M)^4 (m >= 2) or none.
@@ -10,8 +11,10 @@ FR run: frozen-line prediction d_t h = -s grad_par(0) A h - C h, GANDALF RHS wit
         classical RK4 with dt_FR = 0.0005 (time error negligible).
 Same physical initial fields as d02 (8^3 seed embedded).  Reports the W(m) and Pi_m (full grad_par) differences
 at t = 0.064 and 0.128 for dt = 0.002, 0.001 and 0.0005, so the stepper's time error is visible next to the d02
-spatial error.  At these dt the Lawson-RK4 time error is below the spatial error at N = 32; the IMEX-RK222 error is
-O(dt) (first-order coupling of g to z+-, gandalf#158), and IMEX-RK222 at dt = 0.002 is unstable.
+spatial error.  At these dt the Lawson-RK4 time error (nu = 0) is below the spatial error at N = 32; the IMEX-RK222
+error is O(dt^2) (krmhd >= 0.7.0; the first-order coupling of g to z+- of krmhd <= 0.6.0 was fixed in gandalf#158) and
+falls to that spatial floor at dt = 0.0005, so its order is measured by self-convergence at t = 0.064 with one more
+IMEX-RK222 run at dt = 0.00025 (no reference needed); IMEX-RK222 at dt = 0.002 is unstable.
 """
 import os
 import sys
@@ -73,22 +76,22 @@ def frozen(nu: float) -> dict:
     return out
 
 
-def nonlinear(scheme: str, dt: float, nu: float) -> dict:
+def nonlinear(scheme: str, dt: float, nu: float, touts: tuple = TOUT) -> dict:
     st = make_state(box, phi + psi, phi - psi, g0, LAM, BETA, nu=nu)
     out = {}
     n = 0
     clock = timer()
-    for t in TOUT:
+    for t in touts:
         while n < int(round(t / dt)):
             st = gandalf_step(st, dt, eta=0.0, v_A=1.0, nu=nu, hyper_r=1, hyper_n=4, scheme=scheme, eta_z=0.0)
             n += 1
         psiN = np.asarray(st.z_plus - st.z_minus) / 2
         out[t] = (W_m(box, st.g), flux_full(box, st.g, psiN, S, A, P))
         assert abs(n * dt - t) < 1e-12
-    print(f"    {scheme} dt={dt}: max|g| at t={TOUT[-1]}: {float(np.abs(np.asarray(st.g)).max()):.3e} "
+    print(f"    {scheme} dt={dt}: max|g| at t={touts[-1]}: {float(np.abs(np.asarray(st.g)).max()):.3e} "
           f"(initial {float(np.abs(g0).max()):.3e})", flush=True)
     log_run("d03_frozen_gandalf_step.py", f"frozen-line theorem through gandalf_step ({scheme}, nu={nu})", N, M, n,
-            clock(), dict(dt=dt, T=TOUT[-1]))
+            clock(), dict(dt=dt, T=touts[-1]))
     return out
 
 
@@ -96,35 +99,46 @@ chk = Checks()
 print(f"N = {N}, M = {M}, Lambda = sqrt5, s = 1, amp = {AMP}; NL = gandalf_step (eta = eta_z = 0), "
       f"FR = frozen-line prediction (RK4, dt = 5e-4)", flush=True)
 summary = {}
+nlW = {}                       # W(m) of every gandalf_step run at t = 0.064, for the IMEX order below
 for nu in (0.0, 20.0):
     fr = frozen(nu)
     for scheme in ("lawson_rk4", "imex_rk222"):
         errs = {}
         for dt in (0.002, 0.001, 0.0005):
             nl = nonlinear(scheme, dt, nu)
+            nlW[(nu, scheme, dt)] = nl[0.064][0]
             errs[dt] = {t: (relerr(nl[t][0], fr[t][0]), maxrel(nl[t][1], fr[t][1])) for t in TOUT}
         for t in TOUT:
             print(f"  nu={nu:4.1f} {scheme:10s} t={t:6.4f}: W(m) rel.diff "
                   + "  ".join(f"dt={dt:.4f}: {errs[dt][t][0]:.2e}" for dt in errs)
                   + "   | Pi_m: " + "  ".join(f"{errs[dt][t][1]:.2e}" for dt in errs), flush=True)
         summary[(nu, scheme)] = errs
+        if scheme == "imex_rk222":      # one more dt, to t = 0.064 only, for the self-convergence order below
+            nlW[(nu, scheme, 0.00025)] = nonlinear(scheme, 0.00025, nu, (0.064,))[0.064][0]
         e_last = errs[0.0005][0.128][0]
         e_first = errs[0.002][0.128][0]
         chk(f"nu={nu} {scheme}: W(m) NL - FR at t=0.128 does not grow when dt is reduced",
             e_last <= e_first * 1.05, f"{e_first:.2e} -> {e_last:.2e}")
         chk(f"nu={nu} {scheme}: W(m) NL - FR at t=0.128 below 1e-3 at dt=5e-4 (N={N})", e_last < 1e-3, f"{e_last:.2e}")
-# order of the stepper error at t = 0.064 (spatial floor at N = 32 is ~1e-5, d02)
+# order of the stepper error at t = 0.064 (spatial floor at N = 32 is ~1e-5, d02).  The IMEX-RK222 time error reaches
+# that floor at dt = 5e-4, so the ratios of its NL - FR differences mix the two; its order is measured by
+# self-convergence, e(dt) = |W(m; dt) - W(m; dt/2)|, which the shared spatial error drops out of.  (Lawson-RK4 is no
+# reference for nu > 0: it applies the hypercollisions as a split post-step factor.)
+dS = (0.002, 0.001, 0.0005, 0.00025)
 for nu in (0.0, 20.0):
     eL = [summary[(nu, "lawson_rk4")][dt][0.064][0] for dt in (0.002, 0.001, 0.0005)]
     eI = [summary[(nu, "imex_rk222")][dt][0.064][0] for dt in (0.002, 0.001, 0.0005)]
     rI = (eI[0] / eI[1], eI[1] / eI[2])
+    eS = [relerr(nlW[(nu, "imex_rk222", a)], nlW[(nu, "imex_rk222", b)]) for a, b in zip(dS[:-1], dS[1:])]
+    rS = (eS[0] / eS[1], eS[1] / eS[2])
     print(f"  nu={nu}: t=0.064 W(m) differences  Lawson-RK4 {', '.join(f'{x:.2e}' for x in eL)};  IMEX-RK222 "
-          f"{', '.join(f'{x:.2e}' for x in eI)} (ratios {rI[0]:.2f}, {rI[1]:.2f})")
+          f"{', '.join(f'{x:.2e}' for x in eI)} (ratios {rI[0]:.2f}, {rI[1]:.2f});  IMEX-RK222 self-convergence "
+          f"(dt = {', '.join(str(x) for x in dS)}) {', '.join(f'{x:.2e}' for x in eS)} (ratios {rS[0]:.2f}, {rS[1]:.2f})")
     if nu == 0.0:
         chk("Lawson-RK4 (nu = 0): stepper error below the spatial floor at every dt (difference flat in dt)",
             max(eL) / min(eL) < 1.2, ", ".join(f"{x:.2e}" for x in eL))
-    chk(f"IMEX-RK222 (nu = {nu}): first-order convergence in dt (gandalf#158)", all(1.7 < r_ < 2.6 for r_ in rI),
-        f"ratios {rI[0]:.2f}, {rI[1]:.2f}")
+    chk(f"IMEX-RK222 (nu = {nu}): second-order self-convergence in dt (krmhd >= 0.7.0, gandalf#158; first order in "
+        f"<= 0.6.0)", all(3.4 < r_ < 5.2 for r_ in rS), f"ratios {rS[0]:.2f}, {rS[1]:.2f}")
     eI2 = summary[(nu, "imex_rk222")][0.002][0.128][0]
     chk(f"IMEX-RK222 (nu = {nu}) at dt = 0.002 departs from the frozen-line prediction by t = 0.128 (instability)",
         eI2 > 0.1 and summary[(nu, "imex_rk222")][0.001][0.128][0] < 1e-3, f"{eI2:.2e}")

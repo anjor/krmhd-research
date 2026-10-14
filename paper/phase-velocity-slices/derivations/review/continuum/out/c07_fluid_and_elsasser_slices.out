@@ -6,8 +6,8 @@ F2  Schekochihin et al. 2009 eqs (26)-(27) diagonalised
   [PASS] left eigenvectors = Schekochihin et al. 2009 eq. (29) fields; d z+-/dt = +-c bhat.grad z+-; = slice eq. at s u = -+c; potential = their eq. (30) eigenvalues [(-1, -c_s/sqrt(c_s**2 + 1)), (1, c_s/sqrt(c_s**2 + 1))]
   [PASS] entropy mode d ds/dt = 0 (Schekochihin et al. 2009 eq. 23) is the slice equation at u = 0 
 F3  slices at s u = +-1 with GANDALF: the slice with s u_j = +-1 ignores z-+
-  [PASS] Lambda=+2.236: s u_j = +1 (u_j = 1.1785, beta = 0.7200): slice j independent of z-  rel change 9.1e-16; other slices change by >= 0.27
-  [PASS] Lambda=+2.236: s u_j = -1 (u_j = -1.1785): slice j independent of z+  rel change 1.1e-15; other slices change by >= 0.25
+  [PASS] Lambda=+2.236: s u_j = +1 (u_j = 1.1785, beta = 0.7200): slice j independent of z-  rel change 9.4e-16; other slices change by >= 0.27
+  [PASS] Lambda=+2.236: s u_j = -1 (u_j = -1.1785): slice j independent of z+  rel change 1.0e-15; other slices change by >= 0.25
   [PASS] Lambda=-2.236: s u_j = +1 (u_j = 1.2644, beta = 0.6255): slice j independent of z-  rel change 1.2e-15; other slices change by >= 0.19
-  [PASS] Lambda=-2.236: s u_j = -1 (u_j = -1.2644): slice j independent of z+  rel change 7.7e-16; other slices change by >= 0.20
+  [PASS] Lambda=-2.236: s u_j = -1 (u_j = -1.2644): slice j independent of z+  rel change 1.4e-15; other slices change by >= 0.20
 ALL c07 CHECKS PASSED

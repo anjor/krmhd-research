@@ -17,8 +17,8 @@ A. Continuum recurrence on |u|, |u'| <= 1.5
   [PASS] P2 Lam = -sqrt5: relative kernel deviation falls with m, but the pair-weight deviation stays O(1/pi) :: kernel 4.6%, 3.3%, 2.4%, 1.2%; pair weight 0.614/pi, 0.616/pi, 0.609/pi, 0.603/pi at m = (64, 128, 256, 1024)
 ====================================================================================================
 B. GANDALF's ladder eigenvectors at M = 1500 (Gauss nodes |u_j| <= 1.5)
-   Lam=inf     (53 nodes): m=64: |K_B - K_A|/max K = 1.1e-14, pair weight 0.165/pi; m=128: |K_B - K_A|/max K = 1.7e-14, pair weight 0.118/pi; m=256: |K_B - K_A|/max K = 2.3e-14, pair weight 0.080/pi
-   Lam=+sqrt5  (53 nodes): m=64: |K_B - K_A|/max K = 1.5e-14, pair weight 0.843/pi; m=128: |K_B - K_A|/max K = 1.9e-14, pair weight 0.800/pi; m=256: |K_B - K_A|/max K = 2.1e-14, pair weight 0.776/pi
-   Lam=-sqrt5  (53 nodes): m=64: |K_B - K_A|/max K = 1.4e-14, pair weight 0.614/pi; m=128: |K_B - K_A|/max K = 2.1e-14, pair weight 0.590/pi; m=256: |K_B - K_A|/max K = 2.8e-14, pair weight 0.592/pi
+   Lam=inf     (53 nodes): m=64: |K_B - K_A|/max K = 1.2e-14, pair weight 0.165/pi; m=128: |K_B - K_A|/max K = 1.8e-14, pair weight 0.118/pi; m=256: |K_B - K_A|/max K = 2.6e-14, pair weight 0.080/pi
+   Lam=+sqrt5  (53 nodes): m=64: |K_B - K_A|/max K = 1.3e-14, pair weight 0.843/pi; m=128: |K_B - K_A|/max K = 1.5e-14, pair weight 0.800/pi; m=256: |K_B - K_A|/max K = 2.5e-14, pair weight 0.776/pi
+   Lam=-sqrt5  (53 nodes): m=64: |K_B - K_A|/max K = 1.5e-14, pair weight 0.614/pi; m=128: |K_B - K_A|/max K = 2.4e-14, pair weight 0.590/pi; m=256: |K_B - K_A|/max K = 2.4e-14, pair weight 0.592/pi
   [PASS] P3 GANDALF's ladder eigenvectors give the continuum kernel at the nodes; same pair-weight deviations
-== t5b_pair_weight: 4/4 checks passed (1.2 s)
+== t5b_pair_weight: 4/4 checks passed (36.3 s)

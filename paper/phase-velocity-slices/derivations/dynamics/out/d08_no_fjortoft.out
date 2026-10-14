@@ -9,14 +9,14 @@
   [PASS] F2 Lambda=sqrt5: Q_(u^2)/W = m + 1/2 for 2 <= m < M (a positive weight growing with m)
     F2 Lambda=inf: Q_(u^2)/W for pure Hermite states e_m, m = 0, 1, 2, 4, 16, 32: 0.500, 1.500, 2.500, 4.500, 16.500, 32.500
   [PASS] F2 Lambda=inf: Q_(u^2)/W = m + 1/2 for 2 <= m < M (a positive weight growing with m)
-  [PASS] F3 free streaming: every Q_phi (phi = 1, u, u^2, u^4, |u|, sgn u) constant along free phase mixing  (max change / max(|Q_phi|, W) = 5.3e-13; Q_phi(0) = 1: 1, u: -5e-16, u^2: 0.5, u^4: 0.75, |u|: 0.563, sgn u: -0.0553)
-    F3 free streaming: fraction of W in m <= 10 at s k t = 0.5: 1.00e+00, 2.0: 1.00e+00, 5.0: 2.97e-01, 10.0: 6.45e-12, 14.0: 3.35e-29
-  [PASS] F3 free streaming: W(m <= 10) -> 0 while all invariants are conserved  (1.00e+00 -> 3.35e-29)
-  [PASS] F3 free streaming: W(m) is Poisson(lam) (GANDALF ladder, M = 512, before recurrence)  (1.1e-15)
-  [PASS] F3 free streaming: m-diagonal part of Q_(u^2) = lam + 1/2, off-diagonal part = -lam  (4.3e-14)
-  [PASS] F3 Landau, Lambda = sqrt5: every Q_phi (phi = 1, u, u^2, u^4, |u|, sgn u) constant along free phase mixing  (max change / max(|Q_phi|, W) = 2.2e-12; Q_phi(0) = 1: 0.553, u: -1.67e-16, u^2: 0.153, u^4: 0.195, |u|: 0.213, sgn u: 0.0529)
+  [PASS] F3 free streaming: every Q_phi (phi = 1, u, u^2, u^4, |u|, sgn u) constant along free phase mixing  (max change / max(|Q_phi|, W) = 1.2e-12; Q_phi(0) = 1: 1, u: 1.67e-16, u^2: 0.5, u^4: 0.75, |u|: 0.563, sgn u: 0.0553)
+    F3 free streaming: fraction of W in m <= 10 at s k t = 0.5: 1.00e+00, 2.0: 1.00e+00, 5.0: 2.97e-01, 10.0: 6.45e-12, 14.0: 2.37e-29
+  [PASS] F3 free streaming: W(m <= 10) -> 0 while all invariants are conserved  (1.00e+00 -> 2.37e-29)
+  [PASS] F3 free streaming: W(m) is Poisson(lam) (GANDALF ladder, M = 512, before recurrence)  (1.7e-15)
+  [PASS] F3 free streaming: m-diagonal part of Q_(u^2) = lam + 1/2, off-diagonal part = -lam  (7.1e-14)
+  [PASS] F3 Landau, Lambda = sqrt5: every Q_phi (phi = 1, u, u^2, u^4, |u|, sgn u) constant along free phase mixing  (max change / max(|Q_phi|, W) = 1.2e-12; Q_phi(0) = 1: 0.553, u: 8.33e-17, u^2: 0.153, u^4: 0.195, |u|: 0.213, sgn u: 0.0529)
     F3 Landau, Lambda = sqrt5: fraction of W in m <= 10 at s k t = 0.5: 1.00e+00, 2.0: 1.00e+00, 5.0: 5.13e-01, 10.0: 7.75e-03, 14.0: 2.92e-04
   [PASS] F3 Landau, Lambda = sqrt5: W(m <= 10) -> 0 while all invariants are conserved  (1.00e+00 -> 2.92e-04)
-  [PASS] F4 Lambda=+2.236: mirror-symmetric state has Gamma(m) = 0 for all m, H = 0, W(m) > 0  (max|Gamma(m)|/max W = 3.2e-17, |H|/W = 1.6e-16, W(m) range 3.21e-02..5.75e-02)
-  [PASS] F4 Lambda=-2.236: mirror-symmetric state has Gamma(m) = 0 for all m, H = 0, W(m) > 0  (max|Gamma(m)|/max W = 3.4e-18, |H|/W = 0.0e+00, W(m) range 2.81e-02..5.55e-02)
+  [PASS] F4 Lambda=+2.236: mirror-symmetric state has Gamma(m) = 0 for all m, H = 0, W(m) > 0  (max|Gamma(m)|/max W = 3.2e-17, |H|/W = 2.1e-16, W(m) range 3.21e-02..5.75e-02)
+  [PASS] F4 Lambda=-2.236: mirror-symmetric state has Gamma(m) = 0 for all m, H = 0, W(m) > 0  (max|Gamma(m)|/max W = 0.0e+00, |H|/W = 8.2e-17, W(m) range 2.81e-02..5.55e-02)
 SUMMARY: 16/16 checks passed

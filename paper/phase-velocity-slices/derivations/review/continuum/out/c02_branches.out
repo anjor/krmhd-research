@@ -1,30 +1,30 @@
 BR1/BR2  K from velocity quadrature; (B5)-(B7)
   [PASS] 1/eig(K) = Lambda+- of (B7) (400 random beta, tau/Z) max rel 3.4e-11
-  [PASS] (B5) with sigma (B6) are left eigenvectors: l K = l/Lambda max rel 3.4e-11
+  [FAIL] (B5) with sigma (B6) are left eigenvectors: l K = l/Lambda max rel 1.5e-10
   [PASS] Lambda+ > 1 and Lambda- < 0 on the sample 
   [PASS] beta = tau = Z = 1: Lambda+- = +-sqrt5 (exact) 
-  [PASS] (B1): int G_n = dn/n, int G_B = dB/B from (3.27)-(3.28) max rel 5.2e-15
+  [PASS] (B1): int G_n = dn/n, int G_B = dB/B from (3.27)-(3.28) max rel 1.4e-14
 BR3  Laguerre l >= 2 sector
-  [PASS] projection of the source (Z/tau) n + x b on L_l vanishes for l = 2..12 max 4.9e-14
+  [PASS] projection of the source (Z/tau) n + x b on L_l vanishes for l = 2..12 max 6.2e-14
 BR4  W_compr and H_ph-sp decompositions by direct 2D velocity quadrature
-    beta=1.0, tau/Z=1.0: W rel err with kappa(Schekochihin et al. 2009 eq. 204) 5.7e-15, with kappa(B16 printed) 2.47e-02; H: 4.3e-14 vs 3.19e-02
+    beta=1.0, tau/Z=1.0: W rel err with kappa(Schekochihin et al. 2009 eq. 204) 4.2e-15, with kappa(B16 printed) 2.47e-02; H: 4.3e-13 vs 3.19e-02
   [PASS] beta=1.0, tau/Z=1.0: (B15) and (B17) hold with kappa^2 = (1+tau/Z)^2 + beta^-2 
   [PASS] beta=1.0, tau/Z=1.0: (B15) fails with (B16) as printed 
-    beta=0.3, tau/Z=2.0: W rel err with kappa(Schekochihin et al. 2009 eq. 204) 0.0e+00, with kappa(B16 printed) 4.57e-02; H: 2.8e-16 vs 2.89e-01
+    beta=0.3, tau/Z=2.0: W rel err with kappa(Schekochihin et al. 2009 eq. 204) 8.9e-15, with kappa(B16 printed) 4.57e-02; H: 7.6e-14 vs 2.89e-01
   [PASS] beta=0.3, tau/Z=2.0: (B15) and (B17) hold with kappa^2 = (1+tau/Z)^2 + beta^-2 
   [PASS] beta=0.3, tau/Z=2.0: (B15) fails with (B16) as printed 
-    beta=5.0, tau/Z=0.5: W rel err with kappa(Schekochihin et al. 2009 eq. 204) 6.8e-15, with kappa(B16 printed) 7.18e-02; H: 4.4e-15 vs 9.29e-02
+    beta=5.0, tau/Z=0.5: W rel err with kappa(Schekochihin et al. 2009 eq. 204) 1.7e-14, with kappa(B16 printed) 7.18e-02; H: 2.0e-14 vs 9.29e-02
   [PASS] beta=5.0, tau/Z=0.5: (B15) and (B17) hold with kappa^2 = (1+tau/Z)^2 + beta^-2 
   [PASS] beta=5.0, tau/Z=0.5: (B15) fails with (B16) as printed 
-    beta=0.1, tau/Z=0.1: W rel err with kappa(Schekochihin et al. 2009 eq. 204) 6.2e-15, with kappa(B16 printed) 1.56e-04; H: 4.1e-15 vs 2.31e-04
+    beta=0.1, tau/Z=0.1: W rel err with kappa(Schekochihin et al. 2009 eq. 204) 1.6e-14, with kappa(B16 printed) 1.56e-04; H: 3.8e-14 vs 2.31e-04
   [PASS] beta=0.1, tau/Z=0.1: (B15) and (B17) hold with kappa^2 = (1+tau/Z)^2 + beta^-2 
   [PASS] beta=0.1, tau/Z=0.1: (B15) fails with (B16) as printed 
-    beta=20.0, tau/Z=3.0: W rel err with kappa(Schekochihin et al. 2009 eq. 204) 1.8e-15, with kappa(B16 printed) 1.71e-02; H: 1.7e-14 vs 1.27e-01
+    beta=20.0, tau/Z=3.0: W rel err with kappa(Schekochihin et al. 2009 eq. 204) 1.7e-14, with kappa(B16 printed) 1.71e-02; H: 1.7e-14 vs 1.27e-01
   [PASS] beta=20.0, tau/Z=3.0: (B15) and (B17) hold with kappa^2 = (1+tau/Z)^2 + beta^-2 
   [PASS] beta=20.0, tau/Z=3.0: (B15) fails with (B16) as printed 
 BR5  moments
   [PASS] exact (dn/n, dB/B) = (1/2) x Schekochihin et al. 2009 eqs (202)-(203) (CMM footnote) max rel 4.6e-15
-  [PASS] u_par = int v G_0, dp_perp/p = -(Z/tau) n - (2/beta) b, dp_par/p = 2 int v^2 G_0 + b (direct integrals) max abs 6.4e-14
+  [PASS] u_par = int v G_0, dp_perp/p = -(Z/tau) n - (2/beta) b, dp_par/p = 2 int v^2 G_0 + b (direct integrals) max abs 4.5e-13
   [PASS] beta=tau=Z=1: G_0 = phi (G- - G+), G_1 = phi^2 G+ + G- 
   [PASS] beta=tau=Z=1: c+ = 5 + 2 sqrt5, c- = (5 + sqrt5)/2, cross term zero 
-ALL c02 CHECKS PASSED
+FAILED: ['(B5) with sigma (B6) are left eigenvectors: l K = l/Lambda']

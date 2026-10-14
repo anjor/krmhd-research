@@ -1,15 +1,14 @@
     M = 8, Lambda = sqrt5: eigenvalues u = [-3.191, -2.2639, -1.4376, -0.6342, 0.0, 0.6342, 1.4376, 2.2639, 3.191]
     choose u_j = -0.634223 and beta = 2.486087 so that s u_j = -1 (mirror slice u = 0.634223, s u = +1.000000)
-  [PASS] E1 s u = -1 slice: d_t a = -{z-, a} + d_z a (GANDALF RHS)  (5.5e-16)
-  [PASS] E1 s u = -1 slice: unchanged when z+ is replaced  (9.3e-16)
-  [PASS] E1 s u = +1 slice: d_t a = -{z+, a} - d_z a (GANDALF RHS)  (5.5e-16)
-  [PASS] E1 s u = +1 slice: unchanged when z- is replaced  (6.9e-16)
+  [PASS] E1 s u = -1 slice: d_t a = -{z-, a} + d_z a (GANDALF RHS)  (6.7e-16)
+  [PASS] E1 s u = -1 slice: unchanged when z+ is replaced  (9.9e-16)
+  [PASS] E1 s u = +1 slice: d_t a = -{z+, a} - d_z a (GANDALF RHS)  (7.0e-16)
+  [PASS] E1 s u = +1 slice: unchanged when z- is replaced  (9.1e-16)
   [PASS] E2 every other slice sees both z+ and z-  (min sensitivity 0.63)
-W1013 20:41:11.422490 43206255 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
-    E3 t = 0.5: |z+(t) - z+(0) e^(i k_z t)| = 4.7e-15, max|z-(t)| = 0.0e+00
+    E3 t = 0.5: |z+(t) - z+(0) e^(i k_z t)| = 4.6e-15, max|z-(t)| = 0.0e+00
     E3 deviation of each slice from rigid streaming along z, ||a_j(t) - a_j(0) e^(-i s u_j k_z t)|| / ||a_j(0)||:
-       su=-5.031: 1.4e+00  su=-3.570: 1.4e+00  su=-2.267: 1.4e+00  su=-1.000: 1.4e-14  su=+0.000: 1.4e+00  su=+1.000: 1.4e+00  su=+2.267: 1.4e+00  su=+3.570: 1.4e+00  su=+5.031: 1.4e+00
-  [PASS] E3 z- stays zero and z+ translates rigidly toward -z  (4.7e-15, 0.0e+00)
-  [PASS] E3 the s u = -1 slice co-moves rigidly with z+  (1.4e-14)
+       su=-5.031: 1.4e+00  su=-3.570: 1.4e+00  su=-2.267: 1.4e+00  su=-1.000: 1.2e-14  su=+0.000: 1.4e+00  su=+1.000: 1.4e+00  su=+2.267: 1.4e+00  su=+3.570: 1.4e+00  su=+5.031: 1.4e+00
+  [PASS] E3 z- stays zero and z+ translates rigidly toward -z  (4.6e-15, 0.0e+00)
+  [PASS] E3 the s u = -1 slice co-moves rigidly with z+  (1.2e-14)
   [PASS] E3 every other slice is distorted by z+  (min 1.35)
 SUMMARY: 8/8 checks passed

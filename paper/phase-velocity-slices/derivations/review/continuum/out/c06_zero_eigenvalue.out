@@ -4,15 +4,15 @@ Z1  exact determinant parity
   [PASS] characteristic polynomial has parity (-1)^(M+1) (M <= 10) 
     e.g. M = 3: det A = 3*(Lambda - 1)/(4*Lambda)  (vanishes only at Lambda = 1)
 Z2  GANDALF's matrix
-  [PASS] krmhd 0.6.0 zero, Lambda=+2.236: zero eigenvalue at even M only; spectrum real M=63: min|u|=1.2e-01, M=64: min|u|=2.6e-15, M=127: min|u|=9.0e-02, M=128: min|u|=3.1e-16
-  [PASS] krmhd 0.6.0 zero, Lambda=-2.236: zero eigenvalue at even M only; spectrum real M=63: min|u|=1.5e-01, M=64: min|u|=3.7e-16, M=127: min|u|=1.0e-01, M=128: min|u|=2.3e-16
-  [PASS] krmhd 0.6.0 symmetric, Lambda=+2.236: zero eigenvalue at even M only; spectrum real M=63: min|u|=1.2e-01, M=64: min|u|=1.2e-16, M=127: min|u|=9.0e-02, M=128: min|u|=7.8e-17
-  [PASS] krmhd 0.6.0 symmetric, Lambda=-2.236: zero eigenvalue at even M only; spectrum real M=63: min|u|=1.5e-01, M=64: min|u|=1.1e-15, M=127: min|u|=1.0e-01, M=128: min|u|=4.5e-17
+  [PASS] krmhd 0.7.0 zero, Lambda=+2.236: zero eigenvalue at even M only; spectrum real M=63: min|u|=1.2e-01, M=64: min|u|=2.0e-16, M=127: min|u|=9.0e-02, M=128: min|u|=2.5e-17
+  [PASS] krmhd 0.7.0 zero, Lambda=-2.236: zero eigenvalue at even M only; spectrum real M=63: min|u|=1.5e-01, M=64: min|u|=2.6e-15, M=127: min|u|=1.0e-01, M=128: min|u|=2.5e-16
+  [PASS] krmhd 0.7.0 symmetric, Lambda=+2.236: zero eigenvalue at even M only; spectrum real M=63: min|u|=1.2e-01, M=64: min|u|=1.1e-15, M=127: min|u|=9.0e-02, M=128: min|u|=1.6e-16
+  [PASS] krmhd 0.7.0 symmetric, Lambda=-2.236: zero eigenvalue at even M only; spectrum real M=63: min|u|=1.5e-01, M=64: min|u|=8.3e-16, M=127: min|u|=1.0e-01, M=128: min|u|=3.6e-16
   [PASS] exact rational-radical null vector of A^T (M = 64) annihilated by GANDALF's matrix residual 2.8e-16
     w0 has nonzero entries only at even m: True
 Z3  the u = 0 slice in GANDALF's right-hand side
-  [PASS] Lambda=+2.236 beta=1.0: d_t a_0 = -{Phi, a_0} exactly (no streaming, no {Psi,.}) rel 7.3e-16; |A^T w0| = 5.0e-16
-  [PASS] Lambda=+2.236 beta=2.5: d_t a_0 = -{Phi, a_0} exactly (no streaming, no {Psi,.}) rel 1.2e-15; |A^T w0| = 5.0e-16
-  [PASS] Lambda=-2.236 beta=1.0: d_t a_0 = -{Phi, a_0} exactly (no streaming, no {Psi,.}) rel 7.2e-16; |A^T w0| = 5.0e-16
-  [PASS] Lambda=-2.236 beta=2.5: d_t a_0 = -{Phi, a_0} exactly (no streaming, no {Psi,.}) rel 1.0e-15; |A^T w0| = 5.0e-16
+  [PASS] Lambda=+2.236 beta=1.0: d_t a_0 = -{Phi, a_0} exactly (no streaming, no {Psi,.}) rel 9.4e-16; |A^T w0| = 4.9e-16
+  [PASS] Lambda=+2.236 beta=2.5: d_t a_0 = -{Phi, a_0} exactly (no streaming, no {Psi,.}) rel 1.1e-15; |A^T w0| = 4.9e-16
+  [PASS] Lambda=-2.236 beta=1.0: d_t a_0 = -{Phi, a_0} exactly (no streaming, no {Psi,.}) rel 8.0e-16; |A^T w0| = 4.9e-16
+  [PASS] Lambda=-2.236 beta=2.5: d_t a_0 = -{Phi, a_0} exactly (no streaming, no {Psi,.}) rel 9.9e-16; |A^T w0| = 4.9e-16
 ALL c06 CHECKS PASSED

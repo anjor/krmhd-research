@@ -7,14 +7,14 @@ a. Space of symmetric K with K A = A^T K: 60-digit mpmath SVD of the linear map 
   [PASS] c03.a conserved quadratic forms (k-independent K) = span{Pi A^n}, dimension M+1 (60-digit SVD)
 ----------------------------------------------------------------------------------------------------
 b. A k-dependent translation-invariant form is not conserved
-   d/dt sum_k 1        g^T Pi g : relative rate 2.2e-18
+   d/dt sum_k 1        g^T Pi g : relative rate 5.0e-18
    d/dt sum_k |k_z|    g^T Pi g : relative rate 2.5e-03
    d/dt sum_k k_perp^2 g^T Pi g : relative rate 4.5e-03
   [PASS] c03.b the family is exact only within k-independent forms: k-weighted versions of Q_1 are not conserved
 ----------------------------------------------------------------------------------------------------
 c. CMM's continuum integrals by direct quadrature on the retained span (zero closure, Lam = sqrt5)
-   M=8: |W(B13) - Q_1/2| = 0.0e+00; |Gamma(B25) - Q_u/2| = 0.0e+00; |[G,L^2G] - (g Pi A^2 g + (M+1)g_M^2/2)| = 0.0e+00; even M: H(B18) = +4.814195 vs conserved PV form/2 = +2.845570
-   M=9: |W(B13) - Q_1/2| = 4.4e-16; |Gamma(B25) - Q_u/2| = 0.0e+00; |[G,L^2G] - (g Pi A^2 g + (M+1)g_M^2/2)| = 0.0e+00; |H(B18) - Q_(1/u)/2| (odd M) = 2.2e-16
+   M=8: |W(B13) - Q_1/2| = 0.0e+00; |Gamma(B25) - Q_u/2| = 8.9e-16; |[G,L^2G] - (g Pi A^2 g + (M+1)g_M^2/2)| = 1.4e-14; even M: H(B18) = +4.814195 vs conserved PV form/2 = +2.845570
+   M=9: |W(B13) - Q_1/2| = 4.4e-16; |Gamma(B25) - Q_u/2| = 0.0e+00; |[G,L^2G] - (g Pi A^2 g + (M+1)g_M^2/2)| = 0.0e+00; |H(B18) - Q_(1/u)/2| (odd M) = 0.0e+00
   [PASS] c03.c CMM's W (B13), Gamma (B25), H (B18, odd M) equal Q_1/2, Q_u/2, Q_{1/u}/2 on the retained span; [G,L^2G] misses (M+1) g_M^2/2 (direct quadrature)
 ----------------------------------------------------------------------------------------------------
 d. Copy closure: which CMM forms the conserved quadratic forms are
@@ -24,14 +24,14 @@ d. Copy closure: which CMM forms the conserved quadratic forms are
   [PASS] c03.d copy closure: Q_u = CMM's Gamma (B32) on retained moments, but Q_1 is not (B31) and odd-M Pi A^-1 is not the Galerkin P(1/v) (the 'exact restriction' statements hold for the zero closure only)
 ----------------------------------------------------------------------------------------------------
 e. Per-slice Casimirs with exact (padded) quadrature on krmhd_rhs
-   M=9 Lam=+2.236 zero: max_j rel. d/dt int a_j^2 = 7.6e-17; min_j rel. d/dt int a_j^4 = 4.9e-04 (exact quadrature on the 2x padded grid)
-   M=10 Lam=-2.236 symmetric: max_j rel. d/dt int a_j^2 = 9.0e-17; min_j rel. d/dt int a_j^4 = 2.5e-03 (exact quadrature on the 2x padded grid)
+   M=9 Lam=+2.236 zero: max_j rel. d/dt int a_j^2 = 1.1e-16; min_j rel. d/dt int a_j^4 = 4.9e-04 (exact quadrature on the 2x padded grid)
+   M=10 Lam=-2.236 symmetric: max_j rel. d/dt int a_j^2 = 1.0e-16; min_j rel. d/dt int a_j^4 = 2.5e-03 (exact quadrature on the 2x padded grid)
   [PASS] c03.e int a_j^2 conserved, int a_j^4 not (exact quadrature)
 ----------------------------------------------------------------------------------------------------
 f. Galerkin matrix of P(1/v) by direct mpmath quadrature
-   M=6 (even): max|B_M - J^D - lambda_0 (e d^T + d e^T)| = 2.2e-16 (lambda_0 = 0.457143)
+   M=6 (even): max|B_M - J^D - lambda_0 (e d^T + d e^T)| = 3.9e-16 (lambda_0 = 0.457143)
    M=7 (odd): max|B_M - J^-1| = 3.3e-16; max|B_M - Pi A^-1| over Lam = +-sqrt5, 3: 4.4e-16
-   M=10 (even): max|B_M - J^D - lambda_0 (e d^T + d e^T)| = 3.3e-16 (lambda_0 = 0.369408)
+   M=10 (even): max|B_M - J^D - lambda_0 (e d^T + d e^T)| = 3.9e-16 (lambda_0 = 0.369408)
    M=11 (odd): max|B_M - J^-1| = 5.6e-16; max|B_M - Pi A^-1| over Lam = +-sqrt5, 3: 6.7e-16
   [PASS] c03.f odd M: B_M = J^-1 = Pi A^-1 (zero closure, any Lam); even M: B_M = J^D + lambda_0(ed^T + de^T) (direct quadrature)
 ----------------------------------------------------------------------------------------------------
@@ -43,4 +43,4 @@ g. Even-M principal-value H for G = F_M(v - 1/2): convergence rate at Lam = sqrt
    Lam=-2.2361: fit error x sqrt(M) = -1.0082 -0.396 M^-1/2 +0.701 M^-1 (max residual 1.4e-05); successive increments shrink by 1.20, 1.28, 1.33, 1.36
    Lam=+inf: fit error x sqrt(M) = -1.5204 +0.003 M^-1/2 +1.100 M^-1 (max residual 1.4e-05); successive increments shrink by 1.98, 1.99, 1.99, 2.00
   [PASS] c03.g even-M PV error = c M^-1/2 (1 + O(M^-1/2)) for Lam = sqrt5, -sqrt5, inf (coefficient settles; slow at Lam = sqrt5)
-== c03_invariants: 7/7 passed (68.6 s)
+== c03_invariants: 7/7 passed (140.3 s)

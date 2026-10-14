@@ -1,10 +1,10 @@
 L1  field-aligned flux from g_0 (or g_1), single mode, s k = 1, large-M GANDALF ladder
-    Lambda=+sqrt5, g_0 data                 : min over m < 2600, s k t <= 60 of Pi_m / max_m|Pi_m| = -3.66e-29;  free energy beyond m = 2600: 2.8e-28
-    Lambda=inf (free streaming), g_0 data   : min over m < 2600, s k t <= 60 of Pi_m / max_m|Pi_m| = -1.49e-28;  free energy beyond m = 2600: 3.6e-28
+    Lambda=+sqrt5, g_0 data                 : min over m < 2600, s k t <= 60 of Pi_m / max_m|Pi_m| = -3.87e-29;  free energy beyond m = 2600: 2.9e-28
+    Lambda=inf (free streaming), g_0 data   : min over m < 2600, s k t <= 60 of Pi_m / max_m|Pi_m| = -3.46e-28;  free energy beyond m = 2600: 3.9e-28
     Lambda=-sqrt5, g_0 data                 : min over m < 2600, s k t <= 60 of Pi_m / max_m|Pi_m| = -2.18e-02 (at m = 0, s k t = 2.77);  free energy beyond m = 2600: 2.4e-28
-    Lambda=+sqrt5, g_1 data                 : min over m < 2600, s k t <= 60 of Pi_m / max_m|Pi_m| = -3.59e-01 (at m = 0, s k t = 0.97);  free energy beyond m = 2600: 4.2e-28
-  [PASS] L1 Lambda = sqrt5 from g_0: flux >= 0 at every m for s k t <= 60 (M = 5000, before the truncation is felt)  (min -3.7e-29)
-  [PASS] L1 free streaming from g_0: flux >= 0 (Poisson)  (min -1.5e-28)
+    Lambda=+sqrt5, g_1 data                 : min over m < 2600, s k t <= 60 of Pi_m / max_m|Pi_m| = -3.59e-01 (at m = 0, s k t = 0.97);  free energy beyond m = 2600: 4.1e-28
+  [PASS] L1 Lambda = sqrt5 from g_0: flux >= 0 at every m for s k t <= 60 (M = 5000, before the truncation is felt)  (min -3.9e-29)
+  [PASS] L1 free streaming from g_0: flux >= 0 (Poisson)  (min -3.5e-28)
 Q   Gaussian ensemble by 2D quadrature over (k_par, k_z); sigma_z = sigma_x = 1, b0 = tan(alpha), s = 1
     alpha   tau   m |  net/true  cos^2a |  B/(F+B) 2D   1D     | t*Pi true 2D  exact | opp weight  alpha/pi
     26.57   0.5   1 | 0.79993  0.79993 | 0.00156  0.00156 | 5.36656e-02 5.36656e-02 | 0.14449  0.14761
