@@ -106,7 +106,7 @@ def main() -> int:
         v2 = float(max(np.abs(a).max() for a in slices_norm))
         imgs = [g0[0], g0[-1]] + slices_norm
         vm = [v1, v1, v2, v2, v2]
-        labels = [r"(a) $t=0$", rf"(b) $t={t_out[-1] / tau:.1f}\,\tau$"] + \
+        labels = [r"(a) $t=0$", rf"(b) $t={t_out[-1] / tau:.1f}\,t_{{\rm nl}}$"] + \
                  [(rf"({c}) $su_j={s * u[j]:+.2f}$" if abs(s * u[j]) > 1e-9 else rf"({c}) $u_j=0$")
                   for c, j in zip("cde", j_show)]
         for k, (ax, im, v, lab) in enumerate(zip(axes, imgs, vm, labels)):
