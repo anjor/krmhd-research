@@ -46,6 +46,10 @@
 \IfFileExists{sections/10-discussion.tex}{\input{sections/10-discussion}}{\section{Discussion}\label{sec:discussion}}
 
 \appendix
+% Appendix equations are numbered (A1), (A2), ... within each appendix.
+\counterwithin*{equation}{section}
+\renewcommand{\theequation}{\thesection\arabic{equation}}
+\renewcommand{\theHequation}{\thesection.\arabic{equation}}
 \IfFileExists{sections/A-branches.tex}{\input{sections/A-branches}}{\section{The two compressive branches}\label{app:branches}}
 \IfFileExists{sections/B-spectral.tex}{\input{sections/B-spectral}}{\section{Spectral theory of the branch operator}\label{app:spectral}}
 \IfFileExists{sections/C-truncated.tex}{\input{sections/C-truncated}}{\section{The truncated hierarchy}\label{app:truncated}}

@@ -1,0 +1,162 @@
+\section{Spectral theory of the branch operator}\label{app:spectral}
+
+This appendix proves theorem~\ref{thm:spectrum} and the statements of section~\ref{sec:slices} about the eigenvalues of $L$, the zeros of the dielectric function, the Case--Van Kampen modes and the case $0<\Lambda<1$. The notation is that of section~\ref{sec:slices}. We work in the complexification of $\mathcal W$, with $\ip{f}{g}=\int\bar f\,g\,F_M^{-1}\,\dd u$ and $\fe{f}{g}=\ip{f}{Pg}$; the operator $L$ maps real functions to real functions, and for real functions these are the products of section~\ref{sec:slices}. We denote by $\mathcal D_0$ the set of functions $pF_M$ with $p$ a polynomial. The set $\mathcal D_0$ is dense in $\mathcal W$, because the functions $e_m$ form an orthonormal basis of $(\mathcal W,\ip{\cdot}{\cdot})$; it lies in $D(U)$, and $U$, $P$ and $L$ map it into itself. Let $\mathcal S$ be the set of smooth functions $f$ on the real line with $|f(v)|\le C(1+|v|)^kF_M(v)$ for some constants $C$ and $k$; it contains $\mathcal D_0$ and the smooth functions with compact support. For a function $f$ we use the Cauchy integral
+\begin{equation*}
+  \chi_f(\zeta)=\frac{1}{\pi}\int\frac{f(v)}{v-\zeta}\,\dd v\qquad(\mathrm{Im}\,\zeta>0).
+\end{equation*}
+For $f\in\mathcal S$, $\chi_f$ is analytic in the upper half plane, extends continuously to the real axis with the boundary value $\chi_f(u+\ii0)=\mathsf H[f](u)+\ii f(u)$ (the Plemelj formula), and is $O(1/\zeta)$ as $|\zeta|\to\infty$ in the closed upper half plane. The following converse is used twice.
+
+\begin{lemma}\label{appB:lemma}
+Let $Y$ be analytic in the upper half plane, continuous up to the real axis, and $Y(\zeta)=O(1/\zeta)$ as $|\zeta|\to\infty$ in the closed upper half plane. Then $Y=\chi_y$ with $y(u)=\mathrm{Im}\,Y(u+\ii0)$.
+\end{lemma}
+
+\begin{proof}
+For $\mathrm{Im}\,\zeta>0$, Cauchy's formula on a large half disc gives $Y(\zeta)=(2\pi\ii)^{-1}\int Y(v+\ii0)\,(v-\zeta)^{-1}\,\dd v$, because the contribution of the arc vanishes when $Y=O(1/\zeta)$. The function $\overline{Y(\bar\zeta)}$ is analytic in the lower half plane and has the same decay, so Cauchy's theorem gives $\int\overline{Y(v+\ii0)}\,(v-\zeta)^{-1}\,\dd v=0$. Subtracting $(2\pi\ii)^{-1}$ times this integral from the first gives $Y(\zeta)=\pi^{-1}\int\mathrm{Im}\,Y(v+\ii0)\,(v-\zeta)^{-1}\,\dd v=\chi_y(\zeta)$.
+\end{proof}
+
+\subsection{Self-adjointness}\label{appB:sa}
+
+Let $\Lambda\notin[0,1]$, so that $p_0>0$. Since $P=(I-\mathsf Q)+p_0\mathsf Q$, the operator $P^{1/2}=I+(\sqrt{p_0}-1)\mathsf Q$ is bounded and symmetric in $\ip{\cdot}{\cdot}$, it has the bounded inverse $I+(1/\sqrt{p_0}-1)\mathsf Q$, and $\fe{f}{g}=\ip{P^{1/2}f}{P^{1/2}g}$. The map $V:G\mapsto P^{1/2}G$ is therefore unitary from $(\mathcal W,\fe{\cdot}{\cdot})$ onto $(\mathcal W,\ip{\cdot}{\cdot})$. Since $V-I$ has its range in the span of $F_M$, which lies in $D(U)$, $V$ maps $D(U)$ onto itself, and by (\ref{eq:LUP})
+\begin{equation}\label{appB:rank2}
+  VLV^{-1}=P^{1/2}UP^{1/2}=U+\mathsf K,\qquad
+  \mathsf K=(\sqrt{p_0}-1)\big(\mathsf QU+U\mathsf Q\big),
+\end{equation}
+that is, $\mathsf KG=(\sqrt{p_0}-1)\big[\ip{uF_M}{G}\,F_M+\ip{F_M}{G}\,uF_M\big]$. The term $(\sqrt{p_0}-1)^2\mathsf QU\mathsf Q$ is absent because $\mathsf QU\mathsf QG=M_1[F_M]\,M_0[G]\,F_M=0$. The operator $\mathsf K$ is symmetric and of rank two, and it is bounded because $\ip{F_M}{F_M}=1$ and $\ip{uF_M}{uF_M}=1/2$. The multiplication operator $U$ is self-adjoint on $D(U)$, and by the Kato--Rellich theorem \citep[][chapter~V]{Kato1966} a bounded symmetric perturbation leaves a self-adjoint operator self-adjoint on the same domain. Hence $U+\mathsf K$ is self-adjoint on $D(U)$ in $(\mathcal W,\ip{\cdot}{\cdot})$, and $L=V^{-1}(U+\mathsf K)V$ is self-adjoint on $D(U)$ in $(\mathcal W,\fe{\cdot}{\cdot})$. This is part~(i) of theorem~\ref{thm:spectrum}. In the Hermite basis, the matrix of $P^{1/2}LP^{-1/2}$ is $\Pw^{1/2}A\Pw^{-1/2}=\Pw^{1/2}J\Pw^{1/2}$, the symmetric tridiagonal matrix with zero diagonal and off-diagonal elements $(p_0/2)^{1/2}$ between $m=0$ and $m=1$ and $((m+1)/2)^{1/2}$ between $m$ and $m+1$ for $m\ge1$; section~\ref{sec:truncated} uses its truncations.
+
+\subsection{Eigenvalues}\label{appB:eig}
+
+A function $G\in D(U)$ is an eigenfunction of $L$ with eigenvalue $\lambda$ if and only if
+\begin{equation}\label{appB:eigeq}
+  (u-\lambda)\,G=\frac{uF_M}{\Lambda}\,M_0[G],\qquad G\neq0 .
+\end{equation}
+This holds for every $\Lambda\neq0$. If $\lambda$ is not real, (\ref{appB:eigeq}) gives $G=M_0[G]\,uF_M/[\Lambda(u-\lambda)]$, which lies in $D(U)$, and taking $M_0$ of both sides gives $M_0[G]\,\eps(\lambda)=0$ if $\mathrm{Im}\,\lambda>0$ and $M_0[G]\,\overline{\eps(\bar\lambda)}=0$ if $\mathrm{Im}\,\lambda<0$, because the integral in (\ref{eq:eps}) taken at a point of the lower half plane equals $\overline{\eps(\bar\lambda)}$. Since $M_0[G]=0$ would give $G=0$, a non-real $\lambda$ is an eigenvalue if and only if $\lambda$ or $\bar\lambda$ is a zero of $\eps$ in the upper half plane, and the eigenfunction is $uF_M/[\Lambda(u-\lambda)]$, normalised by $M_0=1$. If $\lambda$ is real and $\lambda\neq0$, the function $M_0[G]\,uF_M/[\Lambda(u-\lambda)]$ is not square integrable near $u=\lambda$ unless $M_0[G]=0$, and then (\ref{appB:eigeq}) gives $G=0$. If $\lambda=0$, (\ref{appB:eigeq}) gives $G=M_0[G]\,F_M/\Lambda$, so that $M_0[G]=M_0[G]/\Lambda$, which requires $\Lambda=1$. The only real eigenvalue of $L$ is therefore $\lambda=0$ at $\Lambda=1$, with the eigenfunction $F_M$; at $\Lambda=1$, $LF_M=0$ and $\fe{F_M}{G}=p_0M_0[G]=0$ for every $G$.
+
+\subsection{Zeros of the dielectric function}\label{appB:penrose}
+
+The function $\eps$ of (\ref{eq:eps}) is analytic in the upper half plane and continuous up to the real axis, where it takes the values (\ref{sl:epsRI}). Since $1+\zeta Z(\zeta)=-1/(2\zeta^2)+O(\zeta^{-4})$ uniformly in $\mathrm{Im}\,\zeta\ge0$, $\eps(\zeta)\to1$ as $|\zeta|\to\infty$ in the closed upper half plane. If $\eps$ has no zeros on the real axis, the number of its zeros in the upper half plane, counted with multiplicity, is therefore the winding number about $0$ of the closed curve $u\mapsto\eps(u+\ii0)$, $-\infty\le u\le\infty$. On the real axis, $\eps(u+\ii0)=0$ requires $\eps_I(u)=0$, hence $u=0$, and $\eps_R(0)=p_0$ vanishes only at $\Lambda=1$. For $\Lambda\neq1$ we write $\eps(u+\ii0)=1-\mathcal N(u)/\Lambda$, with $\mathcal N(u)=1+uZ(u+\ii0)$. The winding number of $\eps$ about $0$ equals that of $\mathcal N$ about the point $\Lambda$, because $\eps$ is obtained from $\mathcal N$ by a real affine map. The curve $\mathcal N$ has
+\begin{equation*}
+  \mathrm{Im}\,\mathcal N(u)=\pi uF_M(u),\qquad \mathcal N(0)=1,\qquad \mathcal N(u)\to0\quad(|u|\to\infty).
+\end{equation*}
+It leaves $0$ at $u=-\infty$, runs through the lower half plane to the point $1$, which it reaches at $u=0$, and returns to $0$ through the upper half plane; it meets the real axis only at $0$ and $1$. It therefore winds once, counterclockwise, around every point of the interval $(0,1)$, and around no real point outside $[0,1]$: for $\Lambda>1$ the ray from $\Lambda$ to $+\infty$, and for $\Lambda<0$ the ray from $\Lambda$ to $-\infty$, does not meet it. Hence
+\begin{equation}\label{appB:count}
+  \#\{\zeta:\ \eps(\zeta)=0,\ \mathrm{Im}\,\zeta\ge0\}=
+  \begin{cases}0, & \Lambda<0\ \text{or}\ \Lambda>1,\\ 1, & 0<\Lambda<1,\end{cases}
+\end{equation}
+which is the criterion of \citet{Penrose1960} for this dielectric function. By section~\ref{appB:eig}, $L$ has no eigenvalues for $\Lambda\notin[0,1]$.
+
+For $0<\Lambda<1$ the zero lies on the imaginary axis: the relation $\eps(-\bar\zeta)=\overline{\eps(\zeta)}$, which holds because $F_M$ is even, maps zeros to zeros, and the zero is unique. With $\zeta=\ii\gamma$ and $Z(\ii\gamma)=\ii\sqrt\pi\,e^{\gamma^2}\mathrm{erfc}(\gamma)$, the condition $\eps(\ii\gamma)=0$ reads
+\begin{equation}\label{appB:gamma}
+  1-\sqrt\pi\,\gamma\,e^{\gamma^2}\,\mathrm{erfc}(\gamma)=\Lambda .
+\end{equation}
+The left-hand side decreases strictly from $1$ to $0$ as $\gamma$ increases from $0$ to $\infty$, so $\gamma$ is unique; for example, $\gamma=1.175216$, $0.432752$ and $0.060314$ for $\Lambda=0.2$, $0.5$ and $0.9$. By section~\ref{appB:eig}, $L$ then has the eigenvalues $\pm\ii\gamma$, with the eigenfunctions
+\begin{equation}\label{appB:Fpm}
+  F_\pm(v)=\frac{vF_M(v)}{\Lambda\,(v\mp\ii\gamma)},\qquad M_0[F_\pm]=1 .
+\end{equation}
+At $\Lambda=1$, $\eps(u+\ii0)=-\ii\sqrt\pi\,u+2u^2+O(u^3)$ near $u=0$, so that $\varrho(u)\simeq\pi^{-3/2}u^{-2}$, and the eigenvalue $0$ of section~\ref{appB:eig} lies inside the continuous spectrum.
+
+The plasma dispersion function continues to the entire function $Z(\zeta)=\ii\sqrt\pi\,e^{-\zeta^2}\mathrm{erfc}(-\ii\zeta)$, and the dielectric function continues with it. The zeros $\zeta_n$ of the continued $\eps$ in the lower half plane are the Landau roots. They are not eigenvalues of $L$: in the lower half plane the resolvent contains $\overline{\eps(\bar\zeta)}$ in place of $\eps(\zeta)$, and by (\ref{appB:count}) this function has no zeros there for $\Lambda\notin[0,1]$. For $\Lambda=\sqrt5$ the least-damped root is $-0.409958\,\ii$, and for $\Lambda=-\sqrt5$ the least-damped roots are $\pm1.242247-0.835300\,\ii$. For $\Lambda=1+\delta$ the least-damped root is $-\ii(\delta/\sqrt\pi)\,[1-2\delta/\pi+O(\delta^2)]$, which follows from $1+\zeta Z(\zeta)=1+\ii\sqrt\pi\,\zeta-2\zeta^2+O(\zeta^3)$; the roots computed for $\delta=10^{-2}$, $10^{-3}$ and $10^{-4}$ agree with it.
+
+\subsection{Spectral measure}\label{appB:stone}
+
+For $\mathrm{Im}\,z>0$ and real $G\in\mathcal W$, let $X=(z-L)^{-1}G$, given by (\ref{sl:resolvent}), and let
+\begin{equation*}
+  C_G(z)=\int\frac{G(v)}{z-v}\,\dd v,\qquad I_G(z)=\int\frac{G(v)^2}{(z-v)\,F_M(v)}\,\dd v .
+\end{equation*}
+Since $M_0[X]=C_G(z)/\eps(z)$ and $\int uG(u)\,(z-u)^{-1}\,\dd u=zC_G(z)-M_0[G]$, the resolvent form is
+\begin{equation}\label{appB:RG}
+  R_G(z)\equiv\fe{G}{(z-L)^{-1}G}=I_G(z)-\frac{z}{\Lambda}\,\frac{C_G(z)^2}{\eps(z)} .
+\end{equation}
+It is the Stieltjes transform of the spectral measure $\mu_G$ of $L$ in the state $G$, $R_G(z)=\int(z-x)^{-1}\,\dd\mu_G(x)$, and $\mu_G$ is recovered from it by the Stieltjes inversion formula, which is Stone's formula taken in the state $G$:
+\begin{equation}\label{appB:stoneformula}
+  \mu_G\big((u_1,u_2)\big)+\tfrac12\mu_G\big(\{u_1\}\big)+\tfrac12\mu_G\big(\{u_2\}\big)
+  =-\frac{1}{\pi}\lim_{\eta\to0+}\int_{u_1}^{u_2}\mathrm{Im}\,R_G(u+\ii\eta)\,\dd u .
+\end{equation}
+
+Let $G\in\mathcal D_0$ be real and $\Lambda\notin[0,1]$. Then $G$ and $G^2/F_M$ are smooth and decay like Gaussians, so $C_G=-\pi\chi_G$ and $I_G=-\pi\chi_{G^2/F_M}$ extend continuously to the real axis from above, with $C_G(u+\ii0)=-\pi(\mathsf H[G]+\ii G)(u)$ and $\mathrm{Im}\,I_G(u+\ii0)=-\pi G(u)^2/F_M(u)$. By (\ref{appB:count}), $1/\eps$ is continuous on the closed upper half plane, so $R_G(u+\ii\eta)$ converges to $R_G(u+\ii0)$ as $\eta\to0+$, uniformly for $u$ in compact sets. With $\eps_I=-\pi uF_M/\Lambda$, the imaginary part of the boundary value is a square:
+\begin{equation}\label{appB:square}
+  -\frac{1}{\pi}\,\mathrm{Im}\,R_G(u+\ii0)
+  =\frac{G^2}{F_M}-\frac{\eps_I}{F_M}\,\frac{2\eps_R\,G\,\mathsf H[G]-\eps_I\big(\mathsf H[G]^2-G^2\big)}{|\eps|^2}
+  =\frac{\big(\eps_RG-\eps_I\mathsf H[G]\big)^2}{F_M\,|\eps|^2}
+  =\varrho\,\Tr[G]^2=a_u^2 .
+\end{equation}
+By (\ref{appB:stoneformula}) and the uniform convergence, $\mu_G$ has no atoms and $\dd\mu_G=a_u^2\,\dd u$.
+
+Three consequences follow. First, the set of $G\in\mathcal W$ whose spectral measure is absolutely continuous is a closed subspace, the absolutely continuous subspace of $L$; it contains the dense set $\mathcal D_0$, so it is the whole of $\mathcal W$. Hence $L$ has no eigenvalues, in agreement with section~\ref{appB:penrose}, and no singular continuous spectrum. Second, the operator $\mathsf K$ of (\ref{appB:rank2}) has rank two and is therefore of trace class, so by the Kato--Rosenblum theorem \citep[][chapter~X]{Kato1966} the absolutely continuous parts of $U+\mathsf K$ and of $U$ are unitarily equivalent. The operator $U$ is multiplication by $u$ in $L^2(\mathbb R,\dd u/F_M)$, whose spectrum is the real line, purely absolutely continuous and of multiplicity one. Since $U+\mathsf K=VLV^{-1}$ is purely absolutely continuous, $L$ is unitarily equivalent to $U$, which is part~(ii) of theorem~\ref{thm:spectrum}. Third, applying $\dd\mu_G=a_u^2\,\dd u$ to $G+G'$ and $G-G'$ gives, for real $G,G'\in\mathcal D_0$ and every bounded Borel function $\varphi$,
+\begin{equation}\label{appB:polar}
+  \fe{G'}{\varphi(L)G}=\int\varphi(u)\,a_u[G']\,a_u[G]\,\dd u,\qquad a[G]=\mathcal AG ,
+\end{equation}
+and by linearity the same holds for complex $G,G'\in\mathcal D_0$ with $a_u[G']$ replaced by its complex conjugate.
+
+\subsection{The slice transform}\label{appB:transform}
+
+The formula (\ref{eq:aunit}) defines a bounded operator $\mathcal A$ from $\mathcal W$ into $L^2(\mathbb R,\dd u)$, with $\mathsf H$ the Hilbert transform on $L^2(\mathbb R,\dd u)$. For $\Lambda\notin[0,1]$, $|\eps(u+\ii0)|$ is bounded below on the real axis, since it has no zeros there and tends to $1$ at infinity. Since $|\eps_R|\le|\eps|$, the first term of (\ref{eq:aunit}), $\eps_RG/(\sqrt{F_M}\,|\eps|)$, has norm at most $\ip{G}{G}^{1/2}$. In the second, $\eps_I\mathsf H[G]/(\sqrt{F_M}\,|\eps|)=-\pi u\sqrt{F_M}\,\mathsf H[G]/(\Lambda|\eps|)$, the factor $u\sqrt{F_M}/|\eps|$ is bounded, $\mathsf H$ is an isometry of $L^2(\mathbb R,\dd u)$, and $\int|G|^2\,\dd u\le\pi^{-1/2}\ip{G}{G}$. By (\ref{appB:polar}) with $\varphi=1$, $\mathcal A$ is isometric on $\mathcal D_0$, and since $\mathcal D_0$ is dense, $\mathcal A$ is an isometry of $(\mathcal W,\fe{\cdot}{\cdot})$ into $L^2(\mathbb R,\dd u)$. Its range is therefore closed.
+
+The identities (\ref{sl:TL}) can also be verified directly from (\ref{eq:transform}). For $G=F_M$, (\ref{eq:transform}) gives $\Tr[F_M]=\eps_R+u\,\mathrm{Re}\,Z(u)/\Lambda=p_0$. For $G\in\mathcal D_0$, $\mathsf H[uG](u)=M_0[G]/\pi+u\,\mathsf H[G](u)$, and by (\ref{eq:eps}) and (\ref{sl:epsRI}), $\mathsf H[uF_M]=\Lambda(1-\eps_R)/\pi$. Hence $\mathsf H[LG]=u\,\mathsf H[G]+\eps_RM_0[G]/\pi$, and
+\begin{equation*}
+  \eps_R\,LG-\eps_I\,\mathsf H[LG]
+  =u\big(\eps_RG-\eps_I\mathsf H[G]\big)-\eps_R\,M_0[G]\Big(\frac{uF_M}{\Lambda}+\frac{\eps_I}{\pi}\Big)
+  =u\big(\eps_RG-\eps_I\mathsf H[G]\big),
+\end{equation*}
+because $\eps_I/\pi=-uF_M/\Lambda$. Dividing by $F_M$ gives $\Tr[LG]=u\,\Tr[G]$.
+
+\citet{Morrison2000} proved that the G-transform of the linearised Vlasov--Poisson system is invertible when the Penrose condition holds. The argument below gives the corresponding statement for the branch operator, with the weights of the free-energy product. We now show that the range of $\mathcal A$ is dense, so that $\mathcal A$ is unitary. Let $b$ be a smooth function with compact support, $c=\sqrt\varrho\,b$, and
+\begin{equation*}
+  G=\eps_Rc+\eps_I\mathsf H[c]=\mathrm{Im}\big[\eps(u+\ii0)\,\chi_c(u+\ii0)\big].
+\end{equation*}
+Since $c$ has compact support, $\eps_I=-\pi uF_M/\Lambda$ and $\mathsf H[c]$ is smooth and bounded, $G$ belongs to $\mathcal S$ and to $\mathcal W$. The product $\eps\chi_c$ is analytic in the upper half plane, continuous up to the real axis and $O(1/\zeta)$, so by lemma~\ref{appB:lemma} it equals $\chi_G$, and $\chi_c(u+\ii0)=\chi_G(u+\ii0)/\eps(u+\ii0)$. Taking imaginary parts, with the Plemelj formula for $\chi_G$,
+\begin{equation*}
+  c=\frac{\mathrm{Im}\big[(\mathsf H[G]+\ii G)\,\bar\eps\big]}{|\eps|^2}=\frac{\eps_RG-\eps_I\mathsf H[G]}{|\eps|^2}=\varrho\,\Tr[G],
+\end{equation*}
+so that $\mathcal AG=c/\sqrt\varrho=b$. The smooth functions with compact support are dense in $L^2(\mathbb R,\dd u)$ and the range of the isometry $\mathcal A$ is closed, so $\mathcal A$ is onto. Its inverse is
+\begin{equation}\label{appB:inv}
+  \mathcal A^{-1}a=\eps_R\sqrt\varrho\,a+\eps_I\,\mathsf H\big[\sqrt\varrho\,a\big],
+\end{equation}
+which is (\ref{sl:inverse}): since $|\eps_R|\sqrt{\varrho/F_M}=|\eps_R|/|\eps|\le1$, $|\eps_I|/\sqrt{F_M}$ is bounded and $\varrho$ is bounded, the right-hand side of (\ref{appB:inv}) is a bounded operator from $L^2(\mathbb R,\dd u)$ into $\mathcal W$, and it equals $\mathcal A^{-1}$ on the dense set of smooth $a$ with compact support. The same argument gives the other direction directly. For $G\in\mathcal D_0$, the function $Y=\chi_G/\eps$ is analytic in the upper half plane, because $\eps$ has no zeros there, and $\mathrm{Im}\,Y(u+\ii0)=\varrho\Tr[G]=c$, which lies in $\mathcal S$. By lemma~\ref{appB:lemma}, $Y=\chi_c$, so that $Y(u+\ii0)=\mathsf H[c]+\ii c$, and $G=\mathrm{Im}\,\chi_G(u+\ii0)=\mathrm{Im}[\eps(u+\ii0)\,Y(u+\ii0)]=\eps_Rc+\eps_I\mathsf H[c]$. The first direction does not use the zeros of $\eps$ in the upper half plane, and the second uses only their absence. If $\eps$ has a zero there, $Y$ has a pole, and the inversion fails by its residue (section~\ref{appB:unstable}).
+
+Part~(iii) of theorem~\ref{thm:spectrum} now follows. By (\ref{appB:polar}) with $\varphi(u)=(z-u)^{-1}$, $\mathrm{Im}\,z\neq0$, the identity $\fe{G'}{(z-L)^{-1}G}=\int\overline{a_u[G']}\,a_u[G]\,(z-u)^{-1}\,\dd u$ holds for $G,G'\in\mathcal D_0$; both sides are continuous on $\mathcal W\times\mathcal W$, so it holds for all $G,G'\in\mathcal W$. Since $\mathcal A$ is unitary, the left-hand side equals $\int\overline{a_u[G']}\,a_u[(z-L)^{-1}G]\,\dd u$, and since $\mathcal AG'$ runs over $L^2(\mathbb R,\dd u)$, $\mathcal A(z-L)^{-1}G=(z-u)^{-1}\mathcal AG$ for every $G\in\mathcal W$. For $G\in D(U)$, applying this to $(z-L)G$ gives $\mathcal AG=(z-u)^{-1}\mathcal A(z-L)G$, so that $u\,\mathcal AG$ lies in $L^2(\mathbb R,\dd u)$ and $\mathcal ALG=u\,\mathcal AG$. The relations (\ref{sl:parseval}) are then the functional calculus of multiplication by $u$.
+
+Written with the modes (\ref{sl:Fu}), (\ref{appB:inv}) is the completeness relation $G=\int\varrho\,\Tr[G]\,F_u\,\dd u$, because
+\begin{equation*}
+  \int c(u)\,F_u(v)\,\dd u=\frac{vF_M(v)}{\Lambda}\,\PVint\frac{c(u)}{v-u}\,\dd u+\eps_R(v)\,c(v)
+  =\eps_R(v)\,c(v)+\eps_I(v)\,\mathsf H[c](v).
+\end{equation*}
+The relation $\varrho\,\Tr[\mathcal A^{-1}a]=\sqrt\varrho\,a$, written with the modes, is the orthogonality relation $\fe{F_u}{F_{u'}}=\delta(u-u')/\varrho(u)=|\eps(u+\ii0)|^2\,\delta(u-u')/F_M(u)$, in the sense of distributions. The G-transform $\mathcal G[c]=\eps_Rc+\eps_I\mathsf H[c]$ is therefore unitary from $L^2(\mathbb R,\dd u/\varrho)$ onto $(\mathcal W,\fe{\cdot}{\cdot})$, with inverse $G\mapsto\varrho\,\Tr[G]$, and the factor $\sqrt\varrho$ in (\ref{eq:aunit}) turns it into the unit-weight map $\mathcal A$ onto $L^2(\mathbb R,\dd u)$. For $\Lambda=\infty$, $\eps=1$, $\varrho=F_M$, $\Tr[G]=G/F_M$ and $F_u=\delta(v-u)$, and $\mathcal A$ is multiplication by $F_M^{-1/2}$, so that theorem~\ref{thm:spectrum} reduces to the spectral theorem for $U$.
+
+We checked (\ref{appB:RG}) against the resolvent of the Hermite matrix $A$, (\ref{appB:square}) symbolically, and (\ref{sl:parseval}), (\ref{sl:TL}) and both directions of the inversion by quadrature, for several values of $\Lambda$ of both signs, to relative errors below $10^{-15}$. As an independent check, we solved the problem for a single Fourier mode $e^{\ii k_zz}$ in a uniform field, $\partial_{\hat t} G+\ii LG=0$ with the normalised time $\hat t=sk_zt$, as a Volterra equation for $M_0[G]$, with every ingredient computed by quadrature from its definition. The autocorrelation $\fe{G(0)}{G(\hat t)}$ agrees with $\int a_u(0)^2e^{-\ii\hat t u}\,\dd u$ to within $5\times10^{-11}$ of $\fe{G(0)}{G(0)}$ for $0\le\hat t\le12$, $\Lambda=\pm\sqrt5$, $5$, $-0.4$ and $50$, and two non-Gaussian initial conditions.
+
+\subsection{The case \texorpdfstring{$0<\Lambda<1$}{0 < Lambda < 1}}\label{appB:unstable}
+
+For $0<\Lambda<1$ the product (\ref{eq:fe}) is indefinite, with one negative direction, and $L$ is symmetric for it. By section~\ref{appB:penrose}, $L$ has the eigenvalues $\pm\ii\gamma$ of (\ref{appB:gamma}), with the eigenfunctions (\ref{appB:Fpm}). The first direction of the inversion in section~\ref{appB:transform} still holds, since $\eps$ has no zeros on the real axis for $\Lambda\neq1$, so the continuum modes remain orthogonal. The second fails: for $G\in\mathcal D_0$ the function $Y=\chi_G/\eps$ has at most a simple pole in the upper half plane, at $\zeta=\ii\gamma$, with residue $\mathrm{res}_G=\chi_G(\ii\gamma)/\eps'(\ii\gamma)$. Applying lemma~\ref{appB:lemma} to $Y-\mathrm{res}_G/(\zeta-\ii\gamma)$, and using that $\mathrm{res}_G/(u-\ii\gamma)$ is the boundary value of a function analytic in the lower half plane, gives
+\begin{equation*}
+  G=\int\varrho\,\Tr[G]\,F_u\,\dd u+\alpha_+F_++\alpha_-F_-,\qquad
+  \alpha_+=-\pi\,\mathrm{res}_G,\qquad \alpha_-=\overline{\alpha_+}\quad\text{for real }G .
+\end{equation*}
+We use the bilinear extension of (\ref{eq:fe}) to complex functions, without complex conjugation. The symmetry of $L$ gives $\fe{F_+}{F_-}=0$ and $\fe{F_\pm}{F_u}=0$, because the eigenvalues differ, and with $\eps'(\zeta)=-\Lambda^{-1}\int vF_M\,(v-\zeta)^{-2}\,\dd v$ one finds $\alpha_\pm=\fe{F_\pm}{G}/\fe{F_\pm}{F_\pm}$. The free energy is then
+\begin{equation}\label{appB:defect}
+  \fe{G}{G}=\int\varrho\,\Tr[G]^2\,\dd u+2\,\mathrm{Re}\,\frac{\fe{F_+}{G}^2}{\fe{F_+}{F_+}},
+\end{equation}
+with
+\begin{equation}\label{appB:Fplus}
+  \fe{F_+}{G}=\frac{\ii\gamma}{\Lambda}\int\frac{G(v)}{v-\ii\gamma}\,\dd v,\qquad
+  \fe{F_+}{F_+}=\frac{\Lambda-1+2\gamma^2\Lambda}{\Lambda^2} .
+\end{equation}
+The first relation in (\ref{appB:Fplus}) follows from (\ref{eq:fe}) and $M_0[F_+]=1$. For the second,
+\begin{equation*}
+  \fe{F_+}{F_+}=\frac{\ii\gamma}{\Lambda^2}\int\frac{vF_M(v)}{(v-\ii\gamma)^2}\,\dd v
+  =\frac{\ii\gamma}{\Lambda^2}\,\big[Z+\zeta Z'\big]_{\zeta=\ii\gamma},
+\end{equation*}
+and $Z'=-2(1+\zeta Z)$ together with $1+\ii\gamma Z(\ii\gamma)=\Lambda$ gives the result. For $\Lambda=0.5$ and $0.2$ and three test functions, the continuum part of (\ref{appB:defect}) alone differs from $\fe{G}{G}$ by between 52\% and 350\%, with the wrong sign in two cases, and (\ref{appB:defect}) closes the balance to $3\times10^{-15}$. In the single-wavenumber problem the same defect appears as growth: at $\Lambda=0.5$ the density $M_0[G]$ grows at the rate $\gamma=0.43275$. The KRMHD branches never fall in this range, because $\Lambda^+>1$ and $\Lambda^-<0$.
+
+\subsection{Density response and Landau roots}\label{appB:landau}
+
+Consider again a single Fourier mode $e^{\ii k_zz}$, now with $k_z>0$, in a uniform field, $\Phi=\Psi=0$, so that $\partial_tG+\ii k_zsLG=0$ and $G(t)=e^{-\ii\hat t L}G(0)$ with $\hat t=sk_zt$. By theorem~\ref{thm:spectrum}, $a_u(t)=e^{-\ii\hat t u}a_u(0)$: each slice keeps its amplitude and turns in phase at its own frequency. For $G(0)=F_M$, (\ref{sl:TL}) gives $a_u(0)=p_0\sqrt{\varrho(u)}$, and since $M_0[X]=\fe{F_M}{X}/p_0$ for every $X$,
+\begin{equation}\label{appB:M0}
+  M_0(\hat t)=p_0\int\varrho(u)\,e^{-\ii\hat t u}\,\dd u .
+\end{equation}
+The density decays because slices that start in phase dephase. In a truncated hierarchy the integral is replaced by its Gauss quadrature (section~\ref{sec:truncated}); for $\Lambda=\pm\sqrt5$ and $M=128$ and $512$ the two agree to $3\times10^{-15}$ for $\hat t\le12$, before the recurrence of the truncated system.
+
+The late-time form follows by moving the contour of (\ref{appB:M0}) into the lower half plane. There $\varrho$ continues to the meromorphic function $F_M(\zeta)/[\eps(\zeta)\,\overline{\eps(\bar\zeta)}]$, in which $\eps$ is the continuation of section~\ref{appB:penrose} and $\overline{\eps(\bar\zeta)}$, the integral (\ref{eq:eps}) taken in the lower half plane, has no zeros there for $\Lambda\notin[0,1]$. The poles are therefore the Landau roots $\zeta_n$. For $\mathrm{Im}\,\zeta<0$ the continued $Z$ exceeds the integral in (\ref{eq:eps}) by $2\pi\ii F_M(\zeta)$, so that $\eps(\zeta)-\overline{\eps(\bar\zeta)}=-2\pi\ii\zeta F_M(\zeta)/\Lambda$, and at a simple root the residue of $\varrho(\zeta)e^{-\ii\hat t\zeta}$ is $\Lambda e^{-\ii\hat t\zeta_n}/[2\pi\ii\,\zeta_n\eps'(\zeta_n)]$. Along a horizontal line $\mathrm{Im}\,\zeta=-\sigma$, $F_M(\zeta)$ decays like a Gaussian and both factors of the denominator tend to $1$. Hence, for every $\sigma>0$ such that no root lies on that line and the roots above it are simple,
+\begin{equation}\label{appB:roots}
+  M_0(\hat t)=-(\Lambda-1)\sum_{\mathrm{Im}\,\zeta_n>-\sigma}\frac{e^{-\ii\hat t\zeta_n}}{\zeta_n\,\eps'(\zeta_n)}+O\big(e^{-\sigma\hat t}\big)\qquad(\hat t\to\infty).
+\end{equation}
+The Landau roots enter the slice description only in this way, through the continuation of the spectral density into the lower half plane. At $\hat t=12$, (\ref{appB:roots}) with the least-damped root alone agrees with (\ref{appB:M0}) to a relative error of $2.6\times10^{-7}$ for $\Lambda=\sqrt5$, and with the four least-damped roots to $5\times10^{-11}$ for $\Lambda=-\sqrt5$. In the single-wavenumber problem of section~\ref{appB:transform}, the late-time decay rate for $\Lambda=\sqrt5$ is $0.4100$, in agreement with the least-damped root.

@@ -1,6 +1,6 @@
 \section{The two compressive branches}\label{app:branches}
 
-This appendix derives the branch decomposition of section~\ref{mod:branches} from CMM's eqs~(3.25)--(3.28), following S09 (\S6.2) and CMM (appendix~B), and collects the relations between the branches and the moments of the ion distribution. It also documents a misprint in CMM and confirms two corrections to S09 that CMM state. We write $\delta_n\equiv\delta n/n$ and $\delta_B\equiv\delta B/B$, and $\langle\cdot\rangle$ for the volume average. Every identity below was checked symbolically, and the decompositions (\ref{appA:split}) and (\ref{appA:Hsplit}) were also checked by direct quadrature over $(v_\perp,v_\parallel)$ for random distribution functions.
+This appendix derives the branch decomposition of section~\ref{mod:branches} from CMM's eqs~(3.25)--(3.28), following S09 (\S6.2) and CMM (appendix~B), and collects the relations between the branches and the moments of the ion distribution. It also documents a misprint in CMM's eq.~(B16) and confirms a correction to S09 that CMM state: a factor $1/2$ on the right-hand sides of S09's eqs~(202)--(203), which becomes a factor $1/4$ in the coefficients of S09's eq.~(213). We write $\delta_n\equiv\delta n/n$ and $\delta_B\equiv\delta B/B$, and $\langle\cdot\rangle$ for the volume average. Every identity below was checked symbolically. We also built the matrix (\ref{appA:K}) by quadrature over $v_\perp$ and checked its eigenvalues and left eigenvectors against (\ref{eq:Lambdapm}) and the branches given below, and we checked the moment formulas of \S\ref{appA:moments} and the decompositions (\ref{appA:split}) and (\ref{appA:Hsplit}) by quadrature over $(v_\perp,v_\parallel)$ for random distribution functions.
 
 \subsection{Laguerre projection}\label{appA:proj}
 
@@ -9,13 +9,15 @@ With $x=v_\perp^2/\vth^2$, CMM (eq.~B8) and S09 (eq.~205) write
   g=\frac{n_i}{\pi\vth^2}\,e^{-x}\sum_{l\ge0}L_l(x)\,G_l(v_\parallel),\qquad
   F_0=\frac{n_i}{\pi\vth^2}\,e^{-x}F_M(v_\parallel),
 \end{equation*}
-where the Laguerre polynomials $L_l$ are orthonormal with weight $e^{-x}$ on $(0,\infty)$. For functions of this form the perpendicular velocity integral $(2\pi/n_i)\int_0^\infty v_\perp\,\dd v_\perp(\cdots)$ equals $\int_0^\infty e^{-x}(\cdots)\,\dd x$, and the moments needed are
+where the Laguerre polynomials $L_l$ are orthonormal with weight $e^{-x}$ on $(0,\infty)$. For any function $q(x)$, $(2\pi/n_i)\int_0^\infty v_\perp\,\dd v_\perp\,q(x)\,g=\sum_lG_l\int_0^\infty e^{-x}q(x)L_l(x)\,\dd x$. The Laguerre moments needed are
 \begin{equation}\label{appA:lagmom}
-  \int_0^\infty e^{-x}x^kL_l\,\dd x=0\quad(l>k),\qquad
-  \int_0^\infty e^{-x}L_l\,\dd x=\delta_{l0},\qquad
-  \int_0^\infty e^{-x}x\,L_l\,\dd x=\delta_{l0}-\delta_{l1}.
+  \begin{gathered}
+  \int_0^\infty e^{-x}x^kL_l\,\dd x=0\quad(l>k),\\
+  \int_0^\infty e^{-x}L_l\,\dd x=\begin{cases}1,&l=0,\\0,&l\ge1,\end{cases}\qquad
+  \int_0^\infty e^{-x}x\,L_l\,\dd x=\begin{cases}1,&l=0,\\-1,&l=1,\\0,&l\ge2,\end{cases}
+  \end{gathered}
 \end{equation}
-The source term of (\ref{mod:kinetic}) is a polynomial of degree one in $x$, so by (\ref{appA:lagmom}) it projects only on $L_0$ and $L_1$. The projections of (\ref{mod:kinetic}) are
+the last because $x=L_0(x)-L_1(x)$. The source term of (\ref{mod:kinetic}) is a polynomial of degree one in $x$, so by (\ref{appA:lagmom}) it projects only on $L_0$ and $L_1$. The projections of (\ref{mod:kinetic}) are
 \begin{gather*}
   \frac{\dd G_0}{\dd t}+v_\parallel\gradpar\Big[G_0+F_M\Big(\frac{Z}{\tau}\delta_n+\delta_B\Big)\Big]=0,\qquad
   \frac{\dd G_1}{\dd t}+v_\parallel\gradpar\big(G_1-F_M\delta_B\big)=0,\\
@@ -26,10 +28,11 @@ and the field relations (\ref{mod:fields}) become
   \int G_0\,\dd v_\parallel=\delta_n-\delta_B,\qquad
   \int(G_0-G_1)\,\dd v_\parallel=-\frac{Z}{\tau}\delta_n-2\Big(1+\frac{1}{\beta_i}\Big)\delta_B .
 \end{equation}
+The equations for $l\ge2$ are CMM's eq.~(B10) and S09's eq.~(210). They are the branch equation (\ref{mod:Gpm}) with $1/\Lambda=0$.
 
 \subsection{Density and field-strength distributions, and the branches}\label{appA:branches}
 
-With $D=Z/\tau+2(1+\beta_i^{-1})$, CMM's eqs~(B2)--(B3) (S09 eqs~176--177) define
+With $D=Z/\tau+2(1+\beta_i^{-1})$, CMM's eqs~(B2)--(B3) (S09 eqs~176--177) define, after the integral over $v_\perp$,
 \begin{equation*}
   G_n=-\frac{1}{D}\Big[(G_0-G_1)-2\Big(1+\frac{1}{\beta_i}\Big)G_0\Big],\qquad
   G_B=-\frac{1}{D}\Big[(G_0-G_1)+\frac{Z}{\tau}G_0\Big].
@@ -38,27 +41,28 @@ By (\ref{appA:fields}), $\int G_n\,\dd v_\parallel=\delta_n$ and $\int G_B\,\dd 
 \begin{equation}\label{appA:G01}
   G_0=G_n-G_B,\qquad G_1=\Big(1+\frac{Z}{\tau}\Big)G_0+D\,G_B .
 \end{equation}
-The equations for $G_0$ and $G_1$ then give
+The equations for $G_0$ and $G_1$ then give S09's eqs~(179)--(180),
 \begin{equation}\label{appA:K}
   \frac{\dd}{\dd t}\begin{pmatrix}G_n\\ G_B\end{pmatrix}+v_\parallel\gradpar\begin{pmatrix}G_n\\ G_B\end{pmatrix}
   =v_\parallel F_M\,\gradpar\,K\begin{pmatrix}\delta_n\\ \delta_B\end{pmatrix},\qquad
   K=\frac{1}{D}\begin{pmatrix}-\dfrac{Z}{\tau}\Big(1+\dfrac{2}{\beta_i}\Big) & -\dfrac{2}{\beta_i}\\[10pt]
-  \dfrac{Z}{\tau}\Big(1+\dfrac{Z}{\tau}\Big) & 2+\dfrac{Z}{\tau}\end{pmatrix},
+  \dfrac{Z}{\tau}\Big(1+\dfrac{Z}{\tau}\Big) & 2+\dfrac{Z}{\tau}\end{pmatrix}.
 \end{equation}
-which are S09's eqs~(179)--(180).
 
-If $\ell$ is a left eigenvector of $K$, $\ell K=\Lambda^{-1}\ell$, then $G=\ell\cdot(G_n,G_B)$ has $\int G\,\dd v_\parallel=\ell\cdot(\delta_n,\delta_B)$, and (\ref{appA:K}) gives for $G$ the closed equation (\ref{mod:Gpm}) with this $\Lambda$. The two left eigenvectors are
+If $\ell$ is a left eigenvector of $K$, $\ell K=\Lambda^{-1}\ell$, then $G=\ell\cdot(G_n,G_B)$ has $\int G\,\dd v_\parallel=\ell\cdot(\delta_n,\delta_B)$, and (\ref{appA:K}) gives for $G$ the closed equation (\ref{mod:Gpm}) with this $\Lambda$. The two left eigenvectors give CMM's branches (B5), with $\sigma$ of their eq.~(B6) (S09 eqs~183--184),
 \begin{equation*}
-  \ell^+=\Big(\frac{1+Z/\tau}{\sigma},\,1\Big),\qquad
-  \ell^-=\Big(1,\,\frac{2\tau}{\sigma Z\beta_i}\Big),
+  G^+=G_B+\frac{1+Z/\tau}{\sigma}\,G_n,\qquad
+  G^-=G_n+\frac{2\tau}{\sigma Z\beta_i}\,G_B,\qquad
+  \sigma=1+\frac{\tau}{Z}+\frac{1}{\beta_i}+\kappa,
 \end{equation*}
-with $\sigma=1+\tau/Z+\beta_i^{-1}+\kappa$ (CMM eq.~B6; S09 eq.~184). They give the branches $G^\pm$ of section~\ref{mod:branches}, and the eigenvalues are $1/\Lambda^\pm$ with $\Lambda^\pm$ of (\ref{eq:Lambdapm}). Equivalently,
+and the eigenvalues are $1/\Lambda^\pm$ with $\Lambda^\pm$ and $\kappa$ of (\ref{eq:Lambdapm}). Equivalently,
 \begin{equation*}
   \mathrm{tr}\,K=\frac{1}{\Lambda^+}+\frac{1}{\Lambda^-},\qquad
   \det K=\frac{1}{\Lambda^+\Lambda^-},\qquad
   \Lambda^++\Lambda^-=2\Big(\frac{1}{\beta_i}-\frac{\tau}{Z}\Big),\qquad
   \Lambda^+\Lambda^-=-\Big[1+\frac{2\tau}{Z}\Big(1+\frac{1}{\beta_i}\Big)\Big].
 \end{equation*}
+For $\beta_i\gg1$, $\Lambda^+-1\simeq\beta_i^{-1}$ and $\Lambda^-\to-1-2\tau/Z$ (S09 eqs~187--188). For $\beta_i\ll1$, $\Lambda^+-1\simeq2\beta_i^{-1}$ and $\Lambda^-\to-\tau/Z$ (S09 eqs~191--192).
 
 \subsection{Moments}\label{appA:moments}
 
@@ -67,20 +71,20 @@ The map $(G_n,G_B)\mapsto(G^+,G^-)$ has determinant $2(1+\tau/Z)/(\beta_i\sigma^
   G_n=\frac{\sigma G^--(2\tau/Z\beta_i)\,G^+}{2\kappa},\qquad
   G_B=\frac{\sigma G^+-(1+Z/\tau)\,G^-}{2\kappa}.
 \end{equation}
-Integrating over $v_\parallel$, with $M_0^\pm=\int G^\pm\,\dd v_\parallel$,
+Integrating over $v_\parallel$, with $M_0^\pm=\int G^\pm\,\dd v_\parallel$, gives
 \begin{equation}\label{appA:dndB}
   \delta_n=\frac{\sigma M_0^--(2\tau/Z\beta_i)\,M_0^+}{2\kappa},\qquad
   \delta_B=\frac{\sigma M_0^+-(1+Z/\tau)\,M_0^-}{2\kappa}.
 \end{equation}
 These are one half of the right-hand sides of S09's eqs~(202)--(203). CMM found this factor (footnote to their eq.~B15) and noted that it propagates through S09's eqs~(208)--(209) to the coefficients of S09's eq.~(213). Equations (\ref{appA:dndB}) and (\ref{appA:cpm}) below confirm it for S09's eqs~(202)--(203) and~(213).
 
-In CMM's notation the non-Alfv\'enic part of the ion distribution is $g_i=g+x\,\delta_BF_0$ (CMM eq.~3.26). Its parallel flow and its pressure perturbations, $\delta p_\perp=\int\dd^3v\,(m_iv_\perp^2/2)\,g_i$ and $\delta p_\parallel=\int\dd^3v\,m_iv_\parallel^2\,g_i$, are
+In CMM's notation the non-Alfv\'enic part of the ion distribution is $g_i=g+x\,\delta_BF_0$ (CMM eq.~3.26). Its parallel flow $u_\parallel=\overline{v_\parallel g_i}$ and its pressure perturbations, $\delta p_\perp=\int\dd^3v\,(m_iv_\perp^2/2)\,g_i$ and $\delta p_\parallel=\int\dd^3v\,m_iv_\parallel^2\,g_i$, are
 \begin{equation*}
   u_\parallel=\int v_\parallel G_0\,\dd v_\parallel,\qquad
   \frac{\delta p_\perp}{p}=-\frac{Z}{\tau}\delta_n-\frac{2}{\beta_i}\delta_B,\qquad
   \frac{\delta p_\parallel}{p}=\frac{2}{\vth^2}\int v_\parallel^2G_0\,\dd v_\parallel+\delta_B,
 \end{equation*}
-with $p=n_iT_i$, and the temperature perturbations are $\delta T_{\perp,\parallel}/T_i=\delta p_{\perp,\parallel}/p-\delta_n$. The expression for $\delta p_\perp$ follows from the second relation in (\ref{mod:fields}) and states perpendicular pressure balance, $\delta p_\perp+\delta p_e+B_0\,\delta B/4\pi=0$, with the isothermal electron pressure $\delta p_e=(Z/\tau)\,p\,\delta_n$. With (\ref{appA:G01}) and (\ref{appA:inv}) all of these are linear functionals of $G^+$ and $G^-$. More generally, by (\ref{appA:lagmom}) every moment $\int\dd^3v\,v_\parallel^jv_\perp^{2k}g_i$ with $k\le1$ is a linear functional of $G^+$ and $G^-$, and the coefficients with $l\ge2$ enter only the moments with $k\ge2$.
+with $p=n_iT_i$, and the temperature perturbations are $\delta T_{\perp,\parallel}/T_i=\delta p_{\perp,\parallel}/p-\delta_n$. The expression for $\delta p_\perp$ follows from the second relation in (\ref{mod:fields}). It states perpendicular pressure balance, $\delta p_\perp+\delta p_e+B_0\,\delta B/4\pi=0$, with the isothermal electron pressure $\delta p_e=(Z/\tau)\,p\,\delta_n$. With (\ref{appA:G01}) and (\ref{appA:inv}) all of these are linear functionals of $G^+$ and $G^-$. More generally, by (\ref{appA:lagmom}) every moment $\int\dd^3v\,v_\parallel^jv_\perp^{2k}g_i$ with $k\le1$ is a linear functional of $G^+$ and $G^-$, and the coefficients with $l\ge2$ enter only the moments with $k\ge2$.
 
 \subsection{Free energy and phase-space helicity}\label{appA:energy}
 
@@ -91,9 +95,9 @@ CMM's compressive free energy (their eq.~3.31) is
 \end{equation*}
 Since $x=L_0(x)-L_1(x)$,
 \begin{equation*}
-  \frac{g_i}{F_0}=\Big(\frac{G_0}{F_M}+\delta_B\Big)L_0+\Big(\frac{G_1}{F_M}-\delta_B\Big)L_1+\sum_{l\ge2}\frac{G_l}{F_M}\,L_l ,
+  \frac{g_i}{F_0}=\Big(\frac{G_0}{F_M}+\delta_B\Big)L_0+\Big(\frac{G_1}{F_M}-\delta_B\Big)L_1+\sum_{l\ge2}\frac{G_l}{F_M}\,L_l .
 \end{equation*}
-and the orthonormality of the $L_l$, the normalisation $\int F_M\,\dd v_\parallel=1$ and the field relations (\ref{appA:fields}) give
+The orthonormality of the $L_l$, the normalisation $\int F_M\,\dd v_\parallel=1$ and the field relations (\ref{appA:fields}) then give
 \begin{equation*}
   \frac{W_{\rm compr}}{n_iT_i/2}=\Big\langle\int\frac{G_0^2+G_1^2}{F_M}\,\dd v_\parallel
   +\frac{Z}{\tau}\delta_n^2-\frac{2Z}{\tau}\delta_n\delta_B-2\Big(1+\frac{1}{\beta_i}\Big)\delta_B^2
@@ -135,7 +139,7 @@ where $\mathrm P$ denotes the principal value. It is built from $g$ rather than 
 \end{equation}
 with $\tilde H_{\rm ph\text{-}sp}$ the corresponding sum over $l\ge2$ (CMM eqs~B18--B19).
 
-The coefficients (\ref{appA:cpm}) are those of CMM's eqs~(B15) and (B17) with $\kappa$ as in (\ref{eq:Lambdapm}), which is S09's eq.~(204). CMM's eq.~(B16) prints $\kappa=[(1+\tau/Z)+\beta_i^{-2}]^{1/2}$, without the square on $1+\tau/Z$; at $\beta_i=\tau=Z=1$ this gives $\kappa=\sqrt3$ instead of $\sqrt5$. With the printed $\kappa$, (B15) and (B17) do not hold. We evaluated both sides for random distribution functions by quadrature over $(v_\perp,v_\parallel)$ at $(\beta_i,\tau/Z)=(1,1)$, $(0.3,2)$, $(5,0.5)$, $(0.1,0.1)$ and $(20,3)$. With the printed $\kappa$ the relative error is between $1.6\times10^{-4}$ and $7.2\times10^{-2}$ for $W_{\rm compr}$ and between $2.3\times10^{-4}$ and $0.29$ for $H_{\rm ph\text{-}sp}$ (at $\beta_i=\tau=Z=1$ it is $2.5\times10^{-2}$ and $3.2\times10^{-2}$), and with the square restored it is below $5\times10^{-14}$. CMM's eqs~(B6)--(B7) contain the correct square root, so the misprint affects only the coefficients in (B15) and (B17). The coefficients (\ref{appA:cpm}) are one quarter of those in S09's eq.~(213), as CMM state.
+The coefficients (\ref{appA:cpm}) are those of CMM's eqs~(B15) and (B17) with $\kappa$ as in (\ref{eq:Lambdapm}), which is S09's eq.~(204). CMM's eq.~(B16) prints $\kappa=[(1+\tau/Z)+\beta_i^{-2}]^{1/2}$, without the square on $1+\tau/Z$; at $\beta_i=\tau=Z=1$ this gives $\kappa=\sqrt3$ instead of $\sqrt5$. The square root in CMM's eqs~(B6)--(B7) is correct, so the misprint affects only the coefficients $c_\pm$ in (B15) and (B17), and with the printed $\kappa$ these two decompositions do not hold. We evaluated both sides for random distribution functions by quadrature over $(v_\perp,v_\parallel)$ at $(\beta_i,\tau/Z)=(1,1)$, $(0.3,2)$, $(5,0.5)$, $(0.1,0.1)$ and $(20,3)$. For the distribution functions we used, the relative difference between the two sides with the printed $\kappa$ is between $1.6\times10^{-4}$ and $7.2\times10^{-2}$ for $W_{\rm compr}$ and between $2.3\times10^{-4}$ and $0.29$ for $H_{\rm ph\text{-}sp}$ (at $\beta_i=\tau=Z=1$ it is $2.5\times10^{-2}$ and $3.2\times10^{-2}$). Its size depends on the distribution function, because the difference is $\delta c_+W^+_{\rm compr}+\delta c_-W^-_{\rm compr}$ for (\ref{appA:split}), and the same combination of $H^\pm_{\rm ph\text{-}sp}$ for (\ref{appA:Hsplit}), where $\delta c_\pm$ are the changes in the coefficients (\ref{appA:cpm}) caused by the misprint. With the square restored the relative difference is below $5\times10^{-14}$. The coefficients (\ref{appA:cpm}) are one quarter of those in S09's eq.~(213), as CMM state.
 
 \subsection{The case \texorpdfstring{$\beta_i=\tau=Z=1$}{beta = tau = Z = 1}}\label{appA:golden}
 
@@ -147,6 +151,6 @@ At $\beta_i=\tau=Z=1$ one has $\Lambda^\pm=\pm\sqrt5$ and $\sigma=3+\sqrt5$, and
 \end{equation*}
 with $1-r^2=(3\sqrt5-5)/2\approx0.854$. The Laguerre coefficients with $l=0,1$ are
 \begin{equation*}
-  G_0=\phi\,(G^--G^+),\qquad G_1=\phi^2G^++G^-,
+  G_0=\phi\,(G^--G^+),\qquad G_1=\phi^2G^++G^-.
 \end{equation*}
-so that the parallel flow is $u_\parallel=\phi\,\vth\,(M_1[G^-]-M_1[G^+])$, with $M_1$ taken in the variable $u$ of section~\ref{mod:onebranch}. The coefficients (\ref{appA:cpm}) are $c_+=5+2\sqrt5=\phi^2(1+\phi^2)\approx9.472$ and $c_-=(5+\sqrt5)/2=1+\phi^2\approx3.618$.
+The parallel flow is therefore $u_\parallel=\phi\,\vth\,(M_1[G^-]-M_1[G^+])$, with $M_1$ taken in the variable $u$ of section~\ref{mod:onebranch}; since $\vth=v_A$ at $\beta_i=1$, this is $u_\parallel/v_A=\phi\,(M_1[G^-]-M_1[G^+])$. The coefficients (\ref{appA:cpm}) are $c_+=5+2\sqrt5=\phi^2(1+\phi^2)\approx9.472$ and $c_-=(5+\sqrt5)/2=1+\phi^2\approx3.618$.

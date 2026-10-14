@@ -1,0 +1,112 @@
+\section{The \texorpdfstring{$k_z$}{kz}-based decomposition under field-line tilt}\label{app:tilt}
+
+This appendix derives the statements of section~\ref{dec:sec-tilt}. The model is linear streaming along a uniformly tilted static field, with no flow. We take $\Phi=0$ and $\Psi=-b_0y$, so that $\boldsymbol b_\perp=b_0\hat{\boldsymbol x}$ and $\gradpar=\partial_z+b_0\partial_x$. Both Laplacians vanish, so the pair solves \eqref{eq:rmhd} exactly. It is not periodic in $y$, and we use it as a model of the tilt that a large-scale $\boldsymbol b_\perp$ imposes on structure of much smaller scale. A Fourier mode satisfies $\gradpar e^{\ii\boldsymbol k\cdot\boldsymbol r}=\ii k_\parallel e^{\ii\boldsymbol k\cdot\boldsymbol r}$ with the field-aligned wavenumber $k_\parallel=k_z+b_0k_x$, so the Hermite hierarchy decouples mode by mode,
+\begin{equation}\label{appE:mode}
+  \partial_tg(\boldsymbol k,t)=-\ii sk_\parallel\,A\,g(\boldsymbol k,t)-\mathsf D\,g(\boldsymbol k,t),
+\end{equation}
+where $\mathsf D$ is a collision matrix that is diagonal in $m$, zero unless stated otherwise. Each mode evolves as in a uniform field with wavenumber $k_\parallel$, and its Hermite coefficients depend on $\boldsymbol k$ only through $k_\parallel$ and the initial data.
+
+\subsection{Per-mode fluxes and the sign split}\label{appE:sec-permode}
+
+Because $\gradpar$ acts on each mode as multiplication by $\ii k_\parallel$, the field-aligned flux \eqref{eq:fluxCD} is a sum over modes in this model. The contribution of mode $\boldsymbol k$, and that of the same mode to the $k_z$-based flux \eqref{dec:fluxz}, are
+\begin{equation}\label{appE:permode}
+  \Pi_{m+1/2}(\boldsymbol k)=-2s\,b_m\,k_\parallel\,\mathrm{Im}\big[g_m(\boldsymbol k)^*g_{m+1}(\boldsymbol k)\big],\qquad
+  \Pi^z_{m+1/2}(\boldsymbol k)=\frac{k_z}{k_\parallel}\,\Pi_{m+1/2}(\boldsymbol k).
+\end{equation}
+On every mode with $k_zk_\parallel<0$ the two have opposite signs.
+
+The split into phase-mixing and phase-unmixing parts uses a wavenumber $\kappa$ with sign $\sigma=\mathrm{sgn}\,\kappa$: with $\tilde g_m=(\ii\sigma)^mg_m$, let $g^\pm_m=(\tilde g_m\pm\tilde g_{m+1})/2$. Up to the factor $(-1)^m$ in $g^-_m$, which does not affect $|g^\pm_m|^2$, this is the decomposition of \citet{Schekochihin2016}, also used by \citet{Kanekar2015} and \citet{Parker2016}; with $\kappa=k_\parallel$ it is taken along the field, and with $\kappa=k_z$ along $\zhat$. Then
+\begin{equation}\label{appE:pm}
+  |g^+_m|^2-|g^-_m|^2=-\sigma\,\mathrm{Im}\big(g_m^*g_{m+1}\big),
+\end{equation}
+so that $\Pi_{m+1/2}(\boldsymbol k)=2s|k_\parallel|\,b_m\,(|g^+_m|^2-|g^-_m|^2)$ for the split along the field and $\Pi^z_{m+1/2}(\boldsymbol k)=2s|k_z|\,b_m\,(|g^+_m|^2-|g^-_m|^2)$ for the split along $\zhat$. In both, $g^+_m$ carries free energy to larger $m$ and $g^-_m$ to smaller $m$. On a mode with $k_zk_\parallel<0$ the two signs $\sigma$ differ, and
+\begin{equation*}
+  \big(g^\pm_m\big)_{\kappa=k_z}=(-1)^m\big(g^\mp_m\big)_{\kappa=k_\parallel}:
+\end{equation*}
+the split along $\zhat$ exchanges the phase-mixing and phase-unmixing parts. GANDALF's diagnostics \texttt{phase\_mixing\_energy} and \texttt{phase\_unmixing\_energy} assign $|g_m(\boldsymbol k)|^2$ to phase mixing or to unmixing according to the sign of the $k_z$-based flux of the mode, and they inherit the exchange from \eqref{appE:permode}. GANDALF's \texttt{hermite\_flux} returns $\Pi^z_{m+1/2}(\boldsymbol k)/(s\,p_m)$.
+
+\subsection{Free streaming}\label{appE:sec-free}
+
+For $\Lam=\infty$, $\mathsf D=0$ and density data, $g(\boldsymbol k,0)=c_{\boldsymbol k}e_0$, the solution of \eqref{appE:mode} is $G=c_{\boldsymbol k}F_M(u)\,e^{-\ii sk_\parallel ut}$. The identity $\int H_m(u)\,e^{-u^2-\ii\kappa u}\,\dd u=\sqrt\pi\,(-\ii\kappa)^m\,e^{-\kappa^2/4}$ gives its Hermite coefficients,
+\begin{equation}\label{appE:poisson}
+  g_m(\boldsymbol k,t)=c_{\boldsymbol k}\,(-\ii\,\mathrm{sgn}\,k_\parallel)^m\,\frac{\lambda^{m/2}\,e^{-\lambda/2}}{\sqrt{m!}},\qquad
+  \lambda=\tfrac12\,(sk_\parallel t)^2 .
+\end{equation}
+Thus $|g_m|^2=|c_{\boldsymbol k}|^2e^{-\lambda}\lambda^m/m!$ is a Poisson distribution in $m$ with mean $\lambda$, and the free energy in the moments $m\le m_*$ is $|c_{\boldsymbol k}|^2$ times the probability that a Poisson variable of mean $\lambda$ does not exceed $m_*$. By \eqref{appE:permode},
+\begin{equation}\label{appE:freeflux}
+  \Pi_{m+1/2}(\boldsymbol k,t)=|c_{\boldsymbol k}|^2\,\frac{2\lambda}{t}\,\frac{e^{-\lambda}\lambda^m}{m!}\ \ge\ 0 .
+\end{equation}
+The field-aligned flux is non-negative on every mode, at every $m$ and $t$, and as a function of time it is largest at $s|k_\parallel|t=\sqrt{2m+1}$. Free streaming from a density perturbation is therefore pure phase mixing. On a mode with $k_z<0<k_\parallel$, however, \eqref{appE:permode} gives $\Pi^z_{m+1/2}(\boldsymbol k,t)<0$ at every $m$ and $t$, and the $k_z$-based diagnostics report pure unmixing.
+
+\subsection{A Gaussian ensemble}\label{appE:sec-ensemble}
+
+Let the initial data be $g(\boldsymbol k,0)=c_{\boldsymbol k}\,g_*$, with one velocity profile $g_*$ for all modes and $\mathrm E|c_{\boldsymbol k}|^2=\mathcal S(\boldsymbol k)$, where
+\begin{equation*}
+  \mathcal S(\boldsymbol k)\propto\exp\Big(-\frac{k_z^2}{2\sigma_z^2}-\frac{k_x^2}{2\sigma_x^2}\Big)
+\end{equation*}
+with any dependence on $k_y$, normalised to unit total weight. By \eqref{appE:mode} the field-aligned flux of mode $\boldsymbol k$ is $|c_{\boldsymbol k}|^2\,\Pi_{m+1/2}(k_\parallel,t)$, where $\Pi_{m+1/2}(k_\parallel,t)$ denotes the flux of a single mode of unit amplitude with field-aligned wavenumber $k_\parallel$; this holds for every $m$, $t$ and $\Lam$, and with any $\mathsf D$. We treat the modes as a continuum, so that $k_z$ and $k_x$ are independent Gaussian variables under $\mathcal S$. Then $k_z$ and $k_\parallel$ are jointly Gaussian, with variances $\sigma_z^2$ and $\sigma_\parallel^2=\sigma_z^2+b_0^2\sigma_x^2$ and covariance $\sigma_z^2$. We define the effective tilt angle $\alpha\in[0,\pi/2)$ by
+\begin{equation*}
+  \cos\alpha=\frac{\sigma_z}{\sigma_\parallel},\qquad\text{that is,}\qquad \tan\alpha=\frac{b_0\sigma_x}{\sigma_z}.
+\end{equation*}
+Given $k_\parallel$, the Eulerian wavenumber $k_z$ is Gaussian with
+\begin{equation}\label{appE:cond}
+  \mathrm E\big[k_z\,\big|\,k_\parallel\big]=k_\parallel\cos^2\alpha,\qquad
+  \mathrm{var}\big[k_z\,\big|\,k_\parallel\big]=\sigma_\parallel^2\cos^2\alpha\,\sin^2\alpha .
+\end{equation}
+
+The reported net flux is the mean over $\mathcal S$ of $(k_z/k_\parallel)\,\Pi_{m+1/2}(k_\parallel,t)$. Averaging first over $k_z$ at fixed $k_\parallel$ and using \eqref{appE:cond} replaces $k_z/k_\parallel$ by $\cos^2\alpha$, which gives the first relation of \eqref{eq:tiltcos}. Only the conditional mean of $k_z$ enters, so the relation holds for any per-mode flux that depends on $\boldsymbol k$ through $k_\parallel$ alone: for every $m$ and $t$, every $\Lam$, every $m$-diagonal collision operator and every common profile $g_*$, whether or not the flux of each mode is positive. The correlation coefficient of $k_z$ and $k_\parallel$ is $\cos\alpha$, and two jointly Gaussian variables with correlation coefficient $\rho$ have opposite signs with probability $\arccos(\rho)/\pi$. This gives the second relation of \eqref{eq:tiltcos}.
+
+For pure phase mixing, $\Pi_{m+1/2}(k_\parallel,t)\ge0$ for every $k_\parallel$, and the true backward flux vanishes. The $k_z$-based diagnostics report the forward and backward fluxes $\Pi^z_{\pm,m+1/2}$, the sums over modes of $\max(\pm\Pi^z_{m+1/2}(\boldsymbol k),0)$, whose difference is the net flux. For a Gaussian variable $X$ with mean $\mu$ and standard deviation $d$, $\mathrm E\max(-X,0)=d\,\mathcal N(\mu/d)-\tfrac12\mu\,\mathrm{erfc}\big(\mu/\sqrt2d\big)$, where $\mathcal N(y)=(2\pi)^{-1/2}e^{-y^2/2}$. With \eqref{appE:cond} and $y=k_\parallel/\sigma_\parallel$ this gives
+\begin{equation}\label{appE:FB}
+\begin{aligned}
+  \Pi^z_{-,m+1/2}(t)&=\int\mathcal N(y)\Big[\cos\alpha\sin\alpha\,\frac{\mathcal N(|y|\cot\alpha)}{|y|}-\frac{\cos^2\alpha}{2}\,\mathrm{erfc}\Big(\frac{|y|\cot\alpha}{\sqrt2}\Big)\Big]\,\Pi_{m+1/2}(\sigma_\parallel y,t)\,\dd y,\\
+  \Pi^z_{+,m+1/2}(t)&=\int\mathcal N(y)\Big[\cos\alpha\sin\alpha\,\frac{\mathcal N(|y|\cot\alpha)}{|y|}+\frac{\cos^2\alpha}{2}\,\mathrm{erfc}\Big(-\frac{|y|\cot\alpha}{\sqrt2}\Big)\Big]\,\Pi_{m+1/2}(\sigma_\parallel y,t)\,\dd y .
+\end{aligned}
+\end{equation}
+Their difference is $\cos^2\alpha$ times the true flux $\int\mathcal N(y)\,\Pi_{m+1/2}(\sigma_\parallel y,t)\,\dd y$, as the first relation of \eqref{eq:tiltcos} requires.
+
+For free streaming from density data, \eqref{appE:freeflux} with $\lambda=\hat t^2y^2/2$, where $\hat t=s\sigma_\parallel t$, and the moments $\int\mathcal N(y)\,y^{2n}e^{-ay^2}\,\dd y=(2n-1)!!\,(1+2a)^{-n-1/2}$ give the true net flux per unit spectral weight in closed form,
+\begin{equation}\label{appE:closed}
+  t\,\Pi_{m+1/2}(t)=\frac{2\,(\hat t^2/2)^{m+1}\,(2m+1)!!}{m!\,(1+\hat t^2)^{m+3/2}} .
+\end{equation}
+For the same data, the substitution $w=|y|\,(1+\hat t^2)^{1/2}$ in \eqref{appE:FB} shows that the backward share depends on $\alpha$ and $\hat t$ only through $q=\cot\alpha/(1+\hat t^2)^{1/2}$, and on $m$:
+\begin{equation}\label{appE:share}
+\begin{aligned}
+  \frac{\Pi^z_{-,m+1/2}}{\Pi^z_{+,m+1/2}+\Pi^z_{-,m+1/2}}&=\frac{f_-(q)}{f_-(q)+f_+(q)},\\
+  f_\pm(q)&=\int_0^\infty e^{-w^2/2}\,w^{2m+2}\Big[\frac{q\,\mathcal N(qw)}{w}\pm\frac{q^2}{2}\,\mathrm{erfc}\Big(\mp\frac{qw}{\sqrt2}\Big)\Big]\,\dd w .
+\end{aligned}
+\end{equation}
+As $\hat t\to\infty$ at fixed $\alpha>0$, $q$ tends to zero. The first term in the bracket, of order $q$, then dominates the second, of order $q^2$, and the backward share tends to $1/2$ for every $m$. The gross reported flux $\Pi^z_++\Pi^z_-$ equals $\cos^2\alpha$ times the true flux divided by $1-2f_-/(f_-+f_+)$, so it exceeds the true flux by a factor that grows without bound, while the net reported flux remains $\cos^2\alpha$ times the true flux. At late times the flux through a fixed $m$ is carried by modes with $|k_\parallel|$ of order $\sqrt{2m}/(st)$, which is small compared with the spread $\sigma_\parallel\cos\alpha\sin\alpha$ of $k_z$ at fixed $k_\parallel$, so the sign of $k_z$ on these modes is nearly random. Table~\ref{appE:tab} lists the backward share at several values of $q$ and $m$.
+
+\begin{table}[t]
+  \centering
+  \caption{Backward share $\Pi^z_-/(\Pi^z_++\Pi^z_-)$ of the $k_z$-based Hermite flux through $m+1/2$ for free streaming from density data in the Gaussian ensemble of appendix~\ref{appE:sec-ensemble}, for which the true backward flux is zero. By \eqref{appE:share} the share depends on the tilt angle $\alpha$ and on $\hat t=s\sigma_\parallel t$ only through $q=\cot\alpha/(1+\hat t^2)^{1/2}$; the second column gives the pairs $(\alpha,\hat t)$ at which it was evaluated, with $\tan\alpha=1/2$, $1$ and $2$. The gross reported flux is $\cos^2\alpha/(1-2\times\text{share})$ times the true flux.}
+  \label{appE:tab}
+  \small
+  \begin{tabular}{@{}llccc@{}}
+    \toprule
+    $q$ & $(\alpha,\hat t)$ & $m=1$ & $m=4$ & $m=16$ \\
+    \midrule
+    1.79    & $(26.6^\circ,0.5)$                      & 0.0016 & $<10^{-4}$ & $<10^{-4}$ \\
+    0.894   & $(26.6^\circ,2)$, $(45^\circ,0.5)$      & 0.0213 & 0.0012 & $<10^{-4}$ \\
+    0.447   & $(45^\circ,2)$, $(63.4^\circ,0.5)$      & 0.1141 & 0.0311 & 0.0009 \\
+    0.248   & $(26.6^\circ,8)$                        & 0.2389 & 0.1284 & 0.0239 \\
+    0.224   & $(63.4^\circ,2)$                        & 0.2600 & 0.1510 & 0.0347 \\
+    0.124   & $(45^\circ,8)$                          & 0.3582 & 0.2771 & 0.1401 \\
+    0.0620  & $(63.4^\circ,8)$                        & 0.4275 & 0.3824 & 0.2887 \\
+    0.0200  & $(45^\circ,50)$                         & ---    & 0.4614 & ---    \\
+    0.0050  & $(45^\circ,200)$                        & ---    & 0.4903 & ---    \\
+    0.00125 & $(45^\circ,800)$                        & ---    & 0.4976 & ---    \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{GANDALF's diagnostics on an exact solution}\label{appE:sec-gandalf}
+
+We evaluated GANDALF's diagnostics on an exact solution of \eqref{appE:mode}: free streaming from density data, with $s=1$ and $\Lam=\infty$, on a $32^3$ grid with $M=256$, for one random realisation of a Gaussian spectrum with $\tan\alpha=1$, cut so that no retained mode reaches the truncation before the last output time. On every mode and at every $m$, \texttt{hermite\_flux} equals $(k_z/k_\parallel)\,\Pi_{m+1/2}(\boldsymbol k)$ to $1.5\times10^{-16}$, the field-aligned flux is non-negative, and the split along $\zhat$ exchanges $g^+_m$ and $g^-_m$ exactly on the modes with $k_zk_\parallel<0$. At $\hat t=1.5$, \texttt{phase\_unmixing\_energy} assigns to unmixing the fractions 0.10, 0.06 and 0.02 of the free energy at $m=1$, 2 and 4. At $\hat t=6$ it assigns 0.33, 0.28, 0.18, 0.13 and 0.06 at $m=1$, 2, 4, 8 and 16, and the backward shares of the $k_z$-based flux are 0.30, 0.24, 0.17, 0.10 and 0.04. Since this test has $s=1$ and $\Lam=\infty$, it does not probe the factors $s$ and $p_0$ that \texttt{hermite\_flux} omits; we checked those separately, at $\beta_i=2$ and $\Lam=\sqrt5$, where the ratio of \texttt{hermite\_flux} to $\Pi^z_{m+1/2}(\boldsymbol k)$ is $1/(s\,p_0)$ at $m=0$ and $1/s$ for $m\ge1$.
+
+\subsection{Scope and checks}\label{appE:sec-checks}
+
+The formulas \eqref{appE:FB} and the statement that the true backward flux vanishes require a per-mode field-aligned flux that is non-negative. This holds for free streaming from density data, by \eqref{appE:freeflux}. We found numerically that it also holds for $\Lam=\sqrt5$, the branch $\Lam^+$ at $\beta_i=Z=1$ and equal ion and electron temperatures, with density data: for a single mode, computed with GANDALF's ladder matrix at $M=5000$, the flux is non-negative to round-off at every $m<2600$ for $s|k_\parallel|t\le60$, before the truncation is felt. It does not hold in general. With density data at $\Lam=-\sqrt5$, the flux through $m=1/2$ is negative near $s|k_\parallel|t=2.8$, by up to 2.2\% of the largest flux over $m$ at that time. With data in $g_1$ at $\Lam=\sqrt5$ it is negative near $s|k_\parallel|t=1.0$, by up to 36\%. In such cases the true flux has a backward part of its own, and \eqref{appE:FB} does not apply, while the first relation of \eqref{eq:tiltcos}, which does not use the sign of the per-mode flux, still holds.
+
+We checked the relations of this appendix independently of their derivation. The per-mode identities \eqref{appE:permode} and \eqref{appE:pm} and the exchange of $g^\pm_m$ hold to round-off on the exact solution of appendix~\ref{appE:sec-gandalf}. The ensemble relations were checked by direct two-dimensional quadrature over $(k_\parallel,k_z)$: the net law of \eqref{eq:tiltcos} to $9\times10^{-10}$, the backward share from \eqref{appE:FB} to $1.1\times10^{-5}$, and the closed form \eqref{appE:closed} to $3\times10^{-8}$. The misclassified weight equals $\alpha/\pi$ by exact angular measure to $4\times10^{-7}$ and by a Monte Carlo sum over $2\times10^6$ modes to $5\times10^{-5}$, and the backward share agrees with the Monte Carlo sum to $1.2\times10^{-3}$. The entries of table~\ref{appE:tab} follow from \eqref{appE:share}, and a direct two-dimensional quadrature over $(k_\parallel,k_z)$ reproduces every entry to the digits shown. The net law also holds for a per-mode flux computed with Landau coupling and hypercollisions ($\Lam=\sqrt5$, $M=64$, $\nu=2$, $m=3$), with a ratio of $0.50000$ at $\alpha=45^\circ$.
