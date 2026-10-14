@@ -10,8 +10,8 @@ These scripts check the results on GANDALF's truncated Hermite hierarchy against
 | `t4_dictionary.py` | the dictionary between slice correlations and W(m), in the continuum and for the truncated hierarchy | Section 5; Section 8, Appendix C | 11 s |
 | `t5_flux_cd.py` | the Hermite flux as Christoffel-Darboux-filtered dephasing of slice pairs, and its sine-kernel limit | Section 5; Section 8, Appendix C | 4 s |
 | `t6_reflection.py` | the hypercollisional reflection law R = exp(-X), and the forced steady state, where W_zero/W_open tends to coth X at low m | Section 8, Appendix C | 43 s |
-| `t7a_cfl_slices.py` | the explicit advection of slice j by Phi + s u_j Psi, the CFL estimate that omits u_j, and the stability of the explicit stages | Appendix D | 27 s |
-| `t7b_imex_order.py` | the first-order coupling of g to z+- in GANDALF's IMEX-RK222 step and the second-order drift of the invariants | Appendix D | 17 s |
+| `t7a_cfl_slices.py` | the explicit advection of slice j by Phi + s u_j Psi, GANDALF's CFL estimate (includes u_j in krmhd >= 0.7.0, gandalf#157; omitted it in <= 0.6.0, where the u_max slices blow up at dt_cfl), and the stability of the explicit stages | Appendix D | 27 s |
+| `t7b_imex_order.py` | the coupling of g to z+- in GANDALF's IMEX-RK222 step (second order in krmhd >= 0.7.0, gandalf#158; first order with the t + dt/2 stage time of <= 0.6.0) and the second-order drift of the invariants | Appendix D | 17 s |
 
 `tcore.py` holds the helpers shared by the scripts. Run times are wall times of one run on an Apple M1 Pro (Python 3.14, krmhd 0.6.0, CPU, float64) with other jobs running; the whole folder took 141 s. `t1_hierarchy.py`, `t7a_cfl_slices.py` and `t7b_imex_order.py` integrate in time with `gandalf_step` and list each integration (scheme, grid, M, steps, wall time) in their output.
 

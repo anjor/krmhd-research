@@ -7,8 +7,8 @@ supports Section 6 (the frozen-line test through gandalf_step) and the time-step
 
 Statement under test: the explicit part of ARS(2,2,2) integrates the slice advection s u_j {Psi, a_j} with
 R(z) = 1 + z + z^2/2, unstable on the imaginary axis; at N = 32, dt = 0.002, y = s u_max max|grad Psi| k_perp,max dt
-= 1.51, and d03 sees a departure from the frozen-line prediction by t = 0.128, where it stops; first order in dt
-otherwise.
+= 1.51, and d03 sees a departure from the frozen-line prediction by t = 0.128, where it stops; second order in dt
+otherwise (krmhd >= 0.7.0, gandalf#158; krmhd <= 0.6.0 coupled g to z+- at first order).
 
 I1 symbolic: the stage structure of krmhd's _gandalf_step_imex222_jit with GANDALF's own (gamma, delta) gives
    R(zE, zI); R(zE, 0) = 1 + zE + zE^2/2 exactly; |R(iy, 0)|^2 = 1 + y^4/4.
@@ -179,8 +179,8 @@ for scheme in ("imex_rk222", "lawson_rk4"):
     orders[scheme] = (o_g, o_W, o_z)
     print(f"    {scheme}: self-convergence at t = {T5} (dt = 1e-3, 5e-4, 2.5e-4): g field {e_g[0]:.2e}, {e_g[1]:.2e} -> order "
           f"{o_g:.2f};  W(m) {e_W[0]:.2e}, {e_W[1]:.2e} -> order {o_W:.2f};  z+ {e_z[0]:.2e}, {e_z[1]:.2e} -> order {o_z:.2f}")
-chk("I5 IMEX-RK222: the g field converges at first order in dt (gandalf#158)", 0.8 < orders["imex_rk222"][0] < 1.3,
-    f"order {orders['imex_rk222'][0]:.2f}")
+chk("I5 IMEX-RK222: the g field converges at second order in dt (krmhd >= 0.7.0, gandalf#158; first order in <= 0.6.0)",
+    1.8 < orders["imex_rk222"][0] < 2.3, f"order {orders['imex_rk222'][0]:.2f}")
 chk("I5 Lawson-RK4: the g field converges at (at least) second order", orders["lawson_rk4"][0] > 1.8,
     f"order {orders['lawson_rk4'][0]:.2f}")
 chk.finish()

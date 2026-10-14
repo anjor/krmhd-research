@@ -1,15 +1,16 @@
 """t7a_cfl_slices: checks the explicit perpendicular advection of the slices in GANDALF's time steppers and the
 time-step limit it implies: the explicit term advects slice j with Phi + s u_j Psi, krmhd's compute_cfl_timestep
-omits the factor u_j, the explicit IMEX-RK222 stage has no stable interval on the imaginary axis while Lawson-RK4 is
-stable for y <= 2 sqrt2, and in a shear-flow test every slice trajectory through gandalf_step follows the derived
-per-slice linear map, with the u_max slices unstable at GANDALF's dt_cfl. Supports Appendix D of the paper
-(summarised in Section 8).
+includes the factor u_j (GANDALF >= 0.7.0, gandalf#157; <= 0.6.0 omitted it), the explicit IMEX-RK222 stage has no
+stable interval on the imaginary axis while Lawson-RK4 is stable for y <= 2 sqrt2, and in a shear-flow test every slice
+trajectory through gandalf_step follows the derived per-slice linear map, with the u_max slices unstable at the
+GANDALF <= 0.6.0 dt_cfl. Supports Appendix D of the paper (summarised in Section 8).
 
 A  GANDALF's explicit Hermite term (krmhd.timestepping._krmhd_rhs_jit with k_z set to zero, as both steppers call it)
    is N(g) = -{Phi, g} - s {Psi, A g}; projected on slice j it is -{Phi + s u_j Psi, a_j}: slice j is advected by
    z^ x grad(Phi + s u_j Psi) at speed |grad_perp(Phi + s u_j Psi)| <= |grad Phi| + s |u_j| |grad Psi|.
-B  krmhd.timestepping.compute_cfl_timestep uses v_max = max(v_A, |grad z+|, |grad z-|, s |grad Psi|) and omits the
-   factor |u_j| (u_max = 10.6 at M = 64, 15.4 at M = 128 for Lam = +-sqrt5).
+B  krmhd.timestepping.compute_cfl_timestep (GANDALF >= 0.7.0, gandalf#157) uses
+   v_max = max(v_A, |grad z+|, |grad z-|, max_j |grad(Phi + s u_j Psi)|), so it includes the factor |u_j|
+   (u_max = 10.6 at M = 64, 15.4 at M = 128 for Lam = +-sqrt5); GANDALF <= 0.6.0 used s |grad Psi| and omitted it.
 C  Stage polynomials of the explicit parts: IMEX-RK222 (ARS 2,2,2 with GANDALF's gamma, delta) R2(z) = 1 + z + z^2/2,
    |R2(iy)|^2 = 1 + y^4/4 > 1 for every y != 0 (pure advection is weakly unstable at any dt and needs dissipation);
    Lawson-RK4 at k_z = 0 is classical RK4, |R4(iy)| <= 1 iff |y| <= 2 sqrt2. With GANDALF's post-step factor
@@ -17,8 +18,10 @@ C  Stage polynomials of the explicit parts: IMEX-RK222 (ARS 2,2,2 with GANDALF's
 D  GANDALF test: a stationary shear flow (z+- functions of y only, k_z = 0, so the Elsasser step is exact and every
    slice sees a fixed linear operator). The per-step growth of every slice through gandalf_step equals the spectral
    radius of D_eta R(dt N_j) computed from the analytic operator N_j = i k_x f_j'(y) (f_j = Phi + s u_j Psi), for both
-   schemes, with and without hyper-resistivity; the fastest slices are |u_j| = u_max; at GANDALF's dt_cfl the fast
-   slices are violently unstable while the u ~ 0 slices are not.
+   schemes, with and without hyper-resistivity; the fastest slices are |u_j| = u_max; at the GANDALF <= 0.6.0 dt_cfl
+   (no u_j) the fast slices are violently unstable while the u ~ 0 slices are not. At the GANDALF >= 0.7.0 dt_cfl every
+   slice decays with eta = 2000, but without dissipation the u_max slices still grow slowly (IMEX-RK222 is weakly
+   unstable for pure advection at any dt, gandalf#166).
 """
 from __future__ import annotations
 
@@ -69,6 +72,7 @@ C.check("A1 explicit term (GANDALF's _krmhd_rhs_jit at k_z = 0) = -{Phi + s u_j 
 
 section("B. GANDALF's CFL speed versus the slice speeds")
 okB = True
+differs = False
 for M in (16, 64, 128):
     for Lam in (SQRT5, -SQRT5):
         rng = np.random.default_rng(100 + M)
@@ -79,18 +83,24 @@ for M in (16, 64, 128):
         dt_g = compute_cfl_timestep(st, v_A=1.0, cfl_safety=0.3)
         Phi = (zp + zm) / 2
         Psi = (zp - zm) / 2
-        vG = max(1.0, maxgrad(grid, zp), maxgrad(grid, zm), maxgrad(grid, Psi))
-        dt_mine = 0.3 * (1.0 / N) / vG
         u = np.sort(np.linalg.eigvals(ladder(M, Lam)).real)
+        Vall = np.array([maxgrad(grid, Phi + uj * Psi) for uj in u])      # every slice speed (s = 1)
+        vG = max(1.0, maxgrad(grid, zp), maxgrad(grid, zm), Vall.max())  # GANDALF >= 0.7.0 (gandalf#157)
+        vG_old = max(1.0, maxgrad(grid, zp), maxgrad(grid, zm), maxgrad(grid, Psi))   # GANDALF <= 0.6.0 (no u_j)
+        dt_mine = 0.3 * (1.0 / N) / vG
+        v_gandalf = 0.3 * (1.0 / N) / dt_g
         Vj = np.array([maxgrad(grid, Phi + uj * Psi) for uj in (u[0], u[-1], u[np.argmin(np.abs(u))])])
         bound = maxgrad(grid, Phi) + u[-1] * maxgrad(grid, Psi)
-        okB = okB and abs(dt_g / dt_mine - 1) < 1e-10 and Vj[:2].max() <= bound * (1 + 1e-12)
-        print(f"   M={M:3d} Lam={Lam:+.3f}: u_max = {u[-1]:.4f}; GANDALF v_max = {vG:.3f} (dt_cfl reproduced: "
-              f"{abs(dt_g / dt_mine - 1):.1e}); slice speeds max|grad(Phi + u Psi)| at u = -u_max, +u_max, 0: "
-              f"{Vj[0]:.3f}, {Vj[1]:.3f}, {Vj[2]:.3f}; ratio fastest slice / v_max = {Vj[:2].max() / vG:.2f}; "
-              f"bound |grad Phi| + u_max |grad Psi| = {bound:.3f}")
-C.check("B1 compute_cfl_timestep = 0.3 dx / max(v_A, |grad z+-|, s|grad Psi|) (no u_j); fastest slice speed obeys the "
-        "bound and exceeds v_max by ~u_max", okB)
+        okB = okB and abs(dt_g / dt_mine - 1) < 1e-10 and Vj[:2].max() <= bound * (1 + 1e-12) and \
+            Vall.max() <= v_gandalf * (1 + 1e-10)
+        differs = differs or vG / vG_old > 1 + 1e-3
+        print(f"   M={M:3d} Lam={Lam:+.3f}: u_max = {u[-1]:.4f}; GANDALF v_max = {v_gandalf:.3f} (dt_cfl reproduced: "
+              f"{abs(dt_g / dt_mine - 1):.1e}; <= 0.6.0 formula v_max = {vG_old:.3f}); slice speeds max|grad(Phi + u Psi)| "
+              f"at u = -u_max, +u_max, 0: {Vj[0]:.3f}, {Vj[1]:.3f}, {Vj[2]:.3f}; max over all j = {Vall.max():.3f}; ratio "
+              f"fastest slice / v_max = {Vall.max() / v_gandalf:.2f}; bound |grad Phi| + u_max |grad Psi| = {bound:.3f}")
+C.check("B1 compute_cfl_timestep (GANDALF >= 0.7.0, gandalf#157) = 0.3 dx / max(v_A, |grad z+-|, max_j |grad(Phi + s u_j "
+        "Psi)|) (includes u_j; <= 0.6.0 used s|grad Psi| and gives a different dt_cfl for at least one state here); "
+        "fastest slice speed obeys the bound and no longer exceeds v_max", okB and differs)
 
 section("C. Stage polynomials")
 z, y = sp.symbols("z y")
@@ -170,10 +180,14 @@ g0 = np.zeros((2, Ng_, Ng_ // 2 + 1, M + 1), complex)
 g0[0, :, ix, :] = (rng.standard_normal((Ng_, M + 1)) + 1j * rng.standard_normal((Ng_, M + 1)))
 g0 *= np.asarray(g2.dealias_mask)[..., None]
 st0 = make_state(g2, M, Lam, zp, zm, g0, beta_i=1.0)
-dt_cfl = compute_cfl_timestep(st0, v_A=1.0, cfl_safety=0.3)
+dt_cfl = compute_cfl_timestep(st0, v_A=1.0, cfl_safety=0.3)      # GANDALF >= 0.7.0 (includes u_j, gandalf#157)
+# GANDALF <= 0.6.0 value: 0.3 min(dx, dy, dz) / max(v_A, |grad z+-|, s |grad Psi|), without the factor u_j
+dt_cfl_old = 0.3 * min(g2.Lx / g2.Nx, g2.Ly / g2.Ny, g2.Lz / g2.Nz) / max(
+    1.0, maxgrad(g2, zp), maxgrad(g2, zm), s * maxgrad(g2, (zp - zm) / 2))
 print(f"   M = {M}, Lam = sqrt5, max|grad Psi| = {maxgrad(g2, (zp - zm) / 2):.3f}, max|grad Phi| = {maxgrad(g2, (zp + zm) / 2):.3f};"
-      f" fastest slice speed max|f_j'| = {Vfast:.3f}; GANDALF dt_cfl(0.3) = {dt_cfl:.3e}; y_fast(dt_cfl) = "
-      f"{dt_cfl * kxs[ix] * Vfast * lam_T:.2f}")
+      f" fastest slice speed max|f_j'| = {Vfast:.3f}; GANDALF dt_cfl(0.3) = {dt_cfl:.3e}, y_fast(dt_cfl) = "
+      f"{dt_cfl * kxs[ix] * Vfast * lam_T:.2f}; GANDALF <= 0.6.0 dt_cfl(0.3) (no u_j) = {dt_cfl_old:.3e}, y_fast = "
+      f"{dt_cfl_old * kxs[ix] * Vfast * lam_T:.2f}")
 
 
 def run(dt: float, eta: float, scheme: str, nsteps: int):
@@ -245,21 +259,41 @@ for j in (M, np.argmin(np.abs(u))):
     Vj = abs(2 * np.pi * (aPhi + s * u[j] * aPsi)) * lam_T
     analytic = (8 * eta / (np.sqrt(kperp_max2) * Vj) ** 4) ** (1 / 3)
     print(f"   IMEX, eta = {eta:g}: slice u = {u[j]:+.3f}: first unstable dt (any k_x plane) = {thr[j]:.4e}; small-y "
-          f"formula (8 eta)^(1/3)/(k_perp,max V_j)^(4/3) = {analytic:.4e}; GANDALF dt_cfl = {dt_cfl:.3e}")
+          f"formula (8 eta)^(1/3)/(k_perp,max V_j)^(4/3) = {analytic:.4e}; GANDALF dt_cfl = {dt_cfl:.3e}, "
+          f"<= 0.6.0 dt_cfl = {dt_cfl_old:.3e}")
     if j == M:
-        okD3 = okD3 and thr[j] < dt_cfl and abs(thr[j] / analytic - 1) < 0.25
+        okD3 = okD3 and thr[j] < dt_cfl_old and abs(thr[j] / analytic - 1) < 0.25 and dt_cfl < thr[j]
     else:
-        okD3 = okD3 and thr[j] > dt_cfl
-C.check("D3 IMEX, eta = 2000: GANDALF's dt_cfl exceeds the stability threshold of the fastest slice (formula within 25%) "
-        "but not that of u ~ 0", okD3)
-# direct demonstration at dt_cfl (IMEX, eta = 2000)
-traj, pred, err, wall = run(dt_cfl, eta, "imex_rk222", 15)
-runs.append(("imex_rk222", dt_cfl, eta, 15, wall))
+        okD3 = okD3 and thr[j] > dt_cfl_old
+C.check("D3 IMEX, eta = 2000: GANDALF <= 0.6.0's dt_cfl (no u_j) exceeds the stability threshold of the fastest slice "
+        "(formula within 25%) but not that of u ~ 0; GANDALF >= 0.7.0's dt_cfl is below both", okD3)
+# direct demonstration at the GANDALF <= 0.6.0 dt_cfl (IMEX, eta = 2000)
+traj, pred, err, wall = run(dt_cfl_old, eta, "imex_rk222", 15)
+runs.append(("imex_rk222", dt_cfl_old, eta, 15, wall))
 grow = np.linalg.norm(traj[-1], axis=0) / np.linalg.norm(traj[0], axis=0)
-print(f"   gandalf_step at dt_cfl, eta = {eta:g}, 15 steps (trajectory deviation from the linear map {err:.1e}): "
+print(f"   gandalf_step at the <= 0.6.0 dt_cfl, eta = {eta:g}, 15 steps (trajectory deviation from the linear map {err:.1e}): "
       "amplitude ratio at u = " + ", ".join(f"{u[j]:+.2f}: {grow[j]:.2e}" for j in sel_j))
-C.check("D4 at GANDALF's dt_cfl the u_max slices blow up while the u ~ 0 slice decays",
+C.check("D4 at GANDALF <= 0.6.0's dt_cfl (no u_j) the u_max slices blow up while the u ~ 0 slice decays",
         grow[M] > 1e2 and grow[np.argmin(np.abs(u))] < 1.0 and err < 1e-10)
+# the same 15 steps at GANDALF's (>= 0.7.0) dt_cfl, with eta = 2000 and with eta = 0
+okD5 = True
+for eta5 in (eta, 0.0):
+    traj, pred, err, wall = run(dt_cfl, eta5, "imex_rk222", 15)
+    runs.append(("imex_rk222", dt_cfl, eta5, 15, wall))
+    grow5 = np.linalg.norm(traj[-1], axis=0) / np.linalg.norm(traj[0], axis=0)
+    r5 = np.array([rho(j, dt_cfl, eta5, "imex_rk222") for j in range(M + 1)])
+    print(f"   gandalf_step at GANDALF dt_cfl, eta = {eta5:g}, 15 steps (trajectory deviation from the linear map "
+          f"{err:.1e}): amplitude ratio at u = " + ", ".join(f"{u[j]:+.2f}: {grow5[j]:.2e}" for j in sel_j) +
+          f"; spectral radius per step at u_max {r5[M]:.5f}, u ~ 0 {r5[np.argmin(np.abs(u))]:.5f}, largest at u = "
+          f"{u[np.argmax(r5)]:+.2f}; |ratio - 1| at u ~ 0 = {abs(grow5[np.argmin(np.abs(u))] - 1):.1e}")
+    okD5 = okD5 and err < 1e-10
+    if eta5 > 0:
+        okD5 = okD5 and grow5.max() < 1.0 and r5.max() < 1.0
+    else:
+        okD5 = okD5 and grow5[M] > 1.0 and r5[M] > 1.0 and abs(u[np.argmax(r5)]) > 0.95 * u[-1] and \
+            abs(grow5[np.argmin(np.abs(u))] - 1) < 1e-6
+C.check("D5 at GANDALF's (>= 0.7.0) dt_cfl, IMEX: with eta = 2000 every slice decays; with eta = 0 the u_max slices "
+        "still grow, weakly (largest spectral radius at |u_j| ~ u_max, gandalf#166), and the u ~ 0 slice is neutral", okD5)
 print("GANDALF integrations (scheme, dt, eta, steps, wall s), grid 32x32x2, M = 64, Lam = sqrt5, shear flow:")
 for r in runs:
     print(f"   {r[0]} dt={r[1]:.3e} eta={r[2]:g} steps={r[3]} wall={r[4]:.1f}s")

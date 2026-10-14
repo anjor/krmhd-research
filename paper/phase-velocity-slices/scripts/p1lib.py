@@ -940,7 +940,8 @@ def Q_phi_scale(box: Box, a: ArrayLike, u: ArrayLike, name: str) -> float:
 def hermite_flux_field_aligned(box: Box, g: ArrayLike, psi: ArrayLike, s: float, sl: Slices) -> np.ndarray:
     """Field-aligned Hermite flux Pi_{m+1/2} = 2 s p_m A_{m,m+1} <g_m grad_par g_{m+1}>, m = 0..M-1, with the full
     grad_par = d_z + {Psi, .}: the free energy per unit time from moment m to m+1, so that, collisionless,
-    d/dt sum_{n<=m} p_n <g_n^2> = -Pi_{m+1/2} for any Alfvenic fields."""
+    d/dt sum_{n<=m} p_n <g_n^2> = -Pi_{m+1/2} for any Alfvenic fields.  Equals twice GANDALF's (>= 0.7.0)
+    krmhd.diagnostics.hermite_flux summed over modes with the rfft weights (gandalf#159)."""
     g = np.asarray(g)
     psi = np.asarray(psi)
     M = g.shape[-1] - 1
@@ -952,7 +953,8 @@ def hermite_flux_field_aligned(box: Box, g: ArrayLike, psi: ArrayLike, s: float,
 
 def hermite_flux_kz(box: Box, g: ArrayLike, s: float, sl: Slices, per_mode: bool = False) -> np.ndarray:
     """k_z-only Hermite flux Pi^z_{m+1/2} = 2 s p_m A_{m,m+1} <g_m d_z g_{m+1}>, i.e. s p_m times GANDALF's
-    krmhd.diagnostics.hermite_flux summed over modes (which omits {Psi, .}, s and p_0).  per_mode returns the
+    krmhd.diagnostics.hermite_flux summed over modes up to GANDALF 0.6.0, which omitted {Psi, .}, s and p_0 (from
+    0.7.0 hermite_flux is field-aligned; see hermite_flux_field_aligned).  per_mode returns the
     k-resolved contributions [Nz, Ny, Nkx, M] (already weighted, summing to the total)."""
     g = np.asarray(g)
     M = g.shape[-1] - 1

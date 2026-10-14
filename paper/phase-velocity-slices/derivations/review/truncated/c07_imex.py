@@ -1,15 +1,18 @@
-"""c07_imex: independent checks of the first-order coupling in GANDALF's IMEX-RK222 step: a scalar non-autonomous
-test of the ARS(2,2,2) stage times, and the convergence order of g(T) and of the W drift through gandalf_step in a
-configuration different from that of ../../truncated/t7b_imex_order.py. Supports Appendix D of the paper.
+"""c07_imex: independent checks of the coupling of g to z+- in GANDALF's IMEX-RK222 step, which is second order in dt
+in krmhd >= 0.7.0 (gandalf#158; stage 2 samples z+- at t + gamma dt) and was first order in krmhd <= 0.6.0 (z+- at
+t + dt/2): a scalar non-autonomous test of the ARS(2,2,2) stage times, and the convergence order of g(T) and of the W
+drift through gandalf_step in a configuration different from that of ../../truncated/t7b_imex_order.py. Supports
+Appendix D of the paper.
 
 Independent routes:
 
 a. Plain numerics (no SymPy) for the non-autonomous scalar problem y' = lam_I y + i omega(t) y with
    omega(t) = 3 + 2 sin(1.3 t): ARS(2,2,2) with the implicit part lam_I (= 5i or 0) and the explicit stage-2 evaluated at
-   time t + c dt, c = gamma (consistent) or 1/2 (GANDALF). Global order of y(T) and of the |y|^2 drift.
+   time t + c dt, c = gamma (consistent; GANDALF >= 0.7.0) or 1/2 (GANDALF <= 0.6.0). Global order of y(T) and of the
+   |y|^2 drift.
 b. GANDALF, a configuration different from that of t7b_imex_order.py: 8^3, M = 8, Lam = -sqrt5, beta = 2, a single propagating
    z+ (z- = 0, so the Elsasser update is exact and Lawson-RK4 is a 4th-order reference), dt = T/16 ... T/1024:
-   order of g(T) for gandalf_step IMEX and of the W drift.
+   order of g(T) for gandalf_step IMEX (second order since gandalf#158) and of the W drift.
 """
 from __future__ import annotations
 
@@ -111,7 +114,8 @@ o = np.log2(np.array(errs[:-1]) / np.array(errs[1:]))
 od = np.log2(np.abs(np.array(drift[:-1]) / np.array(drift[1:])))
 print(f"   IMEX ({sum(ns)} steps, {t_imex:.1f} s): g(T) errors {[f'{e:.2e}' for e in errs]}; orders {np.round(o, 3).tolist()}")
 print(f"   IMEX signed W drift (W(T)-W(0))/W(0) {[f'{e:+.2e}' for e in drift]}; local orders {np.round(od, 3).tolist()}")
-C("c07.b gandalf_step IMEX: g(T) first order (single wave, Lam = -sqrt5, beta = 2)", abs(o[-1] - 1) < 0.05)
+C("c07.b gandalf_step IMEX: g(T) second order (krmhd >= 0.7.0, gandalf#158; first order in <= 0.6.0) (single wave, "
+  "Lam = -sqrt5, beta = 2)", abs(o[-1] - 2) < 0.05, f"finest order {o[-1]:.3f}")
 C("c07.c W drift of gandalf_step IMEX tends to second order (local order of the finest pair within 0.15 of 2)",
   abs(od[-1] - 2) < 0.15, f"finest local order {od[-1]:.3f}")
 print(f"GANDALF integrations: 8^3, M = 8: Lawson reference 2048 steps + 384 steps, IMEX {sum(ns)} steps; total "

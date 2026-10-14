@@ -9,8 +9,10 @@ quadrature).  It supports Section 5 and Appendix E (the k_z-based decomposition 
 Model: linear streaming along a uniformly tilted static field, grad_par = d_z + b0 d_x (no flow, collisionless).
 Every Fourier mode evolves with k_par = k_z + b0 k_x:  g(k, t) = exp(-i s k_par t A) g(k, 0).
 True (field-aligned) flux through m:   Pi_m(k)   = -2 s k_par p_m A_{m,m+1} Im(g_m^* g_{m+1});
-k_z-based flux (GANDALF hermite_flux): Pi^z_m(k) = (k_z / k_par) Pi_m(k)                     (exact, per mode;
-hermite_flux itself omits the factor s p_m, which is 1 in T2).
+k_z-based flux:                         Pi^z_m(k) = (k_z / k_par) Pi_m(k)                     (exact, per mode).
+GANDALF's hermite_flux knows only z+- = 0 here, so its grad_par is d_z: since 0.7.0 (gandalf#159) it returns the
+one-sided per-mode flux s p_m A_{m,m+1} Re[g_m^* d_z g_{m+1}] = Pi^z_m(k) / 2 (up to 0.6.0 it omitted s p_m, which is 1
+in T2, and returned Pi^z_m(k)).
 Phase-mixing split  g~_m = (i sgn kappa)^m g_m,  g^{+-}_m = (g~_m +- g~_{m+1})/2,  kappa = k_par or k_z:
   |g^+|^2 - |g^-|^2 = -sgn(kappa) Im(g_m^* g_{m+1}),  and the k_z split swaps + and - on modes with k_z k_par < 0.
 
@@ -120,15 +122,16 @@ for t in (0.25 * t_late, t_late):
     ph = np.exp(-1j * s * KPAR[..., None] * t * evals[None, None, None, :])
     g = (ph * coef) @ R.T * c[..., None]               # g(k,t) = R exp(-i s k_par t diag(u)) R^T e_0 c_k
     st = make_state(box, np.zeros_like(c), np.zeros_like(c), g, BIG, 1.0)
-    flux_gandalf = np.asarray(hermite_flux(st))        # -k_z sqrt(2(m+1)) Im[g_{m+1} g_m^*]
+    flux_gandalf = np.asarray(hermite_flux(st))        # -k_z s p_m A_{m,m+1} Im[g_m^* g_{m+1}] (z+- = 0, >= 0.7.0)
     true = np.zeros_like(flux_gandalf)
     for m in range(Mb):
         true[..., m] = -2 * s * KPAR * pw[m] * A[m, m + 1] * np.imag(np.conj(g[..., m]) * g[..., m + 1])
     with np.errstate(divide="ignore", invalid="ignore"):
-        pred = np.where(np.abs(KPAR[..., None]) > 0, (KZ / KPAR)[..., None] * true, 0.0)
+        pred = np.where(np.abs(KPAR[..., None]) > 0, 0.5 * (KZ / KPAR)[..., None] * true, 0.0)
     e_id = np.abs(flux_gandalf - pred).max() / np.abs(flux_gandalf).max()
     tau = s * spar * t
-    chk(f"T2 tau={tau:.1f}: hermite_flux = (k_z/k_par) x field-aligned flux, every mode and m", e_id < 1e-12, f"{e_id:.1e}")
+    chk(f"T2 tau={tau:.1f}: hermite_flux = (k_z/k_par) x field-aligned flux / 2, every mode and m", e_id < 1e-12,
+        f"{e_id:.1e}")
     chk(f"T2 tau={tau:.1f}: field-aligned flux >= 0 on every mode (pure phase mixing)",
         true.min() > -1e-13 * np.abs(true).max(), f"min/max = {true.min() / np.abs(true).max():.1e}")
     m = 3

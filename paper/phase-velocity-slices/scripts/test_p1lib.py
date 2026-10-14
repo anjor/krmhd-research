@@ -138,14 +138,16 @@ e2 = abs(P.free_energy(box, g, sl.p) * box.Ntot ** 2 / hermite_free_energy(st) -
 EA = P.alfvenic_energy(box, zp, zm)
 e3 = abs(EA["E"] * box.N * box.Ntot / krmhd_energy(st)["total"] - 1)
 hf = np.asarray(hermite_flux(st))
-pz_g = s * sl.p[:M] * np.sum(box.w[..., None] * hf, axis=(0, 1, 2)) / box.Ntot ** 2
-pz = P.hermite_flux_kz(box, g, s, sl)
+# GANDALF >= 0.7.0 (gandalf#159): hermite_flux is the one-sided field-aligned flux s p_m A_{m,m+1} Re[g_m^* grad_par
+# g_{m+1}] per mode; up to 0.6.0 it was the k_z-only flux without s and p_0
+pz_g = 2.0 * np.sum(box.w[..., None] * hf, axis=(0, 1, 2)) / box.Ntot ** 2
+pz = P.hermite_flux_field_aligned(box, g, psi, s, sl)
 e4 = float(np.abs(pz - pz_g).max() / np.abs(pz).max())
 e5 = abs(EA["E_plus"] + EA["E_minus"] - EA["E"]) / EA["E"]
 check("C1 W(m) = hermite_moment_energy / N^6; W = hermite_free_energy / N^6", max(e1, e2) < 1e-12, f"{e1:.1e}, {e2:.1e}")
 check("C2 Alfvenic energy E = krmhd.physics.energy / (N_z N^3); E = E_plus + E_minus", max(e3, e5) < 1e-12,
       f"{e3:.1e}, {e5:.1e}")
-check("C3 k_z-only flux = s p_m x (hermite_flux summed over modes)", e4 < 1e-12, f"{e4:.1e}")
+check("C3 field-aligned flux = 2 x (hermite_flux summed over modes), GANDALF >= 0.7.0", e4 < 1e-12, f"{e4:.1e}")
 chi = P.nonlinearity_parameter(box, zp, zm)
 print(f"     chi_u = {chi['chi_u']:.2f}, chi_z = {chi['chi_z']:.2f}, kbar_perp/k1 = {chi['kperp_mean'] / box.k1:.2f}, "
       f"kbar_par/k1 = {chi['kpar_mean'] / box.k1:.2f}; Q_u/Q_1 = {P.Q_phi(box, sl.amplitudes(g), sl.u)['Q_u']:.3f}")

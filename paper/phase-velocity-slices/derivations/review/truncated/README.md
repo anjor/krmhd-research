@@ -11,7 +11,7 @@ These scripts check the results of `../../truncated/` again by independent route
 | `c04_dictionary.py` | the delta-correlated spectrum by Gauss-Hermite quadrature, Kanekar et al. (2015) (4.10) and (4.15) at finite Lambda, the large-m dictionary by 2-D quadrature | Section 5 | 30 s |
 | `c05_flux.py` | the flux budget, the Christoffel-Darboux identity and the slice form of the flux with GANDALF's eigenvectors; the sine kernel at M = 1024; the pair weight of the flux | Section 5; Section 8 | 5 s |
 | `c06_cfl.py` | the time-step limit of the fastest slices on a 3-D random state through `gandalf_step`, and the IMEX hyper-resistive threshold for r = 1, 2, 4 | Appendix D | 48 s |
-| `c07_imex.py` | the stage times of ARS(2,2,2) on a scalar test, and the first-order g(T) and second-order W drift through `gandalf_step` | Appendix D | 23 s |
+| `c07_imex.py` | the stage times of ARS(2,2,2) on a scalar test, and the second-order g(T) (krmhd >= 0.7.0, gandalf#158; first order in <= 0.6.0) and second-order W drift through `gandalf_step` | Appendix D | 23 s |
 | `c08_spectrum.py` | u_max by root-finding, the size of its Lambda shift, the u_max asymptotics to M = 2000, the determinant identity and sum rules to 50 digits, the spectral-shift law to M = 8192 | Section 8, Appendix C | 18 s |
 | `c09_reflection.py` | the revival ratio through `gandalf_step`, the revival time at finite Lambda, and the forced steady state against two open references | Section 8, Appendix C | 33 s |
 | `c11_coll_damping.py` | the first-order hypercollisional damping of each slice: the u_max slices are damped most | Section 8, Appendix D | 1 s |

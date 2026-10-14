@@ -71,10 +71,12 @@ for M in (9, 12):
             scale = np.abs(Pi_full).max()
             e1 = np.abs(dE + Pi_full).max() / scale
             e1z = np.abs(dE + Pi_z).max() / scale
-            # GANDALF diagnostic: per-k flux -k_z sqrt(2(m+1)) Im[g_{m+1} g_m^*]; summed with rfft weights, times s
+            # GANDALF diagnostic (>= 0.7.0, gandalf#159): per-k flux s p_m A_{m,m+1} Re[g_m^* gpar g_{m+1}] with the
+            # full gpar = d_z + {Psi, .}; summed with rfft weights it is half the antisymmetrised Pi_full
+            # (<= 0.6.0 it was the d_z part only, without s or p_0)
             hf = np.asarray(hermite_flux(st))
-            hf_sum = s * np.array([np.sum(wk * hf[..., m]) for m in range(M)])
-            e_hf = np.abs(hf_sum[1:] - Pi_z[1:]).max() / np.abs(Pi_z).max()
+            hf_sum = 2 * np.array([np.sum(wk * hf[..., m]) for m in range(M)])
+            e_hf = np.abs(hf_sum - Pi_full).max() / scale
             okA = okA and e1 < 1e-12
             okA2 = okA2 and e1z > 1e-3 and e_hf < 1e-12
             # slice form
@@ -102,12 +104,12 @@ for M in (9, 12):
             okB3 = okB3 and e3 < 1e-11
             print(f"   M={M} Lam={Lam:+.3f} {clo:9s}: |dE/dt + Pi| = {e1:.1e}; with d_z part only {e1z:.1e} "
                   f"(field-line share max|Pi_full - Pi_z|/max|Pi| = {np.abs(Pi_full - Pi_z).max() / scale:.2f}); "
-                  f"s*hermite_flux vs d_z part (m>=1) {e_hf:.1e}; m=0: hermite_flux/(Pi_z) = {hf_sum[0] / Pi_z[0]:.4f} "
-                  f"(1/(1-1/Lam) = {1 / (1 - 1 / Lam):.4f}); CD identity {worst_cd:.1e}; Cdot vs dynamics {e2:.1e}; "
+                  f"2*hermite_flux vs full flux (all m) {e_hf:.1e}; CD identity {worst_cd:.1e}; Cdot vs dynamics {e2:.1e}; "
                   f"slice form vs direct {e3:.1e}")
 C.check("A1 dE_{<=m}/dt = -s b_m int(g_m gpar g_{m+1} - g_{m+1} gpar g_m) on krmhd_rhs (brackets on, both closures)",
         okA)
-C.check("A2 the d_z part alone does not close the budget; s * hermite_flux equals the d_z part for m >= 1", okA2)
+C.check("A2 the d_z part alone does not close the budget; 2 * hermite_flux (GANDALF >= 0.7.0) equals the full flux, all m",
+        okA2)
 C.check("B1 generalised Christoffel-Darboux identity b_m(R_mj R_{m+1,l} - R_{m+1,j} R_ml) = (u_l - u_j) K_m(j,l)", okB1)
 C.check("B2 Cdot_jl = -s (u_j - u_l) int a_l gpar a_j equals dC_jl/dt on krmhd_rhs (E x B advection drops out)", okB2)
 C.check("B3 Pi_{m+1/2} = -sum_jl K_m(j,l) Cdot_jl / (n_j n_l) (CD-filtered slice dephasing)", okB3)

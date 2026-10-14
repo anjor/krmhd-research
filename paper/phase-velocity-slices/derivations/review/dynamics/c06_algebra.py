@@ -96,8 +96,10 @@ for m in range(M):
 ratios = np.array(ratios)
 print(f"    hermite_flux / (p_m s k_z-weighted flux), m = 0..{M - 1}: " + ", ".join(f"{r:.4f}" for r in ratios)
       + f";  1/(s p_0) = {1 / (s * pl[0]):.4f}, 1/s = {1 / s:.4f}")
-chk("A2 GANDALF's hermite_flux omits s and, at m = 0, p_0", abs(ratios[0] - 1 / (s * pl[0])) < 1e-10
-    and np.abs(ratios[1:] - 1 / s).max() < 1e-10)
+# GANDALF >= 0.7.0 (gandalf#159) includes s and p_m and returns the one-sided per-mode flux, half of `mine`;
+# <= 0.6.0 omitted s and, at m = 0, p_0 (ratios 1/(s p_0), 1/s, ...)
+chk("A2 GANDALF's hermite_flux includes s and p_m: hermite_flux = (1/2) x the k_z flux at z+- = 0, every m",
+    np.abs(ratios - 0.5).max() < 1e-10)
 
 # ------------------------------------------------------------------------------------------------ A3
 for M in (8, 64):

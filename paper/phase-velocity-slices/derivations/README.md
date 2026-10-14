@@ -1,6 +1,6 @@
 # Self-checking scripts for the paper
 
-Every equation and number in the paper is checked by a script in this folder. Each script prints PASS or FAIL for each check and exits with status 1 if any check fails. The scripts use GANDALF (the installed `krmhd` package, version 0.6.0) read-only, in float64 on the CPU.
+Every equation and number in the paper is checked by a script in this folder. Each script prints PASS or FAIL for each check and exits with status 1 if any check fails. The scripts use GANDALF (the installed `krmhd` package, version 0.7.0) read-only, in float64 on the CPU.
 
 | folder | what it covers | paper sections |
 |---|---|---|
