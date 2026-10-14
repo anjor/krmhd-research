@@ -1,0 +1,24 @@
+====================================================================================================
+A. Continuum recurrence on |u|, |u'| <= 1.5
+   Lam=inf     m=   64: kernel deviation / max K =   0.83%;  max K pi/k_m = 1.0077;  pair-weight deviation = 0.167/pi
+   Lam=inf     m=  128: kernel deviation / max K =   0.42%;  max K pi/k_m = 1.0039;  pair-weight deviation = 0.118/pi
+   Lam=inf     m=  256: kernel deviation / max K =   0.21%;  max K pi/k_m = 1.0019;  pair-weight deviation = 0.083/pi
+   Lam=inf     m= 1024: kernel deviation / max K =   0.05%;  max K pi/k_m = 1.0005;  pair-weight deviation = 0.042/pi
+   Lam=+sqrt5  m=   64: kernel deviation / max K =  11.82%;  max K pi/k_m = 1.1340;  pair-weight deviation = 0.855/pi
+   Lam=+sqrt5  m=  128: kernel deviation / max K =   8.54%;  max K pi/k_m = 1.0933;  pair-weight deviation = 0.830/pi
+   Lam=+sqrt5  m=  256: kernel deviation / max K =   6.13%;  max K pi/k_m = 1.0653;  pair-weight deviation = 0.811/pi
+   Lam=+sqrt5  m= 1024: kernel deviation / max K =   3.12%;  max K pi/k_m = 1.0322;  pair-weight deviation = 0.788/pi
+   Lam=-sqrt5  m=   64: kernel deviation / max K =   4.63%;  max K pi/k_m = 1.0311;  pair-weight deviation = 0.614/pi
+   Lam=-sqrt5  m=  128: kernel deviation / max K =   3.33%;  max K pi/k_m = 1.0220;  pair-weight deviation = 0.616/pi
+   Lam=-sqrt5  m=  256: kernel deviation / max K =   2.37%;  max K pi/k_m = 1.0155;  pair-weight deviation = 0.609/pi
+   Lam=-sqrt5  m= 1024: kernel deviation / max K =   1.20%;  max K pi/k_m = 1.0078;  pair-weight deviation = 0.603/pi
+  [PASS] P1 Lam = inf: kernel -> sine kernel (deviation < 1% for m >= 64, falling) and pair weight -> sin(k_m d)/pi :: kernel 0.83%, 0.42%, 0.21%, 0.05%; pair weight 0.167/pi, 0.118/pi, 0.083/pi, 0.042/pi at m = (64, 128, 256, 1024)
+  [PASS] P2 Lam = +sqrt5: relative kernel deviation falls with m, but the pair-weight deviation stays O(1/pi) :: kernel 11.8%, 8.5%, 6.1%, 3.1%; pair weight 0.855/pi, 0.830/pi, 0.811/pi, 0.788/pi at m = (64, 128, 256, 1024)
+  [PASS] P2 Lam = -sqrt5: relative kernel deviation falls with m, but the pair-weight deviation stays O(1/pi) :: kernel 4.6%, 3.3%, 2.4%, 1.2%; pair weight 0.614/pi, 0.616/pi, 0.609/pi, 0.603/pi at m = (64, 128, 256, 1024)
+====================================================================================================
+B. GANDALF's ladder eigenvectors at M = 1500 (Gauss nodes |u_j| <= 1.5)
+   Lam=inf     (53 nodes): m=64: |K_B - K_A|/max K = 1.1e-14, pair weight 0.165/pi; m=128: |K_B - K_A|/max K = 1.7e-14, pair weight 0.118/pi; m=256: |K_B - K_A|/max K = 2.3e-14, pair weight 0.080/pi
+   Lam=+sqrt5  (53 nodes): m=64: |K_B - K_A|/max K = 1.5e-14, pair weight 0.843/pi; m=128: |K_B - K_A|/max K = 1.9e-14, pair weight 0.800/pi; m=256: |K_B - K_A|/max K = 2.1e-14, pair weight 0.776/pi
+   Lam=-sqrt5  (53 nodes): m=64: |K_B - K_A|/max K = 1.4e-14, pair weight 0.614/pi; m=128: |K_B - K_A|/max K = 2.1e-14, pair weight 0.590/pi; m=256: |K_B - K_A|/max K = 2.8e-14, pair weight 0.592/pi
+  [PASS] P3 GANDALF's ladder eigenvectors give the continuum kernel at the nodes; same pair-weight deviations
+== t5b_pair_weight: 4/4 checks passed (1.2 s)

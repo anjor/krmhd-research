@@ -38,10 +38,11 @@ D10 Landau roots (zeros of the continuation into Im zeta < 0)
     Lambda=+sqrt5: (-1.687986116e-40 - 0.4099583848j);  Lambda=-sqrt5: (1.242246887 - 0.8352996325j)
   [PASS] Lambda=+sqrt5 least-damped root -0.409958 i (reference value) 
   [PASS] Lambda=-sqrt5 least-damped roots +-1.242247 - 0.835300 i (reference values) 
-    Lambda = 1 + 0.01: root (1.2959839e-62 - 0.0056062538j), rel. dev. from -i(Lambda-1)/sqrt(pi) = 0.00632
-    Lambda = 1 + 0.001: root (-2.0943448e-56 - 0.00056383069j), rel. dev. from -i(Lambda-1)/sqrt(pi) = 0.000636
-    Lambda = 1 + 0.0001: root (8.5807784e-67 - 5.6415367e-5j), rel. dev. from -i(Lambda-1)/sqrt(pi) = 6.37e-5
+    Lambda = 1 + 0.01: root (1.2959839e-62 - 0.0056062538j), rel. dev. from -i(Lambda-1)/sqrt(pi) = 0.00632; (root/lead - 1)/delta = -0.631738 (-2/pi = -0.63662)
+    Lambda = 1 + 0.001: root (-2.0943448e-56 - 0.00056383069j), rel. dev. from -i(Lambda-1)/sqrt(pi) = 0.000636; (root/lead - 1)/delta = -0.636128 (-2/pi = -0.63662)
+    Lambda = 1 + 0.0001: root (8.5807784e-67 - 5.6415367e-5j), rel. dev. from -i(Lambda-1)/sqrt(pi) = 6.37e-5; (root/lead - 1)/delta = -0.636571 (-2/pi = -0.63662)
   [PASS] Lambda -> 1+: zeta_L = -i (Lambda - 1)/sqrt(pi) (1 + O(Lambda - 1))  [Schekochihin et al. 2009 eq. 190 with Lambda+ - 1 = 1/beta] 
+  [PASS] Lambda = 1 + delta: zeta_L = -i (delta/sqrt(pi)) [1 - 2 delta/pi + O(delta^2)]  (|(root/lead - 1)/delta + 2/pi| < delta) 
 D11 Vlasov-Poisson / Jeans correspondence
   [PASS] eps_VP(k lambda_D) = eps(Lambda = -(k lambda_D)^2); eps_Jeans(k/k_J) = eps(Lambda = (k/k_J)^2) 8.43e-31
 ALL s03 CHECKS PASSED

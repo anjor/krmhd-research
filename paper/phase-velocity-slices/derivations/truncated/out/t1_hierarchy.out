@@ -72,17 +72,17 @@ D. krmhd_rhs in matrix form and the exact slice equation
   [PASS] D3 control: dropping the u_j Psi advection fails
 ====================================================================================================
 E. Slice leakage through gandalf_step (one GANDALF integration per case, recorded below)
-W1013 20:28:37.364829 43181746 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
-   imex_rk222 zero      nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 6.21e-16  (wall 1.2 s incl. compile)
+W1014 16:25:24.231760 44038383 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+   imex_rk222 zero      nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 6.21e-16  (wall 1.1 s incl. compile)
    imex_rk222 zero      nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.02e-04  (wall 0.1 s incl. compile)
    imex_rk222 zero      nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 2.04e-04  (wall 0.1 s incl. compile)
    imex_rk222 symmetric nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 5.87e-16  (wall 0.9 s incl. compile)
    imex_rk222 symmetric nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 8.68e-05  (wall 0.1 s incl. compile)
    imex_rk222 symmetric nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.74e-04  (wall 0.1 s incl. compile)
-   lawson_rk4 zero      nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 3.15e-15  (wall 1.8 s incl. compile)
+   lawson_rk4 zero      nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 3.15e-15  (wall 1.6 s incl. compile)
    lawson_rk4 zero      nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.02e-04  (wall 0.1 s incl. compile)
    lawson_rk4 zero      nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 2.04e-04  (wall 0.1 s incl. compile)
-   lawson_rk4 symmetric nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.28e-15  (wall 1.7 s incl. compile)
+   lawson_rk4 symmetric nu=0.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.28e-15  (wall 1.6 s incl. compile)
    lawson_rk4 symmetric nu=0.5: max_(l != j0) |a_l| / |a_j0| after 20 steps = 8.68e-05  (wall 0.1 s incl. compile)
    lawson_rk4 symmetric nu=1.0: max_(l != j0) |a_l| / |a_j0| after 20 steps = 1.74e-04  (wall 0.1 s incl. compile)
   [PASS] E1 nu = 0: no leakage between slices through gandalf_step (IMEX and Lawson, both closures, eta, eta_z on)
@@ -94,16 +94,16 @@ W1013 20:28:37.364829 43181746 cpp_gen_intrinsics.cc:74] Empty bitcode string pr
    first-order estimate of the largest leakage at nu = 1: 2.037e-04; measured (IMEX, zero closure) 2.037e-04
   [PASS] E3 measured leakage matches the first-order collisional coupling nu T |(W^T C R)_{l j0}| / n_j0 :: ratio 0.9999
 GANDALF integrations (scheme, closure, nu, steps, wall s):
-   imex_rk222 zero nu=0.0 steps=20 wall=1.2s grid=16^3 M=10
+   imex_rk222 zero nu=0.0 steps=20 wall=1.1s grid=16^3 M=10
    imex_rk222 zero nu=0.5 steps=20 wall=0.1s grid=16^3 M=10
    imex_rk222 zero nu=1.0 steps=20 wall=0.1s grid=16^3 M=10
    imex_rk222 symmetric nu=0.0 steps=20 wall=0.9s grid=16^3 M=10
    imex_rk222 symmetric nu=0.5 steps=20 wall=0.1s grid=16^3 M=10
    imex_rk222 symmetric nu=1.0 steps=20 wall=0.1s grid=16^3 M=10
-   lawson_rk4 zero nu=0.0 steps=20 wall=1.8s grid=16^3 M=10
+   lawson_rk4 zero nu=0.0 steps=20 wall=1.6s grid=16^3 M=10
    lawson_rk4 zero nu=0.5 steps=20 wall=0.1s grid=16^3 M=10
    lawson_rk4 zero nu=1.0 steps=20 wall=0.1s grid=16^3 M=10
-   lawson_rk4 symmetric nu=0.0 steps=20 wall=1.7s grid=16^3 M=10
+   lawson_rk4 symmetric nu=0.0 steps=20 wall=1.6s grid=16^3 M=10
    lawson_rk4 symmetric nu=0.5 steps=20 wall=0.1s grid=16^3 M=10
    lawson_rk4 symmetric nu=1.0 steps=20 wall=0.1s grid=16^3 M=10
-== t1_hierarchy: 12/12 checks passed (21.0 s)
+== t1_hierarchy: 12/12 checks passed (18.9 s)

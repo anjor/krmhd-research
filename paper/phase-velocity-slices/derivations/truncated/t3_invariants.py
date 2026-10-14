@@ -3,7 +3,8 @@ forms with a k-independent matrix K that are conserved for all z+- are exactly Q
 (M+1)-dimensional family; krmhd_rhs conserves them, the odd-M helicity Pi A^-1 and the even-M principal-value form,
 but not the controls; on the retained Hermite span CMM's W, Gamma and H are Q_1/2, Q_u/2 and Q_{1/u}/2; the Galerkin
 matrix of P(1/v) is Pi A^-1 at odd M and differs at even M; and the even-M principal-value helicity converges only
-like M^(-1/2). Supports Section 8 (conserved forms, helicity at odd and even M) and Appendix C of the paper.
+like M^(-1/2). Supports Section 7 (conserved forms, helicity at odd and even M), Section 8 (conservation rates) and
+Appendix C of the paper.
 
 A  {K = K^T : K A symmetric} has dimension M+1 and equals span{Pi A^n, n = 0..M} = {W diag(phi_j) W^T}:
    every conserved quadratic form is Q_phi = g^T Pi phi(A) g = sum_j phi(u_j) |a_j|^2 / n_j.
@@ -16,9 +17,11 @@ C  (SymPy, symbolic Lam) for G in the span of the first M+1 Hermite functions (z
    CMM (v_th = 1, n T = 1, no volume average): W^+- (B13, B31) = Q_1/2, Gamma^+- (B25, B32) = Q_u/2,
    H^+- (B18) = Q_{1/u}/2.
 D  Galerkin matrix B_M = [P int psi_m psi_n / v dv]: odd M: B_M = J^-1 = Pi A^-1 (any Lam);
-   even M: B_M = J^D + lambda_0 (e d^T + d e^T), e_m = p_m(0), d_m = p_m'(0), lambda_0 the Gauss weight of the node 0.
+   even M: B_M = J^D + lambda_0 (e d^T + d e^T), e_m = p_m(0), d_m = p_m'(0), lambda_0 the Gauss weight of the node 0;
+   lambda_0 = [pi/(2M+3)]^(1/2) (1 + O(M^-2)).
 E  Convergence for a non-band-limited G = F_M(v - a): W, Gamma (all M) and H (odd M) converge spectrally;
-   the even-M principal-value H converges like M^(-1/2), its error being -2 lambda_0 (e.g)(d.g) at Lam = inf.
+   the even-M principal-value H converges like M^(-1/2), its error being -2 lambda_0 (e.g)(d.g) at Lam = inf, and
+   5% to 18% of H at M = 64 and 128.
 """
 from __future__ import annotations
 
@@ -248,6 +251,16 @@ for M in (33, 65, 129):
         okD2 = okD2 and err < 1e-11
     print(f"   M={M}: max|B_M - Pi A^-1| / max|B_M| = {err:.1e} (Lam = +-sqrt5)")
 C.check("D2 odd M = 33, 65, 129: Pi A^-1 equals the Galerkin projection of P(1/v) to round-off", okD2)
+# size of the node term at even M: lambda_0 = lambda^inf_{M/2} ~ [pi/(2M+3)]^(1/2) (weights normalised to sum 1)
+devs = []
+for M in (2, 4, 10, 16, 64, 128, 256, 1024):
+    xg, wg = roots_hermite(M + 1)
+    j0 = int(np.argmin(np.abs(xg)))
+    devs.append((M, wg[j0] / np.sqrt(np.pi) / np.sqrt(np.pi / (2 * M + 3)) - 1))
+print("   lambda^inf_(M/2) / [pi/(2M+3)]^(1/2) - 1 at M = " + ", ".join(f"{M}: {d:+.2e}" for M, d in devs))
+C.check("D3 even M: the weight of the node u = 0 is lambda^inf_(M/2) = [pi/(2M+3)]^(1/2) (1 + O(M^-2))",
+        all(abs(d) * M ** 2 < 0.1 for M, d in devs) and abs(devs[-1][1]) < 1e-7,
+        f"max |rel. dev.| M^2 = {max(abs(d) * M ** 2 for M, d in devs):.3f}")
 
 section("E. Convergence to the continuum for G = F_M(v - a), a = 0.5 (all Hermite coefficients nonzero)")
 a = 0.5
@@ -299,4 +312,10 @@ for Lam in (SQRT5, -SQRT5, np.inf):
     okE = okE and abs(slope + 0.5) < 0.1
 C.check("E1 W, Q_u (all M) and H (odd M) converge spectrally; even-M PV H converges ~ M^-1/2 (local slopes within 0.1), "
         "with exactly the predicted node-zero error at Lam = inf (M >= 16)", okE)
+# size of the even-M error relative to the helicity at M = 64 and 128 (quoted in the paper as 5% to 18%)
+relE = [(Lam, M, abs(e) / Hc) for (Lam, M, e) in rowsE if M in (64, 128)]
+print("   |even-M PV error|/H at M = 64, 128: " + "; ".join(f"Lam={L_:+.4f} M={M}: {100 * r:.1f}%" for L_, M, r in relE))
+C.check("E2 at M = 64 and 128 the even-M PV helicity error is between 5% and 18% of H (Lam = sqrt5, -sqrt5, inf)",
+        all(0.05 <= r <= 0.18 for _, _, r in relE),
+        f"min {100 * min(r for *_, r in relE):.1f}%, max {100 * max(r for *_, r in relE):.1f}%")
 C.finish()

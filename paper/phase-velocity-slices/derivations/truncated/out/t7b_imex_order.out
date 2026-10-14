@@ -9,7 +9,7 @@ A. Order conditions
 ====================================================================================================
 B/C. Convergence of g(T): gandalf_step (IMEX, Lawson) and the re-implemented IMEX step
    case: single z+ (z- = 0); max|grad_perp z+| = 2.000, max|grad_perp z-| = 0.000; |N(g)| / |s d_z(A g)| = 0.338
-W1013 20:30:27.923579 43186035 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+W1014 16:30:14.413267 44043838 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
      re-implemented step (z at t + dt/2) vs gandalf_step: max relative difference 0.0e+00
      imex     : rel. error of g(T) for dt = T/[16, 32, 64, 128, 256]: 1.62e-02 6.35e-03 2.91e-03 1.42e-03 7.06e-04; observed orders [1.35, 1.12, 1.04, 1.01]
                 |W(T)-W(0)|/W(0): 9.41e-04 1.61e-04 3.09e-05 6.58e-06 1.50e-06; orders [2.55, 2.38, 2.23, 2.13]; |Gamma(T)-Gamma(0)|/|Gamma(0)|: 2.34e-02 3.97e-03 7.54e-04 1.59e-04 3.60e-05
@@ -33,17 +33,17 @@ W1013 20:30:27.923579 43186035 cpp_gen_intrinsics.cc:74] Empty bitcode string pr
   [PASS] D1 single-wave case: the W drift converges at local orders 2.6 -> 2.1 (second order asymptotically) for GANDALF and the consistent variant alike, while g(T) converges at first order
 GANDALF integrations (what, case, steps, dt, wall s), grid 8^3, M = 6, Lam = sqrt5, T = 0.2:
    imex single step (C1) | single z+ (z- = 0) | steps=1 | dt=1.00e-02 | wall=0.8s
-   var_half single step (C1) | single z+ (z- = 0) | steps=1 | dt=1.00e-02 | wall=0.4s
-   lawson_rk4 reference | single z+ (z- = 0) | steps=2048 | dt=9.77e-05 | wall=3.5s
+   var_half single step (C1) | single z+ (z- = 0) | steps=1 | dt=1.00e-02 | wall=0.3s
+   lawson_rk4 reference | single z+ (z- = 0) | steps=2048 | dt=9.77e-05 | wall=3.3s
    imex convergence | single z+ (z- = 0) | steps=496 | dt=None | wall=0.6s
-   var_half convergence | single z+ (z- = 0) | steps=496 | dt=None | wall=1.3s
-   var_gamma convergence | single z+ (z- = 0) | steps=496 | dt=None | wall=1.3s
+   var_half convergence | single z+ (z- = 0) | steps=496 | dt=None | wall=1.2s
+   var_gamma convergence | single z+ (z- = 0) | steps=496 | dt=None | wall=1.2s
    lawson convergence | single z+ (z- = 0) | steps=240 | dt=None | wall=0.3s
    imex single step (C1) | general z+- | steps=1 | dt=1.00e-02 | wall=0.0s
    var_half single step (C1) | general z+- | steps=1 | dt=1.00e-02 | wall=0.0s
-   lawson_rk4 reference | general z+- | steps=2048 | dt=9.77e-05 | wall=2.6s
-   imex convergence | general z+- | steps=496 | dt=None | wall=0.7s
-   var_half convergence | general z+- | steps=496 | dt=None | wall=1.3s
-   var_gamma convergence | general z+- | steps=496 | dt=None | wall=1.4s
+   lawson_rk4 reference | general z+- | steps=2048 | dt=9.77e-05 | wall=2.4s
+   imex convergence | general z+- | steps=496 | dt=None | wall=0.6s
+   var_half convergence | general z+- | steps=496 | dt=None | wall=1.2s
+   var_gamma convergence | general z+- | steps=496 | dt=None | wall=1.2s
    lawson convergence | general z+- | steps=240 | dt=None | wall=0.3s
-== t7b_imex_order: 5/5 checks passed (15.7 s)
+== t7b_imex_order: 5/5 checks passed (14.2 s)

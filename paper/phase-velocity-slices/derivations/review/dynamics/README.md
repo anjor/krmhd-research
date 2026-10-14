@@ -7,9 +7,9 @@ These scripts check the main dynamical results again by routes that share no cod
 | `c01_lagrangian_pointwise.py` | the frozen-line theorem and Cauchy's solution pointwise along Lagrangian markers, converging with N = 16 to 48 | Section 6 | 40 s |
 | `c01_lagrangian_pointwise.py 32,48,64 1.5 0.25,0.5 strong` | the same test in a strong flow that reaches the grid scale (convergence printed, not asserted; output in `out/c01_lagrangian_pointwise_strong.out`) | Section 6 | 189 s |
 | `c02_forcing_same_instant.py 16,24,32,48` | the corollary for white forcing when the g injections and O(1) Phi kicks are correlated at the same instant, with an anticipating control | Section 6 | 225 s |
-| `c04_tilt_landau.py` | the tilt results by direct 2D quadrature, and the sign of the field-aligned flux from g_0 at M = 5000 | Section 5, Appendix E | 19 s |
-| `c05_imex.py` | the stability function and order of GANDALF's IMEX-RK222 step for the slice advection, and the blow-up of the d03 run at dt = 0.002 | Section 6, Appendix D | 38 s |
-| `c06_algebra.py` | the Christoffel-Darboux identity, the normalisation of hermite_flux, the fourth-order statement, the absence of a Fjortoft-type constraint, the range of Lambda and the s u = -1 slice | Sections 5, 6 and 7 | 4 s |
+| `c04_tilt_landau.py` | the tilt results by direct 2D quadrature, and the sign of the field-aligned flux from g_0 at M = 5000 | Section 5 (k_z-based versus field-aligned split); the tilt statistics of an earlier draft's appendix are not in the current paper | 19 s |
+| `c05_imex.py` | the stability function and order of GANDALF's IMEX-RK222 step for the slice advection, and the blow-up of the d03 run at dt = 0.002 | not in the current paper (its runs use Lawson-RK4) | 38 s |
+| `c06_algebra.py` | the Christoffel-Darboux identity, the normalisation of hermite_flux, the fourth-order statement (not in the current paper), the absence of a Fjortoft-type constraint, the range of Lambda and the s u = -1 slice | Sections 3, 5, 6 and 8 | 4 s |
 
 `c00_core.py` holds the helpers shared by these scripts. A log of the GANDALF time integrations goes to `paper/phase-velocity-slices/data/derivations/review/dynamics/`, which is git-ignored. There is no c03: that check concerns a question outside the scope of this paper. Run times are wall times of one run on an Apple M1 Pro (Python 3.14, krmhd 0.6.0).
 

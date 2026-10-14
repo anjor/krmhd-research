@@ -1,8 +1,9 @@
 """s00: equation numbers of Chandran, Mallet & Meyrand (2026, arXiv:2607.27981v1; CMM below) read from their LaTeX
 source. The script recomputes the number of every CMM equation label cited in the paper and in these derivations from
-the numbering rules of the journal class file shipped with the source, and checks a few printed formulas (Lambda+-,
-sigma, G+-, kappa as printed in (B16), tau, F_M, v_th) by string matching. It supports the CMM equation numbers quoted
-in Section 2 and Appendix A of the paper (and wherever else CMM equations are cited).
+the numbering rules of the journal class file shipped with the source, checks it against the number quoted in the
+paper (a label fails if its number differs), and checks a few printed formulas (Lambda+-, sigma, G+-, kappa as
+printed in (B16), tau, F_M, v_th) by string matching. It supports the CMM equation numbers quoted in Sections 2, 3, 4
+and 7 and Appendix A of the paper.
 
 The source is downloaded data and is read as text only; run the script in isolated mode, from the repository root:
 
@@ -153,63 +154,69 @@ while True:
             labels[lab] = num if numbered else None
             order.append(lab)
 
-# CMM labels cited in the paper and the derivations, with the role they play there
+# CMM labels cited in the paper and the derivations: (label, number quoted in the paper or the derivations, role)
 USED = [
-    ('eq:poissonbracket', 'Poisson bracket {f,g} = z.(grad f x grad g)'),
-    ('eq:WGK', 'gyrokinetic free energy W'),
-    ('eq:defHGK', 'gyrokinetic helicity H'),
-    ('eq:realimag', 'Plemelj split of H into P-integral and i pi (psi^2/F)_{v=0}'),
-    ('eq:GKvpar0', 'v_par = 0 equation'),
-    ('eq:ImHcons', 'conservation of Im H'),
-    ('eq:kperprhoe', 'contains tau = T_0i/T_0e'),
-    ('eq:defphiA', 'normalised potentials varphi, A'),
-    ('eq:ddt', 'd/dt = d_t + u_perp.grad'),
-    ('eq:gradpar', 'grad_par = d_z + b_perp.grad/v_A'),
-    ('eq:J0J1', 'J0 and 2J1/a expansions'),
-    ('eq:Gamma0', 'Gamma0, Gamma1 expansions'),
-    ('eq:dgdt', 'ITEF ion kinetic equation'),
-    ('eq:gkeKRMHD', 'KRMHD induction'),
-    ('eq:vorticity', 'KRMHD vorticity'),
-    ('eq:KRMHDdgdt', 'KRMHD ion kinetic equation for g_09'),
-    ('eq:defg09', 'g_09 = g_i - vperp^2 dB/B F0'),
-    ('eq:dnKRMHD', 'overline g_09 = dn/n - dB/B'),
-    ('eq:perpAmpereKRMHD', 'perpendicular pressure balance'),
-    ('eq:KRMHDWcompr', 'compressive free energy'),
-    ('eq:HnAKRMHD', 'H_ph-sp in KRMHD'),
-    ('eq:KRMHDdndB', 'dn/n = int G_n, dB/B = int G_B'),
-    ('eq:Gn', 'G_n'),
-    ('eq:GB', 'G_B'),
-    ('eq:dGpmdt', 'branch equation'),
-    ('eq:GpGm', 'G+ and G-'),
-    ('eq:g09sigma', 'sigma'),
-    ('eq:Lambdapm', 'Lambda+-'),
-    ('eq:Gl', 'Laguerre expansion'),
-    ('eq:dGldt', 'l >= 2 free streaming'),
-    ('eq:Wpmcompr', 'W+-'),
-    ('eq:defWtilde', 'W tilde'),
-    ('eq:Wcomprtotal', 'W_compr decomposition'),
-    ('eq:defkappa', 'kappa'),
-    ('eq:Hentrtotal', 'H decomposition'),
-    ('eq:Hpm', 'H+-'),
-    ('eq:Hentrtilde', 'H tilde'),
-    ('eq:Khel0', 'd/dt int G^2 v/(2F)'),
-    ('eq:Khel1', 'same, integrated by parts'),
-    ('eq:Mn', 'moments M_n'),
-    ('eq:dM0dt', 'dM0/dt'),
-    ('eq:dM1dt', 'dM1/dt'),
-    ('eq:Gammapm', 'Gamma+-'),
-    ('eq:Gammacons', 'dGamma/dt = 0'),
-    ('eq:hermiteexp', 'Hermite expansion'),
-    ('eq:orthogonality', 'Hermite orthogonality'),
-    ('eq:valGm', 'Hermite coefficients'),
-    ('eq:WcomprHerm', 'W+- in Hermite form'),
-    ('eq:GammapmHerm', 'Gamma+- in Hermite form'),
+    ('eq:poissonbracket', '2.9', 'Poisson bracket {f,g} = z.(grad f x grad g)'),
+    ('eq:WGK', '2.13', 'gyrokinetic free energy W'),
+    ('eq:defHGK', '2.15', 'gyrokinetic helicity H'),
+    ('eq:realimag', '2.17', 'Plemelj split of H into P-integral and i pi (psi^2/F)_{v=0}'),
+    ('eq:defpsi', '2.18', 'psi_s = h_s - (q_s/T_0s) <chi>_R F_0s (Section 4: psi_s at v_par = 0)'),
+    ('eq:GKvpar0', '2.22', 'v_par = 0 equation'),
+    ('eq:ImHcons', '2.23', 'conservation of Im H'),
+    ('eq:kperprhoe', '3.1', 'contains tau = T_0i/T_0e'),
+    ('eq:defphiA', '3.2', 'normalised potentials varphi, A'),
+    ('eq:ddt', '3.3', 'd/dt = d_t + u_perp.grad'),
+    ('eq:gradpar', '3.4', 'grad_par = d_z + b_perp.grad/v_A'),
+    ('eq:dAdt', '3.6', 'ITEF induction equation, with the grad_par(dn/n) term (Section 4, finite k_perp rho_i)'),
+    ('eq:econt', '3.7', 'ITEF electron continuity, with the rho_i {dn/n, dB/B} term (Section 4)'),
+    ('eq:dn', '3.10', 'ITEF quasineutrality with Gamma_0 and J_0 (Section 4)'),
+    ('eq:J0J1', '3.11', 'J0 and 2J1/a expansions'),
+    ('eq:Gamma0', '3.13', 'Gamma0, Gamma1 expansions'),
+    ('eq:dB', '3.14', 'ITEF perpendicular pressure balance with Gamma_1 and J_1 (Section 4)'),
+    ('eq:dgdt', '3.16', 'ITEF ion kinetic equation'),
+    ('eq:gkeKRMHD', '3.23', 'KRMHD induction'),
+    ('eq:vorticity', '3.24', 'KRMHD vorticity'),
+    ('eq:KRMHDdgdt', '3.25', 'KRMHD ion kinetic equation for g_09'),
+    ('eq:defg09', '3.26', 'g_09 = g_i - vperp^2 dB/B F0'),
+    ('eq:dnKRMHD', '3.27', 'overline g_09 = dn/n - dB/B'),
+    ('eq:perpAmpereKRMHD', '3.28', 'perpendicular pressure balance'),
+    ('eq:KRMHDWcompr', '3.31', 'compressive free energy'),
+    ('eq:HnAKRMHD', '3.33', 'H_ph-sp in KRMHD'),
+    ('eq:KRMHDdndB', 'B1', 'dn/n = int G_n, dB/B = int G_B'),
+    ('eq:Gn', 'B2', 'G_n'),
+    ('eq:GB', 'B3', 'G_B'),
+    ('eq:dGpmdt', 'B4', 'branch equation'),
+    ('eq:GpGm', 'B5', 'G+ and G-'),
+    ('eq:g09sigma', 'B6', 'sigma'),
+    ('eq:Lambdapm', 'B7', 'Lambda+-'),
+    ('eq:Gl', 'B8', 'Laguerre expansion'),
+    ('eq:dGldt', 'B10', 'l >= 2 free streaming'),
+    ('eq:Wpmcons', 'B12', 'dW+-/dt = 0 and dWtilde/dt = 0 (Appendix A)'),
+    ('eq:Wpmcompr', 'B13', 'W+-'),
+    ('eq:defWtilde', 'B14', 'W tilde'),
+    ('eq:Wcomprtotal', 'B15', 'W_compr decomposition'),
+    ('eq:defkappa', 'B16', 'kappa'),
+    ('eq:Hentrtotal', 'B17', 'H decomposition'),
+    ('eq:Hpm', 'B18', 'H+-'),
+    ('eq:Hentrtilde', 'B19', 'H tilde'),
+    ('eq:Khel0', 'B20', 'd/dt int G^2 v/(2F)'),
+    ('eq:Khel1', 'B21', 'same, integrated by parts'),
+    ('eq:Mn', 'B22', 'moments M_n'),
+    ('eq:dM0dt', 'B23', 'dM0/dt'),
+    ('eq:dM1dt', 'B24', 'dM1/dt'),
+    ('eq:Gammapm', 'B25', 'Gamma+-'),
+    ('eq:Gammacons', 'B26', 'dGamma/dt = 0'),
+    ('eq:hermiteexp', 'B27', 'Hermite expansion'),
+    ('eq:orthogonality', 'B29', 'Hermite orthogonality'),
+    ('eq:valGm', 'B30', 'Hermite coefficients'),
+    ('eq:WcomprHerm', 'B31', 'W+- in Hermite form'),
+    ('eq:GammapmHerm', 'B32', 'Gamma+- in Hermite form'),
 ]
-print(f"         {'label':22s} {'number':>7s}  role")
-for lab, role in USED:
+print(f"         {'label':22s} {'number':>7s} {'cited':>6s}  role")
+for lab, cited, role in USED:
     num = labels.get(lab, 'MISSING')
-    ok = not (num == 'MISSING' or num is None)
-    print(f"  [{'PASS' if ok else 'FAIL'}] {lab:22s} {str(num):>7s}  {role}")
+    ok = num == cited
+    print(f"  [{'PASS' if ok else 'FAIL'}] {lab:22s} {str(num):>7s} {cited:>6s}  {role}")
     if not ok:
         fails.append(lab)
 
