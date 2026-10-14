@@ -2,7 +2,7 @@
 
 We derive the branches of section~\ref{mod:branches} following S09 (\S6.2) and CMM (appendix~B), with $\delta_n\equiv\delta n/n$, $\delta_B\equiv\delta B/B$ and $\langle\cdot\rangle$ the volume average. We checked every identity symbolically, and the moments and splits also by quadrature over $(v_\perp,v_\parallel)$ for random distribution functions.
 
-\begin{table}[t]
+\begin{table}[h]
   \centering
   \caption{Conventions of this paper, CMM \citep{Chandran2026}, S09 \citep{Schekochihin2009} and GANDALF \citep{Kanekar2025}, with equation numbers of the respective papers; ``same'' means as in this paper.}
   \label{tab:conventions}
@@ -116,13 +116,4 @@ with $\tilde W_{\rm compr}$ the part with $l\ge2$. Each part is conserved (S09, 
 \end{equation}
 with $\tilde H_{\rm ph\text{-}sp}$ the sum over $l\ge2$ (CMM eqs~B18--B19).
 
-The coefficients (\ref{appA:cpm}) use $\kappa$ of (\ref{eq:Lambdapm}) (S09 eq.~204) and are one quarter of those in S09's eq.~(213), as CMM state. CMM's eq.~(B16) prints $\kappa=[(1+\tau/Z)+\beta_i^{-2}]^{1/2}$, which gives $\sqrt3$ instead of $\sqrt5$ at $\beta_i=\tau=Z=1$. Their eqs~(B6)--(B7) are correct, so the misprint affects only $c_\pm$ in (B15) and (B17), our (\ref{appA:split}) and (\ref{appA:Hsplit}), which then fail. For random distribution functions at $(\beta_i,\tau/Z)=(1,1)$, $(0.3,2)$, $(5,0.5)$, $(0.1,0.1)$ and $(20,3)$, the relative difference between the two sides with the printed $\kappa$ is $1.6\times10^{-4}$ to $7.2\times10^{-2}$ for $W_{\rm compr}$ and $2.3\times10^{-4}$ to $0.29$ for $H_{\rm ph\text{-}sp}$ ($2.5\times10^{-2}$ and $3.2\times10^{-2}$ at $\beta_i=\tau=Z=1$). It depends on the distribution function, being $\delta c_+W^+_{\rm compr}+\delta c_-W^-_{\rm compr}$ (or the same combination of $H^\pm_{\rm ph\text{-}sp}$) with $\delta c_\pm$ the changes in $c_\pm$; with the square restored it is below $5\times10^{-14}$.
-
-\subsection{The case \texorpdfstring{$\beta_i=\tau=Z=1$}{beta = tau = Z = 1}}\label{appA:golden}
-
-Here $\Lambda^\pm=\pm\sqrt5$, $\sigma=3+\sqrt5$, and both mixing coefficients in $G^\pm$ are $r=(3-\sqrt5)/2=\phi^{-2}\approx0.382$, with $\phi$ the golden ratio:
-\begin{equation*}
-  G^+=G_B+r\,G_n,\qquad G^-=G_n+r\,G_B,\qquad
-  G_0=\phi\,(G^--G^+),\qquad G_1=\phi^2G^++G^-.
-\end{equation*}
-Since $\vth=v_A$, the parallel flow is $u_\parallel/v_A=\phi\,(M_1[G^-]-M_1[G^+])$ with $M_1$ in the variable $u$, and $c_+=5+2\sqrt5=\phi^2(1+\phi^2)\approx9.472$, $c_-=(5+\sqrt5)/2=1+\phi^2\approx3.618$.
+The coefficients (\ref{appA:cpm}) use $\kappa$ of (\ref{eq:Lambdapm}) (S09 eq.~204) and are one quarter of those in S09's eq.~(213), as CMM state. CMM's eq.~(B16) prints $\kappa=[(1+\tau/Z)+\beta_i^{-2}]^{1/2}$, which gives $\sqrt3$ instead of $\sqrt5$ at $\beta_i=\tau=Z=1$. Their eqs~(B6)--(B7) are correct, so the misprint affects only $c_\pm$ in (B15) and (B17), our (\ref{appA:split}) and (\ref{appA:Hsplit}), which then fail. For random distribution functions the relative error with the printed $\kappa$ is up to $7.2\times10^{-2}$ for $W_{\rm compr}$ and $0.29$ for $H_{\rm ph\text{-}sp}$ over the parameters we tried ($2.5\times10^{-2}$ and $3.2\times10^{-2}$ at $\beta_i=\tau=Z=1$), and below $5\times10^{-14}$ with the square restored.

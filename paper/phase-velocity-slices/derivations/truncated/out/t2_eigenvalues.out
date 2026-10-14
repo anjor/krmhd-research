@@ -55,11 +55,15 @@ D. Parity, the exact zero eigenvalue at even M, the u = 0 slice and Im H
    M=9: psi(0)^T A = [ 0.000e+00  0.000e+00  0.000e+00  4.282e-17  0.000e+00 -1.076e-17
   0.000e+00  0.000e+00  0.000e+00  8.332e-01]; predicted last entry psi_8(0) sqrt(9/2) = 0.833197
   [PASS] D3 left null vector psi_m(0) (zero closure, any Lam), last entry x sqrt(M)/(sqrt(M)+sqrt(M+1)) (copy); odd M leaks psi_(M-1)(0) sqrt(M/2) g_M
-   M=10 Lam=+2.236: |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 5.6e-16; Im H = (pi/2) sum|a0|^2 = 3.3162e+02, relative d/dt = 4.3e-18
-   M=10 Lam=-2.236: |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 5.6e-16; Im H = (pi/2) sum|a0|^2 = 3.3162e+02, relative d/dt = 4.3e-18
-   M=16 Lam=+2.236: |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 6.5e-16; Im H = (pi/2) sum|a0|^2 = 5.0302e+02, relative d/dt = 1.8e-18
-   M=16 Lam=-2.236: |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 6.5e-16; Im H = (pi/2) sum|a0|^2 = 5.0302e+02, relative d/dt = 1.8e-18
-  [PASS] D4 krmhd_rhs: d_t g(v=0) = -{Phi, g(v=0)} exactly and Im H = (pi/2) sum_k |g(v=0)|^2 is conserved
+   M=10 Lam=+2.236 zero     : |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 5.6e-16; (pi/2) sum|a0|^2 = 3.3162e+02, relative d/dt = 4.3e-18
+   M=10 Lam=+2.236 symmetric: |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 7.2e-16; (pi/2) sum|a0|^2 = 3.0570e+02, relative d/dt = 7.1e-19
+   M=10 Lam=-2.236 zero     : |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 5.6e-16; (pi/2) sum|a0|^2 = 3.3162e+02, relative d/dt = 4.3e-18
+   M=10 Lam=-2.236 symmetric: |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 7.2e-16; (pi/2) sum|a0|^2 = 3.0570e+02, relative d/dt = 7.1e-19
+   M=16 Lam=+2.236 zero     : |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 6.5e-16; (pi/2) sum|a0|^2 = 5.0302e+02, relative d/dt = 1.8e-18
+   M=16 Lam=+2.236 symmetric: |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 6.1e-16; (pi/2) sum|a0|^2 = 4.9127e+02, relative d/dt = 8.7e-19
+   M=16 Lam=-2.236 zero     : |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 6.5e-16; (pi/2) sum|a0|^2 = 5.0302e+02, relative d/dt = 1.8e-18
+   M=16 Lam=-2.236 symmetric: |d_t a0 + {Phi, a0}|/|{Phi, a0}| = 6.1e-16; (pi/2) sum|a0|^2 = 4.9127e+02, relative d/dt = 8.7e-19
+  [PASS] D4 krmhd_rhs (both closures): d_t g(v=0) = -{Phi, g(v=0)} exactly and Im H = (pi/2) sum_k |g(v=0)|^2 is conserved (zero closure; for the copy closure the u = 0 slice energy)
 ====================================================================================================
 E. u_max for GANDALF's matrix
      M |  Lam=+sqrt5 zero | Lam=-sqrt5 zero | Lam=inf zero    | Lam=+sqrt5 copy | Lam=-sqrt5 copy | Lam=inf copy
@@ -77,6 +81,9 @@ E. u_max for GANDALF's matrix
    M=20 Lam=2.23607: u_max - x_max = -5.170575e-14; first order -lambda_max x_max/Lam = -5.2101009e-14 (rel. diff 0.00759); + second order (lambda_max x_max/Lam^2) sum_k lambda_k x_k/(x_max - x_k) -> rel. diff 5.8e-5; estimate 1/(2 |Lam| x_max^2) = 0.00726
    M=20 Lam=-2.23607: u_max - x_max = 5.2502358e-14; first order -lambda_max x_max/Lam = 5.2101009e-14 (rel. diff 0.0077); + second order (lambda_max x_max/Lam^2) sum_k lambda_k x_k/(x_max - x_k) -> rel. diff 5.89e-5; estimate 1/(2 |Lam| x_max^2) = 0.00726
   [PASS] E3 (mpmath, 80 digits) the Lam-shift of u_max is -lambda_max x_max/Lam to O(1/(Lam x_max^2)) relative; the exact second-order term removes the residual
+   M=64 Lam=2.23607: u_max - x_max = -2.20581e-49; -lambda_max x_max/Lam = -2.21025e-49; x_max = 10.6160229819, lambda_max = 4.65547e-50, x_max e^(-x_max^2)/Lam = 5.38906e-49
+   M=64 Lam=-2.23607: u_max - x_max = 2.2147e-49; -lambda_max x_max/Lam = 2.21025e-49; x_max = 10.6160229819, lambda_max = 4.65547e-50, x_max e^(-x_max^2)/Lam = -5.38906e-49
+  [PASS] E4 (mpmath, 120 digits) at M = 64 the Lam-shift of u_max is about 1e-49 (between 1e-50 and 1e-48) and equals -lambda_max x_max/Lam to 1%
 ====================================================================================================
 F. Asymptotics of u_max(M)
    a_1 = -2.3381074105, a'_1 = -1.0187929716; 2^(-1/3)|a_1| = 1.855757, 2^(-2/3) a_1^2/10 = 0.344383, 2^(-1/3)|a'_1| = 0.808617, -2^(-5/3)(4/(5a'_1) + a'_1^2/5) = 0.181950
@@ -122,4 +129,4 @@ G. Conventions
    Lam=-2.2361, M=256, nu=300 (m/M)^6, k s = 2 pi: least-damped eigenvalue / (-i k s) = -1.24219931-0.83523093j; Landau root zeta_L = 1.24224689-0.83529963j; |difference| = 8.4e-05; distance to sqrt2 zeta_L, zeta_L/sqrt2: 0.620, 0.438
   [PASS] G2 GANDALF's operator reproduces the Landau root of 1 - (1 + zeta Z)/Lam (u = v/v_th, F_M ~ e^-u^2), not a sqrt2-rescaled one
   [PASS] G3 krmhd_rhs: d_t z+ = +i k_z z+ for z- = 0, so z+ ~ exp(i k_z (z + t)) propagates toward -z :: d_t z+/z+ = 0.000000+6.283185j, i k_z = 0.000000+6.283185j
-== t2_eigenvalues: 18/18 checks passed (10.5 s)
+== t2_eigenvalues: 19/19 checks passed (10.7 s)

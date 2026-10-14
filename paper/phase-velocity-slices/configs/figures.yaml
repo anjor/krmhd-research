@@ -1,5 +1,5 @@
-# Parameters of the computed figures of section 9 (deterministic computations, no time integration).
-# Read by analysis/fig_spectrum.py, analysis/fig_tilt.py, analysis/fig_dictionary.py and analysis/fig_reflection.py.
+# Parameters of the computed figures of section 8 (deterministic computations, no time integration).
+# Read by analysis/fig_spectrum.py and analysis/fig_dictionary.py.
 # Each script caches its numbers in data/computed/<figure>.npz (with a .json of metadata and checks) and plots
 # from the cache; it recomputes only when its section of this file changes or with --recompute.
 #
@@ -64,88 +64,12 @@ spectrum:
       tol: 1.0e-6
 
 # -------------------------------------------------------------------------------------------------------------
-# fig:tilt. Reported backward share B^z/(F^z + B^z) of the k_z-based Hermite flux for free streaming from g_0 along a
-# uniformly tilted field, Gaussian ensemble with effective tilt angle alpha (der-dynamics eq. 2.5, quadrature),
-# against tau = s sigma_par t; markers: GANDALF's hermite_flux and phase_unmixing_energy on the exact tilted-field
-# solution in a periodic box (the construction of derivations/dynamics/d06_tilt_kz_decomposition.py, T2).
-tilt:
-  s: 1.0
-  alpha_deg: [30.0, 45.0, 63.43]   # 63.43 deg is tan(alpha) = 2 as in d06
-  m: [1, 4, 16]
-  tau_min: 0.1
-  tau_max: 1000.0
-  n_tau: 161
-  box:
-    N: 32                          # grid N^3, L = 1, 2/3 dealiasing
-    M: 256                         # GANDALF ladder used for the exact solution (Lambda -> infinity)
-    Lambda: 1.0e300                # free streaming; GANDALF's ladder is then symmetric
-    b0: 0.5                        # grad_par = d_z + b0 d_x; tan(alpha) = b0 sigma_x/sigma_z = 1
-    sigma_z: 1.5                   # Gaussian spectrum widths in units of 2 pi/L
-    sigma_x: 3.0
-    sigma_y: 3.0
-    seed: 3
-    tau_cut: 6.0                   # keep |k_par| < sqrt(2M/3)/(s t(tau_cut)): no retained mode reaches m = M/3
-    tau: [0.75, 1.5, 3.0, 4.5, 6.0]
-    m_diag: [1, 2, 4, 8, 16]
-  checks:
-    share_table:                   # derivations/dynamics/out/d06_tilt_kz_decomposition.out, T3/T4: [alpha_deg, tau, m, share]
-      - [14.04, 0.5, 1, 0.0001]
-      - [14.04, 0.5, 4, 0.0000]
-      - [14.04, 0.5, 16, 0.0000]
-      - [14.04, 2.0, 1, 0.0016]
-      - [14.04, 2.0, 4, 0.0000]
-      - [14.04, 2.0, 16, 0.0000]
-      - [14.04, 8.0, 1, 0.0946]
-      - [14.04, 8.0, 4, 0.0217]
-      - [14.04, 8.0, 16, 0.0004]
-      - [26.57, 0.5, 1, 0.0016]
-      - [26.57, 0.5, 4, 0.0000]
-      - [26.57, 0.5, 16, 0.0000]
-      - [26.57, 2.0, 1, 0.0213]
-      - [26.57, 2.0, 4, 0.0012]
-      - [26.57, 2.0, 16, 0.0000]
-      - [26.57, 8.0, 1, 0.2390]
-      - [26.57, 8.0, 4, 0.1284]
-      - [26.57, 8.0, 16, 0.0239]
-      - [45.0, 0.5, 1, 0.0213]
-      - [45.0, 0.5, 4, 0.0012]
-      - [45.0, 0.5, 16, 0.0000]
-      - [45.0, 2.0, 1, 0.1141]
-      - [45.0, 2.0, 4, 0.0311]
-      - [45.0, 2.0, 16, 0.0009]
-      - [45.0, 8.0, 1, 0.3582]
-      - [45.0, 8.0, 4, 0.2771]
-      - [45.0, 8.0, 16, 0.1401]
-      - [63.43, 0.5, 1, 0.1141]
-      - [63.43, 0.5, 4, 0.0311]
-      - [63.43, 0.5, 16, 0.0009]
-      - [63.43, 2.0, 1, 0.2600]
-      - [63.43, 2.0, 4, 0.1509]
-      - [63.43, 2.0, 16, 0.0346]
-      - [63.43, 8.0, 1, 0.4275]
-      - [63.43, 8.0, 4, 0.3824]
-      - [63.43, 8.0, 16, 0.2887]
-    share_tol: 5.1e-5
-    closed_form_tol: 1.0e-10       # true net flux against der-dynamics eq. 2.6 (d06 T4)
-    late:                          # d06 T3c: alpha = 45 deg, m = 4
-      alpha_deg: 45.0
-      m: 4
-      tau: [50.0, 200.0, 800.0]
-      share: [0.4614, 0.4903, 0.4976]
-    box:                           # d06 T2 (3 decimals)
-      opposite_weight: 0.104
-      k_cut: 29.0
-      tau: [1.5, 6.0]
-      m: [1, 2, 4, 8, 16]
-      unmixing_share: [[0.101, 0.058, 0.024, 0.006, 0.001], [0.331, 0.278, 0.182, 0.131, 0.056]]
-      backward_flux_share: [[0.054, 0.028, 0.010, 0.002, 0.000], [0.296, 0.238, 0.167, 0.103, 0.042]]
-      tol: 5.1e-4
-      identity_tol: 1.0e-12        # hermite_flux = (k_z/k_par) x field-aligned flux, every mode and m (relative)
-
-# -------------------------------------------------------------------------------------------------------------
 # fig:dictionary. (a) W(m) normalised by its large-m asymptote: delta-correlated slices with density F_M (exact
-# Gamma(m+1/2)/(sqrt2 pi m!)) and Kanekar et al.'s forced-linear spectrum on GANDALF's operator (white noise on g_0,
-# outgoing closure at m = M, Lyapunov steady state; derivations/truncated/t4_dictionary.py, C2);
+# Gamma(m+1/2)/(sqrt2 pi m!)) and Kanekar et al.'s forced-linear spectrum on GANDALF's ladder (white noise on g_0,
+# streaming operator -i s k_z A with an outgoing closure at m = M, Lyapunov steady state; as in
+# derivations/truncated/t4_dictionary.py, C2), together with the continuum spectrum of delta-correlated slices with
+# density proportional to rho(u) at finite Lambda, W(m) = pi p_0 sqrt(2m) int rho phi_m^2 du in units of the asymptote,
+# by Gauss quadrature of rho du on a K-point ladder (Golub-Welsch; exact at Lambda = inf to round-off);
 # (b) local slope d ln W/d ln m for slice correlations chat(kappa) = (1 + kappa^2 ell^2)^(-p/2) with density F_M,
 # W(m) = (1/pi) int_0^inf chat(kappa) exp(-kappa^2/2) (kappa^2/2)^m/m! dkappa (t4, D1, in closed form).
 dictionary:
@@ -158,6 +82,9 @@ dictionary:
     s: 1.0
     m_plot_max: 400
     n_markers: 14                  # log-spaced markers on the forced curves
+  continuum:
+    Lambda: [inf, sqrt5, -sqrt5]
+    K_gauss: 2000                  # nodes of the Gauss rule of rho du used for int rho phi_m^2 du, m <= m_plot_max
   powerlaw:
     p: [0.5, 1.0, 1.5, 2.0, 2.5]
     ell: [1.0, 0.15]
@@ -180,6 +107,9 @@ dictionary:
       tol: 5.1e-5
       kanekar_max_rel_dev: 3.1e-4  # Lambda = inf against the exact (pi eps/|k|) Gamma(m+1/2)/(sqrt2 pi m!)
       kanekar_tol: 5.0e-6
+    continuum:                     # computed here (no derivations/ output): quadrature exactness and closure error
+      inf_tol: 1.0e-10             # Gauss-rule int F_M psi_m^2 du against Gamma(m+1/2)/(sqrt2 pi m!), m <= 400
+      vs_forced_tol: 5.0e-4        # forced ladder (outgoing closure) against the continuum at m <= 200, every Lambda
     powerlaw:                      # t4_dictionary.out, D1: W(m)/[chat(sqrt2m)/(pi sqrt2m)] and the fitted slope
       m: [4, 8, 16, 32, 64, 128, 200, 300, 400]
       fit_m: [128, 200, 300, 400]
@@ -195,46 +125,3 @@ dictionary:
         - [1.0, 2.0, 1.051, 1.037, 1.021, 1.011, 1.006, 1.003, 1.002, 1.001, 1.001, -1.499]
         - [1.0, 2.5, 1.108, 1.070, 1.038, 1.020, 1.010, 1.005, 1.003, 1.002, 1.002, -1.750]
       tol: 5.1e-4
-
-# -------------------------------------------------------------------------------------------------------------
-# fig:reflection. (a) exact revival ratio of |g_0(t)| near the recurrence time (collisional/collisionless maxima of
-# the matrix exponential of GANDALF's linear operator L = -i s k_z A + nu D, D = -diag((m/M)^n), m >= 2) against
-# the law R = exp(-X), X = 2 nu t_w/(2n+1), t_w = sqrt(2M)/(|k_z| s), over the scan of
-# derivations/truncated/t6_reflection.py, C; (b) the forced steady state W_zero/W_open (white noise on g_0, Lyapunov
-# solves with the zero closure and with an outgoing closure) against coth X with X from the exact revival (t6, D).
-reflection:
-  scan:
-    Lambda: [inf, sqrt5]
-    M: [32, 64, 128, 256]
-    n: [2, 4, 6]
-    nu: [0.3, 1.0, 3.0, 10.0, 30.0]
-    nz: [1, 2, 4]                  # k_z = 2 pi n_z
-    s: 1.0
-    window: [0.8, 1.2]             # search window for the revival, in units of T_rec = 2 sqrt(2M+3)/(k_z s)
-    n_t: 1601
-    tail_at: 0.75                  # |g_0| at 0.75 T_rec bounds the non-recurrent response
-    resolved_factor: 20.0          # a case is resolved if the collisional revival peak exceeds 20x that bound
-  steady:
-    M: 128
-    n: 6
-    nu: 3.0
-    Lambda: sqrt5
-    nz: 1
-    s: 1.0
-  checks:                          # derivations/truncated/out/t6_reflection.out
-    n_cases: 360
-    n_unresolved: 41
-    n_unresolved_sqrt5: 39
-    M_median: [32, 64, 128, 256]
-    median_exponent_error: [0.1387, 0.0677, 0.0335, 0.0168]   # |ln(R_law/R_exact)|/X (C4)
-    median_tol: 5.1e-5
-    max_exponent_error_M128_X3: 0.050                         # M >= 128, X < 3 (C1)
-    max_tol: 5.1e-4
-    X: 1.1753                                                 # steady case (D)
-    R_exact: 0.2913
-    X_meas: 1.2335
-    coth_X: 1.2107
-    coth_X_meas: 1.1854
-    ratio_m: [2, 4, 8, 16, 32, 48]
-    ratio: [1.1852, 1.1852, 1.1852, 1.1854, 1.1865, 1.1911]
-    steady_tol: 5.1e-5

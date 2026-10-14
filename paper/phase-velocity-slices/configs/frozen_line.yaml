@@ -1,0 +1,63 @@
+# Run family C: the frozen-line theorem (paper section 6, thm:frozen and cor:singlepoint; figure fig:frozen and
+# figures/frozen_table.tex).  Read by scripts/run_frozen_line.py; analysis by analysis/fig_frozen.py.
+#
+# The same physical initial fields at every resolution N (drawn on an N0^3 grid and embedded).  For each N three
+# integrations from the same g(0):
+#   NL  full ideal KRMHD with GANDALF's gandalf_step (Lawson-RK4; z+- evolve, g passive);
+#   FR  frozen-line prediction d_t h = -s grad_par(0)(A h): GANDALF's right-hand side for g with (z+, z-) = (Psi0, -Psi0),
+#       i.e. Phi = 0 and Psi = Psi(0) (field lines frozen at t = 0, no flow), classical RK4 at the same dt;
+#   LZ  k_z-only linear prediction (Phi = Psi = 0), exact matrix exponential per k_z.
+# Single-point statistics of NL (with grad_par(t)) must approach those of FR (with grad_par(0)) as N grows; the others
+# (W(k_perp), W(|k_z|), the k_z-only flux) must not.
+#
+# Units: v_A = 1, box side L = 1 (k = 2 pi n), s = sqrt(beta_i), u = v_par/v_th.
+
+label: frozen                  # run IDs P1_frozen-N<N>_<YYYYMMDD_HHMMSS> (and P1_frozen-N<N>-dt<k>_... for the dt check)
+
+box:
+  L: 1.0
+  N: [16, 20, 32, 40, 64]      # none divisible by 3: the retained band |n| <= floor(N/3) is then free of aliasing for
+                               # quadratic products, so the ideal invariants are conserved to time-stepping accuracy
+  N0: 8                        # grid on which the initial fields are drawn
+
+velocity:
+  M: 8                         # Hermite moments g_0..g_M
+  Lambda: sqrt5                # Lambda^+ at beta_i = tau = Z = 1
+  beta_i: 1.0
+  closure: zero
+
+initial:
+  seed: 1                      # numpy default_rng seed; draw order Phi, Psi, g_0, g_1 (as derivations/dynamics/d02)
+  nperp: [1.0, 2.5]            # k_perp L/2 pi in this range
+  nzmax: 2                     # |k_z L/2 pi| <= nzmax
+  rms_grad_phi: 1.0            # rms |grad_perp Phi| (u_E)
+  rms_grad_psi: 1.0            # rms |grad_perp Psi| (b_perp)
+  g1_amplitude: 0.5            # g_1 = g1_amplitude x an independent field (before normalisation)
+  free_energy: 1.0             # sum_m p_m <g_m^2> at t = 0
+
+time:
+  t_out: [0.062, 0.125, 0.25]  # output times (t = 0 is always saved); must be multiples of dt
+  dt_candidates: [0.002, 0.001, 0.0005, 0.00025]
+  safety: 0.5                  # dt = largest candidate <= safety x min(Alfvenic CFL, 2 sqrt2/rho) at t = 0 on the
+                               # finest grid, with every t_out a multiple of dt; the same dt for every N
+  check_every: 25              # steps between checks of rho(t) dt <= 2 sqrt2 and samples of the conserved energies
+  dt_check:                    # repeat the finest grid at a smaller dt (time-step error below the spatial error)
+    N: 64
+    divide: 2
+
+stepper:                       # gandalf_step arguments (ideal: no dissipation of z+- or g, no hypercollisions)
+  scheme: lawson_rk4
+  eta: 0.0
+  hyper_r: 1
+  nu: 0.0
+  hyper_n: 1
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+diagnostics:
+  quartic_ms: [0, 1, 2]        # <g_m^4> for these m
+  pad: 2                       # real-space refinement for <g_m^4> (exact for fields inside the 2/3 band)
+
+gates:
+  conservation_tol: 0.01       # relative drift of the free energy and of the Alfvenic energy (ideal runs)

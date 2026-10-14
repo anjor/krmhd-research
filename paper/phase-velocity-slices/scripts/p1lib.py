@@ -1,7 +1,9 @@
-"""Shared library for the GANDALF verification runs of the phase-velocity-slice paper (section 9, "Checks with
+"""Shared library for the GANDALF verification runs of the phase-velocity-slice paper (section 8, "Checks with
 GANDALF"): run bookkeeping, the periodic box, random and localised initial fields, the slice basis of the Hermite
-ladder, GANDALF state construction and time stepping, the frozen-field RK4 problem, diagnostics, time-step limits,
-gates and run records.  GANDALF (krmhd 0.6.0) is used read-only.
+ladder, GANDALF state construction and time stepping (Lawson-RK4 only), the frozen-field RK4 problem, diagnostics,
+time-step limits, gates and run records.  GANDALF (the installed krmhd package) is used read-only: its grid, Poisson
+bracket, ladder matrix, right-hand side and gandalf_step.  Every diagnostic is computed here; GANDALF's own
+diagnostics and its CFL routine are not used.
 
 Import this module before anything else that imports JAX or krmhd: it switches JAX to float64 and to the CPU.
 
@@ -41,7 +43,6 @@ import math  # noqa: E402
 import operator  # noqa: E402
 import platform  # noqa: E402
 import re  # noqa: E402
-import shutil  # noqa: E402
 import subprocess  # noqa: E402
 import sys  # noqa: E402
 import time  # noqa: E402
@@ -62,7 +63,7 @@ import krmhd  # noqa: E402
 from krmhd.hermite import compute_streaming_matrix  # noqa: E402
 from krmhd.physics import KRMHDState, poisson_bracket_3d  # noqa: E402
 from krmhd.spectral import SpectralGrid3D  # noqa: E402
-from krmhd.timestepping import KRMHDFields, _krmhd_rhs_jit, compute_cfl_timestep, gandalf_step  # noqa: E402
+from krmhd.timestepping import KRMHDFields, _krmhd_rhs_jit, gandalf_step  # noqa: E402
 
 if jnp.zeros(1).dtype != jnp.float64:  # pragma: no cover - guards against importing JAX before this module
     raise RuntimeError("p1lib needs float64 JAX: import p1lib before any other module that imports JAX or krmhd")
@@ -105,11 +106,9 @@ __all__ = [
     "alfvenic_energy_density_k", "W_kperp", "W_kz", "alfvenic_energy", "nonlinearity_parameter",
     "outer_shell_fraction", "resolution_check", "dissipation_rates", "slice_leakage", "diagnostics",
     # time-step limits
-    "advection_operator_norm", "slice_advection_rate", "recommended_dt", "rk_stability",
+    "advection_operator_norm", "slice_advection_rate", "alfvenic_cfl_dt", "recommended_dt", "rk_stability",
     # gates
-    "relative_drift", "gate_energy_conservation", "make_gates", "gates_outcome", "require_gates", "budget_residual",
-    # figures
-    "JPP_SINGLE_IN", "JPP_DOUBLE_IN", "OKABE_ITO", "jpp_style", "save_figure",
+    "relative_drift", "rel_l1", "rel_max", "gate_energy_conservation", "make_gates", "gates_outcome", "require_gates", "budget_residual",
 ]
 
 
@@ -509,6 +508,32 @@ class Box:
         """Field-aligned derivative grad_par f = d_z f + {Psi, f} (bhat = zhat + zhat x grad Psi to first order)."""
         return self.dz(f) + self.bracket(psi, f)
 
+    def from_real(self, x: np.ndarray, pad: int = 1) -> np.ndarray:
+        """Inverse of to_real: rfft coefficients on this N^3 grid (GANDALF's unnormalised convention) of real values
+        [z, y, x] given on a grid refined by `pad`; components outside |n| < N/2 are dropped and the 2/3 mask is
+        applied."""
+        x = np.asarray(x, dtype=float)
+        N = self.N
+        if pad == 1:
+            return np.fft.rfftn(x, axes=(0, 1, 2)) * self.mask
+        Np = pad * N
+        h = N // 2
+        F = np.fft.rfftn(x, axes=(0, 1, 2)) / pad ** 3
+        out = np.zeros((N, N, N // 2 + 1), dtype=complex)
+        out[np.ix_(np.r_[0:h, N - h + 1:N], np.r_[0:h, N - h + 1:N], np.arange(h))] = \
+            F[np.ix_(np.r_[0:h, Np - h + 1:Np], np.r_[0:h, Np - h + 1:Np], np.arange(h))]
+        return out * self.mask
+
+    def bracket_independent(self, f: ArrayLike, h: ArrayLike) -> np.ndarray:
+        """{f, h} computed without GANDALF's code: spectral derivatives, products on a grid refined by 2 (no aliasing
+        for fields inside the 2/3 band), transform back and the 2/3 mask (numpy only).  For fields inside the band it
+        equals GANDALF's dealiased bracket to round-off; used for the independent decoupling check."""
+        f = np.asarray(f)
+        h = np.asarray(h)
+        fx, fy = self.grad_perp_real(f, pad=2)
+        hx, hy = self.grad_perp_real(h, pad=2)
+        return self.from_real(fx * hy - fy * hx, pad=2)
+
     # ----- fields -----
     def random_field(self, rng: np.random.Generator, nperp: Sequence[float], nzmax: float,
                      extra: Sequence[int] = ()) -> np.ndarray:
@@ -671,7 +696,7 @@ def make_slices(M: int, Lam: float, closure: str = "zero") -> Slices:
 
 def coll_rates(M: int, nu: float, hyper_n: int) -> np.ndarray:
     """GANDALF's normalised hypercollision rates nu (m/M)^n for m >= 2 (0 for m = 0, 1), as in the Lawson-RK4 factor
-    exp(-nu (m/M)^n dt) and the IMEX implicit operator."""
+    exp(-nu (m/M)^n dt)."""
     m = np.arange(M + 1, dtype=float)
     r = nu * (m / M) ** hyper_n if M >= 2 else np.zeros(M + 1)
     r[:2] = 0.0
@@ -725,7 +750,7 @@ def fields_of(state: KRMHDState) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 @dataclass(frozen=True)
 class StepParams:
     """Arguments of krmhd.timestepping.gandalf_step other than the state and dt.  The scheme has no default, so every
-    run pins it ("lawson_rk4" or "imex_rk222").  eta, hyper_r: GANDALF's normalised hyper-resistivity
+    run pins it; only "lawson_rk4" is accepted for these runs.  eta, hyper_r: GANDALF's normalised hyper-resistivity
     exp(-eta (k_perp^2/k_perp,max^2)^r dt) on z+- and every g_m; nu, hyper_n: hypercollisions exp(-nu (m/M)^n dt),
     m >= 2; eta_z, hyper_rz: parallel hyper-dissipation; closure: "zero" or "symmetric" (copy)."""
 
@@ -740,8 +765,8 @@ class StepParams:
     v_A: float = 1.0
 
     def __post_init__(self) -> None:
-        if self.scheme not in ("lawson_rk4", "imex_rk222"):
-            raise ValueError(f"scheme must be 'lawson_rk4' or 'imex_rk222', got {self.scheme!r}")
+        if self.scheme != "lawson_rk4":
+            raise ValueError(f"these runs use scheme 'lawson_rk4' only, got {self.scheme!r}")
 
     @classmethod
     def from_config(cls, d: Mapping[str, Any]) -> "StepParams":
@@ -871,7 +896,8 @@ PHI_NAMES: dict[str, str] = {"1": "Q_1", "u": "Q_u", "u2": "Q_u2", "u3": "Q_u3",
 
 
 def W_m(box: Box, g: ArrayLike) -> np.ndarray:
-    """Hermite spectrum W(m) = <g_m^2> (unweighted, volume average), m = 0..M.  Moment energies are p_m W(m)."""
+    """Unweighted moment variances <g_m^2> (volume average), m = 0..M.  The paper's Hermite spectrum is
+    W(m) = p_m <g_m^2> (key "pW_m" of diagnostics); the two differ only at m = 0."""
     return box.avg2_last(g)
 
 
@@ -1073,16 +1099,19 @@ def slice_leakage(box: Box, a: ArrayLike, j0: int) -> dict[str, float]:
 
 def diagnostics(box: Box, sl: Slices, s: float, zp: ArrayLike, zm: ArrayLike, g: ArrayLike, *,
                 correlation: bool = True, flux: bool = True, quartic_ms: Sequence[int] | None = (0, 1, 2),
-                spectra: bool = True, pad: int = 2) -> dict[str, Any]:
+                spectra: bool = True, pad: int = 2, psi_flux: ArrayLike | None = None) -> dict[str, Any]:
     """The standard set of diagnostics at one time, as a flat dict for stack_records/np.savez:
-    W_m [M+1], pW_m [M+1], E_slice [M+1], Q_1, Q_u, Q_u2, Q_u3, Q_inv_u, E_A, E_kin, E_mag, E_plus, E_minus,
-    cross_helicity, res_g_shell, res_g_beyond, res_alfven_shell, res_alfven_beyond, and optionally C_slice [M+1, M+1]
-    (slice correlation), Pi_fa [M] (field-aligned flux), Pi_kz [M] (k_z-only flux), g4 [len(quartic_ms)] (<g_m^4>),
-    W_kperp, W_kz."""
+    W_m [M+1] (<g_m^2>), pW_m [M+1] (the paper's W(m) = p_m <g_m^2>), E_slice [M+1], Q_1, Q_u, Q_u2, Q_u3, Q_inv_u,
+    E, E_kin, E_mag, E_plus, E_minus, cross_helicity (Alfvenic, of z+-), res_g_shell, res_g_beyond, res_alfven_shell,
+    res_alfven_beyond, and optionally C_slice [M+1, M+1] (slice correlation), Pi_fa [M] (field-aligned flux with
+    grad_par = d_z + {Psi, .}; Psi from z+- unless psi_flux is given), Pi_kz [M] (k_z-only flux), g4
+    [len(quartic_ms)] (<g_m^4>), W_kperp, W_kz."""
     zp = np.asarray(zp)
     zm = np.asarray(zm)
     g = np.asarray(g)
     _, psi = phi_psi(zp, zm)
+    if psi_flux is not None:
+        psi = np.asarray(psi_flux)
     a = sl.amplitudes(g)
     Wm = W_m(box, g)
     out: dict[str, Any] = dict(W_m=Wm, pW_m=sl.p * Wm, E_slice=slice_energies(box, a))
@@ -1133,7 +1162,8 @@ def advection_operator_norm(box: Box, f: ArrayLike, tol: float = 1e-6, seed: int
 
 def slice_advection_rate(box: Box, zp: ArrayLike, zm: ArrayLike, s: float, u: ArrayLike, pad: int = 2,
                          exact: bool = False) -> dict[str, Any]:
-    """Explicit slice-advection rate.  Both GANDALF steppers treat N(g) = -{Phi, g} - s{Psi, A g} explicitly; in slice
+    """Explicit slice-advection rate.  GANDALF's Lawson-RK4 step treats N(g) = -{Phi, g} - s{Psi, A g} explicitly
+    (classical RK4 stages; streaming along z is integrated exactly by the integrating factor); in slice
     j this is advection by zhat x grad(Phi + s u_j Psi), a skew operator whose spectral radius is bounded by
         rho = k_perp,max * max_j max_x |grad_perp(Phi + s u_j Psi)|,
     k_perp,max the largest retained |k_perp| (the band corner).  Lawson-RK4 is then stable for dt <= 2 sqrt2/rho.
@@ -1156,23 +1186,35 @@ def slice_advection_rate(box: Box, zp: ArrayLike, zm: ArrayLike, s: float, u: Ar
     return out
 
 
-def recommended_dt(box: Box, state: KRMHDState, sl: Slices, cfl_safety: float, lawson_fraction: float,
-                   v_A: float = 1.0, pad: int = 2) -> dict[str, Any]:
-    """dt = min(GANDALF's compute_cfl_timestep(state, v_A, cfl_safety), lawson_fraction * 2 sqrt2/rho), with rho
-    from slice_advection_rate.  Returns dt, dt_cfl, which limit binds, and the slice-advection numbers."""
-    dt_cfl = float(compute_cfl_timestep(state, v_A=v_A, cfl_safety=cfl_safety))
-    zp, zm, _ = fields_of(state)
-    lim = slice_advection_rate(box, zp, zm, math.sqrt(state.beta_i), sl.u, pad=pad)
-    dt_l = lawson_fraction * lim["dt_lawson_max"]
-    return dict(dt=min(dt_cfl, dt_l), dt_cfl=dt_cfl, dt_lawson=dt_l, binding="cfl" if dt_cfl <= dt_l else "lawson",
-                **lim)
+def alfvenic_cfl_dt(box: Box, zp: ArrayLike, zm: ArrayLike, v_A: float = 1.0, pad: int = 2) -> dict[str, float]:
+    """Alfvenic CFL limit dt_A = min(dx, dz)/v_max with v_max = max(v_A, max|grad_perp z+|, max|grad_perp z-|): the
+    time for the fastest Elsasser advection (z+- is advected by zhat x grad z-+) or the Alfven wave to cross one grid
+    cell.  Maxima over x on a grid refined by `pad`.  Computed here, independently of GANDALF's CFL routine."""
+    vp = max(float(np.sqrt(sum(c ** 2 for c in box.grad_perp_real(np.asarray(zp), pad))).max()),
+             float(np.sqrt(sum(c ** 2 for c in box.grad_perp_real(np.asarray(zm), pad))).max()))
+    vmax = max(float(v_A), vp)
+    return dict(v_perp_max=vp, v_max=vmax, dt_alfven=(box.L / box.N) / vmax)
+
+
+def recommended_dt(box: Box, zp: ArrayLike, zm: ArrayLike, sl: Slices, s: float, safety: float, v_A: float = 1.0,
+                   pad: int = 2) -> dict[str, Any]:
+    """dt = safety * min(dt_A, 2 sqrt2/rho): dt_A the Alfvenic CFL limit (alfvenic_cfl_dt) and rho =
+    k_perp,max max_j max_x |grad_perp(Phi + s u_j Psi)| the slice-advection rate (slice_advection_rate), for which
+    the explicit RK4 stages of the Lawson-RK4 step are stable when rho dt <= 2 sqrt2.  Returns dt, both limits, which
+    one binds, and the slice-advection numbers."""
+    cfl = alfvenic_cfl_dt(box, zp, zm, v_A=v_A, pad=pad)
+    lim = slice_advection_rate(box, zp, zm, s, sl.u, pad=pad)
+    dt_a = cfl["dt_alfven"]
+    dt_l = lim["dt_lawson_max"]
+    return dict(dt=safety * min(dt_a, dt_l), safety=safety, dt_alfven=dt_a, dt_slice=dt_l,
+                binding="alfvenic CFL" if dt_a <= dt_l else "slice advection", v_perp_max=cfl["v_perp_max"], **lim)
 
 
 def rk_stability(rate: float, dt: float, nsteps: int = 1) -> dict[str, float]:
-    """Stability factors on the imaginary axis at y = rate dt: classical RK4 (Lawson-RK4 at k_z = 0)
-    |R4(iy)| = |1 + iy - y^2/2 - iy^3/6 + y^4/24| (<= 1 iff y <= 2 sqrt2), and the explicit part of IMEX-RK222
-    |R2(iy)| = sqrt(1 + y^4/4) > 1 (pure advection grows unless damped); also their nsteps-th powers (worst-case
-    amplification of the fastest slice mode over nsteps)."""
+    """Stability factors on the imaginary axis at y = rate dt: classical RK4 (the Hermite stages of Lawson-RK4)
+    |R4(iy)| = |1 + iy - y^2/2 - iy^3/6 + y^4/24| (<= 1 iff y <= 2 sqrt2), and the explicit midpoint rule (the
+    Elsasser stages) |R2(iy)| = sqrt(1 + y^4/4) > 1 (pure advection grows unless damped); also their nsteps-th powers
+    (worst-case amplification of the fastest mode over nsteps)."""
     y = rate * dt
     r4 = abs(1 + 1j * y - y ** 2 / 2 - 1j * y ** 3 / 6 + y ** 4 / 24)
     r2 = math.sqrt(1.0 + y ** 4 / 4.0)
@@ -1186,6 +1228,21 @@ def relative_drift(series: ArrayLike) -> float:
     """max_t |X(t)/X(0) - 1| for a time series X."""
     x = np.asarray(series, dtype=float)
     return float(np.max(np.abs(x / x[0] - 1.0)))
+
+
+def rel_l1(a: ArrayLike, b: ArrayLike) -> float:
+    """sum |a - b| / sum |b| (relative difference of a nonnegative spectrum or a set of moments; b the reference)."""
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    return float(np.abs(a - b).sum() / max(float(np.abs(b).sum()), 1e-300))
+
+
+def rel_max(a: ArrayLike, b: ArrayLike) -> float:
+    """max |a - b| / max |b| (relative difference of a sign-indefinite quantity such as a flux or a correlation
+    matrix; b the reference)."""
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    return float(np.abs(a - b).max() / max(float(np.abs(b).max()), 1e-300))
 
 
 def gate_energy_conservation(W: ArrayLike | None = None, E_A: ArrayLike | None = None, tol: float = 0.01) -> dict[str, Any]:
@@ -1248,53 +1305,3 @@ def budget_residual(t: ArrayLike, E: ArrayLike, eps: ArrayLike) -> np.ndarray:
     eps = np.asarray(eps, dtype=float)
     integ = np.concatenate([[0.0], np.cumsum(0.5 * (eps[1:] + eps[:-1]) * np.diff(t))])
     return (E - E[0] + integ) / E[0]
-
-
-# ------------------------------------------------------------------------------------------------------------------
-# figures (optional helpers for the analysis scripts; matplotlib is imported only here)
-# ------------------------------------------------------------------------------------------------------------------
-JPP_SINGLE_IN = 3.4
-JPP_DOUBLE_IN = 7.0
-OKABE_ITO = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442", "#000000"]
-
-
-def jpp_style(usetex: bool = True) -> bool:
-    """Set matplotlib rcParams for the Journal of Plasma Physics: 10 pt serif text, viridis for images, the Okabe-Ito
-    palette for lines, small legends.  With usetex, text.usetex is switched on if LaTeX renders a test string;
-    returns whether LaTeX is in use (False means mathtext fallback, which the caller should report)."""
-    import matplotlib
-    if "matplotlib.pyplot" not in sys.modules:
-        matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from cycler import cycler
-    plt.rcParams.update({
-        "font.size": 10, "axes.labelsize": 10, "axes.titlesize": 10, "legend.fontsize": 8, "xtick.labelsize": 9,
-        "ytick.labelsize": 9, "font.family": "serif", "mathtext.fontset": "cm", "image.cmap": "viridis",
-        "axes.prop_cycle": cycler(color=OKABE_ITO), "legend.frameon": False, "savefig.bbox": "tight",
-        "savefig.pad_inches": 0.02, "figure.dpi": 150, "lines.linewidth": 1.2,
-    })
-    ok = False
-    if usetex and shutil.which("latex"):
-        plt.rcParams["text.usetex"] = True
-        plt.rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
-        try:
-            fig = plt.figure(figsize=(1, 1))
-            fig.text(0.5, 0.5, r"$k_\perp \rho_i$, $W(m)$")
-            fig.canvas.draw()
-            plt.close(fig)
-            ok = True
-        except Exception:
-            plt.rcParams["text.usetex"] = False
-    else:
-        plt.rcParams["text.usetex"] = False
-    return ok
-
-
-def save_figure(fig: Any, name: str, dpi: int = 300) -> tuple[Path, Path]:
-    """Save a figure as figures/<name>.pdf and figures/<name>.png; returns both paths."""
-    FIGURES.mkdir(parents=True, exist_ok=True)
-    pdf = FIGURES / f"{name}.pdf"
-    png = FIGURES / f"{name}.png"
-    fig.savefig(pdf)
-    fig.savefig(png, dpi=dpi)
-    return pdf, png

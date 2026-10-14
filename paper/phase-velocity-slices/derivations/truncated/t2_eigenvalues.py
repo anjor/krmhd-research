@@ -3,7 +3,7 @@ matrix A: Gauss-Hermite nodes and Christoffel numbers at Lam = inf; the characte
 eigen-condition and the sum rules at finite Lam; the first-order shift and the asymptotic spectral-shift law; the
 parity symmetry and the exact zero eigenvalue at even M with its u = 0 slice (Im H); the size and Lam-independence
 of u_max and its large-M asymptotics for both closures; and the conventions (Lambda+- of CMM, the Landau root, the
-propagation direction of z+). Supports Section 8 and Appendix C of the paper.
+propagation direction of z+). Supports Sections 7 and 8 and Appendix C of the paper.
 
 A  Lam = inf, zero closure: u_j = zeros x_j of H_{M+1}; right eigenvectors r_j[m] = p_m(x_j) (orthonormal
    Hermite polynomials), n_j = 1/lambda_j (lambda_j = Gauss-Hermite weights normalised to sum 1).
@@ -17,7 +17,7 @@ D  Parity S A S = -A (S = diag((-1)^m)): spectrum symmetric; even M has an exact
    closures) with left null vector psi_m(0) (zero closure); the u = 0 slice is g(v = 0) and is advected by Phi only
    (checked on krmhd_rhs), its energy (pi/2) sum_k |a_0|^2 is CMM's Im H (conserved, CMM eq. 2.23); odd M: det A != 0.
 E  u_max: table for M = 16..256, Lam = +-sqrt5, inf, both closures; Lam-dependence exponentially small
-   (mpmath check of the first-order formula for the extreme eigenvalue).
+   (mpmath check of the first-order formula for the extreme eigenvalue; E4: its size at M = 64, about 1e-49).
 F  Asymptotics of u_max(M):
      zero closure: u_max = nu^(1/2) + 2^(-1/3) a_1 nu^(-1/6) - 2^(-2/3) a_1^2 nu^(-5/6)/10 + O(nu^(-3/2)), nu = 2M+3,
      copy closure: u_max = nu^(1/2) + 2^(-1/3) a'_1 nu^(-1/6) - 2^(-5/3) (4/(5 a'_1) + a'_1^2/5) nu^(-5/6) + O(nu^(-3/2)),
@@ -232,24 +232,28 @@ grid = make_grid(N)
 okD4 = True
 for M in (10, 16):
     for Lam in (SQRT5, -SQRT5):
-        rng = np.random.default_rng(77 + M)
-        zp = random_field(grid, rng, amp=200.0)
-        zm = random_field(grid, rng, amp=200.0)
-        g = random_field(grid, rng, slope=-1.0, extra_shape=(M + 1,))
-        st = make_state(grid, M, Lam, zp, zm, g, beta_i=1.3)
-        gdot = np.asarray(krmhd_rhs(st, eta=0.0, v_A=1.0).g)
-        w0 = hermite_functions(M, [0.0])[:, 0]
-        a0 = g @ w0
-        a0dot = gdot @ w0
-        pred = -bracket(grid, (zp + zm) / 2, a0) * np.asarray(grid.dealias_mask)
-        pred[0, 0, 0] = 0
-        e = np.abs(pred - a0dot).max() / np.abs(pred).max()
-        K = (np.pi / 2) * np.outer(w0, w0)
-        val, scale = dqform(grid, g, gdot, K)
-        okD4 = okD4 and e < 1e-12 and abs(val) / scale < 1e-14
-        print(f"   M={M} Lam={Lam:+.3f}: |d_t a0 + {{Phi, a0}}|/|{{Phi, a0}}| = {e:.1e}; Im H = (pi/2) sum|a0|^2 = "
-              f"{qform(grid, g, K):.4e}, relative d/dt = {abs(val) / scale:.1e}")
-C.check("D4 krmhd_rhs: d_t g(v=0) = -{Phi, g(v=0)} exactly and Im H = (pi/2) sum_k |g(v=0)|^2 is conserved", okD4)
+        for clo in ("zero", "symmetric"):
+            rng = np.random.default_rng(77 + M)
+            zp = random_field(grid, rng, amp=200.0)
+            zm = random_field(grid, rng, amp=200.0)
+            g = random_field(grid, rng, slope=-1.0, extra_shape=(M + 1,))
+            st = make_state(grid, M, Lam, zp, zm, g, beta_i=1.3)
+            gdot = np.asarray(krmhd_rhs(st, eta=0.0, v_A=1.0, closure=clo).g)
+            w0 = hermite_functions(M, [0.0])[:, 0]
+            if clo == "symmetric":          # left null vector of the copy closure: last entry times p_M (D3)
+                w0[M] *= weight(M, Lam, clo)[M]
+            a0 = g @ w0
+            a0dot = gdot @ w0
+            pred = -bracket(grid, (zp + zm) / 2, a0) * np.asarray(grid.dealias_mask)
+            pred[0, 0, 0] = 0
+            e = np.abs(pred - a0dot).max() / np.abs(pred).max()
+            K = (np.pi / 2) * np.outer(w0, w0)
+            val, scale = dqform(grid, g, gdot, K)
+            okD4 = okD4 and e < 1e-12 and abs(val) / scale < 1e-14
+            print(f"   M={M} Lam={Lam:+.3f} {clo:9s}: |d_t a0 + {{Phi, a0}}|/|{{Phi, a0}}| = {e:.1e}; (pi/2) sum|a0|^2 = "
+                  f"{qform(grid, g, K):.4e}, relative d/dt = {abs(val) / scale:.1e}")
+C.check("D4 krmhd_rhs (both closures): d_t g(v=0) = -{Phi, g(v=0)} exactly and Im H = (pi/2) sum_k |g(v=0)|^2 is "
+        "conserved (zero closure; for the copy closure the u = 0 slice energy)", okD4)
 
 section("E. u_max for GANDALF's matrix")
 print("     M |  Lam=+sqrt5 zero | Lam=-sqrt5 zero | Lam=inf zero    | Lam=+sqrt5 copy | Lam=-sqrt5 copy | Lam=inf copy")
@@ -308,6 +312,39 @@ for M in (12, 20):
               f"estimate 1/(2 |Lam| x_max^2) = {mp.nstr(1 / (2 * abs(Lam) * xm ** 2), 3)}")
 C.check("E3 (mpmath, 80 digits) the Lam-shift of u_max is -lambda_max x_max/Lam to O(1/(Lam x_max^2)) relative; "
         "the exact second-order term removes the residual", okE3)
+# size of the shift at M = 64 (quoted as about 1e-49 in the paper): u_max is the largest zero of the ladder polynomial
+# r_{M+1}(u) (zero closure; r_0 = 1, r_1 = sqrt2 u, A_10 = (1 - 1/Lam)/sqrt2), found by Newton's method at 120 digits
+# from the largest Gauss-Hermite node x_max (the same recurrence with 1/Lam = 0).
+mp.mp.dps = 120
+M = 64
+
+
+def r_last(u, LL):
+    """r_{M+1}(u) of the zero-closure recurrence; LL = None for Lam = inf."""
+    a10 = (1 - (0 if LL is None else 1 / LL)) / mp.sqrt(2)
+    r0, r1 = mp.mpf(1), mp.sqrt(2) * u
+    for m in range(1, M + 1):
+        down = a10 if m == 1 else mp.sqrt(mp.mpf(m) / 2)
+        r0, r1 = r1, (u * r1 - down * r0) / mp.sqrt(mp.mpf(m + 1) / 2)
+    return r1
+
+
+xm = mp.findroot(lambda x: r_last(x, None), mp.mpf(table[(64, np.inf, 'zero')]), tol=mp.mpf(10) ** -110)
+pp = [mp.mpf(1), mp.sqrt(2) * xm]
+for m in range(1, M):
+    pp.append((xm * pp[m] - mp.sqrt(mp.mpf(m) / 2) * pp[m - 1]) / mp.sqrt(mp.mpf(m + 1) / 2))
+lam_max = 1 / mp.fsum([q ** 2 for q in pp])
+okE4 = True
+for Lam in (mp.sqrt(5), -mp.sqrt(5)):
+    um = mp.findroot(lambda x: r_last(x, Lam), xm, tol=mp.mpf(10) ** -110)
+    shift = um - xm
+    first = -lam_max * xm / Lam
+    okE4 = okE4 and abs(shift / first - 1) < 0.01 and mp.mpf(10) ** -50 < abs(shift) < mp.mpf(10) ** -48
+    print(f"   M=64 Lam={mp.nstr(Lam, 6)}: u_max - x_max = {mp.nstr(shift, 6)}; -lambda_max x_max/Lam = {mp.nstr(first, 6)}; "
+          f"x_max = {mp.nstr(xm, 12)}, lambda_max = {mp.nstr(lam_max, 6)}, x_max e^(-x_max^2)/Lam = "
+          f"{mp.nstr(xm * mp.exp(-xm ** 2) / Lam, 6)}")
+C.check("E4 (mpmath, 120 digits) at M = 64 the Lam-shift of u_max is about 1e-49 (between 1e-50 and 1e-48) and equals "
+        "-lambda_max x_max/Lam to 1%", okE4)
 
 section("F. Asymptotics of u_max(M)")
 a1 = ai_zeros(1)[0][0]

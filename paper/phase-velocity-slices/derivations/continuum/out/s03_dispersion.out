@@ -1,0 +1,48 @@
+D1  Z normalisation
+  [PASS] int F_M/(x - zeta) = i sqrt(pi) e^{-zeta^2} erfc(-i zeta) max rel err 3.96e-31
+  [PASS] Z(0) = i sqrt(pi) 
+D2  real axis
+  [PASS] P int F_M/(x-u) dx = -2 Dawson(u) 1.97e-31
+  [PASS] Z(u + i0) = -2 Dawson(u) + i pi F_M(u) 2.63e-25
+D3  derivative and asymptotics
+  [PASS] Z' = -2(1 + zeta Z) 8.37e-31
+  [PASS] |1 + zeta Z + 1/(2 zeta^2) + 3/(4 zeta^4)| |zeta|^6 bounded (<= 15/8 + small) on Im zeta >= 0 1.882
+D4  dielectric function
+  [PASS] eps(zeta) = 1 - (1/Lambda) int u F_M/(u-zeta) du = 1 - (1 + zeta Z)/Lambda 4.93e-31
+  [PASS] eps -> 1 at |zeta| -> inf (Im zeta > 0) 
+D5  eps_R - 1 = Hc[eps_I]
+  [PASS] eps_R(u) - 1 = (1/pi) P int eps_I(v)/(v-u) dv 1.48e-31
+D6  Nyquist curve and winding numbers
+  [PASS] Im R(u) = pi u F_M(u) has the sign of u (crossings only at u = 0 and +-inf) 
+  [PASS] R(0) = 1, R(+-100) ~ -1/(2u^2) -> 0 
+    winding of eps(u+i0) on [-100,100]: -5.0000:+0.000000, -2.2361:+0.000000, -0.5000:+0.000000, -0.0100:+0.000000, +0.0100:+1.000000, +0.2000:+1.000000, +0.5000:+1.000000, +0.9000:+1.000000, +0.9990:+1.000000, +1.0010:+0.000000, +1.5000:+0.000000, +2.2361:+0.000000, +10.0000:+0.000000
+  [PASS] winding = 1 for 0 < Lambda < 1, 0 otherwise 
+D7  argument principle in the box [-6,6] x [1e-3, 6]
+    zeros counted: +2.236: +0.0000000000 +0.0e+00i, -2.236: +0.0000000000 +0.0e+00i, +3.000: +0.0000000000 +0.0e+00i, -0.300: -0.0000000000 +0.0e+00i, +1.500: +0.0000000000 +0.0e+00i, +0.200: +1.0000000000 +0.0e+00i, +0.500: +1.0000000000 +0.0e+00i, +0.900: +1.0000000000 +0.0e+00i
+  [PASS] one zero in the upper half plane for 0 < Lambda < 1, none otherwise 
+D8  unstable root for 0 < Lambda < 1
+  [PASS] 1 + i gamma Z(i gamma) = 1 - sqrt(pi) gamma e^{gamma^2} erfc(gamma) (real) 
+  [PASS] f(gamma) strictly decreasing on (0, 30], f(0+) = 1, f -> 0 
+  [PASS] f(gamma) ~ 1/(2 gamma^2) at large gamma 
+    Lambda=0.01: gamma=6.966267415, |eps(i gamma)|=5.0e-28
+    Lambda=0.2: gamma=1.175216411, |eps(i gamma)|=0.0; max Im eig A (M=64,128,256,512): 1.175216, 1.175216, 1.175216, 1.175216
+    Lambda=0.5: gamma=0.4327515994, |eps(i gamma)|=0.0; max Im eig A (M=64,128,256,512): 0.432624, 0.432749, 0.432752, 0.432752
+    Lambda=0.9: gamma=0.06031390023, |eps(i gamma)|=0.0; max Im eig A (M=64,128,256,512): 0.000000, 0.000000, 0.045346, 0.056817
+    Lambda=0.999: gamma=0.0005645490358, |eps(i gamma)|=0.0
+  [PASS] unstable root zeta = i gamma (reference values) and truncated-matrix convergence (Lambda = 0.2, 0.5) 
+D9  Lambda = 1
+  [PASS] eps(0 + i0) = 0 at Lambda = 1 
+  [PASS] eps(u+i0) = -i sqrt(pi) u + 2 u^2 + O(u^3) at Lambda = 1 |remainder|/|u|^3 <= 1.77
+  [PASS] rho(u) u^2 -> 1/pi^{3/2} at Lambda = 1 (non-integrable) 1.0
+D10 Landau roots (zeros of the continuation into Im zeta < 0)
+    Lambda=+sqrt5: (-1.687986116e-40 - 0.4099583848j);  Lambda=-sqrt5: (1.242246887 - 0.8352996325j)
+  [PASS] Lambda=+sqrt5 least-damped root -0.409958 i (reference value) 
+  [PASS] Lambda=-sqrt5 least-damped roots +-1.242247 - 0.835300 i (reference values) 
+    Lambda = 1 + 0.01: root (1.2959839e-62 - 0.0056062538j), rel. dev. from -i(Lambda-1)/sqrt(pi) = 0.00632; (root/lead - 1)/delta = -0.631738 (-2/pi = -0.63662)
+    Lambda = 1 + 0.001: root (-2.0943448e-56 - 0.00056383069j), rel. dev. from -i(Lambda-1)/sqrt(pi) = 0.000636; (root/lead - 1)/delta = -0.636128 (-2/pi = -0.63662)
+    Lambda = 1 + 0.0001: root (8.5807784e-67 - 5.6415367e-5j), rel. dev. from -i(Lambda-1)/sqrt(pi) = 6.37e-5; (root/lead - 1)/delta = -0.636571 (-2/pi = -0.63662)
+  [PASS] Lambda -> 1+: zeta_L = -i (Lambda - 1)/sqrt(pi) (1 + O(Lambda - 1))  [Schekochihin et al. 2009 eq. 190 with Lambda+ - 1 = 1/beta] 
+  [PASS] Lambda = 1 + delta: zeta_L = -i (delta/sqrt(pi)) [1 - 2 delta/pi + O(delta^2)]  (|(root/lead - 1)/delta + 2/pi| < delta) 
+D11 Vlasov-Poisson / Jeans correspondence
+  [PASS] eps_VP(k lambda_D) = eps(Lambda = -(k lambda_D)^2); eps_Jeans(k/k_J) = eps(Lambda = (k/k_J)^2) 8.43e-31
+ALL s03 CHECKS PASSED

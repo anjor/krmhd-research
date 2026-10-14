@@ -19,7 +19,8 @@ Checks:
  D8  0 < Lambda < 1: the zero is zeta = i gamma, 1 - sqrt(pi) gamma e^{gamma^2} erfc(gamma) = Lambda; the left side decreases
      monotonically from 1 to 0, so the root is unique; truncated ladder matrices converge to +-i gamma.
  D9  Lambda = 1: eps(0 + i0) = 0, eps(u+i0) = -i sqrt(pi) u + 2 u^2 + O(u^3), rho ~ 1/(pi^{3/2} u^2) (not integrable).
- D10 Landau roots (zeros of the continuation of eps into Im zeta < 0) at Lambda = +-sqrt5 and Lambda -> 1+.
+ D10 Landau roots (zeros of the continuation of eps into Im zeta < 0) at Lambda = +-sqrt5 and Lambda -> 1+, where
+     zeta_L = -i (delta/sqrt(pi)) [1 - 2 delta/pi + O(delta^2)] for Lambda = 1 + delta.
  D11 Vlasov-Poisson / Jeans correspondence: with F0 Maxwellian, eps_VP = 1 + (1 + zeta Z)/(k lambda_D)^2, i.e. Lambda = -(k lambda_D)^2;
      self-gravitating: Lambda = (k/k_J)^2.
 Exit 1 on failure.
@@ -190,12 +191,18 @@ print(f"    Lambda=+sqrt5: {mp.nstr(r1, 10)};  Lambda=-sqrt5: {mp.nstr(r2, 10)}"
 check("Lambda=+sqrt5 least-damped root -0.409958 i (reference value)", abs(r1 - mp.mpc(0, -0.409958)) < 2e-6)
 check("Lambda=-sqrt5 least-damped roots +-1.242247 - 0.835300 i (reference values)", abs(r2 - mp.mpc(1.242247, -0.835300)) < 2e-6)
 okl = True
+ok2 = True
 for d in (mp.mpf('1e-2'), mp.mpf('1e-3'), mp.mpf('1e-4')):
     rz = mp.findroot(lambda z: epsm(z, 1 + d), mp.mpc(0, -d / mp.sqrt(mp.pi)))
     rel = abs(rz - mp.mpc(0, -d / mp.sqrt(mp.pi))) / (d / mp.sqrt(mp.pi))
     okl &= rel < 2 * d
-    print(f"    Lambda = 1 + {mp.nstr(d, 2)}: root {mp.nstr(rz, 8)}, rel. dev. from -i(Lambda-1)/sqrt(pi) = {mp.nstr(rel, 3)}")
+    # second order: zeta_L = -i (delta/sqrt(pi)) [1 - 2 delta/pi + O(delta^2)]  (Appendix B)
+    c2 = (rz / mp.mpc(0, -d / mp.sqrt(mp.pi)) - 1) / d
+    ok2 &= abs(c2 + 2 / mp.pi) < d
+    print(f"    Lambda = 1 + {mp.nstr(d, 2)}: root {mp.nstr(rz, 8)}, rel. dev. from -i(Lambda-1)/sqrt(pi) = {mp.nstr(rel, 3)}; "
+          f"(root/lead - 1)/delta = {mp.nstr(mp.re(c2), 6)} (-2/pi = {mp.nstr(-2 / mp.pi, 6)})")
 check("Lambda -> 1+: zeta_L = -i (Lambda - 1)/sqrt(pi) (1 + O(Lambda - 1))  [Schekochihin et al. 2009 eq. 190 with Lambda+ - 1 = 1/beta]", okl)
+check("Lambda = 1 + delta: zeta_L = -i (delta/sqrt(pi)) [1 - 2 delta/pi + O(delta^2)]  (|(root/lead - 1)/delta + 2/pi| < delta)", ok2)
 
 print("D11 Vlasov-Poisson / Jeans correspondence")
 w = 0

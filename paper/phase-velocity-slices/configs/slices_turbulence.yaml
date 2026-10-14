@@ -1,0 +1,59 @@
+# Run family A: phase-velocity slices in decaying Alfvenic turbulence (paper sections 3 and 7, thm:slice and
+# thm:trunc; figure fig:snapshots and the decoupling check of section 8).  Read by scripts/run_slices_turbulence.py;
+# analysis by analysis/fig_snapshots.py.
+#
+# A density blob g = f e_0 in one compressive branch is released into balanced random Alfvenic fields with
+# chi of order 1.  Each slice a_j = w_j . g starts with the same pattern p_0 R_0j f and is then carried by
+# zhat x grad(Phi + s u_j Psi) and streams along z at s u_j.  Hyper-resistivity acts with the same coefficient on
+# z+- and on every g_m, hence on every slice in the same way.  No forcing, no hypercollisions.
+#
+# Units: v_A = 1, box side L = 1 (k = 2 pi n), s = sqrt(beta_i), u = v_par/v_th.
+
+label: slices-turb             # run ID P1_slices-turb_<YYYYMMDD_HHMMSS>
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 16                        # zero closure: 17 slices, u_j the Gauss nodes of rho du (u = 0 is a node)
+  Lambda: sqrt5
+  beta_i: 1.0
+  closure: zero
+
+alfvenic:                      # balanced random Gaussian Elsasser fields, drawn independently, equal energies
+  seed: 20261014
+  nperp: [1.0, 3.0]            # k_perp L/2 pi in this range
+  nzmax: 2                     # |k_z L/2 pi| <= nzmax
+  chi: 1.0                     # chi = kbar_perp z_rms/(kbar_par v_A) at t = 0, energy-weighted mean wavenumbers,
+                               # z_rms = [(<|grad z+|^2> + <|grad z-|^2>)/2]^(1/2)
+
+blob:                          # g(0) = amplitude x f e_0, f a band-limited periodic Gaussian with its mean removed
+  sigma: [0.125, 0.125, 0.25]      # standard deviations in x, y, z (L/8, L/8, L/4); periodic images included
+  center: [0.5, 0.5, 0.0]          # the plane z0 = 0 cuts through the peak
+  amplitude: 1.0
+
+stepper:                       # gandalf_step arguments
+  scheme: lawson_rk4
+  eta: 2.0                     # normalised hyper-resistivity: damping rate eta (k_perp^2/k_perp,max^2)^r on z+- and g
+  hyper_r: 2
+  nu: 0.0                      # no hypercollisions
+  hyper_n: 1
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+time:
+  t_out_eddy: [0.5, 1.5]       # output times in units of the outer eddy time tau = 1/(kbar_perp z_rms) at t = 0
+  safety: 0.5                  # dt = safety x min(Alfvenic CFL, 2 sqrt2/rho), recomputed every few steps
+  recompute_every: 5
+
+output:
+  z0: 0.0                      # plane on which a_j, g_0, Phi, Psi are saved
+  pad: 2                       # exact Fourier interpolation onto a grid refined by pad in x and y
+  su_shown: [-1.0, 0.0, 1.0]   # the figure shows the slices with s u_j nearest to these values
+
+gates:
+  budget_tol: 0.01             # |E(t) + accumulated hyper-resistive loss - E(0)|/E(0), free energy and Alfvenic energy
+  resolution_tol: 1.0e-3       # energy fraction in k_perp shells n >= n_max (band corners included) at the last
+                               # output, for the free energy of g and for the Alfvenic energy

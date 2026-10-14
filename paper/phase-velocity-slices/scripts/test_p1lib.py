@@ -6,13 +6,14 @@ A  The slice projection of GANDALF's right-hand side obeys the slice equation to
    strong fields so that the brackets dominate the streaming); dropping the u_j Psi advection fails.
 B  W = sum of slice energies: sum_m p_m <g_m^2> = sum_j <a_j^2>; Q_phi from the slices equals <g^T P phi(A) g>
    for phi = u, u^2, u^3, 1/u (odd M).
-C  Normalisations agree with GANDALF's own diagnostics: W(m) and the free energy (hermite_moment_energy,
-   hermite_free_energy), the Alfvenic energy (krmhd.physics.energy), the k_z-only flux (hermite_flux).
+C  Normalisations against real-space averages computed independently (no GANDALF diagnostics): <g_m^2>, the
+   Alfvenic energy, the slice correlation matrix, the k_z-only and field-aligned fluxes; the numpy bracket
+   (bracket_independent) equals GANDALF's dealiased bracket for fields inside the band.
 D  Field-aligned flux budget through GANDALF's right-hand side: d/dt sum_{n<=m} p_n <g_n^2> = -Pi_{m+1/2}, and the
    field-line part {Psi, .} of the flux is not negligible.
-E  One gandalf_step (Lawson-RK4 and IMEX-RK222) from a random state conserves Q_1 to time-stepping accuracy: the
-   change of Q_1 is orders of magnitude below the change of the individual moment energies and falls at least like
-   dt^3 when dt is halved.  One Lawson step with hypercollisions from a single-slice state leaks into slice l at
+E  One gandalf_step (Lawson-RK4) from a random state conserves Q_1 to time-stepping accuracy: the change of Q_1 is
+   orders of magnitude below the change of the individual moment energies and falls at least like dt^3 when dt is
+   halved; recommended_dt combines the Alfvenic CFL limit and the slice-advection limit.  One Lawson step with hypercollisions from a single-slice state leaks into slice l at
    the first-order rate dt |K_{l j0}| of slice_coupling_matrix.
 F  Frozen-field RK4 conserves every slice energy; with z+- = 0 it reproduces the exact k_z-only solution.
 G  Fields: embedding from 8^3 into 16^3 keeps the physical field; the Gaussian blob peaks at 1 at its centre;
@@ -35,8 +36,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import p1lib as P  # noqa: E402  (first: switches JAX to float64)
 import numpy as np  # noqa: E402
 import jax.numpy as jnp  # noqa: E402
-from krmhd.diagnostics import hermite_flux, hermite_free_energy, hermite_moment_energy  # noqa: E402
-from krmhd.physics import energy as krmhd_energy  # noqa: E402
 from krmhd.timestepping import gandalf_step  # noqa: E402
 
 T0 = time.time()
@@ -119,7 +118,7 @@ for Lam, clo, beta in ((P.SQRT5, "zero", 1.7), (-P.SQRT5, "symmetric", 0.6)):
           f"max|Pi - Pi_kz|/max|Pi| = {fl:.2f}")
 
 # ---------------------------------------------------------------------------------------------------------------
-print("C. normalisations against GANDALF's diagnostics (Lambda = sqrt5, zero closure)", flush=True)
+print("C. normalisations against independent real-space averages (Lambda = sqrt5, zero closure)", flush=True)
 Lam, beta = P.SQRT5, 1.0
 s = 1.0
 sl = P.make_slices(M, Lam)
@@ -130,24 +129,38 @@ g = np.zeros((16, 16, 9, M + 1), complex)
 g[..., 0] = box.random_field(rng, (1, 2.5), 2)
 g[..., 1] = 0.5 * g[..., 0] + 0.5 * box.random_field(rng, (1, 2.5), 2)     # correlated g_0, g_1: Q_u != 0
 g[..., 2] = 0.3 * box.random_field(rng, (1, 2.5), 2)
+g[..., 3:] = 0.1 * box.random_field(rng, (1, 2.5), 2, extra=(M - 2,))
 g /= math.sqrt(P.free_energy(box, g, sl.p))
 st = P.make_state(box, zp, zm, g, Lam, beta)
 Wm = P.W_m(box, g)
-e1 = float(np.abs(Wm * box.Ntot ** 2 / np.asarray(hermite_moment_energy(st)) - 1).max())
-e2 = abs(P.free_energy(box, g, sl.p) * box.Ntot ** 2 / hermite_free_energy(st) - 1)
+gr = box.to_real(g)                                       # [z, y, x, m]; band-limited, so grid means are exact
+e1 = float(np.abs(Wm / np.mean(gr ** 2, axis=(0, 1, 2)) - 1).max())
 EA = P.alfvenic_energy(box, zp, zm)
-e3 = abs(EA["E"] * box.N * box.Ntot / krmhd_energy(st)["total"] - 1)
-hf = np.asarray(hermite_flux(st))
-# GANDALF >= 0.7.0 (gandalf#159): hermite_flux is the one-sided field-aligned flux s p_m A_{m,m+1} Re[g_m^* grad_par
-# g_{m+1}] per mode; up to 0.6.0 it was the k_z-only flux without s and p_0
-pz_g = 2.0 * np.sum(box.w[..., None] * hf, axis=(0, 1, 2)) / box.Ntot ** 2
-pz = P.hermite_flux_field_aligned(box, g, psi, s, sl)
-e4 = float(np.abs(pz - pz_g).max() / np.abs(pz).max())
-e5 = abs(EA["E_plus"] + EA["E_minus"] - EA["E"]) / EA["E"]
-check("C1 W(m) = hermite_moment_energy / N^6; W = hermite_free_energy / N^6", max(e1, e2) < 1e-12, f"{e1:.1e}, {e2:.1e}")
-check("C2 Alfvenic energy E = krmhd.physics.energy / (N_z N^3); E = E_plus + E_minus", max(e3, e5) < 1e-12,
-      f"{e3:.1e}, {e5:.1e}")
-check("C3 field-aligned flux = 2 x (hermite_flux summed over modes), GANDALF >= 0.7.0", e4 < 1e-12, f"{e4:.1e}")
+gx, gy = box.grad_perp_real(phi)
+hx, hy = box.grad_perp_real(psi)
+e2 = abs(EA["E"] / (0.5 * np.mean(gx ** 2 + gy ** 2 + hx ** 2 + hy ** 2)) - 1)
+e2b = abs(EA["E_plus"] + EA["E_minus"] - EA["E"]) / EA["E"]
+a = sl.amplitudes(g)
+ar = box.to_real(a)
+Cr = np.einsum("zyxi,zyxj->ij", ar, ar) / box.Ntot
+e3 = float(np.abs(P.slice_correlation(box, a) - Cr).max() / np.abs(Cr).max())
+dzr = box.to_real(box.dz(g))
+pz_r = np.array([2 * s * sl.p[m] * sl.A[m, m + 1] * np.mean(gr[..., m] * dzr[..., m + 1]) for m in range(M)])
+pz = P.hermite_flux_kz(box, g, s, sl)
+e4 = float(np.abs(pz - pz_r).max() / np.abs(pz_r).max())
+gpr = np.stack([box.to_real(box.dz(g[..., m]) + box.bracket_independent(psi, g[..., m])) for m in range(M + 1)], -1)
+pf_r = np.array([2 * s * sl.p[m] * sl.A[m, m + 1] * np.mean(gr[..., m] * gpr[..., m + 1]) for m in range(M)])
+pf = P.hermite_flux_field_aligned(box, g, psi, s, sl)
+e5 = float(np.abs(pf - pf_r).max() / np.abs(pf_r).max())
+e6 = max(float(np.abs(box.bracket(f1, f2) - box.bracket_independent(f1, f2)).max() / np.abs(box.bracket(f1, f2)).max())
+         for f1, f2 in ((phi, psi), (psi, g[..., 0]), (phi, g[..., 1])))
+check("C1 <g_m^2> = real-space mean of g_m^2", e1 < 1e-12, f"{e1:.1e}")
+check("C2 Alfvenic energy = (1/2)<|grad Phi|^2 + |grad Psi|^2> in real space; E = E_plus + E_minus",
+      max(e2, e2b) < 1e-12, f"{e2:.1e}, {e2b:.1e}")
+check("C3 slice correlation matrix = real-space <a_j a_l>", e3 < 1e-12, f"{e3:.1e}")
+check("C4 k_z-only and field-aligned fluxes = real-space 2 s p_m A_(m,m+1) <g_m d g_(m+1)>", max(e4, e5) < 1e-12,
+      f"{e4:.1e}, {e5:.1e}")
+check("C5 numpy bracket (2x padded products) = GANDALF's dealiased bracket", e6 < 1e-12, f"{e6:.1e}")
 chi = P.nonlinearity_parameter(box, zp, zm)
 print(f"     chi_u = {chi['chi_u']:.2f}, chi_z = {chi['chi_z']:.2f}, kbar_perp/k1 = {chi['kperp_mean'] / box.k1:.2f}, "
       f"kbar_par/k1 = {chi['kpar_mean'] / box.k1:.2f}; Q_u/Q_1 = {P.Q_phi(box, sl.amplitudes(g), sl.u)['Q_u']:.3f}")
@@ -161,7 +174,7 @@ print(f"     slice-advection rate {lim['rate']:.1f} (fastest slice u = {sl.u[lim
 a0 = sl.amplitudes(g)
 Q0 = P.Q_phi(box, a0, sl.u)
 pW0 = sl.p * Wm
-for scheme in ("lawson_rk4", "imex_rk222"):
+for scheme in ("lawson_rk4",):
     dQ, dpw, dQu = [], [], []
     for dt in (dt0, dt0 / 2):
         st1 = gandalf_step(st, dt, eta=0.0, v_A=1.0, nu=0.0, hyper_r=1, hyper_n=6, scheme=scheme)
@@ -177,6 +190,12 @@ for scheme in ("lawson_rk4", "imex_rk222"):
           dQ[1] < 1e-3 * dpw[1] and order_ok,
           f"|dQ_1|/Q_1 = {dQ[0]:.2e}, {dQ[1]:.2e} (ratio {dQ[0] / max(dQ[1], 1e-300):.1f}); "
           f"max_m |d(p_m W_m)|/Q_1 = {dpw[0]:.2e}, {dpw[1]:.2e}; |dQ_u|/scale = {dQu[0]:.1e}, {dQu[1]:.1e}")
+
+rd = P.recommended_dt(box, zp, zm, sl, s, safety=0.5)
+cf = P.alfvenic_cfl_dt(box, zp, zm)
+check("E3 recommended_dt = 0.5 min(dt_A, 2 sqrt2/rho); the slice limit binds for these fields",
+      abs(rd["dt"] - 0.5 * min(cf["dt_alfven"], lim["dt_lawson_max"])) < 1e-15 and rd["binding"] == "slice advection",
+      f"dt_A = {rd['dt_alfven']:.3e}, 2 sqrt2/rho = {rd['dt_slice']:.3e}, dt = {rd['dt']:.3e}")
 
 # hypercollisional leakage out of a single slice in one Lawson step, against the first-order coupling
 nu, hn = 2.0, 6
@@ -200,20 +219,20 @@ check("E2 one Lawson step with hypercollisions: |a_l|/|a_j0| = dt |K_(l j0)| to 
 
 # ---------------------------------------------------------------------------------------------------------------
 print("F. frozen-field RK4 and the exact k_z-only solution", flush=True)
-dtF, nF = 2e-3, 20
+dtF, nF = 5e-4, 80                    # rho dt = 0.2 for the fastest slice: RK4 energy error ~ (rho dt)^6/72 per step
 fr = P.FrozenRK4(box, M, Lam, beta, dtF)
 gF = np.asarray(fr.advance(psi, -psi, g, nF))
 Ej0 = P.slice_energies(box, a0)
 EjF = P.slice_energies(box, sl.amplitudes(gF))
 e_sl = float(np.abs(EjF / Ej0 - 1).max())
-moved = float(np.abs(P.W_m(box, gF) / Wm - 1).max())
-check("F1 frozen field (z+, z-) = (Psi, -Psi): every slice energy conserved to RK4 accuracy", e_sl < 1e-9 and moved > 1e-3,
-      f"max_j |dE_j/E_j| = {e_sl:.1e} while max_m |dW_m/W_m| = {moved:.2f}")
+moved = float(np.abs(sl.p * P.W_m(box, gF) - sl.p * Wm).max() / P.free_energy(box, g, sl.p))
+check("F1 frozen field (z+, z-) = (Psi, -Psi): every slice energy conserved to RK4 accuracy",
+      e_sl < 1e-7 and moved > 1e-2, f"max_j |dE_j/E_j| = {e_sl:.1e} while max_m |d(p_m W_m)|/W = {moved:.2f}")
 zero = np.zeros_like(zp)
 gZ = np.asarray(fr.advance(zero, zero, g, nF))
 gX = P.kz_only_evolve(box, g, sl, s, nF * dtF)
 e_z = float(np.abs(gZ - gX).max() / np.abs(gX).max())
-check("F2 frozen RK4 with z+- = 0 equals the exact k_z-only solution", e_z < 1e-8, f"max rel. diff {e_z:.1e}")
+check("F2 frozen RK4 with z+- = 0 equals the exact k_z-only solution", e_z < 1e-9, f"max rel. diff {e_z:.1e}")
 
 # ---------------------------------------------------------------------------------------------------------------
 print("G. embedding, blob, plane", flush=True)
@@ -252,8 +271,8 @@ Bmat = np.zeros((n8, n8))
 for i in range(n8):
     e = np.zeros(n8)
     e[i] = 1.0
-    ek = np.fft.rfftn(e.reshape(8, 8, 8)) * b8.mask
-    Bmat[:, i] = np.fft.irfftn(b8.bracket(fj, ek), s=(8, 8, 8)).ravel()
+    ek = np.fft.rfftn(e.reshape(8, 8, 8), axes=(0, 1, 2)) * b8.mask
+    Bmat[:, i] = np.fft.irfftn(b8.bracket(fj, ek), s=(8, 8, 8), axes=(0, 1, 2)).ravel()
 ev = np.linalg.eigvals(Bmat)
 rho = float(np.abs(ev).max())
 check("H1 rho(P{Phi + s u_max Psi, .}) <= k_perp,max max|grad(Phi + s u Psi)| (8^3, M = 3)", rho <= lim8["rate"],
@@ -291,6 +310,12 @@ try:
 except ValueError:
     pass
 okI = okI and P.steps_for_times([0.062, 0.124, 0.25], 0.002) == [31, 62, 125]
+okI = okI and P.steps_for_times([0.062, 0.125, 0.25], 0.0005) == [124, 250, 500]
+try:
+    P.StepParams(scheme="imex_rk222")
+    okI = False
+except ValueError:
+    pass
 okI = okI and abs(P.parse_number("sqrt5") - P.SQRT5) < 1e-15 and P.parse_number("-sqrt(5)") == -P.SQRT5
 okI = okI and math.isinf(P.parse_number("inf")) and abs(P.parse_number("2*pi") - 2 * math.pi) < 1e-15
 check("I1 run ID, .npz/.json round trip, gates, output times, parse_number", okI, row[:90] + " ...")
