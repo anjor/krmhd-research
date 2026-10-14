@@ -1,3 +1,4 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
 B1  Laguerre moments
   [PASS] int e^-x x^k L_l = 0 for l > k (l <= 12, k <= 6) 
   [PASS] int e^-x x^k L_k = (-1)^k k! 
