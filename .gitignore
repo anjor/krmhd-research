@@ -5,3 +5,12 @@ __pycache__/
 .claude/settings.local.json
 studies/04-phase-space-helicity/.loop/
 paper/phase-velocity-slices/.loop/
+# LaTeX build products of the P1 paper (build with latexmk -outdir elsewhere, or let these be ignored)
+paper/phase-velocity-slices/*.aux
+paper/phase-velocity-slices/*.bbl
+paper/phase-velocity-slices/*.blg
+paper/phase-velocity-slices/*.fdb_latexmk
+paper/phase-velocity-slices/*.fls
+paper/phase-velocity-slices/*.log
+paper/phase-velocity-slices/*.out
+paper/phase-velocity-slices/main.pdf

@@ -1,0 +1,82 @@
+\section{Truncated Hermite hierarchies}\label{sec:truncated}
+
+Fourier--Hermite codes for KRMHD evolve the moments $g_0,\dots,g_M$ of a branch and close the hierarchy at $m=M$; examples are Viriato \citep{Loureiro2016} and GANDALF \citep{Kanekar2025}. The truncated hierarchy consists of exactly $M+1$ passive slices, whose phase velocities and weights, for the zero closure, are the nodes and weights of the Gauss rule of the spectral density $\varrho\,\dd u$ of (\ref{eq:varrho}). Appendix~\ref{app:truncated} gives the proofs.
+
+\subsection{The slices of the truncated hierarchy}
+
+For one branch truncated at $m=M$, the vector $g=(g_0,\dots,g_M)^{\mathsf T}$ obeys
+\begin{equation}\label{tr:hierarchy}
+  \partial_tg+\{\Phi,g\}+s\,\gradpar(Ag)=0,\qquad \gradpar=\partial_z+\{\Psi,\cdot\},
+\end{equation}
+where, for the zero closure $g_{M+1}=0$, $A$ is the leading $(M+1)\times(M+1)$ block of the ladder matrix of section~\ref{sec:model}. The copy closure $g_{M+1}=g_{M-1}$ changes, for $M\ge2$, only $A_{M,M-1}$, to $\sqrt{M/2}+\sqrt{(M+1)/2}$. The weight $\Pw$ of section~\ref{sec:model} makes $\Pw A$ symmetric for the zero closure; for the copy closure its last entry becomes $p_M=\sqrt M/(\sqrt M+\sqrt{M+1})\approx\frac12$, and $\Pw A$ is then the same matrix for both closures. The weight is positive definite if and only if $\Lambda\notin[0,1]$.
+
+\begin{theorem}\label{thm:trunc}
+Let $\Lambda\notin[0,1]$, the value $\Lambda=\infty$ included, and use the zero or the copy closure.
+\begin{itemize}
+\item[(i)] $A$ has $M+1$ real and simple eigenvalues $u_0<\dots<u_M$. The right eigenvector of $u_j$ is $\boldsymbol r_j=(r_0(u_j),\dots,r_M(u_j))^{\mathsf T}$, where $r_m(u)$, the $m$th Hermite coefficient of the Case--Van Kampen mode $F_u$ of section~\ref{sec:slices}, is a polynomial of degree $m$. The left eigenvector is $\boldsymbol w_j=\Pw\boldsymbol r_j$, and $\boldsymbol w_j^{\mathsf T}\boldsymbol r_l=n_j\,\delta_{jl}$ with $n_j=\boldsymbol r_j^{\mathsf T}\Pw\boldsymbol r_j>0$.
+\item[(ii)] For arbitrary real $\Phi$ and $\Psi$, and brackets in (\ref{tr:hierarchy}) evaluated by any bilinear rule, possibly followed by linear operations, such as dealiasing, that act on every $g_m$ in the same way, $g$ solves (\ref{tr:hierarchy}) if and only if the unit-weight slice amplitudes $a_j=\boldsymbol w_j^{\mathsf T}g/\sqrt{n_j}=\sum_mp_mR_{mj}g_m$, with $R_{mj}=r_m(u_j)/\sqrt{n_j}$, satisfy
+\begin{equation}\label{eq:truncslice}
+  \partial_ta_j+\{\Phi+su_j\Psi,\,a_j\}+su_j\,\partial_za_j=0,\qquad j=0,\dots,M,
+\end{equation}
+with the brackets evaluated by the same rule.
+\item[(iii)] $g_m=\sum_jR_{mj}\,a_j$, and $\sum_mp_m|g_m(\boldsymbol k)|^2=\sum_j|a_j(\boldsymbol k)|^2$ for every Fourier mode.
+\end{itemize}
+\end{theorem}
+
+Each slice is a passive scalar carried by $\uE+su_j\bhat$, the velocity $\boldsymbol U_u$ of (\ref{eq:Uu}) at $u=u_j$, so theorem~\ref{thm:trunc} is the truncated form of theorem~\ref{thm:slice}, for any $z^\pm$. Its proof uses only the bilinearity of the discrete bracket. The conservation of $\int a_j^2\,\dd^3r$ and the two-slice law (\ref{eq:twoslice}) need, in addition, the antisymmetry of the bracket under the volume average, which the dealiased pseudo-spectral bracket has exactly only when $\Phi$, $\Psi$ and $g$ lie inside the dealiasing band. Hypercollisions, which act on the Hermite index, couple the slices.
+
+\citet[\S6.2.1]{Loureiro2016} diagonalised the $k_\perp$-dependent truncated streaming matrix of the KREHM model for the linear parallel step of Viriato. \citet{ParkerDellar2015} identified the eigenvectors of the truncated Hermite system of linearised Vlasov--Poisson with discrete Case--Van Kampen modes. The normal fields of truncated Hermite hierarchies of electromagnetic drift-kinetic models \citep{Tassi2015} are proportional to the truncated distribution function at the zeros of a Hermite polynomial and, in three dimensions, are coupled through the parallel gradients of the self-consistent potentials \citep[\S7]{Tassi2022}. In KRMHD the Landau coupling enters only $A_{10}$ of a matrix that does not depend on the wavenumber, and the Alfv\'enic fields do not depend on $g$, so the decoupling is exact in three dimensions.
+
+\subsection{Gauss quadrature of the Case--Van Kampen measure}
+
+\begin{proposition}\label{tr:gaussprop}
+Let $\Lambda\notin[0,1]$ and use the zero closure. Then (i) $\int\varrho\,r_mr_n\,\dd u=\delta_{mn}/p_m$; (ii) the $u_j$ are the zeros of $r_{M+1}$, and with $\lambda_j=1/n_j$
+\begin{equation}\label{eq:gauss}
+  \sum_{j=0}^M\lambda_j\,f(u_j)=\int\varrho(u)\,f(u)\,\dd u\qquad\text{for every polynomial $f$ of degree at most $2M+1$,}
+\end{equation}
+so the $u_j$ and $\lambda_j$ are the nodes and weights of the $(M+1)$-point Gauss rule of $\varrho\,\dd u$; (iii) for $G=\sum_{m\le M}g_me_m$, with $e_m=H_mF_M/\sqrt{2^mm!}$, $a_j=\sqrt{\lambda_j}\,\Tr[G](u_j)$.
+\end{proposition}
+
+Since $\lambda_j\simeq\varrho(u_j)\Delta_j$, with $\Delta_j$ the local spacing of the nodes, part (iii) gives $a_j\simeq\Delta_j^{1/2}a_{u_j}$ for states in the span of the retained moments: the discrete slices are the continuum slices (\ref{eq:aunit}) at the nodes. For smooth states outside that span, the distribution of free energy over the slices converges to the continuum one approximately as $M^{-1}$.
+
+At $\Lambda=\infty$ this is the known correspondence with Gauss--Hermite quadrature: the nodes $x_j$ are the zeros of $H_{M+1}$, as \citet{ParkerDellar2015} and \citet{Tassi2022} noted, with weights $\lambda^\infty_j$, and the link with the Jacobi matrix is that of \citet{GolubWelsch1969}. The identification of the truncated KRMHD hierarchy at finite $\Lambda$ with the Gauss rule of the dressed density $\varrho=F_M/|\eps|^2$ is new, as is the exact nonlinear decoupling. The copy closure gives no Gauss rule (appendix~\ref{app:truncated}).
+
+\subsection{Conserved quadratic forms}
+
+The truncated counterpart of (\ref{eq:Qphi}) is $Q^{(M)}_\varphi=\int g^{\mathsf T}\Pw\varphi(A)g\,\dd^3r=\sum_j\varphi(u_j)\int a_j^2\,\dd^3r$.
+
+\begin{proposition}
+Let $\Lambda\notin[0,1]$, use either closure, let $\Phi$, $\Psi$ and $g$ lie inside the dealiasing band, and let no collisions, dissipation or forcing act on $g$. A form $\int g^{\mathsf T}Kg\,\dd^3r$ with a real symmetric matrix $K$ is conserved for all $\Phi$ and $\Psi$ if and only if $K=\Pw\varphi(A)$ for a real function $\varphi$ on the nodes.
+\end{proposition}
+
+\begin{proof}
+By the antisymmetry of the bracket and of $\gradpar$, the form changes only through $B=\frac12(KA-A^{\mathsf T}K)$, and $B_{mn}\neq0$ would make the state $g_m=\cos k_zz$, $g_n=\sin k_zz$, $\Psi=0$ change it. So $KA=A^{\mathsf T}K$, $R^{\mathsf T}KR$ commutes with $\mathrm{diag}(u_j)$, whose entries are distinct, and $K=\Pw R\,\mathrm{diag}(\varphi_j)R^{\mathsf T}\Pw=\Pw\varphi(A)$. Conversely, each $\int a_j^2\,\dd^3r$ is conserved by (\ref{eq:truncslice}).
+\end{proof}
+
+For the zero closure and $G=\sum_{m\le M}g_me_m$, $\fe{G}{G}=g^{\mathsf T}\Pw g$ and $\fe{G}{LG}=g^{\mathsf T}\Pw Ag$, so by (\ref{eq:WGH}) $W^\pm=(n_iT_i/2V)\,Q^{(M)}_1$ and $\Gamma^\pm=(\vth/2V)\,Q^{(M)}_u$ are exactly CMM's (B31) and (B32) on the retained moments. Under the copy closure $Q^{(M)}_1$ carries the weight $p_M$ on $g_M^2$ and is not (B31); $Q^{(M)}_u$ is the same for both closures.
+
+\subsection{The phase-space helicity at odd and even \texorpdfstring{$M$}{M}}
+
+Let $h_m=H_m/\sqrt{2^mm!}$, $\psi_m=h_mF_M^{1/2}$, $J$ the ladder matrix of the zero closure at $\Lambda=\infty$, and $\boldsymbol h(0)$ and $\boldsymbol h'(0)$ the vectors with components $h_m(0)$ and $h_m'(0)$. For the zero closure, the exactness of Gauss--Hermite quadrature gives the matrix $(B_M)_{mn}=\PVint\psi_m\psi_nu^{-1}\,\dd u$ of CMM's helicity (\ref{eq:WGH}) on the retained moments,
+\begin{equation}\label{eq:Hoddeven}
+  B_M=J^{-1}=\Pw A^{-1}\quad(M\ \text{odd}),\qquad
+  B_M=J^{+}+\lambda^\infty_{M/2}\big[\boldsymbol h(0)\,\boldsymbol h'(0)^{\mathsf T}+\boldsymbol h'(0)\,\boldsymbol h(0)^{\mathsf T}\big]\quad(M\ \text{even}),
+\end{equation}
+with $J^+$ the Moore--Penrose inverse. For odd $M$ the conserved form $Q^{(M)}_{1/u}$ is therefore exactly CMM's helicity of the truncated state, $\Hph^\pm=(n_iT_i/2\vth V)\,Q^{(M)}_{1/u}$, for every $\Lambda\neq1$.
+
+For even $M$, $u_{M/2}=0$ is an eigenvalue for every $\Lambda$ and both closures, because $SAS=-A$ with $S=\mathrm{diag}((-1)^m)$ makes the spectrum symmetric about zero and $M+1$ is odd. For the zero closure the left null vector is $p_0\boldsymbol h(0)$, so the slice at $u=0$ is proportional to $\sum_mh_m(0)g_m=G_M(0)/F_M(0)$, the truncated distribution at $v_\parallel=0$. It is advected by $\uE$ alone, and its conserved energy is proportional to the imaginary part of (\ref{eq:Hcomplex}) for the truncated state, the truncated form of CMM's conservation of $\mathrm{Im}\,\Hph$ (their eqs.~2.22--2.23). The real part is not conserved: the rank-two term in (\ref{eq:Hoddeven}) couples $\boldsymbol h(0)$, the null vector of $J$, to its other eigenvectors, so at $\Lambda=\infty$ $B_M$ is not of the form $\Pw\varphi(A)$, and at finite $\Lambda$ we found the same numerically. The conserved principal-value form $\sum_{u_j\neq0}u_j^{-1}\int a_j^2\,\dd^3r$ leaves out the slice at $u=0$ and differs from the helicity by a node term proportional to $\lambda^\infty_{M/2}\simeq[\pi/(2M+3)]^{1/2}$, so it converges only as $M^{-1/2}$. For $G=F_M(u-\frac12)$ the even-$M$ error times $M^{1/2}$ tends to $-2.86$, $-1.01$ and $-1.52$ for $\Lambda=\sqrt5$, $-\sqrt5$ and $\infty$, and is between 5\% and 18\% of the helicity at $M=64$ and 128. Diagnostics of the helicity should therefore use odd $M$ and the zero closure.
+
+\citet{Tassi2022} found the field advected by the $\boldsymbol E\times\boldsymbol B$ flow alone at an odd number of retained moments, and its Casimir invariants in three dimensions, for Hermite truncations of drift-kinetic models with a symmetric matrix \citep[see also][and \citealt{Tassi2015} in two dimensions]{Tassi2023}. New here are the survival of this field under the $\Lambda$-modified ladder and both closures, its identification with $\mathrm{Im}\,\Hph$, and the consequence (\ref{eq:Hoddeven}) for the real part.
+
+\subsection{The largest phase velocity and the time step}
+
+The largest phase velocity $u_{\max}=u_M$ hardly depends on $\Lambda$. At $\Lambda=\infty$ it is the largest Gauss--Hermite node $x_M$, and since $\Lambda$ acts only on the moments $m=0$ and 1, where the extreme eigenvector of $J$ is small, the shift at finite $\Lambda$ is of size $x_Me^{-x_M^2}/\Lambda$ up to an algebraic factor, about $10^{-49}$ at $M=64$. With $\kappa_m=(2m+1)^{1/2}$, appendix~\ref{app:truncated} derives
+\begin{equation}\label{eq:umax}
+\begin{aligned}
+  u_{\max}&=\kappa+2^{-1/3}\alpha_1\,\kappa^{-1/3}-\frac{2^{-2/3}\alpha_1^2}{10}\,\kappa^{-5/3}+O(\kappa^{-3}),&\qquad\kappa&=\kappa_{M+1}\quad\text{(zero closure)},\\
+  u_{\max}&=\kappa+2^{-1/3}\alpha_1'\,\kappa^{-1/3}-2^{-5/3}\Big(\frac{4}{5\alpha_1'}+\frac{\alpha_1'^2}{5}\Big)\kappa^{-5/3}+O(\kappa^{-3}),&\qquad\kappa&=\kappa_M\quad\text{(copy closure)},
+\end{aligned}
+\end{equation}
+where $\alpha_1=-2.3381074$ and $\alpha_1'=-1.0187930$ are the first zeros of the Airy function and of its derivative; the first two terms of the zero-closure line are the classical asymptotics of the largest zero of a Hermite polynomial. At $M=64$ and 128, $u_{\max}$ is $10.616023$ and $15.355050$ for the zero closure and $11.00116$ and $15.71228$ for the copy closure (figure~\ref{fig:spectrum}).
+
+By theorem~\ref{thm:trunc} the nonlinear term $-\{\Phi,g\}-s\{\Psi,Ag\}$ advects slice $j$ with the stream function $\Phi+su_j\Psi$, at a speed up to $\max|\nabla_\perp\Phi|+s|u_j|\max|\nabla_\perp\Psi|$. A time-step limit for an explicit treatment of this term must therefore use $su_{\max}|\nabla_\perp\Psi|$, not $s|\nabla_\perp\Psi|$. \citet{Mandell2024} include the largest Gauss--Hermite node in the parallel-streaming frequency that sets the time step of the GX code; here the same factor also multiplies the field-line term.

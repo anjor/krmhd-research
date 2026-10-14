@@ -1,54 +1,25 @@
 \section{Phase-velocity slices}\label{sec:slices}
 
-This section diagonalises the operator $L$ of one branch and shows that the diagonalising transform commutes with the nonlinear terms of the kinetic equation. We consider the branch equation (\ref{eq:branch}) with the operator (\ref{eq:L}),
-\begin{equation*}
-  \partial_tG+\{\Phi,G\}+s\,\gradpar(LG)=0,\qquad
-  LG=uG-\frac{uF_M}{\Lambda}\,M_0[G],
-\end{equation*}
-in which $G(\boldsymbol r,u,t)$ is $G^+$ or $G^-$, with $\Lambda=\Lambda^+$ or $\Lambda^-$ from (\ref{eq:Lambdapm}), or a Laguerre coefficient $G_l$ with $l\ge2$, for which $\Lambda=\infty$. The Alfv\'enic fields $\Phi$ and $\Psi$ are treated as given functions of $\boldsymbol r$ and $t$, and nothing in this section uses the RMHD equations (\ref{eq:rmhd}). Two properties of (\ref{eq:branch}) are used: $L$ acts on $u$ alone, with a coefficient $1/\Lambda$ that is the same at every point and on every scale, and the brackets $\{\Phi,\cdot\}$ and $\{\Psi,\cdot\}$ act in the same way at every $u$.
+This section diagonalises the operator $L$ of (\ref{eq:branch}), for $G^\pm$ with $\Lambda=\Lambda^\pm$ and for $G_l$ ($l\ge2$) with $\Lambda=\infty$, and shows that the diagonalising transform commutes with the nonlinear terms. The Alfv\'enic fields $\Phi$ and $\Psi$ are given functions of $\boldsymbol r$ and $t$; (\ref{eq:rmhd}) is not used.
 
 \subsection{The free-energy product and the factorisation \texorpdfstring{$L=UP$}{L = UP}}\label{sl:product}
 
-Let $\mathcal W$ be the space of real functions $G(u)$ with $\ip{G}{G}<\infty$, where
-\begin{equation*}
-  \ip{f}{g}=\int\frac{f\,g}{F_M}\,\dd u .
-\end{equation*}
-Since $M_0[g]=\ip{F_M}{g}$ and $\ip{F_M}{F_M}=1$, the operator $\mathsf Q=F_M\,M_0$ is the orthogonal projector onto $F_M$ in this inner product. The free-energy product is
+Let $\mathcal W$ be the space of real functions $G(u)$ with $\ip{G}{G}<\infty$, where $\ip{f}{g}=\int fg\,F_M^{-1}\,\dd u$. Since $M_0[g]=\ip{F_M}{g}$ and $\ip{F_M}{F_M}=1$, $\mathsf Q=F_M\,M_0$ is the orthogonal projector onto $F_M$. The free-energy product is
 \begin{equation}\label{eq:fe}
   \fe{f}{g}=\ip{f}{g}-\frac{M_0[f]\,M_0[g]}{\Lambda}=\ip{f}{Pg},\qquad
-  P=I-\frac{\mathsf Q}{\Lambda}=I-\frac{F_M\,M_0}{\Lambda} .
+  P=I-\frac{\mathsf Q}{\Lambda} .
 \end{equation}
-For a branch, $\tfrac12 n_iT_i\fe{G^\pm}{G^\pm}$ averaged over the volume is the free energy $W^\pm$ of the branch in the form of CMM's eq.~(B13). S09 (\S6.2.3) showed that it is conserved, and section~\ref{sec:invariants} returns to this identification. Writing $G=M_0[G]\,F_M+G_\perp$ with $M_0[G_\perp]=0$ gives
-\begin{equation}\label{sl:split}
-  \fe{G}{G}=\ip{G_\perp}{G_\perp}+p_0\,M_0[G]^2,\qquad p_0=1-\frac{1}{\Lambda} .
-\end{equation}
-By (\ref{sl:split}) the product is positive definite if and only if $p_0>0$, that is, for $\Lambda\notin[0,1]$, and then
-\begin{equation*}
-  \min(1,p_0)\,\ip{G}{G}\le\fe{G}{G}\le\max(1,p_0)\,\ip{G}{G},
-\end{equation*}
-so that $(\mathcal W,\fe{\cdot}{\cdot})$ is a Hilbert space whose norm is equivalent to that of $\ip{\cdot}{\cdot}$. Since $\Lambda^+>1$ and $\Lambda^-<0$ for all $\beta_i$ and $\tau/Z$ (section~\ref{sec:model}), and $p_0=1$ for $\Lambda=\infty$, this covers every compressive sector of KRMHD. At $\Lambda=1$ the product is degenerate, with null vector $F_M$. For $0<\Lambda<1$ it has exactly one negative direction, since $\fe{F_M}{F_M}=p_0<0$ while $\fe{G}{G}>0$ for every non-zero $G$ with $M_0[G]=0$.
+Averaged over the volume, $\tfrac12 n_iT_i\fe{G^\pm}{G^\pm}$ is CMM's branch free energy $W^\pm$ (their eq.~B13), which S09 (\S6.2.3) showed to be conserved. With $G=M_0[G]\,F_M+G_\perp$ and $M_0[G_\perp]=0$, $\fe{G}{G}=\ip{G_\perp}{G_\perp}+p_0\,M_0[G]^2$, where $p_0=1-1/\Lambda$. The product is therefore positive definite, with a norm equivalent to that of $\ip{\cdot}{\cdot}$, if and only if $\Lambda\notin[0,1]$, as for every compressive sector of KRMHD ($\Lambda^+>1$, $\Lambda^-<0$; section~\ref{sec:model}). It is degenerate at $\Lambda=1$ and indefinite for $0<\Lambda<1$.
 
-Let $U$ be multiplication by $u$, $(UG)(u)=uG(u)$, with domain $D(U)=\{G\in\mathcal W:\ uG\in\mathcal W\}$; it is self-adjoint in $(\mathcal W,\ip{\cdot}{\cdot})$. Since $UPG=uG-uF_M\,M_0[G]/\Lambda$, the branch operator factorises as
+Let $U$ be multiplication by $u$, which is self-adjoint in $(\mathcal W,\ip{\cdot}{\cdot})$ on $D(U)=\{G\in\mathcal W:\ uG\in\mathcal W\}$. Since $UPG=uG-uF_M\,M_0[G]/\Lambda$,
 \begin{equation}\label{eq:LUP}
-  L=UP .
+  L=UP ,
 \end{equation}
-Because $P$ and $U$ are symmetric in $\ip{\cdot}{\cdot}$, (\ref{eq:fe}) and (\ref{eq:LUP}) give
-\begin{equation*}
-  \fe{f}{Lg}=\ip{Pf}{UPg}
-  =\int\frac{u\,f\,g}{F_M}\,\dd u-\frac{M_0[f]\,M_1[g]+M_1[f]\,M_0[g]}{\Lambda},
-\end{equation*}
-where the last step uses $M_1[F_M]=0$. The right-hand side is symmetric in $f$ and $g$, so $L$ is symmetric in the free-energy product. For $\Lambda\notin[0,1]$ it is also self-adjoint, with domain $D(U)$: the map $G\mapsto P^{1/2}G$ is unitary from $(\mathcal W,\fe{\cdot}{\cdot})$ onto $(\mathcal W,\ip{\cdot}{\cdot})$ and carries $L$ into $P^{1/2}UP^{1/2}$, which differs from $U$ by a bounded symmetric operator of rank two (appendix~\ref{app:spectral}). Since $P$ is invertible for $\Lambda\neq1$, (\ref{eq:LUP}) also gives
-\begin{equation}\label{sl:PLinv}
-  PL^{-1}=U^{-1},\qquad\text{that is,}\qquad
-  \fe{f}{L^{-1}g}=\int\frac{f\,g}{u\,F_M}\,\dd u\quad\text{for } g/u\in\mathcal W .
-\end{equation}
-The form (\ref{sl:PLinv}) contains no $\Lambda$; section~\ref{sec:invariants} uses it for CMM's phase-space helicity.
-
-In the Hermite representation of section~\ref{sec:model}, let $e_m=H_m(u)F_M(u)/\sqrt{2^mm!}$, so that $G=\sum_mg_me_m$. The $e_m$ are orthonormal in $\ip{\cdot}{\cdot}$, the matrix of $P$ is the weight matrix $\Pw=\mathrm{diag}(p_m)$, and the matrix of $U$ is the Hermite Jacobi matrix $J$, with zero diagonal and $J_{m,m+1}=J_{m+1,m}=\sqrt{(m+1)/2}$. The product (\ref{eq:fe}) of $f=\sum_mf_me_m$ and $g=\sum_mg_me_m$ becomes $\fe{f}{g}=\sum_mp_mf_mg_m$, and the factorisation (\ref{eq:LUP}) becomes $A=J\Pw$ for the ladder matrix of section~\ref{sec:model}, which is why $\Pw A=\Pw J\Pw$ is symmetric.
+so $\fe{f}{Lg}=\ip{Pf}{UPg}$ is symmetric in $f$ and $g$; for $\Lambda\notin[0,1]$, $L$ is self-adjoint on $D(U)$ in the free-energy product (appendix~\ref{app:spectral}). For $\Lambda\neq1$, $P$ is invertible and $PL^{-1}=U^{-1}$, that is, $\fe{f}{L^{-1}g}=\int fg\,(uF_M)^{-1}\,\dd u$, a form without $\Lambda$ that section~\ref{sec:invariants} uses for CMM's helicity.
 
 \subsection{Resolvent and dielectric function}\label{sl:resolventsec}
 
-For $\mathrm{Im}\,z>0$, the equation $(z-L)X=G$ gives $X=[G-uF_M\,M_0[X]/\Lambda]/(z-u)$, and taking $M_0$ of both sides determines $M_0[X]$:
+For $\mathrm{Im}\,z>0$, solving $(z-L)X=G$ for $X$ and taking $M_0$ of the result gives
 \begin{equation}\label{sl:resolvent}
   (z-L)^{-1}G=\frac{1}{z-u}\left[G-\frac{uF_M}{\Lambda\,\eps(z)}\int\frac{G(v)}{z-v}\,\dd v\right],
 \end{equation}
@@ -57,27 +28,21 @@ with the dielectric function
   \eps(\zeta)=1-\frac{1}{\Lambda}\int\frac{vF_M(v)}{v-\zeta}\,\dd v=1-\frac{1+\zeta Z(\zeta)}{\Lambda},
   \qquad Z(\zeta)=\int\frac{F_M(x)}{x-\zeta}\,\dd x\quad(\mathrm{Im}\,\zeta>0).
 \end{equation}
-Here $Z$ is the plasma dispersion function, and $\eps=0$ is the dispersion relation of the branch (section~\ref{sec:model}). We use $\eps$ for the function (\ref{eq:eps}) in the upper half plane and for its analytic continuation into the lower half plane; the zeros of the continuation are the Landau roots. For $\mathrm{Im}\,z<0$ the resolvent is given by (\ref{sl:resolvent}) with $\eps(z)$ replaced by $\overline{\eps(\bar z)}$, which is the value of the integral in (\ref{eq:eps}) at $z$ and differs from the analytic continuation of $\eps$. On the real axis the Plemelj formula gives
+We also write $\eps$ for its analytic continuation into the lower half plane, whose zeros are the Landau roots. On the real axis,
 \begin{equation}\label{sl:epsRI}
   \eps(u+\ii0)=\eps_R(u)+\ii\,\eps_I(u),\qquad
   \eps_R=1-\frac{1+u\,\mathrm{Re}\,Z(u)}{\Lambda},\qquad
   \eps_I=-\frac{\pi\,u\,F_M(u)}{\Lambda},
 \end{equation}
-where $\mathrm{Re}\,Z(u)=\PVint F_M(x)\,(x-u)^{-1}\,\dd x$ is minus twice the Dawson function. With $\mathsf H[f](u)=\pi^{-1}\PVint f(v)\,(v-u)^{-1}\,\dd v$, which has the Fourier multiplier $\ii\,\mathrm{sgn}\,k$ and is minus the transform usually called the Hilbert transform (we call $\mathsf H$ the Hilbert transform below), the real and imaginary parts are related by $\eps_R-1=\mathsf H[\eps_I]$.
+and $\mathsf H[f](u)=\pi^{-1}\PVint f(v)\,(v-u)^{-1}\,\dd v$, with Fourier multiplier $\ii\,\mathrm{sgn}\,k$, is minus the transform usually called the Hilbert transform; we call $\mathsf H$ the Hilbert transform.
 
-By (\ref{sl:resolvent}), the resolvent exists at every $z$ in the upper half plane at which $\eps(z)\neq0$, and at the complex conjugates of these points. Appendix~\ref{app:spectral} shows that the non-real eigenvalues of $L$ are the zeros of $\eps$ in the upper half plane and their complex conjugates, and that a real eigenvalue can occur only at $u=0$ and only for $\Lambda=1$. The zeros of $\eps$ in the upper half plane are counted by the argument of \citet{Penrose1960}, which appendix~\ref{app:spectral} carries out for this $\eps$: as $u$ runs over the real line, the curve $1+uZ(u+\ii0)$ winds once around every point of the interval $(0,1)$ and around no real point outside $[0,1]$. Hence $\eps$ has no zeros in the closed upper half plane for $\Lambda\notin[0,1]$, and exactly one, on the imaginary axis, for $0<\Lambda<1$. In the latter case $L$ has the eigenvalues $\pm\ii\gamma$, where $\gamma>0$ solves $1-\sqrt\pi\,\gamma\,e^{\gamma^2}\mathrm{erfc}(\gamma)=\Lambda$, and the slice decomposition below is incomplete (appendix~\ref{app:spectral}). At $\Lambda=1$, $\eps(0+\ii0)=0$ and $F_M$ is an eigenfunction with eigenvalue zero embedded in the continuous spectrum. The branch $\Lambda^+$ approaches this case at high beta. For $\Lambda=1+\delta$ the least-damped zero of the analytic continuation of $\eps$ is $\zeta=-(\ii\delta/\sqrt\pi)\,[1+O(\delta)]$. Since $\Lambda^+-1\simeq\beta_i^{-1}$ for $\beta_i\gg1$, the corresponding damping rate is $|k_\parallel|v_A/\sqrt{\pi\beta_i}$, the Barnes damping rate \citep{Barnes1966} in the form of S09's eq.~(190).
+The non-real eigenvalues of $L$ are the zeros of $\eps$ in the upper half plane and their complex conjugates, and the only real eigenvalue is $0$, at $\Lambda=1$, embedded in the continuous spectrum (appendix~\ref{app:spectral}). By the argument of \citet{Penrose1960}, $\eps$ has no zeros in the closed upper half plane for $\Lambda\notin[0,1]$ and one, on the imaginary axis, for $0<\Lambda<1$, when $L$ has the eigenvalues $\pm\ii\gamma$ ($\gamma>0$) and the slice decomposition below is incomplete. The branch $\Lambda^+$ approaches $\Lambda=1$ at high beta, where its least-damped Landau root gives the Barnes damping rate $|k_\parallel|v_A/\sqrt{\pi\beta_i}$ \citetext{\citealp{Barnes1966}; S09, eq.~190; appendix~\ref{app:spectral}}.
 
 The spectral density of the branch is
 \begin{equation}\label{eq:varrho}
   \varrho(u)=\frac{F_M(u)}{|\eps(u+\ii0)|^2} .
 \end{equation}
-For $\Lambda\notin[0,1]$ it is positive, smooth and even, with
-\begin{equation*}
-  \int\varrho\,\dd u=\frac{\Lambda}{\Lambda-1}=\frac{1}{p_0},\qquad
-  \varrho(0)=\frac{F_M(0)}{p_0^2},\qquad
-  \frac{\varrho(u)}{F_M(u)}\to1\quad(|u|\to\infty),
-\end{equation*}
-and $\varrho=F_M$ for $\Lambda=\infty$. At $\Lambda=1$ it behaves as $\pi^{-3/2}u^{-2}$ near $u=0$ and is not integrable; this is the trace of the embedded eigenvalue. Figure~\ref{fig:spectrum} shows $\varrho$ for $\Lambda=\pm\sqrt5$.
+For $\Lambda\notin[0,1]$ it is positive, smooth and even, with $\int\varrho\,\dd u=1/p_0$ and $\varrho/F_M\to1$ as $|u|\to\infty$; $\varrho=F_M$ for $\Lambda=\infty$. Figure~\ref{fig:spectrum} shows $\varrho$ for $\Lambda=\pm\sqrt5$.
 
 \subsection{Case--Van Kampen modes and the slice transform}\label{sl:transformsec}
 
@@ -86,25 +51,23 @@ For real $u$, the equation $(L-u)F=0$ has the distributional solutions
   F_u(v)=\frac{1}{\Lambda}\,\mathrm P\frac{vF_M(v)}{v-u}+\eps_R(u)\,\delta(v-u),\qquad
   M_0[F_u]=1,\qquad M_1[F_u]=u,
 \end{equation}
-which are the Case--Van Kampen modes of the branch \citep{vanKampen1955,Case1959}. The normalisation $M_0[F_u]=1$ fixes the weight of the $\delta$-function. Then $(v-u)F_u=vF_M/\Lambda$, and $(L-u)F_u=(v-u)F_u-vF_M\,M_0[F_u]/\Lambda=0$. Each mode consists of a beam of particles at $v=u$, with weight $\eps_R(u)$, together with a principal-value part, which is the response of the Maxwellian, through the Landau coupling, to the density $M_0[F_u]=1$ of the mode moving at the phase velocity $u$. For $\Lambda=\infty$ the principal-value part vanishes and $F_u=\delta(v-u)$.
-
-The slice transform is the projection on these modes in the free-energy product,
+the Case--Van Kampen modes of the branch \citep{vanKampen1955,Case1959}: $(v-u)F_u=vF_M/\Lambda$ gives $(L-u)F_u=0$, and $M_0[F_u]=1$ fixes the weight of the $\delta$-function. Each mode is a beam of particles at $v=u$ dressed by the response of the Maxwellian, through the Landau coupling, to the density $M_0[F_u]$ of the mode moving at $u$; for $\Lambda=\infty$, $F_u=\delta(v-u)$. The slice transform is the projection on the modes in the free-energy product,
 \begin{equation}\label{eq:transform}
   \Tr[G](u)=\fe{F_u}{G}
   =\frac{\eps_R(u)\,G(u)}{F_M(u)}+\frac{u}{\Lambda}\,\PVint\frac{G(v)}{v-u}\,\dd v
-  =\frac{\eps_R\,G-\eps_I\,\mathsf H[G]}{F_M}(u).
+  =\frac{\eps_R\,G-\eps_I\,\mathsf H[G]}{F_M}(u),
 \end{equation}
-Since $LF_u=uF_u$ and $L$ is symmetric,
-\begin{equation}\label{sl:TL}
-  \Tr[LG](u)=u\,\Tr[G](u)\quad\text{for }G\in D(U),\qquad \Tr[F_M](u)=1-\frac{1}{\Lambda}\quad\text{for every }u ;
-\end{equation}
-appendix~\ref{app:spectral} verifies the first identity directly from (\ref{eq:transform}). The unit-weight slice amplitude is
+and since $LF_u=uF_u$, $L$ is symmetric and $PF_M=p_0F_M$,
+\begin{equation*}
+  \Tr[LG](u)=u\,\Tr[G](u)\quad\text{for }G\in D(U),\qquad \Tr[F_M](u)=1-\frac{1}{\Lambda}\quad\text{for every }u .
+\end{equation*}
+The unit-weight slice amplitude is
 \begin{equation}\label{eq:aunit}
   a_u=\sqrt{\varrho(u)}\;\Tr[G](u)=\frac{\eps_R\,G-\eps_I\,\mathsf H[G]}{\sqrt{F_M}\;|\eps|}(u),
 \end{equation}
-with $\varrho$ from (\ref{eq:varrho}), and we write $\mathcal A$ for the linear map $G\mapsto a$. For $\Lambda=\infty$, $a_u=G(u)/\sqrt{F_M(u)}$: the Laguerre coefficients $G_l$ with $l\ge2$ are already slices.
+and $\mathcal A$ denotes the map $G\mapsto a$. For $\Lambda=\infty$, $a_u=G(u)/\sqrt{F_M(u)}$: the Laguerre coefficients with $l\ge2$ are already slices.
 
-The modes (\ref{sl:Fu}) are those of \citet{vanKampen1955} and \citet{Case1959}, and the reconstruction formula (\ref{sl:inverse}) below is the G-transform $\mathcal G[c]=\eps_Rc+\eps_I\mathsf H[c]$ of \citet{MorrisonPfirsch1992}, \citet{Morrison1994} and \citet{Morrison2000}. \citet{Morrison2000} proved for the linearised Vlasov--Poisson system at fixed wavenumber that this transform is invertible when the Penrose condition holds, and \citet{Heninger2018} applied it to electrostatic drift kinetics (remark~\ref{sl:remlit}). The following theorem gives the corresponding statements for $L$, in the free-energy product and with the weights that make the map unitary.
+The reconstruction formula (\ref{sl:inverse}) below is the G-transform $\mathcal G[c]=\eps_Rc+\eps_I\mathsf H[c]$ of \citet{MorrisonPfirsch1992}, \citet{Morrison1994} and \citet{Morrison2000}, who proved for the linearised Vlasov--Poisson system at fixed wavenumber that it is invertible when the Penrose condition holds. The following theorem gives the corresponding statements for $L$, with the weights that make the map unitary.
 
 \begin{theorem}\label{thm:spectrum}
 Let $\Lambda\notin[0,1]$, the value $\Lambda=\infty$ included, and let spectral statements refer to the complexification of $\mathcal W$. Then:
@@ -123,9 +86,7 @@ and $G$ is recovered from its slices by
 \end{equation}
 \end{theorem}
 
-Appendix~\ref{app:spectral} proves theorem~\ref{thm:spectrum}. In outline, the unitary map $G\mapsto P^{1/2}G$ carries $L$ into $U+(\sqrt{p_0}-1)(\mathsf QU+U\mathsf Q)$, which is $U$ plus a bounded symmetric perturbation of rank two; this gives part~(i). A perturbation of rank two is of trace class, so by the Kato--Rosenblum theorem \citep[][chapter~X]{Kato1966} the absolutely continuous part of $L$ is unitarily equivalent to $U$, whose spectrum is the real line with multiplicity one. Because $\eps$ has no zeros in the closed upper half plane, $1/\eps$ is continuous up to the real axis, and the resolvent form $\fe{G}{(z-L)^{-1}G}$ has continuous boundary values on the real axis for a dense set of $G$. This excludes eigenvalues and singular continuous spectrum, which gives part~(ii). Stone's formula then gives the spectral measure of $L$ in the state $G$ as $\varrho\,\Tr[G]^2\,\dd u=a_u^2\,\dd u$, which is (\ref{sl:parseval}), so that $\mathcal A$ is an isometry, and the construction of a preimage for every smooth $a$ with compact support shows that $\mathcal A$ is onto. The reconstruction formula (\ref{sl:inverse}) uses the absence of zeros of $\eps$ in the closed upper half plane. The formula (\ref{eq:aunit}) holds for every $G\in\mathcal W$, with $\mathsf H$ the Hilbert transform on $L^2(\mathbb R,\dd u)$. For complex $G$, such as a Fourier coefficient, $a_u^2$ in (\ref{sl:parseval}) is replaced by $|a_u|^2$.
-
-Theorem~\ref{thm:spectrum} fixes the weights: $\mathcal G$ is unitary from $L^2(\mathbb R,\dd u/\varrho)$ onto $(\mathcal W,\fe{\cdot}{\cdot})$, with inverse $G\mapsto\varrho\,\Tr[G]$, and the corresponding map onto $L^2(\mathbb R,\dd u)$ is $\mathcal A=\varrho^{-1/2}\mathcal G^{-1}$, that is, $G\mapsto\sqrt\varrho\,\Tr[G]$. In terms of the modes, part~(iii) contains the completeness relation $G=\int\varrho\,\Tr[G]\,F_u\,\dd u$ and the orthogonality relation $\fe{F_u}{F_{u'}}=\delta(u-u')/\varrho(u)$. By (\ref{sl:parseval}), the slices divide the free energy of a branch among phase velocities, with no cross terms between different $u$.
+Appendix~\ref{app:spectral} gives the proof: $G\mapsto P^{1/2}G$ carries $L$ into $U$ plus a bounded symmetric perturbation of rank two, which gives part~(i) and, by the Kato--Rosenblum theorem \citep[][chapter~X]{Kato1966}, the unitary equivalence of the absolutely continuous part of $L$ with $U$; since $1/\eps$ is continuous up to the real axis, Stone's formula gives the spectral measure of $L$ in the state $G$ as $a_u^2\,\dd u$, which excludes eigenvalues and singular continuous spectrum. The G-transform is therefore unitary from $L^2(\mathbb R,\dd u/\varrho)$ onto $(\mathcal W,\fe{\cdot}{\cdot})$, and $\mathcal A=\varrho^{-1/2}\mathcal G^{-1}$. For complex $G$, $a_u^2$ is replaced by $|a_u|^2$. The slices divide the free energy among phase velocities, without cross terms.
 
 \subsection{The slice theorem}\label{sl:slicesec}
 
@@ -150,73 +111,80 @@ The same holds with $a_u$ replaced by $\Tr[G](u)$. By (ii) the velocity $\boldsy
 \end{theorem}
 
 \begin{proof}
-By theorem~\ref{thm:spectrum}(iii), $\mathcal A$ is a bounded, injective linear map that acts on $u$ only, through a kernel that does not depend on $\boldsymbol r$ or $t$. It therefore commutes with $\partial_t$, $\partial_x$, $\partial_y$ and $\partial_z$ applied to continuously differentiable $\mathcal W$-valued functions, and with multiplication by functions of $(\boldsymbol r,t)$; hence it commutes with $\{\Phi,\cdot\}$, with $\{\Psi,\cdot\}$ and with $\gradpar=\partial_z+\{\Psi,\cdot\}$. By (iii), $LG=UG-uF_M\,M_0[G]/\Lambda$ is continuously differentiable, and $\mathcal ALG=u\,\mathcal AG$ then gives
+By theorem~\ref{thm:spectrum}(iii), $\mathcal A$ is bounded and injective and acts on $u$ only, through a kernel that does not depend on $\boldsymbol r$ or $t$, so it commutes with $\partial_t$, with the spatial derivatives of continuously differentiable $\mathcal W$-valued functions and with multiplication by functions of $(\boldsymbol r,t)$, hence with $\{\Phi,\cdot\}$, $\{\Psi,\cdot\}$ and $\gradpar$. By (iii), $LG$ is continuously differentiable, and $\mathcal ALG=u\,\mathcal AG$ gives
 \begin{equation*}
   \mathcal A\big[\partial_tG+\{\Phi,G\}+s\,\gradpar(LG)\big]
   =\partial_ta+\{\Phi,a\}+s\,u\,\gradpar a,
 \end{equation*}
-with $a=\mathcal AG$ and $u$ acting by multiplication. Since $u\,\gradpar a_u=u\,\partial_za_u+\{u\Psi,a_u\}$, the right-hand side is the left-hand side of (\ref{eq:slice}). Because $\mathcal A$ is injective, the expression in square brackets vanishes at $(\boldsymbol r,t)$ if and only if the right-hand side vanishes there as an element of $L^2(\mathbb R,\dd u)$, that is, for almost every $u$. The identity $\{\chi,a\}=(\zhat\times\nabla_\perp\chi)\cdot\nabla a$ gives (\ref{eq:Uu}), and $\nabla\cdot(\zhat\times\nabla_\perp\chi)=0$ gives $\nabla\cdot\boldsymbol U_u=0$. Since $\varrho(u)$ is positive and finite, dividing (\ref{eq:slice}) by $\sqrt{\varrho(u)}$ gives the statement for $\Tr[G](u)$.
+with $a=\mathcal AG$. Since $u\,\gradpar a_u=u\,\partial_za_u+\{u\Psi,a_u\}$, the right-hand side is the left-hand side of (\ref{eq:slice}), and since $\mathcal A$ is injective, the bracket on the left vanishes if and only if the right-hand side vanishes for almost every $u$. The identity $\{\chi,a\}=(\zhat\times\nabla_\perp\chi)\cdot\nabla a$ gives (\ref{eq:Uu}) and $\nabla\cdot\boldsymbol U_u=0$, and dividing by $\sqrt{\varrho(u)}\in(0,\infty)$ gives the statement for $\Tr[G](u)$.
 \end{proof}
 
-When $a_u$ and its derivatives are continuous in $u$, as they are for a finite Hermite expansion of $G$, (\ref{eq:slice}) holds for every $u$. Each slice is a passive scalar carried by the divergence-free velocity $\boldsymbol U_u$, and slices with different $u$ do not interact. The statement is three-dimensional and includes the part $s\{\Psi,LG\}$ of the streaming that follows the perturbed field lines. The velocity $\boldsymbol U_u$ is that of the guiding centre of a free ion that drifts with $\uE$ and streams along the perturbed field line $\bhat=\zhat+\boldsymbol b_\perp$ at the constant parallel velocity $v_\parallel=u\vth$, which is $su$ in units of $v_A$. The parallel electric field and the mirror force, which couple the ions to $\delta n$ and $\delta B$ and enter (\ref{eq:branch}) through the Landau coupling $uF_M\,M_0[G]/\Lambda$, do not appear in (\ref{eq:slice}). The Landau coupling only dresses the slices: its effect is contained in the relation (\ref{eq:aunit}) between $a_u$ and $G$, by which the slice at $u$ is the projection of $G$ on the mode $F_u$, the beam of particles at $v=u$ together with the response (\ref{sl:Fu}) of the Maxwellian to it. The distribution $G(\boldsymbol r,u,t)$ at fixed $u$ is not a passive scalar, since the Landau coupling links it to all other velocities; the dressed combination $a_u$ is. In a straight field the slice streams at $su$, the parallel phase velocity of the mode $F_u$, and we call $u$ the phase velocity of the slice.
-
-The proof uses two properties of the branch equation. The Landau coupling is linear in $G$, local in $\boldsymbol r$, and has the coefficient $1/\Lambda$, which does not depend on the wavenumber, so a single transform diagonalises $L$ at every wavenumber; and the brackets act in the same way at every $u$. Neither property holds for the Vlasov--Poisson system, in which the analogue of $\Lambda$ is $-(k\lambda_D)^2$ (section~\ref{sec:model}) and the nonlinear term acts on velocity. That the slices are also passive is a further property of KRMHD: $\Phi$ and $\Psi$ obey (\ref{eq:rmhd}), which does not involve $G$. When the advecting fields depend on the distribution, as the electrostatic potential does in the drift-kinetic system of \citet{Heninger2018}, the transformed components obey (\ref{eq:slice}) with $\Psi=0$ and with a potential that depends on them, and they remain coupled through it. Passivity is not needed for the energy of each slice to be conserved (section~\ref{sec:invariants}), but it is needed for the slices to evolve independently of one another. Both the decomposition and the passivity are properties of the limit $k_\perp\rho_i\to0$. At finite $k_\perp\rho_i$ the field relations contain gyroaveraging factors, so that the effective $\Lambda$ depends on $k_\perp$ and the advecting potential on $v_\perp$, and the Alfv\'enic fields depend on the compressive fluctuations; section~\ref{sec:invariants} states what can be proved there.
-
-The slice at $u=0$ is advected by $\uE$ alone. If $G$ is H\"older continuous in $u$ near $u=0$, (\ref{eq:transform}) gives $\Tr[G](0)=p_0\,G(0)/F_M(0)$, so this slice is the distribution at $v_\parallel=0$ itself, which obeys $\partial_tG+\{\Phi,G\}=0$ there because $(LG)(0)=0$. This is the KRMHD form of CMM's eq.~(2.22), by which in gyrokinetics the distribution at $v_\parallel=0$ is advected by the gyroaveraged potential alone; section~\ref{sec:invariants} relates the energy of this slice to the imaginary part of CMM's complex helicity.
+Each slice is a passive scalar carried by the divergence-free velocity $\boldsymbol U_u$, in three dimensions, and slices with different $u$ do not interact; when $a_u$ is continuous in $u$, as for a finite Hermite expansion, (\ref{eq:slice}) holds for every $u$. The velocity $\boldsymbol U_u$ is that of the guiding centre of a free ion that drifts with $\uE$ and streams along $\bhat$ at $v_\parallel=u\vth$ ($su$ in units of $v_A$). The parallel electric field and the mirror force, which enter through the Landau coupling, only dress the slices: the distribution at fixed $u$ is not a passive scalar, but its projection $a_u$ on $F_u$ is. In a straight field the slice streams at $su$, the parallel phase velocity of $F_u$, hence the name. The proof uses only that $1/\Lambda$ does not depend on the wavenumber and that the brackets act alike at every $u$; passivity holds because the Alfv\'enic fields do not depend on $G$.
 
 In terms of the Elsasser potentials $z^\pm=\Phi\pm\Psi$, the stream function of the slice at $u$ is
 \begin{equation}\label{eq:elsasserpot}
   \Phi+su\Psi=\tfrac12\big[(1+su)\,z^++(1-su)\,z^-\big] .
 \end{equation}
-By (\ref{eq:elsasserpot}), the slices with $su=\pm1$, that is, with $v_\parallel=\pm v_A$, are advected by a single Elsasser field (proposition~\ref{prop:elsasser}).
-
-The two branches and the sector $\Lambda=\infty$ have different transforms, because their values of $\Lambda$ differ, but the velocity (\ref{eq:Uu}) depends only on $u$. Applying theorem~\ref{thm:slice} to each of them, with $a^\pm_u$ the slices of $G^\pm$ and $a^{(l)}_u=G_l(u)/\sqrt{F_M(u)}$ for $l\ge2$, gives
+The sectors have different transforms, but $\boldsymbol U_u$ depends only on $u$, so with $a^\pm_u$ the slices of $G^\pm$ and $a^{(l)}_u=G_l(u)/\sqrt{F_M(u)}$ for $l\ge2$, theorem~\ref{thm:slice} gives
 \begin{equation}\label{eq:sameflow}
   \big(\partial_t+\boldsymbol U_u\cdot\nabla\big)\big(a^+_u,\,a^-_u,\,a^{(2)}_u,\,a^{(3)}_u,\dots\big)=0 .
 \end{equation}
-By (\ref{eq:sameflow}), the compressive sector of KRMHD is a continuum of passive scalars labelled by phase velocity, and at each $u$ the slices of all sectors are carried by the same flow. Section~\ref{sec:truncated} shows that the truncated Hermite hierarchy integrated by GANDALF decomposes in the same way, with the slices at the eigenvalues of the truncated ladder matrix. We checked that decomposition to round-off against GANDALF's right-hand side for $\Lambda=\pm\sqrt5$ and $\beta_i=0.3$, $0.5$ and $1$, with both closures at $\beta_i=0.3$ and $1$, in states in which the brackets were up to several times larger than the streaming term. In part of these checks the brackets were evaluated independently of GANDALF, and the same comparison with the sign of $\{\Psi,\cdot\}$ reversed fails by an amount of order one (section~\ref{sec:numerics}).
+The compressive sector of KRMHD is therefore a continuum of passive scalars labelled by phase velocity, and at each $u$ the slices of all sectors are carried by the same flow. Section~\ref{sec:truncated} shows that a truncated Hermite hierarchy decomposes in the same way; we checked that decomposition to round-off against GANDALF's right-hand side (section~\ref{sec:numerics}).
+
+\subsection{Special slices}\label{sl:special}
+
+The slice $u=0$ is advected by $\uE$ alone. If $G$ is H\"older continuous in $u$ near $u=0$, (\ref{eq:transform}) gives $\Tr[G](0)=p_0\,G(0)/F_M(0)$, so this slice is the distribution at $v_\parallel=0$, which obeys $\partial_tG+\{\Phi,G\}=0$ there because $(LG)(0)=0$. This is the KRMHD form of CMM's eq.~(2.22), by which in gyrokinetics the distribution at $v_\parallel=0$ is advected by the gyroaveraged potential alone. Section~\ref{sec:invariants} relates the energy of this slice to the imaginary part of CMM's complex helicity, and section~\ref{sec:truncated} gives its truncated counterpart.
+
+\begin{proposition}\label{prop:elsasser}
+Under the hypotheses of theorem~\ref{thm:slice}, the slices with $su=-1$ and $su=+1$, that is, with $v_\parallel=-v_A$ and $+v_A$, obey
+\begin{equation}\label{sl:elsasser}
+  (\partial_t-\partial_z)\,a_u+\{z^-,a_u\}=0\quad(su=-1),\qquad
+  (\partial_t+\partial_z)\,a_u+\{z^+,a_u\}=0\quad(su=+1).
+\end{equation}
+The slice $su=-1$ moves toward $-z$ with $z^+$ and is advected by $z^-$ alone, and the slice $su=+1$ moves toward $+z$ with $z^-$ and is advected by $z^+$ alone. In a truncated hierarchy the same holds for a slice of theorem~\ref{thm:trunc} whose speed $su_j$ is $-1$ or $+1$.
+\end{proposition}
+
+\begin{proof}
+By (\ref{eq:elsasserpot}), $\Phi+su\Psi$ is $z^-$ at $su=-1$ and $z^+$ at $su=+1$. Substituting in (\ref{eq:slice}) gives (\ref{sl:elsasser}).
+\end{proof}
+
+By (\ref{eq:rmhd}), $(\partial_t-\partial_z+\{z^-,\cdot\})\nabla_\perp^2z^+=\{\partial_xz^+,\partial_xz^-\}+\{\partial_yz^+,\partial_yz^-\}$, so the slice with $su=-1$ is transported by the operator that transports the Elsasser vorticity $\nabla_\perp^2z^+$, without the right-hand side, which arises because $\zhat\times\nabla_\perp z^\pm$ are vector fields and vanishes when either Elsasser field vanishes. The two slices exist at every $\beta_i$, at $u=\pm\beta_i^{-1/2}$ (in a truncated hierarchy only when $\beta_i=u_j^{-2}$ for an eigenvalue $u_j$), whereas the fluid slow waves interact exclusively with the counter-propagating Alfv\'en waves only for $\beta\gg1$ \citetext{S09, \S2.5, eq.~30 and footnote~15; \citealp[\S2.4]{LithwickGoldreich2001}}.
+
+The fluid slow waves and the entropy mode obey equations of the same form. With $c=(1+v_A^2/c_s^2)^{-1/2}$, the slow-wave speed in units of $v_A$, S09's equations (their eqs~23 and~29--30) for the generalised Elsasser fields $z_\parallel^\pm=u_\parallel\pm c^{-1}\,\delta B_\parallel/B_0$ and the entropy mode $\delta s$ read
+\begin{equation}\label{eq:fluidslices}
+  \partial_tz_\parallel^\pm+\{\Phi\mp c\Psi,\,z_\parallel^\pm\}\mp c\,\partial_zz_\parallel^\pm=0,\qquad
+  \partial_t\,\delta s+\{\Phi,\delta s\}=0 ,
+\end{equation}
+which is (\ref{eq:slice}) at $su=\mp c$ and at $u=0$. This is a formal correspondence between equations, not a derived collisional limit of the kinetic slices: in the collisional limit (S09, \S6.1 and appendix~D) the continuum of slice speeds is replaced by the three speeds $-c$, $0$ and $c$. At low $\beta_i$ every slice with $u$ of order unity is, to leading order in $s$, advected by $\uE$ alone, as is the passively advected kinetic field that \citet{Schekochihin2019} identified at low $\beta$ with the kinetic analogue of the entropy mode.
+
+The equations (\ref{eq:rmhd}) and (\ref{eq:branch}) are invariant under the reflection
+\begin{equation}\label{eq:mirror}
+  \Phi'(\boldsymbol r)=\Phi(\tilde{\boldsymbol r}),\qquad
+  \Psi'(\boldsymbol r)=-\Psi(\tilde{\boldsymbol r}),\qquad
+  G'(\boldsymbol r,u)=G(\tilde{\boldsymbol r},-u),\qquad
+  \tilde{\boldsymbol r}=(x,y,-z),
+\end{equation}
+which reverses $z$ and $v_\parallel$, exchanges $z^+$ and $z^-$, and maps the slice at $u$ to the slice at $-u$, $a'_u(\boldsymbol r)=a_{-u}(\tilde{\boldsymbol r})$. The free energy $\Wc$ is therefore even under (\ref{eq:mirror}), and $\Gamma$ and $\Hph$, which weight the slice energies with $u$ and $1/u$ (section~\ref{sec:invariants}), are odd, so they vanish in every state that is its own mirror image.
 
 \subsection{Dissipation, collisions and forcing}\label{sl:forcingsec}
 
-Theorem~\ref{thm:slice} concerns the collisionless and unforced branch equation. Consider instead
-\begin{equation*}
-  \partial_tG+\{\Phi,G\}+s\,\gradpar(LG)=-\mathcal BG-\mathcal CG+F,
-\end{equation*}
-where $\mathcal B$ is a linear operator that acts on $\boldsymbol r$ alone and in the same way at every $u$, $\mathcal C$ is a linear operator that acts on $u$ alone and in the same way at every $\boldsymbol r$, and $F(\boldsymbol r,u,t)$ is a source. Under the hypotheses of theorem~\ref{thm:slice}, and with $\mathcal BG$, $\mathcal CG$ and $F$ continuous functions of $(\boldsymbol r,t)$ with values in $\mathcal W$, the argument of its proof gives
+Let the right-hand side of (\ref{eq:branch}) be $-\mathcal BG-\mathcal CG+F$, where the linear operators $\mathcal B$ and $\mathcal C$ act on $\boldsymbol r$ alone and on $u$ alone, respectively, each in the same way at every value of the other variable, and $F$ is a source. If $\mathcal BG$, $\mathcal CG$ and $F$ are continuous functions of $(\boldsymbol r,t)$ with values in $\mathcal W$, the proof of theorem~\ref{thm:slice} gives
 \begin{equation}\label{eq:sliceforcing}
   \partial_ta_u+\boldsymbol U_u\cdot\nabla a_u=-\mathcal B\,a_u-\int\hat{\mathcal C}(u,u')\,a_{u'}\,\dd u'+\sqrt{\varrho(u)}\;\Tr[F](u),
-  \qquad
-  \hat{\mathcal C}(u,u')=\sqrt{\varrho(u)\,\varrho(u')}\;\fe{F_u}{\mathcal CF_{u'}} ,
 \end{equation}
-where $\hat{\mathcal C}$ is the kernel of $\mathcal A\,\mathcal C\,\mathcal A^{-1}$.
-
-An operator $\mathcal B$ commutes with $\mathcal A$ and appears unchanged in every slice equation. Damping at a rate that depends only on $k_\perp$ or $k_z$, applied with the same coefficient to every Hermite moment, is of this kind; GANDALF applies its hyper-resistivity and its parallel damping in this way \citep{Kanekar2025}. Such terms damp each slice and do not couple slices. We checked (\ref{eq:sliceforcing}) to round-off with a damping term proportional to $k_\perp^4$.
-
-An operator $\mathcal C$ that depends on velocity couples the slices through the kernel $\hat{\mathcal C}$. \citet{Heninger2018}, whose subject is the G-transform of kinetic equations with collisions, state that for electrostatic drift kinetics the transform changes the collision operator only by a small term. The kernel is explicit for an operator that is diagonal in the Hermite basis, $\mathcal Ce_m=\nu_me_m$. Examples are the Lenard--Bernstein operator in $v_\parallel$, $\mathcal CG=-\nu\,\partial_u(uG+\tfrac12\partial_uG)$, for which $\nu_m=\nu m$, and GANDALF's hypercollisions, for which $\nu_m=\nu(m/M)^n$ for $m\ge2$ and $\nu_0=\nu_1=0$. Let $r_m(u)$ be the $m$th Hermite coefficient of the mode $F_u$. It is a polynomial of degree $m$ (section~\ref{sec:truncated}), and by (\ref{sl:Fu})
+where $\hat{\mathcal C}$ is the kernel of $\mathcal A\,\mathcal C\,\mathcal A^{-1}$. Damping at a rate that depends only on $k_\perp$ or $k_z$, applied with the same coefficient to every Hermite moment, is of the form $\mathcal B$ and damps each slice separately. A velocity-dependent $\mathcal C$ couples the slices. With $e_m=H_m(u)F_M(u)/\sqrt{2^mm!}$, so that $G=\sum_mg_me_m$ and $\fe{f}{g}=\sum_mp_mf_mg_m$, and with $r_m(u)$ the $m$th Hermite coefficient of $F_u$, a polynomial of degree $m$ with $r_0=M_0[F_u]=1$ and $r_1=\sqrt2\,M_1[F_u]=\sqrt2\,u$,
 \begin{equation*}
-  r_0(u)=M_0[F_u]=1,\qquad r_1(u)=\sqrt2\,M_1[F_u]=\sqrt2\,u .
+  \Tr[e_m](u)=p_m\,r_m(u),
 \end{equation*}
-Since $\fe{f}{g}=\sum_mp_mf_mg_m$,
-\begin{equation}\label{sl:Ten}
-  \Tr[e_m](u)=p_m\,r_m(u).
-\end{equation}
-The functions $e_m/\sqrt{p_m}$ form an orthonormal basis of $(\mathcal W,\fe{\cdot}{\cdot})$, so by theorem~\ref{thm:spectrum} their images $\phi_m=\mathcal A[e_m/\sqrt{p_m}]=\sqrt{p_m\varrho}\;r_m$ form an orthonormal basis of $L^2(\mathbb R,\dd u)$, and
+so the functions $\phi_m=\sqrt{p_m\varrho}\;r_m$, the images of the orthonormal basis $e_m/\sqrt{p_m}$ of $(\mathcal W,\fe{\cdot}{\cdot})$, form an orthonormal basis of $L^2(\mathbb R,\dd u)$. For $\mathcal Ce_m=\nu_me_m$, as for Lenard--Bernstein collisions ($\nu_m=\nu m$) or hypercollisions ($\nu_m=\nu(m/M)^n$), the kernel is $\hat{\mathcal C}(u,u')=\sum_m\nu_m\,\phi_m(u)\,\phi_m(u')$, which couples different slices unless all $\nu_m$ are equal. Collisions are the only term in (\ref{eq:sliceforcing}) that exchanges free energy between slices. Forcing of $g_m$ by a field $f(\boldsymbol r,t)$, $F=f\,e_m$, gives the slice at $u$ the source $\sqrt{\varrho(u)}\,p_m\,r_m(u)\,f$:
 \begin{equation*}
-  \hat{\mathcal C}(u,u')=\sum_m\nu_m\,\phi_m(u)\,\phi_m(u') .
-\end{equation*}
-This kernel is $\nu\,\delta(u-u')$ when $\nu_m=\nu$ for every $m$, and it couples different slices otherwise. For GANDALF's hypercollisions with $n=6$, $M=24$ and $\Lambda=\pm\sqrt5$, the largest off-diagonal element of their matrix in the unit-weight slice variables of the truncated hierarchy (section~\ref{sec:truncated}) is $0.40$ times the largest diagonal element, so the coupling is not small. Collisions are the only term in (\ref{eq:sliceforcing}) that exchanges free energy between slices.
-
-Forcing of the Hermite moment $g_m$ by a field $f(\boldsymbol r,t)$ is the source $F=f\,e_m$, and by (\ref{sl:Ten}) it gives the slice at $u$ the source $\sqrt{\varrho(u)}\,p_m\,r_m(u)\,f$. For the two lowest moments,
-\begin{equation}\label{sl:sources}
   F=f\,e_0:\quad \Big(1-\frac{1}{\Lambda}\Big)\sqrt{\varrho(u)}\;f,\qquad\qquad
   F=f\,e_1:\quad \sqrt2\,u\,\sqrt{\varrho(u)}\;f .
-\end{equation}
-Forcing of $g_0=M_0[G]$ therefore puts the same spatial pattern $f$ into every slice, with an amplitude proportional to $\sqrt\varrho$. For forcing that is white in time, has zero mean and is independent of the state, the free energy injected per unit $u$ is proportional to $\varrho(u)$, with the normalised density $p_0\varrho(u)$, which integrates to one: injection at $m=0$ is uniform with respect to the spectral measure $\varrho\,\dd u$. Forcing of $g_1$ gives the slice at $u$ the amplitude $\sqrt2\,u\sqrt{\varrho(u)}$, which is odd in $u$. The slices at $u$ and $-u$ receive the same pattern with opposite signs, and the injected free energy has the density $2u^2\varrho(u)$, which integrates to $\fe{e_1}{e_1}=1$. In general, such forcing of $g_m$ injects free energy with the normalised density $\phi_m^2=p_m\varrho\,r_m^2$. If $g_0$ and $g_1$ are forced by zero-mean fields $f_0$ and $f_1$ that are white in time and independent of the state, with $\langle f_i(\boldsymbol r,t)\,f_j(\boldsymbol r,t')\rangle=c_{ij}\,\delta(t-t')$, the mean rate at which $a_u^2$ is injected is
-\begin{equation*}
-  \varrho(u)\,\big[p_0^2\,c_{00}+2\sqrt2\,p_0\,c_{01}\,u+2u^2\,c_{11}\big].
 \end{equation*}
-The cross term is odd in $u$. It injects no free energy, but it injects $\int u\,a_u^2\,\dd u=\fe{G}{LG}$, whose volume average is $2\Gamma^\pm/\vth$ for CMM's invariant $\Gamma^\pm$ (section~\ref{sec:invariants}), at the rate $\sqrt2\,p_0\,c_{01}$ per unit volume (see also section~\ref{sec:symmetry}).
+Forcing of $g_0$ puts the same pattern into every slice, with amplitude proportional to $\sqrt\varrho$, so that forcing that is white in time and independent of the state injects free energy uniformly with respect to $\varrho\,\dd u$; forcing of $g_1$ gives the slices at $u$ and $-u$ the same pattern with opposite signs.
 
 \begin{remark}\label{sl:remlit}
-Parts of this structure are known in other settings. For the sector $\Lambda=\infty$, theorem~\ref{thm:slice} restates S09's eqs~(210) and~(212) (section~\ref{sec:model}), at each $v_\parallel$ for $a_u=G_l(u)/\sqrt{F_M(u)}$. What the transform adds is the treatment of the two branches, whose Landau coupling it absorbs into the slices. \citet[section~IV]{Heninger2018} applied the G-transform to the electrostatic drift-kinetic ion equation with Boltzmann electrons in a slab \citep[see also][chapter~13]{Heninger2020}. There quasineutrality also makes the kernel independent of the wavenumber, and their transform is the one used here with $\Lambda=-T_i/(ZT_e)$, which is the limit of $\Lambda^-$ as $\beta_i\to0$. In their system the transformed components stream along the uniform guide field and are carried by one $\boldsymbol E\times\boldsymbol B$ flow, but the potential is proportional to $\int g\,\dd v_\parallel$, so the components remain coupled through it, and there is no streaming along perturbed field lines. The transform has also been used for linear problems at a single wavenumber, among them a forced Landau problem \citep{Plunk2013} and, in the appendix of \citet{PlunkParker2014}, a kinetic-Alfv\'en-wave model with a fluctuating parallel vector potential. \citet{Plunk2015} used a transform that commutes with $\boldsymbol E\times\boldsymbol B$ advection to obtain a quadratic invariant at each velocity, and from it the nonlinear stability of a quasi-two-dimensional drift-kinetic model without parallel streaming. \citet{Tassi2015} constructed normal fields of truncated Hermite hierarchies of electromagnetic drift-fluid models, and \citet{Tassi2022} identified their eigenvalues $\lambda_i$ as the zeros of a Hermite polynomial and the fields as proportional to the truncated distribution function evaluated at $v_\parallel=\lambda_i$. In two dimensions each field is a Lagrangian invariant of the flow with stream function $\phi-\lambda_i(v_{\mathrm{th}e}/c)A_\parallel$, the analogue of $\Phi+su\Psi$, but $\phi$ and $A_\parallel$ depend on all the fields. In three dimensions the parallel gradients of these potentials also enter the equation of each field, so the fields remain coupled, except, when an odd number of moments is retained, the field with $\lambda_i=0$, which is advected by the $\boldsymbol E\times\boldsymbol B$ flow alone \citep{Tassi2022}. Other two-dimensional precedents are listed in section~\ref{sec:intro}.
+Parts of this structure are known in other settings. For $\Lambda=\infty$, theorem~\ref{thm:slice} restates S09's eqs~(210) and~(212), which describe the Laguerre components with $l\ge2$ as a passively mixed, undamped ballistic-type mode; the transform adds the two branches, absorbing their Landau coupling into the slices. \citet[section~IV]{Heninger2018} applied the G-transform to the electrostatic drift-kinetic ion equation with Boltzmann electrons in a slab \citep[see also][chapter~13]{Heninger2020}, where quasineutrality also makes the kernel independent of the wavenumber; their transform is ours with $\Lambda=-T_i/(ZT_e)$, the limit of $\Lambda^-$ as $\beta_i\to0$. Their transformed components stream along the uniform guide field and share one $\boldsymbol E\times\boldsymbol B$ flow but remain coupled through the potential, which is proportional to $\int g\,\dd v_\parallel$; their equation also conserves the energy of each component in three dimensions, although they do not state this. In linear problems at a single wavenumber the transform was used by \citet{Plunk2013}, for a forced Landau problem, and by \citet{PlunkParker2014}, who noted that without forcing any $u$-weighted integral of the squared transformed distribution is conserved, and \citet{Plunk2015} used a transform that commutes with $\boldsymbol E\times\boldsymbol B$ advection to obtain a quadratic invariant at each velocity, and from it the nonlinear stability of a quasi-two-dimensional drift-kinetic model without parallel streaming.
+
+Invariants labelled by a velocity variable are known in two dimensions. In two-field models of collisionless reconnection, two Lagrangian invariants are advected by the generalised stream functions $\phi\pm(\rho_s/d_e)\psi$ \citep{Schep1994,Cafaro1998,Grasso2001}, and in their drift-kinetic version the distribution at each value of the parallel canonical momentum is a Lagrangian invariant \citep{Liseikina2004,Pegoraro2004}. Two-dimensional gyrokinetics has an invariant for every pair $(v_\perp,v_\parallel)$ \citetext{S09, appendix~F; \citealp{Plunk2010}}, and \citet{ZhuHammett2010} used per-velocity quadratic invariants that survive Galerkin truncation to construct its absolute equilibria; the low-beta equations of \citet{ZoccoSchekochihin2011} have Lagrangian invariants parametrised by $v_\parallel$. In each of these models the terms with parallel gradients break the invariants in three dimensions. \citet{Tassi2015} constructed normal fields of truncated Hermite hierarchies of electromagnetic drift-fluid models \citep[see also][]{Tassi2017,Tassi2019,Tassi2023}, and \citet{Tassi2022} identified their eigenvalues $\lambda_i$ as the zeros of a Hermite polynomial and the fields as proportional to the truncated distribution at $v_\parallel=\lambda_i$. In two dimensions each field is advected by a stream function of the form $\phi-\lambda_iA_\parallel$, the analogue of $\Phi+su\Psi$, with $\phi$ and $A_\parallel$ depending on all the fields; in three dimensions the parallel gradients of these potentials couple the fields, except, for an odd number of moments, the field with $\lambda_i=0$, which is advected by the $\boldsymbol E\times\boldsymbol B$ flow alone \citep{Tassi2022}. For linearised Vlasov--Poisson, \citet{ParkerDellar2015} identified the eigenvectors of truncated Hermite systems with discrete Case--Van Kampen modes, and the Viriato code advances its linear parallel step in the characteristic variables of its truncated streaming matrix \citep[\S6.2.1]{Loureiro2016}.
 \end{remark}
