@@ -1,0 +1,63 @@
+# Pipeline test of scripts/run_forced_turbulence.py at 32^3 (short; the steady-state, balance and spectral gates do
+# not apply).  Same physics as configs/forced_beta1.yaml at a quarter of the cost per step; checks that every
+# diagnostic is computed and that the Alfvenic and free-energy budgets close.
+#
+# Units: v_A = 1, box side L = 1 (k = 2 pi n), tau_A = L_z/v_A = 1, s = sqrt(beta_i), u = v_par/v_th.
+
+label: forced-test32           # run ID P1_forced-test32_<YYYYMMDD_HHMMSS>
+
+box:
+  L: 1.0
+  N: 32
+
+velocity:
+  M: 32                        # zero closure; largest node u_max = 7.25
+  Lambda: sqrt5                # branch Lambda^+ for beta_i = 1, tau = Z = 1
+  beta_i: 1.0
+  closure: zero
+
+stepper:                       # gandalf_step arguments
+  scheme: lawson_rk4           # streaming integrated exactly (integrating factor); see forced_beta1.yaml
+  eta: 200.0                   # damping rate eta (k_perp^2/k_perp,max^2)^r on z+- and every g_m
+  hyper_r: 2
+  nu: 30.0                     # hypercollisions nu (m/M)^n, m >= 2
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:                      # krmhd.forcing.force_alfven_modes: Phi forced, Psi not; |k| L/2pi in [n_min, n_max]
+    eps: 1.0                   # target injection rate of E_A = (1/2)<|grad Phi|^2 + |grad Psi|^2>
+    n_min: 1
+    n_max: 2
+    seed: 20261015
+  density:                     # g_0 forced (white): k_perp L/2pi in [n_min, n_max], |n_z| <= max_nz, n_z != 0
+    eps: 1.0                   # target injection rate of W = sum_m p_m <g_m^2>
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+time:
+  t_end: 1.5                   # tau_A
+  dt_max: 5.0e-3
+  safety: 0.8                  # dt = safety x min(slice-advection limit, Alfvenic CFL), capped at dt_max
+  recompute_every: 10          # steps
+  sample_every: 5              # steps
+  print_every: 50
+  snapshot_every: 0.75         # tau_A
+  restart_every: 0.75
+
+diagnostics:
+  n_outer: 2                   # outer scale: k_perp L/2pi <= n_outer + 1/2
+
+gates:
+  steady_window: 50.0          # tau_A (CLAUDE.md; shared/validation.check_steady_state)
+  steady_tol: 0.10
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01

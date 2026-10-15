@@ -1,0 +1,71 @@
+# Alfvenic spin-up for the H1 pilot (configs/forced_beta1.yaml): 64^3, the same Alfvenic forcing, hyper-resistivity and
+# time-step rule as the pilot, but only M = 2 Hermite moments and no density forcing (z+- do not depend on g, so the
+# Alfvenic trajectory is the pilot's at a twentieth of the cost per step).  The time step is set by the largest node of
+# the pilot's ladder (dt_umax_M = 32), so the step sizes are those of the pilot.  Purpose: tune the Alfvenic injection
+# rate so that chi ~ 1 at the outer scale, check the k_perp resolution, measure dt, and hand the steady z+- to the
+# pilot (init.path there).
+#
+# Units: v_A = 1, box side L = 1 (k = 2 pi n), tau_A = L_z/v_A = 1.
+
+label: forced-spinup64
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 2
+  Lambda: sqrt5
+  beta_i: 1.0
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0                   # damping rate eta (k_perp^2/k_perp,max^2)^r on z+- and every g_m
+  hyper_r: 2
+  nu: 0.0
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:                      # Phi forced (same increment on z+ and z-, as force_alfven_modes), Psi not
+    eps: 0.3                   # target injection rate of E_A (32^3 scan: eps = 0.3, 1, 3 give chi_out ~ 1, 1.2, 1.5)
+    generator: perp_lowkz      # krmhd.forcing.gaussian_white_noise_fourier_perp_lowkz: k_perp L/2pi in [1, 2],
+    n_min: 1                   # |n_z| = 1 (n_z = 0 excluded).  The isotropic band of force_alfven_modes (|k| L/2pi in
+    n_max: 2                   # [1, 2], n_z = 0 included) drove a 2D (k_z = 0) condensate: run
+    max_nz: 1                  # P1_forced-spinup64_20261015_105310, 70% of E_A at n_z = 0 and n_perp = 1,
+    include_nz0: false         # E_kin/E_mag = 6.6, chi_out = 5 and rising at t = 4.
+    seed: 20261015
+  density:
+    eps: 0.0                   # off during the Alfvenic spin-up
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+time:
+  t_end: 10.0                  # tau_A
+  dt_max: 5.0e-3
+  dt_umax_M: 32                # the pilot's ladder sets the slice-advection limit
+  dt_rule: bound
+  safety: 0.8
+  recompute_every: 25
+  sample_every: 20
+  print_every: 500
+  snapshot_every: 4.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.10
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01

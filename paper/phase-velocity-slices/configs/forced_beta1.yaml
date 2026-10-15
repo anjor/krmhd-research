@@ -1,0 +1,107 @@
+# H1 pilot (.loop/specs/rework-H1.md): balanced forced KRMHD, beta_i = 1, one compressive branch (Lambda^+ = sqrt5),
+# 64^3, M = 32.  Read by scripts/run_forced_turbulence.py; analysis by analysis/h1_fieldlines.py (field-line tracing on
+# snapshots) and analysis/h1_pilot.py (P-a .. P-f, two-channel model, figures h1_*).
+#
+# Units: v_A = 1, box side L = 1 (k = 2 pi n, k1 = 2 pi), tau_A = L_z/v_A = 1 (Studies 02 and 04), s = sqrt(beta_i),
+# u = v_par/v_th.  The Alfvenic state is handed over from configs/forced_spinup64.yaml (same forcing, dissipation and
+# time-step rule, M = 2); g starts at zero.
+#
+# Choices:
+#  * Forcing of Phi only (z+ and z- get the same white increment, as krmhd.forcing.force_alfven_modes does) on
+#    k_perp L/2pi in [1, 2], |n_z| = 1 (GANDALF's gaussian_white_noise_fourier_perp_lowkz).  force_alfven_modes' own
+#    isotropic band includes n_z = 0 and drove a 2D condensate at 64^3 (spin-up run P1_forced-spinup64_20261015_105310).
+#    eps_A = 0.3 gives chi ~ 1 at the outer scale (32^3 scan: chi_out ~ 1, 1.2, 1.5 at eps_A = 0.3, 1, 3).
+#  * Density forcing of g_0 on the same band (k_perp L/2pi in [1, 2], |n_z| = 1): a single injected Eulerian parallel
+#    wavenumber k_z = k1; no k_perp = 0 entries (those would phase mix with no k_perp cascade) and no n_z = 0 entries.
+#    The amplitude is rescaled with dt every step (injection rate c A^2/dt^2 held at eps_g).
+#  * Hyper-resistivity eta (k_perp^2/k_perp,max^2)^2 on z+- and every g_m with eta = 300: energy fraction in shells
+#    n >= n_max = 21 about 3e-5 (Alfvenic) in the spin-up.
+#  * Hypercollisions nu (m/M)^6, nu = 30: free energy moving up the ladder at dm/dt = s kappa sqrt(2m) is attenuated
+#    between 0 and M by exp[-nu sqrt(2M)/(s kappa (n + 1/2))] = exp(-5.9 k1/kappa) (e^-4.9 at the measured field-aligned
+#    kappa ~ 1.2 k1), and by only 5% of that up to m = M/2: the sink sits at m > M/2, the range m <= M/2 is
+#    collision-free (32^3 test: 92% of D_nu at m >= M/2, 0.4% of W at m > 3M/4).
+#  * Lawson-RK4: streaming (the phase mixing under test) is integrated exactly by the integrating factor; IMEX-ARS343
+#    treats it implicitly with an L-stable stage that damps the fast-streaming high-k_z modes (s k_z,max u_max dt ~ 1
+#    here), and IMEX-RK222's explicit stage is unstable for advection (|R(iy)|^2 = 1 + y^4/4).  Lawson-RK4 also costs
+#    15% less per step (0.91 vs 1.07 s at 64^3, M = 32).  dt = 0.8 x 2 sqrt2/rho with rho the exact spectral radius
+#    of the explicit slice-advection operator at the extreme nodes u = +-7.25 (Lanczos; 1.8 times smaller than the
+#    bound k_perp,max max|v| at 64^3), or the Alfvenic CFL limit if smaller.
+
+label: forced-beta1
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 32
+  Lambda: sqrt5
+  beta_i: 1.0
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0
+  hyper_r: 2
+  nu: 30.0
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: paper/phase-velocity-slices/data/P1_forced-spinup64_20261015_110112/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 53.0                  # tau_A: about 3 tau_A for g to become stationary (W still rising 1.5 tau_A after the
+                               # hand-off in forced_check64), then the 50 tau_A gate window
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  recompute_every: 25
+  sample_every: 20
+  print_every: 500
+  snapshot_every: 5.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.10
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
