@@ -15,6 +15,7 @@ E  Forcing: the expected injection per step c A^2/dt (WhiteForcing constants) ag
    of GANDALF's generators; force_alfven_modes changes Phi only; the density increment goes to g_0 only.
 F  Block averages (steady-state block check): exact rates from accumulated increments on a variable time step,
    dt-weighted means of sampled series, and the spread of a series that differs between blocks.
+G  Per-step time-step limits: make_fast_limits reproduces dt_limits' maxima on the refined grid.
 """
 from __future__ import annotations
 
@@ -183,6 +184,16 @@ def main() -> int:
     gf = H.gate_block_convergence(bf, "eps", {"x": ("x", slice(0, 2), False)}, 0.5)
     check("F3 spread (max - min)/mean per column", abs(gf["x"]["max_spread"] - 0.4) < 1e-12 and gf["x"]["at"] == 0
           and gf["pass"], f"{gf['x']}")
+
+    # G: the cheap per-step limits reproduce dt_limits' maxima (pad 2) and stay close on the unrefined grid (pad 1)
+    lim_g = H.dt_limits(box, zp, zm, s, sl.umax)
+    V2, vp2 = (float(x) for x in H.make_fast_limits(box, s, sl.umax, pad=2)(jnp.asarray(zp), jnp.asarray(zm)))
+    V1, vp1 = (float(x) for x in H.make_fast_limits(box, s, sl.umax, pad=1)(jnp.asarray(zp), jnp.asarray(zm)))
+    check("G1 make_fast_limits(pad = 2) = dt_limits (V_slice, v_perp_max)",
+          rel(V2, lim_g["V_slice"]) < 1e-12 and rel(vp2, lim_g["v_perp_max"]) < 1e-12,
+          f"{V2:.6g} vs {lim_g['V_slice']:.6g}, {vp2:.6g} vs {lim_g['v_perp_max']:.6g}")
+    check("G2 pad = 1 maxima within 25% below the refined ones", 0.75 < V1 / V2 <= 1 + 1e-12 and 0.75 < vp1 / vp2 <= 1 + 1e-12,
+          f"{V1 / V2:.3f}, {vp1 / vp2:.3f}")
 
     print(f"{'ALL PASS' if not FAILED else 'FAILED: ' + ', '.join(FAILED)} ({time.time() - T0:.0f} s)")
     return 1 if FAILED else 0

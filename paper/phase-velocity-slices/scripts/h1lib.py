@@ -386,6 +386,40 @@ def dt_limits(box: P.Box, zp: Any, zm: Any, s: float, umax: float, v_A: float = 
                 v_perp_max=vp, dt_alfven=(box.L / box.N) / max(v_A, vp))
 
 
+def make_fast_limits(box: P.Box, s: float, umax: float, pad: int = 1) -> Any:
+    """Jitted (z+, z-) -> (V_slice, v_perp_max), the two maxima of dt_limits on a grid refined by `pad` (pad = 2
+    reproduces dt_limits; pad = 1 costs four 64^3 inverse FFTs at 64^3 and slightly underestimates the maxima).
+    Used every step to rescale the limits of the last full evaluation, dt_now = dt_ref x (V_ref/V_now), so that a
+    sudden steepening of the flow between full evaluations shrinks the step at once."""
+    N = box.N
+    Np = pad * N
+    h = N // 2
+    idx = jnp.ix_(jnp.r_[0:h, Np - h + 1:Np], jnp.r_[0:h, Np - h + 1:Np], jnp.arange(h))
+    src = jnp.ix_(jnp.r_[0:h, N - h + 1:N], jnp.r_[0:h, N - h + 1:N], jnp.arange(h))
+    KX = jnp.asarray(box.KX)
+    KY = jnp.asarray(box.KY)
+    c = s * umax
+
+    def real(f: Any) -> Any:
+        if pad == 1:
+            return jnp.fft.irfftn(f, s=(N, N, N), axes=(0, 1, 2))
+        F = jnp.zeros((Np, Np, Np // 2 + 1), dtype=f.dtype).at[idx].set(f[src])
+        return jnp.fft.irfftn(F, s=(Np, Np, Np), axes=(0, 1, 2)) * pad ** 3
+
+    @jax.jit
+    def limits(zp: Any, zm: Any) -> tuple[Any, Any]:
+        phi = 0.5 * (zp + zm)
+        psi = 0.5 * (zp - zm)
+        fx, fy, sx, sy = real(1j * KX * phi), real(1j * KY * phi), real(1j * KX * psi), real(1j * KY * psi)
+        V = jnp.maximum(jnp.sqrt((fx + c * sx) ** 2 + (fy + c * sy) ** 2).max(),
+                        jnp.sqrt((fx - c * sx) ** 2 + (fy - c * sy) ** 2).max())
+        vp = jnp.maximum(jnp.sqrt((fx + sx) ** 2 + (fy + sy) ** 2).max(),
+                         jnp.sqrt((fx - sx) ** 2 + (fy - sy) ** 2).max())
+        return V, vp
+
+    return limits
+
+
 def exact_slice_radius(box: P.Box, zp: Any, zm: Any, s: float, umax: float, tol: float = 1e-4) -> float:
     """Spectral radius of the explicit slice-advection operator P{Phi + s u Psi, .} maximised over u = +-umax
     (p1lib.advection_operator_norm, Lanczos); the Lawson-RK4 limit is 2 sqrt2 / radius."""

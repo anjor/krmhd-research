@@ -107,6 +107,10 @@ def main() -> int:
     if dt_rule not in ("bound", "exact"):
         raise ValueError(f"time.dt_rule must be 'bound' or 'exact', got {dt_rule!r}")
     every = int(tc["recompute_every"])
+    safety_A = float(tc.get("safety_alfven", safety))  # safety on the Alfvenic CFL limit (default: safety)
+    fast_every = int(tc.get("limit_every", every))     # steps between cheap rescalings of both limits (H.make_fast_limits)
+    fast = H.make_fast_limits(box, s, umax) if fast_every < every else None
+    ref: tuple[float, float, float, float] | None = None
     s_every = int(tc["sample_every"])
     p_every = int(tc.get("print_every", 200))
     snap_dt = float(tc.get("snapshot_every", math.inf))
@@ -114,7 +118,8 @@ def main() -> int:
     t_start = t
     print(f"[{run.run_id}] N = {box.N}, M = {M}, Lambda = {Lam:+.4f}, beta_i = {beta}, closure {closure}; "
           f"eta = {sp.eta} (r = {sp.hyper_r}), nu = {sp.nu} (n = {sp.hyper_n}), scheme {sp.scheme}; dt from u_max = "
-          f"{umax:.4f} (M = {M_dt}), rule {dt_rule}, safety {safety}, dt_max {dt_max}; t = {t:.3f} -> {t_end}", flush=True)
+          f"{umax:.4f} (M = {M_dt}), rule {dt_rule}, safety {safety} (Alfvenic {safety_A}), limits every {every} steps "
+          f"(rescaled every {fast_every}), dt_max {dt_max}; t = {t:.3f} -> {t_end}", flush=True)
     print(f"    forcing: {json.dumps(fo.describe())}", flush=True)
 
     EA_s, pW_s = (np.asarray(x) for x in energies(state.z_plus, state.z_minus, state.g))
@@ -158,9 +163,18 @@ def main() -> int:
                 dts_lim = lim["dt_slice_exact"]
             else:
                 dts_lim = lim["dt_slice"]
-            dt = min(dt_max, safety * min(dts_lim, lim["dt_alfven"]))
+            dt = min(dt_max, safety * dts_lim, safety_A * lim["dt_alfven"])
             lim.update(t=t, dt=dt)
             lims.append(lim)
+            if fast is not None:
+                V0, vp0 = (float(x) for x in fast(state.z_plus, state.z_minus))
+                ref = (dts_lim, lim["v_perp_max"], V0, vp0)
+        elif fast is not None and ref is not None and n % fast_every == 0:
+            # between full evaluations: scale both limits by the change of the (cheap) maxima since the last one
+            dts_ref, vp_ref, V0, vp0 = ref
+            V1, vp1 = (float(x) for x in fast(state.z_plus, state.z_minus))
+            dt_A = (box.L / box.N) / max(sp.v_A, vp_ref * vp1 / max(vp0, 1e-300))
+            dt = min(dt_max, safety * dts_ref * V0 / max(V1, 1e-300), safety_A * dt_A)
         dt_step = min(dt, t_end - t) if t_end - t < 1.5 * dt else dt
         tw = time.time()
         state = gandalf_step(state, dt_step, eta=sp.eta, v_A=sp.v_A, nu=sp.nu, hyper_r=sp.hyper_r,
