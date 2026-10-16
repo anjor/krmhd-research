@@ -1,0 +1,23 @@
+# Gate decisions for the forced 64^3 H1 runs (scripts/run_forced_turbulence.py), as made by Anjor.  Read by
+# analysis/h1_pilot.py, which re-evaluates each run's recorded gates with these settings and analyses the run only if
+# every gate passes under them.  The run's own .json keeps the gates it recorded at run time; the analysis writes
+# both to h1_analysis.json.
+
+steady_state:
+  # Anjor 2026-10-15, option (b): std/mean < 0.15 over the final 50 tau_A instead of 0.10 (the fluctuation of the
+  # Alfvenic energy is intrinsic at this box size: 11.2% in the spin-up), plus a block-average convergence check.
+  tol: 0.15
+  n_blocks: 4                  # 4 x 12.5 tau_A over the 50 tau_A window
+  # Block check: (max - min)/mean over the blocks of the time averages H1 uses, each divided by its block's measured
+  # injection rate: W(m), the field-aligned flux and D_perp(m) for m <= 3M/4, D_nu(m) for m >= M/2 (where the
+  # hypercollisional sink sits), and the collisional share of the free-energy dissipation.  The tolerance was chosen
+  # in the analysis (Anjor asked for agreement between blocks and a report of the spread, without a number).
+  block_tol: 0.20
+  decision: "Anjor 2026-10-15: option (b), 15% plus a block-average convergence check"
+
+runs:
+  P1_forced-beta1_20261015_122613:
+    m_tol: 0.02
+    decision: >-
+      Anjor 2026-10-16: accept as a pilot with the Hermite-resolution limit (free energy at m > 3M/4) relaxed from 1%
+      to 2% (measured 1.11%); a larger run later checks resolution

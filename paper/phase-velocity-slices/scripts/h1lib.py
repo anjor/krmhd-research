@@ -494,3 +494,67 @@ def gate_spectral_sanity(nperp: np.ndarray, EAk: np.ndarray, Wk: np.ndarray, nma
                                          f"free energy in m > 3M/4 < {m_tol}; >= half of D_nu at m >= M/2"),
                 slope_EA=slope, slope_W=slope_g, outer_frac_A=outer_frac_A, outer_frac_g=outer_frac_g,
                 W_frac_m_gt_3M4=frac_hi, Dnu_frac_m_ge_M2=dnu_hi, **{"pass": bool(ok)})
+
+
+def block_averages(t: np.ndarray, dts: np.ndarray, first: int, n_blocks: int, sampled: Mapping[str, np.ndarray],
+                   accumulated: Mapping[str, np.ndarray]) -> dict[str, Any]:
+    """Time averages over n_blocks equal-length blocks of the window that starts at sample `first` (samples
+    first+1..end, as in the run's window sums).  dts[k] is the time between samples k-1 and k.  A sampled quantity
+    (e.g. W(m), the field-aligned flux) is averaged with weights dts[k]; an accumulated one (energy injected or
+    dissipated between samples k-1 and k, e.g. acc_inj_g, acc_loss_nu) is summed and divided by the block length,
+    which gives the exact mean rate.  Returns the block edges (in tau_A), lengths and {name: array (n_blocks, ...)}."""
+    t = np.asarray(t, dtype=float)
+    d = np.asarray(dts, dtype=float)
+    idx = np.arange(first + 1, len(t))
+    edges = np.linspace(t[first], t[-1], n_blocks + 1)
+    which = np.clip(np.searchsorted(edges, t[idx], side="left") - 1, 0, n_blocks - 1)
+    out: dict[str, Any] = dict(edges=edges.tolist(), length=[float(d[idx[which == b]].sum()) for b in range(n_blocks)])
+    for name, x in sampled.items():
+        x = np.asarray(x, dtype=float)
+        out[name] = np.array([np.tensordot(d[idx[which == b]], x[idx[which == b]], axes=(0, 0)) / d[idx[which == b]].sum()
+                              for b in range(n_blocks)])
+    for name, x in accumulated.items():
+        x = np.asarray(x, dtype=float)
+        out[name] = np.array([x[idx[which == b]].sum(0) / d[idx[which == b]].sum() for b in range(n_blocks)])
+    return out
+
+
+def rel_spread(X: np.ndarray) -> np.ndarray:
+    """(max - min)/|mean| over the leading (block) axis."""
+    X = np.asarray(X, dtype=float)
+    return (X.max(0) - X.min(0)) / np.abs(X.mean(0))
+
+
+def gate_block_convergence(blocks: Mapping[str, Any], eps_key: str,
+                           checks: Mapping[str, tuple[str, slice | None, bool]], tol: float) -> dict[str, Any]:
+    """Block-average convergence check (Anjor 2026-10-15, option (b)): each time average H1 uses agrees between
+    blocks to (max - min)/mean < tol over the given range of m.  `checks` maps a label to (key in blocks, slice of m
+    or None for a scalar, divide by the block's injection rate blocks[eps_key]).  Reports the maximum and median
+    spread per quantity."""
+    eps = np.asarray(blocks[eps_key], dtype=float)
+    out: dict[str, Any] = dict(applies=True, criterion=f"(max - min)/mean over {len(eps)} blocks of each average "
+                               f"(rates and spectra divided by the block injection rate) < {tol}", tol=tol, n_blocks=len(eps),
+                               block_edges=blocks["edges"], eps_blocks=eps.tolist())
+    ok = True
+    for label, (key, rng, per_eps) in checks.items():
+        X = np.asarray(blocks[key], dtype=float)
+        if per_eps:
+            X = X / eps.reshape(-1, *[1] * (X.ndim - 1))
+        sp = np.atleast_1d(rel_spread(X[:, rng] if X.ndim > 1 else X))
+        out[label] = dict(max_spread=float(sp.max()), median_spread=float(np.median(sp)),
+                          at=int(np.arange(X.shape[1])[rng][sp.argmax()]) if X.ndim > 1 else None)
+        ok = ok and float(sp.max()) < tol
+    out["pass"] = bool(ok)
+    return out
+
+
+def regate_spectral_sanity(rec: Mapping[str, Any], res_tol: float, m_tol: float) -> dict[str, Any]:
+    """The spectral-sanity gate re-evaluated from the values a run recorded (gate_spectral_sanity) with a different
+    Hermite-resolution tolerance m_tol (a decision recorded in configs/h1_acceptance.yaml)."""
+    slope, fA, fg = float(rec["slope_EA"]), float(rec["outer_frac_A"]), float(rec["outer_frac_g"])
+    fhi, dnu = float(rec["W_frac_m_gt_3M4"]), float(rec["Dnu_frac_m_ge_M2"])
+    ok = (-5.0 < slope < -1.0) and fA < res_tol and fg < res_tol and fhi < m_tol and dnu > 0.5
+    return dict(applies=True, criterion=("Alfvenic E(k_perp) slope in (-5, -1); energy fraction in shells n >= nmax "
+                                         f"< {res_tol}; free energy in m > 3M/4 < {m_tol}; >= half of D_nu at m >= M/2"),
+                slope_EA=slope, outer_frac_A=fA, outer_frac_g=fg, W_frac_m_gt_3M4=fhi, Dnu_frac_m_ge_M2=dnu,
+                m_tol=m_tol, **{"pass": bool(ok)})

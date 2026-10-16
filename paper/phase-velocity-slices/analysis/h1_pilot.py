@@ -5,7 +5,10 @@ predictions P-a, P-b, P-e, P-f, the two-channel (no-echo) model with measured ka
 Reads only saved data: <run dir>/<run ID>.npz/.json (scripts/run_forced_turbulence.py) and, if present,
 <run dir>/fieldlines_snap_*.npz/.json (analysis/h1_fieldlines.py).  Writes <run dir>/h1_analysis.json and the figures
 figures/h1_wm, h1_flux, h1_kpar (.pdf and .png; --outdir to write elsewhere, e.g. for pipeline checks).  Refuses to
-analyse a run whose gates failed (CLAUDE.md) unless --check (pipeline check on a short run; nothing is interpreted).
+analyse a run whose gates fail (CLAUDE.md) unless --check (pipeline check on a short run; nothing is interpreted).  The
+gates are re-evaluated with Anjor's decisions in configs/h1_acceptance.yaml (steady-state threshold and block-average
+check for every run; per-run tolerances where he accepted a deviation); h1_analysis.json records the run's own gates
+and the re-evaluated ones.
 
 Two-channel model.  Each field-aligned wavenumber kappa of the injected free energy is a linear Hermite problem with
 an m-independent sink of free energy at rate 1/T (the k_perp passive-scalar cascade, H1; D_perp(m) = W(m)/T) plus
@@ -92,12 +95,49 @@ def corr_norm(S: np.ndarray) -> np.ndarray:
 
 
 # ------------------------------------------------------------------------------------------------------------------
+def apply_gate_decisions(meta: dict, ts: dict, first: int, M: int, acc: dict) -> dict:
+    """Re-evaluate a forced run's gates with Anjor's decisions (configs/h1_acceptance.yaml): energy conservation and
+    energy balance as recorded; steady state with acc.steady_state.tol on the recorded std/mean plus the block-average
+    check (h1lib.gate_block_convergence); spectral sanity with the run's own tolerances unless acc.runs.<run ID>
+    overrides m_tol.  Returns the gates, the decisions applied and an overall pass."""
+    g = meta["gates"]
+    gc = meta["config"]["gates"]
+    ss = acc["steady_state"]
+    run_acc = (acc.get("runs") or {}).get(meta["run_id"], {})
+    tol = float(ss["tol"])
+    flucts = {k: float(v) for k, v in g["steady_state"].items() if k.endswith("_fluct")}
+    steady = dict(applies=True, criterion=f"std/mean < {tol} over the final {gc['steady_window']} tau_A, each series",
+                  tol=tol, **flucts, **{"pass": bool(all(f < tol for f in flucts.values()))})
+    b = H.block_averages(ts["t"], ts["acc_sum_dt"], first, int(ss["n_blocks"]),
+                         dict(W=ts["pWm"], Pi_fa=ts["Pi_fa"], E_A=ts["E"]),
+                         dict(eps=ts["acc_inj_g"], D_perp=ts["acc_loss_eta"], D_nu=ts["acc_loss_nu"]))
+    b["nu_share"] = b["D_nu"].sum(1) / (b["D_nu"].sum(1) + b["D_perp"].sum(1))
+    blocks = H.gate_block_convergence(b, "eps", {"W(m), m <= 3M/4": ("W", slice(0, 3 * M // 4 + 1), True),
+                                                 "Pi_fa, m+1/2 <= 3M/4": ("Pi_fa", slice(0, 3 * M // 4), True),
+                                                 "D_perp(m), m <= 3M/4": ("D_perp", slice(0, 3 * M // 4 + 1), True),
+                                                 "D_nu(m), m >= M/2": ("D_nu", slice(M // 2, M + 1), True),
+                                                 "collisional share of the dissipation": ("nu_share", None, False)},
+                                      float(ss["block_tol"]))
+    blocks["E_A_blocks"] = b["E_A"].tolist()
+    blocks["W_total_blocks"] = b["W"].sum(1).tolist()
+    steady["blocks"] = blocks
+    steady["pass"] = bool(steady["pass"] and blocks["pass"])
+    m_tol = float(run_acc.get("m_tol", gc["m_tol"]))
+    spec = H.regate_spectral_sanity(g["spectral_sanity"], float(gc["resolution_tol"]), m_tol)
+    gates = dict(energy_conservation=bool(g["energy_conservation"]["pass"]), energy_balance=bool(g["energy_balance"]["pass"]),
+                 steady_state=steady, spectral_sanity=spec)
+    decisions = [ss["decision"]] + ([run_acc["decision"]] if "decision" in run_acc else [])
+    ok = gates["energy_conservation"] and gates["energy_balance"] and steady["pass"] and spec["pass"]
+    return dict(gates=gates, decisions=decisions, **{"pass": bool(ok)})
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("run_dir")
     ap.add_argument("--window", type=float, default=None, help="averaging window in tau_A (default: the steady window)")
     ap.add_argument("--outdir", default=None, help="figure folder (default paper/phase-velocity-slices/figures)")
     ap.add_argument("--check", action="store_true", help="pipeline check on a short run (no gate requirement)")
+    ap.add_argument("--acceptance", default="h1_acceptance.yaml", help="gate decisions (default configs/h1_acceptance.yaml)")
     args = ap.parse_args()
     rd = Path(args.run_dir)
     if not rd.is_absolute():
@@ -106,8 +146,6 @@ def main() -> int:
         arr = {k: z[k] for k in z.files}
     with open(rd / f"{rd.name}.json") as fh:
         meta = json.load(fh)
-    if meta["outcome"] != "pass" and not args.check:
-        raise SystemExit(f"{meta['run_id']}: gates failed; CLAUDE.md: stop and report (no analysis)")
     if not args.check and not meta["gates"]["steady_state"].get("applies", False):
         raise SystemExit(f"{meta['run_id']}: the steady-state gate does not apply (run too short); use --check")
     cfg = meta["config"]
@@ -126,6 +164,10 @@ def main() -> int:
     sel[first + 1:] = True
     dtk = ts["acc_sum_dt"]
     Tw = float(dtk[sel].sum())
+    applied = apply_gate_decisions(meta, ts, first, M, P.load_config(args.acceptance))
+    if not applied["pass"] and not args.check:
+        raise SystemExit(f"{meta['run_id']}: gates fail under configs/{Path(args.acceptance).name}; CLAUDE.md: stop and "
+                         f"report (no analysis)\n{json.dumps(P._jsonable(applied), indent=1)}")
 
     def tav(key: str) -> np.ndarray:
         return H.time_average(ts[key], dtk, first)
@@ -141,7 +183,7 @@ def main() -> int:
     m = np.arange(M + 1)
     mh = np.arange(M) + 0.5
     out: dict = dict(run_id=meta["run_id"], window=[float(t[first]), float(t[-1])], window_length=Tw, check=args.check,
-                     eps_measured=eps, eps_target=eps_target)
+                     eps_measured=eps, eps_target=eps_target, gates_recorded=meta["gates"], gates_applied=applied)
 
     # ---- P-a: uniform sink
     r = Dperp_exact / W

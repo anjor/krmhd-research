@@ -13,6 +13,8 @@ D  Per-step accounting: one Lawson-RK4 step with hyper-resistivity and hypercoll
    for the Alfvenic energy and for every p_m <g_m^2>.
 E  Forcing: the expected injection per step c A^2/dt (WhiteForcing constants) agrees with the mean over many draws
    of GANDALF's generators; force_alfven_modes changes Phi only; the density increment goes to g_0 only.
+F  Block averages (steady-state block check): exact rates from accumulated increments on a variable time step,
+   dt-weighted means of sampled series, and the spread of a series that differs between blocks.
 """
 from __future__ import annotations
 
@@ -167,6 +169,20 @@ def main() -> int:
     d5 = P.phi_psi(np.asarray(s5.z_plus), np.asarray(s5.z_minus))
     check("E7 ... Psi unchanged", np.abs(d5[1] - psi).max() < 1e-14 * np.abs(psi).max()
           and np.abs(d5[0] - phi).max() > 0)
+
+    # F: block averages on a variable step; rate 3 + t (accumulated) and the sampled series 2 + [t > 5]
+    dts_f = np.concatenate([[0.0], np.where(np.arange(1, 41) % 2 == 0, 0.2, 0.3)])
+    t_f = np.cumsum(dts_f)
+    acc_f = np.concatenate([[0.0], (3 + 0.5 * (t_f[1:] + t_f[:-1])) * dts_f[1:]])
+    smp_f = np.stack([2.0 + (t_f > t_f[-1] / 2), np.full_like(t_f, 4.0)], axis=1)
+    bf = H.block_averages(t_f, dts_f, 0, 2, dict(x=smp_f), dict(eps=acc_f))
+    half = t_f[-1] / 2
+    exact = [3 + half / 2, 3 + 1.5 * half]
+    check("F1 block rates from accumulated increments are exact", rel(bf["eps"], exact) < 1e-12, f"{bf['eps']} vs {exact}")
+    check("F2 dt-weighted block means of sampled series", rel(bf["x"], [[2.0, 4.0], [3.0, 4.0]]) < 1e-12, f"{bf['x']}")
+    gf = H.gate_block_convergence(bf, "eps", {"x": ("x", slice(0, 2), False)}, 0.5)
+    check("F3 spread (max - min)/mean per column", abs(gf["x"]["max_spread"] - 0.4) < 1e-12 and gf["x"]["at"] == 0
+          and gf["pass"], f"{gf['x']}")
 
     print(f"{'ALL PASS' if not FAILED else 'FAILED: ' + ', '.join(FAILED)} ({time.time() - T0:.0f} s)")
     return 1 if FAILED else 0
