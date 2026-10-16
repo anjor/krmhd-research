@@ -1,0 +1,95 @@
+# H1 beta_i scan (.loop/specs/rework-H1.md, Decisions 2026-10-16): forced KRMHD as configs/forced_beta1.yaml with
+# beta_i = 0.3, at fixed chi.  Read by scripts/run_forced_turbulence.py; analysis by analysis/h1_fieldlines.py and
+# analysis/h1_pilot.py.
+#
+# Units: v_A = 1, box side L = 1 (k = 2 pi n, k1 = 2 pi), tau_A = L_z/v_A = 1, s = sqrt(beta_i), u = v_par/v_th.
+#
+# Changes from forced_beta1.yaml (everything else is the same, including the forcing seeds and the Alfvenic state
+# handed over from configs/forced_spinup64.yaml; g starts at zero):
+#  * beta_i = 0.3 and the branch Lambda^+ = -tau/Z + 1/beta_i + [(1 + tau/Z)^2 + beta_i^-2]^(1/2) = 6.2206
+#    (tau = Z = 1; S09 eq. 204).  The Alfvenic sector does not depend on beta_i, so the same eps_A gives the same chi.
+#  * Hypercollisions nu = 30 sqrt(beta_i) = 16.43: the attenuation of free energy streaming up the ladder,
+#    exp[-nu (m/M)^n ... /(s kappa)], depends on nu/s, so scaling nu with s keeps the collisional cutoff at the same
+#    place in m as at beta_i = 1 (collision-free range m <= M/2).
+#  * Steady-state gate threshold 0.15 (Anjor 2026-10-15, option (b)); the block-average check is in the analysis.
+#  * Reason for the scan (Anjor 2026-10-16): at beta_i = 1 the break m_* lies beyond M = 32; m_* ~ beta_i at fixed
+#    chi should bring it inside the hierarchy.  This run is the second of the two (0.1, then 0.3).
+
+label: forced-beta0p3
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 32
+  Lambda: "-1 + 10/3 + sqrt(4 + 100/9)"
+  beta_i: 0.3
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0
+  hyper_r: 2
+  nu: "30*sqrt(0.3)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: paper/phase-velocity-slices/data/P1_forced-spinup64_20261015_110112/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 53.0                  # tau_A: about 3 tau_A for g to become stationary (W still rising 1.5 tau_A after the
+                               # hand-off in forced_check64), then the 50 tau_A gate window
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  recompute_every: 25
+  sample_every: 20
+  print_every: 500
+  snapshot_every: 5.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
