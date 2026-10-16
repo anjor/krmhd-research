@@ -8,6 +8,7 @@
 #  * Here: safety 0.4 on the Alfvenic limit (safety_alfven; RK4's energy error per unit time falls as dt^5), and both
 #    limits rescaled every step from the cheap maxima of h1lib.make_fast_limits (limit_every: 1), so a sudden
 #    steepening of the flow shrinks the step at once.  The full evaluation (Lanczos radius) stays every 25 steps.
+#  * t_end 66 instead of 53, so that the final 50 tau_A start after the free-energy transient (see time.t_end).
 #
 # H1 beta_i scan (.loop/specs/rework-H1.md, Decisions 2026-10-16): forced KRMHD as configs/forced_beta1.yaml with
 # beta_i = 0.1, at fixed chi.  Read by scripts/run_forced_turbulence.py; analysis by analysis/h1_fieldlines.py and
@@ -74,8 +75,9 @@ init:
   keep_keys: false
 
 time:
-  t_end: 53.0                  # tau_A: about 3 tau_A for g to become stationary (W still rising 1.5 tau_A after the
-                               # hand-off in forced_check64), then the 50 tau_A gate window
+  t_end: 66.0                  # tau_A: 53 in forced_beta0p1.yaml; at beta_i = 0.3 W and E_A were still settling until
+                               # t ~ 15 (first block of the 50 tau_A window off by 24%), so here the gate window (the final
+                               # 50 tau_A) is t = 16..66
   dt_max: 5.0e-3
   dt_rule: exact
   safety: 0.8
