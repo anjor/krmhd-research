@@ -1,0 +1,117 @@
+\section{Frozen field lines}\label{sec:frozen}
+
+When the field lines are frozen into the $\boldsymbol E\times\boldsymbol B$ flow, which is common to all slices (\ref{eq:Uu}), each slice streams, in the frame of the flow, along field lines that do not move. This Lagrangian linearity is due to S09 (\S6.3), who showed with the Cauchy solution for the perturbed field that in the frame of $\uE$ the derivative $\bhat\cdot\nabla$ is taken along the field lines at $t=0$ (their eqs~214--216), and concluded that the compressive fluctuations do not cascade along the moving field lines; \citet[\S\S2.6 and~4.1]{Kunz2015} restated it for pressure-anisotropic plasmas, and \citet[\S2.3.1]{LithwickGoldreich2001} made the corresponding remark for a passive scalar in MHD turbulence. We give the solution operator and the hypotheses, and use volume preservation to obtain exact statements about volume-integrated statistics such as $W(m)$.
+
+\subsection{The frozen-line theorem}
+
+We treat one branch at a time, with state $g(\boldsymbol r,t)$: the function $G(\boldsymbol r,\cdot,t)$ of $u$, or $(g_0,\dots,g_M)$ in a truncated hierarchy, where $A$ replaces $L$. With collisions $-\mathcal Cg$ as in (\ref{eq:sliceforcing}), (\ref{eq:branch}) reads
+\begin{equation}\label{lag:kin}
+  \partial_tg+\{\Phi,g\}+s\,\gradpar(Lg)=-\mathcal Cg .
+\end{equation}
+Let $D_t=\partial_t+\{\Phi,\cdot\}$ and $\gradpar(t)=\partial_z+\{\Psi(\cdot,t),\cdot\}$, let $\boldsymbol X_t$ be the flow map of $\uE$, with $\partial_t\boldsymbol X_t(\boldsymbol\xi)=\uE(\boldsymbol X_t(\boldsymbol\xi),t)$ and $\boldsymbol X_0(\boldsymbol\xi)=\boldsymbol\xi$, and let $\mathcal X_th=h\circ\boldsymbol X_t^{-1}$ turn a function of the labels $\boldsymbol\xi$ into a function of position. The first of equations (\ref{eq:rmhd}) states that the residual $R=\partial_t\Psi+\{\Phi,\Psi\}-\partial_z\Phi$ vanishes. The hypotheses are
+\begin{equation}\label{eq:hyp}
+\begin{minipage}{0.86\linewidth}
+\begin{list}{}{\setlength{\leftmargin}{2.9em}\setlength{\labelwidth}{2.5em}\setlength{\labelsep}{0.4em}\setlength{\itemsep}{0.6ex}\setlength{\parsep}{0pt}\setlength{\topsep}{0pt}}
+\item[(H1)] \emph{Ideal induction.} On $[0,t_1]$ the residual $R$ depends on $z$ and $t$ only. The vorticity equation may be forced, viscous or prescribed.
+\item[(H2)] \emph{Kinetic equation.} The branch has $\Lambda\notin[0,1]$, and $g$ obeys (\ref{lag:kin}), where $\mathcal C$ is a linear operator on the velocity variable, the same at every point and independent of the fields, and is bounded or dissipative. There is no spatial dissipation of $g$ and no source.
+\item[(H3)] \emph{Smoothness.} $\Phi$, $\Psi$ and all their spatial derivatives are continuous on $\mathbb T^3\times[0,t_1]$, except that $\Phi$ may jump at finitely many times.
+\end{list}
+\end{minipage}
+\end{equation}
+Under (H3), $\boldsymbol X_t$ is a volume-preserving diffeomorphism of $\mathbb T^3$. The frozen generator $L_0=s\,\gradpar(0)\,L+\mathcal C$ describes the linear problem with the field lines fixed in their initial shape and no flow, and $e^{-tL_0}$ is its solution operator.
+
+\begin{theorem}[Frozen-line theorem]\label{thm:frozen}
+Assume (\ref{eq:hyp}), and let $g$ be a classical solution of (\ref{lag:kin}) on $[0,t_1]$. Then
+\begin{equation}\label{eq:frozen}
+  g(t)=\mathcal X_t\,e^{-tL_0}\,g(0),\qquad 0\le t\le t_1 .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+With $\bhat=\zhat+\zhat\times\nabla_\perp\Psi$, $\partial_t\bhat-\nabla\times(\uE\times\bhat)=\zhat\times\nabla R$, which vanishes under (H1), so $\bhat$ obeys the ideal induction equation and, since $\nabla\cdot\uE=\nabla\cdot\bhat=0$, has Cauchy's solution \citep[example~3]{Webb2014} $\bhat(\boldsymbol X_t(\boldsymbol\xi),t)=(\partial\boldsymbol X_t/\partial\boldsymbol\xi)\,\bhat(\boldsymbol\xi,0)$. The chain rule then gives, for a differentiable function $h$ of the labels,
+\begin{equation}\label{lag:intertwine}
+  \gradpar(t)\,\mathcal X_th=\mathcal X_t\,\gradpar(0)h ;
+\end{equation}
+equivalently, by the Jacobi identity,
+\begin{equation}\label{lag:commutator}
+  [D_t,\gradpar]\,f=\{R,f\},
+\end{equation}
+which vanishes under (H1). Write $g(t)=\mathcal X_t\hat g(t)$. By (\ref{lag:kin}), $\partial_t\hat g=-[s\gradpar(t)(Lg)+\mathcal Cg]\circ\boldsymbol X_t$. The operators $L$ and $\mathcal C$ act at each point with kernels independent of $\boldsymbol r$ (for $L$ because the field relations of KRMHD are algebraic), so they commute with composition by $\boldsymbol X_t$, and (\ref{lag:intertwine}) gives $\partial_t\hat g=-L_0\hat g$ with $\hat g(0)=g(0)$. For $\Lambda\notin[0,1]$, $s\gradpar(0)L$ is antisymmetric in the free-energy norm, which gives uniqueness.
+\end{proof}
+
+Without collisions, (\ref{eq:frozen}) decouples into slices,
+\begin{equation}\label{lag:sliceform}
+  a_u(t)=\mathcal X_t\,T_{sut}\,a_u(0),\qquad T_\ell=e^{-\ell\gradpar(0)} ,
+\end{equation}
+where $T_\ell$ moves a function a distance $\ell$ along the field lines of $\bhat(0)$: each slice is carried rigidly along the initial field lines at the speed $su$ and then relabelled by the flow. This makes exact, for the slices, the remark of S09 (\S6.2.4) that the ballistic response is also the nonlinear solution in Lagrangian variables. Whether solutions of the ideal three-dimensional RMHD equations stay smooth is not known in general, so (H3) is an assumption on $[0,t_1]$.
+
+\subsection{Single-point statistics and forcing}
+
+Let $O$ be a function of the local state, all the velocity-space information at one point, and of finitely many of its derivatives along the field. We call
+\begin{equation}\label{lag:Odef}
+  \mathcal O_t[f]=\int O\big(f,\gradpar(t)f,\gradpar(t)^2f,\dots\big)\,\dd^3r
+\end{equation}
+a single-point statistic. Volume preservation and $\gradpar(t)^k\mathcal X_t=\mathcal X_t\gradpar(0)^k$ give $\mathcal O_t[\mathcal X_ty]=\mathcal O_0[y]$.
+
+\begin{corollary}[Single-point statistics]\label{cor:singlepoint}
+Assume (\ref{eq:hyp}), and let $h(t)=e^{-tL_0}g(0)$. Then $\mathcal O_t[g(t)]=\mathcal O_0[h(t)]$ for every single-point statistic (\ref{lag:Odef}) and $0\le t\le t_1$: every volume-integrated single-point statistic of $g$ takes the value it has in the linear problem along the field lines frozen at $t=0$, with no flow.
+\end{corollary}
+
+The corollary covers $W(m,t)$, the slice correlations $C(u,u';t)$, the collisional dissipation rate and the Hermite flux (\ref{eq:fluxCD}) with the full $\gradpar$. It does not cover spectra in $k_\perp$ or $k_z$, fluxes resolved in $k_\perp$ shells or computed with $\partial_z$, which involve Fourier filters that do not commute with $\mathcal X_t$. With a source $F$, Duhamel's formula in the labels shows that the source injected at $t'$ phase-mixes along the field lines frozen at $t'$ and is then relabelled by the flow. For forcing that is white in time this gives the following.
+
+\begin{corollary}[White forcing]\label{cor:forcing}
+Let the forcing be $F\,\dd t=\dd Y$, with $Y$ a Wiener process with spatially smooth realisations and covariance operator $\Sigma$ whose increments are independent of the past of $g$ and of the Alfv\'enic fields, let (H1) and (H3) hold for every realisation, and let $g$ otherwise satisfy (H2). For every single-point statistic whose integrand is a quadratic form,
+\begin{equation}\label{lag:meanforced}
+  \mathrm E\,\mathcal O_t[g(t)]=\mathrm E\,\mathcal O_0\big[e^{-tL_0}g(0)\big]+\int_0^t\mathrm E\,\mathcal O_{t'}\big[e^{-(t-t')L_{t'}}\chi\big]\,\dd t' ,
+\end{equation}
+where $L_{t'}=s\,\gradpar(t')\,L+\mathcal C$ and $\chi$ is a random field with zero mean and covariance $\Sigma$, independent of all other variables. The mean of $W(m,t)$ is therefore the sum of the linear responses to the initial condition and to the individual injections, each phase-mixing along the field lines frozen at its injection time.
+\end{corollary}
+
+\begin{proof}[Sketch of proof]
+In the labels, $\dd\hat g=-L_0\hat g\,\dd t+\mathcal X_t^{-1}\dd Y$, whose solution is an It\^o integral with an integrand fixed by the past. The cross term between the initial condition and the stochastic integral has zero mean, the It\^o isometry turns the rest into $\int_0^t\mathrm E\,\mathcal O_0[e^{-(t-t')L_0}\mathcal X_{t'}^{-1}\chi]\,\dd t'$, and relabelling with (\ref{lag:intertwine}) gives (\ref{lag:meanforced}).
+\end{proof}
+
+The corollary concerns the mean: a single realisation contains cross terms between injections at different times, and for forcing correlated in time the mean cross terms between injections closer than the correlation time survive.
+
+\subsection{Field-aligned wavenumbers}
+
+Since $\bhat(t)$ is smooth and divergence-free, $K_\parallel(t)=-\ii\,\gradpar(t)$ is self-adjoint on $L^2(\mathbb T^3)$ \citep[e.g.][]{Kato1966}. Its spectral variable is the field-aligned wavenumber, and in a uniform field its spectral projections are the Fourier filters in $k_z$.
+
+\begin{corollary}[Field-aligned wavenumbers]\label{cor:kpar}
+Assume (\ref{eq:hyp}), and let $E_t(I)$ be the spectral projection of $K_\parallel(t)$ on a Borel set $I$. Then
+\begin{equation}\label{lag:kparsub}
+  E_t(I)\,g(t)=\mathcal X_t\,e^{-tL_0}\,E_0(I)\,g(0) .
+\end{equation}
+For real $g$ the parts with positive and negative field-aligned wavenumber evolve separately, so no part of $g$ changes the sign of its field-aligned wavenumber, and without collisions the field-aligned spectrum of every slice is constant in time.
+\end{corollary}
+
+\begin{proof}
+By (\ref{lag:intertwine}) and the unitarity of $\mathcal X_t$, $E_t(I)=\mathcal X_tE_0(I)\mathcal X_t^{-1}$, and $E_0(I)$ commutes with $e^{-tL_0}$. Without collisions $e^{-tL_0}$ multiplies the component of the slice at $u$ at field-aligned wavenumber $k_\parallel$ by $e^{-\ii suk_\parallel t}$.
+\end{proof}
+
+The Eulerian $k_z$ of the same part of $g$ can change sign. In the frozen-in shear $\Phi=-Szy$, $\Psi=-Sty$, an exact but not periodic solution of (\ref{eq:rmhd}) with $\gradpar(t)=\partial_z+St\,\partial_x$, a Fourier mode of the labels becomes a Fourier mode of position with
+\begin{equation}\label{lag:shear}
+  k_z(t)=k_z-Stk_x,\qquad k_\parallel(t)=k_z(t)+Stk_x=k_z .
+\end{equation}
+Its $k_z$ changes sign at $t=k_z/(Sk_x)$ while its field-aligned wavenumber stays fixed, so a diagnostic that sorts the free energy by the sign of $k_z$ counts the mode as reversed, although nothing has changed along the field.
+
+\subsection{What breaks the theorem}
+
+Resistivity or hyper-resistivity on $\Psi$, parallel dissipation of $z^\pm$, and forcing of $\Psi$ in general make $R$ depend on $x$ and $y$, so that (\ref{lag:commutator}) does not vanish and the field lines are not carried by the flow. Dissipation of $g$ that depends on $k_\perp$ or $k_z$ does not commute with the relabelling and violates (H2). Fourier truncation does not commute with it either; its error vanishes as the resolution increases at fixed $t$, but not uniformly in $t$. In the equations that GANDALF integrates, the hyper-resistivity acts alike on $z^\pm$ and every $g_m$ and violates (H1) and (H2), the hypercollisions satisfy (H2), and forcing that adds the same increment to $z^+$ and $z^-$ keeps (H1).
+
+\subsection{A numerical check}\label{fr:check}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{frozen}
+  \caption{Test of the frozen-line theorem. Ideal GANDALF runs (no dissipation, forcing or collisions) from one initial state at $N^3$ grid points, with $M=8$ (zero closure), $\Lambda=\sqrt5$, $\beta_i=1$, random $g_0$ and $g_1$, $\chi=2.21$, the term $\{\Phi,g_0\}$ 2.91 times the streaming term in rms, and $\Delta t=0.0005$. (a) The Hermite spectrum $W(m)$ at $t=0.125$ for $N=64$: initial state (crosses), GANDALF (circles), frozen-line prediction (solid line) and $k_z$-only prediction (dashed line). (b) The relative difference between GANDALF and the frozen-line prediction at $t=0.125$ against $N$, for the single-point statistics $W(m)$, $C_{jl}$, $\Pi_{m+1/2}$ with $\gradpar$ and $\langle g_m^4\rangle$ (filled markers), and for $W(k_\perp)$, $W(|k_z|)$ and $\Pi_{m+1/2}$ with $\partial_z$ (open markers).}
+  \label{fig:frozen}
+\end{figure}
+
+The runs of figure~\ref{fig:frozen} integrate one ideal initial state at $N=16$ to 64 for about three eddy times and compare each run with the frozen-line prediction $e^{-tL_0}g(0)$, computed with GANDALF's right-hand side for $g$ with $\Phi=0$ and $\Psi=\Psi(0)$ held fixed, and with the $k_z$-only prediction ($\Phi=\Psi=0$). For the statistics covered by corollary~\ref{cor:singlepoint} the relative difference falls by two to three orders of magnitude from $N=16$ to 64, to between $1.5\times10^{-5}$ for $W(m)$ and $1.4\times10^{-4}$ for the field-aligned flux, while for $W(k_\perp)$, $W(|k_z|)$ and the flux with $\partial_z$ it stays between 0.13 and 0.38 at every $N$. The $k_z$-only prediction misses $W(m)$ by 15\% and the field-aligned flux by 37\%. In ideal turbulence forced through $\Phi$, the response of $W(m)$ to each white injection into $g$ converges with $N$ to phase mixing along the field lines frozen at its injection time, as corollary~\ref{cor:forcing} states. With one term added, the departure from the frozen-line prediction still falls with $N$ for viscosity or forcing of $\Phi$, but not for resistivity or forcing of $\Psi$ or for damping of $g$ in $k_\perp$ or $k_z$.
+
+\subsection{Echoes}\label{fr:echoes}
+
+Under (\ref{eq:hyp}), $W(m,t)$ and the field-aligned Hermite flux evolve as in the linear problem $\partial_th=-L_0h$, so a return of free energy to low $m$ must already be present there, as a linear echo of initial unmixing correlations, the recurrence of a truncated hierarchy, or slow phase mixing at small field-aligned wavenumbers; with white forcing the same holds for $\mathrm E\,W(m,t)$. In this sense ideal, smooth dynamics without spatial dissipation of $g$ produces no stochastic echoes in $W(m)$. In drift kinetics with a straight guide field \citep{Schekochihin2016,Parker2016} the particles stream along a fixed direction, $[D_t,\partial_z]f=-\{\partial_z\Phi,f\}\neq0$, and the $z$-dependent flow couples positive and negative $k_\parallel$, which is the mechanism of the stochastic echo; a flow independent of $z$ gives none \citetext{\citealp[appendix~B]{Schekochihin2016}; \citealp[\S5.2]{KanekarThesis2015}}. In KRMHD the shear $\partial_z\uE$ that would change $k_\parallel$ also bends the field lines together with $g$, so under (H1) the commutator (\ref{lag:commutator}) vanishes and no part of $g$ moves between positive and negative field-aligned wavenumbers (corollary~\ref{cor:kpar}), although its Eulerian $k_z$ can change sign (\ref{lag:shear}).
+
+The theorem does not contradict the simulations in which echoes were reported \citep{Meyrand2019}, which, like ours, dissipate both the magnetic field and the compressive distribution in space and so violate (H1) and (H2). An echo in $W(m)$ requires such terms, or a failure of deterministic flux freezing for rough fields as the resistivity goes to zero, which (H3) excludes; \citet{Eyink2013} reported such a failure at high conductivity, and \citet[\S VIII.C]{Eyink2018} argued that in a turbulent inertial range the ideal Ohm's law does not imply flux freezing. The question for turbulence is therefore what the terms that break (\ref{eq:hyp}) do to $W(m)$. The next section proposes an answer.

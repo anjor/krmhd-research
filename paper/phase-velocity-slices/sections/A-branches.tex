@@ -56,21 +56,21 @@ If $\ell K=\Lambda^{-1}\ell$, then $G=\ell\cdot(G_n,G_B)$ has $\int G\,\dd v_\pa
 \begin{equation*}
   G^+=G_B+\frac{1+Z/\tau}{\sigma}\,G_n,\qquad
   G^-=G_n+\frac{2\tau}{\sigma Z\beta_i}\,G_B,\qquad
-  \sigma=1+\frac{\tau}{Z}+\frac{1}{\beta_i}+\kappa,
+  \sigma=1+\frac{\tau}{Z}+\frac{1}{\beta_i}+\Delta,
 \end{equation*}
-and the eigenvalues are $1/\Lambda^\pm$ with $\Lambda^\pm$ and $\kappa$ of (\ref{eq:Lambdapm}).
+and the eigenvalues are $1/\Lambda^\pm$ with $\Lambda^\pm$ and $\Delta$ of (\ref{eq:Lambdapm}).
 
 \subsection{Moments}\label{appA:moments}
 
-The map $(G_n,G_B)\mapsto(G^+,G^-)$ has determinant $-2\kappa/\sigma\ne0$ and inverse
+The map $(G_n,G_B)\mapsto(G^+,G^-)$ has determinant $-2\Delta/\sigma\ne0$ and inverse
 \begin{equation}\label{appA:inv}
-  G_n=\frac{\sigma G^--(2\tau/Z\beta_i)\,G^+}{2\kappa},\qquad
-  G_B=\frac{\sigma G^+-(1+Z/\tau)\,G^-}{2\kappa},
+  G_n=\frac{\sigma G^--(2\tau/Z\beta_i)\,G^+}{2\Delta},\qquad
+  G_B=\frac{\sigma G^+-(1+Z/\tau)\,G^-}{2\Delta},
 \end{equation}
 so that, with $M_0^\pm=\int G^\pm\,\dd v_\parallel$,
 \begin{equation}\label{appA:dndB}
-  \delta_n=\frac{\sigma M_0^--(2\tau/Z\beta_i)\,M_0^+}{2\kappa},\qquad
-  \delta_B=\frac{\sigma M_0^+-(1+Z/\tau)\,M_0^-}{2\kappa}.
+  \delta_n=\frac{\sigma M_0^--(2\tau/Z\beta_i)\,M_0^+}{2\Delta},\qquad
+  \delta_B=\frac{\sigma M_0^+-(1+Z/\tau)\,M_0^-}{2\Delta}.
 \end{equation}
 These are one half of the right-hand sides of S09's eqs~(202)--(203), as CMM found (footnote to their eq.~B15). The parallel flow and pressure perturbations of the non-Alfv\'enic part $g_i=g+x\,\delta_BF_0$ of the ion distribution (CMM eq.~3.26) are
 \begin{equation*}
@@ -80,7 +80,7 @@ These are one half of the right-hand sides of S09's eqs~(202)--(203), as CMM fou
 \end{equation*}
 with $p=n_iT_i$. By (\ref{appA:G01}) and (\ref{appA:inv}) these are linear in $G^\pm$, and the $G_l$ with $l\ge2$ enter only moments $\int\dd^3v\,v_\parallel^jv_\perp^{2k}g_i$ with $k\ge2$.
 
-\subsection{Free energy and phase-space helicity}\label{appA:energy}
+\subsection{Free energy}\label{appA:energy}
 
 With $x=L_0-L_1$, the orthonormality of the $L_l$ and the field relations, CMM's compressive free energy (their eq.~3.31) becomes
 \begin{align*}
@@ -98,22 +98,14 @@ The part with $l=0,1$ splits between the branches by the identities
 \end{equation}
 the first of which holds at each $v_\parallel$, with
 \begin{equation}\label{appA:cpm}
-  c_+=\Big[1+\frac{1+\tau/Z}{\kappa}\Big](\Lambda^+)^2>0,\qquad
-  c_-=\frac{Z^2}{2\tau^2}\Big[1+\frac{1}{\kappa\beta_i}\Big](\Lambda^-)^2>0 .
+  c_+=\Big[1+\frac{1+\tau/Z}{\Delta}\Big](\Lambda^+)^2>0,\qquad
+  c_-=\frac{Z^2}{2\tau^2}\Big[1+\frac{1}{\Delta\beta_i}\Big](\Lambda^-)^2>0 .
 \end{equation}
 This gives CMM's eq.~(B15) with their eqs~(B13)--(B14),
 \begin{equation}\label{appA:split}
   W_{\rm compr}=\tilde W_{\rm compr}+c_+W^+_{\rm compr}+c_-W^-_{\rm compr},\qquad
   W^\pm_{\rm compr}=\frac{n_iT_i}{2}\Big\langle\int\frac{(G^\pm)^2}{F_M}\,\dd v_\parallel-\frac{(M_0^\pm)^2}{\Lambda^\pm}\Big\rangle,
 \end{equation}
-with $\tilde W_{\rm compr}$ the part with $l\ge2$. Each part is conserved (S09, \S\S6.2.3 and~6.2.5; CMM eq.~B12) and positive definite (section~\ref{sec:slices}). CMM's phase-space helicity (their eq.~3.33) is built from $g$ without field terms, so the first identity in (\ref{appA:local}) gives their eq.~(B17),
-\begin{equation}\label{appA:Hsplit}
-\begin{gathered}
-  H_{\rm ph\text{-}sp}=T_i\Big\langle\int_0^\infty\pi v_\perp\,\dd v_\perp\,\PVint\frac{g^2}{v_\parallel F_0}\,\dd v_\parallel\Big\rangle
-  =\tilde H_{\rm ph\text{-}sp}+c_+H^+_{\rm ph\text{-}sp}+c_-H^-_{\rm ph\text{-}sp},\\
-  H^\pm_{\rm ph\text{-}sp}=n_iT_i\Big\langle\PVint\frac{(G^\pm)^2}{2v_\parallel F_M}\,\dd v_\parallel\Big\rangle,
-\end{gathered}
-\end{equation}
-with $\tilde H_{\rm ph\text{-}sp}$ the sum over $l\ge2$ (CMM eqs~B18--B19).
+with $\tilde W_{\rm compr}$ the part with $l\ge2$. Each part is conserved (S09, \S\S6.2.3 and~6.2.5; CMM eq.~B12) and positive definite (section~\ref{sec:slices}).
 
-The coefficients (\ref{appA:cpm}) use $\kappa$ of (\ref{eq:Lambdapm}) (S09 eq.~204) and are one quarter of those in S09's eq.~(213), as CMM state. CMM's eq.~(B16) prints $\kappa=[(1+\tau/Z)+\beta_i^{-2}]^{1/2}$, which gives $\sqrt3$ instead of $\sqrt5$ at $\beta_i=\tau=Z=1$. Their eqs~(B6)--(B7) are correct, so the misprint affects only $c_\pm$ in (B15) and (B17), our (\ref{appA:split}) and (\ref{appA:Hsplit}), which then fail. For random distribution functions the relative error with the printed $\kappa$ is up to $7.2\times10^{-2}$ for $W_{\rm compr}$ and $0.29$ for $H_{\rm ph\text{-}sp}$ over the parameters we tried ($2.5\times10^{-2}$ and $3.2\times10^{-2}$ at $\beta_i=\tau=Z=1$), and below $5\times10^{-14}$ with the square restored.
+The coefficients (\ref{appA:cpm}) use $\Delta$ of (\ref{eq:Lambdapm}) (S09 eq.~204) and are one quarter of those in S09's eq.~(213), as CMM state. CMM's eq.~(B16) prints this square root as $[(1+\tau/Z)+\beta_i^{-2}]^{1/2}$, which gives $\sqrt3$ instead of $\sqrt5$ at $\beta_i=\tau=Z=1$. Their eqs~(B6)--(B7) are correct, so the misprint affects only $c_\pm$ in (B15) and (B17) and our (\ref{appA:split}), which then fails. For random distribution functions the relative error in $W_{\rm compr}$ with the printed square root is up to $7.2\times10^{-2}$ over the parameters we tried ($2.5\times10^{-2}$ at $\beta_i=\tau=Z=1$), and below $5\times10^{-14}$ with the square restored.

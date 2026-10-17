@@ -1,0 +1,62 @@
+\section{A two-channel model of the Hermite spectrum}\label{sec:twochannel}
+
+In a turbulent steady state the compressive distribution is forced and dissipated, and the hypotheses (\ref{eq:hyp}) fail in two ways: the induction equation is not ideal, and $g$ is dissipated in space. The exact results still constrain what the nonlinearity can do. It moves no free energy between slices (section~\ref{hm:energy}), and as long as the field lines stay frozen into the flow it moves none between field-aligned wavenumbers (corollary~\ref{cor:kpar}). This section builds a model on the assumption that the two failures matter only through the removal of free energy at small perpendicular scales, and lists the predictions by which it can be tested.
+
+\subsection{The two channels}\label{tc:channels}
+
+\emph{Phase mixing at a frozen field-aligned wavenumber.} With white forcing, the mean of $W(m)$ is a sum of linear responses to the individual injections, each phase mixing along the field lines frozen at its injection time (corollary~\ref{cor:forcing}). Each injection has, along those lines, a distribution of field-aligned wavenumbers $\kappa$, which it keeps (corollary~\ref{cor:kpar}). By (\ref{eq:linforced}), free energy injected at $\kappa$ moves up the Hermite ladder at the speed $\dd m/\dd t=s\kappa\sqrt{2m}$ and carries the flux
+\begin{equation}\label{eq:pmflux}
+  \Pi_{m+1/2}\simeq s\kappa\sqrt{2m}\,W(m)\qquad(m\gg1),
+\end{equation}
+with no part returning to lower $m$.
+
+\emph{A uniform sink.} Each slice is a passive scalar, which the turbulence carries to the dissipation scale, where the spatial dissipation removes it, slice by slice (section~\ref{hm:energy}). For passive scalars in turbulence the rate at which variance is dissipated stays finite as the diffusivity goes to zero \citep{ShraimanSiggia2000,FalkovichGawedzkiVergassola2001}, and the time a scalar takes to reach the dissipation scale is set by the flow, not by the diffusivity. All slices share the $\boldsymbol E\times\boldsymbol B$ flow, and in its frame they differ only by their streaming along the field lines (theorem~\ref{thm:frozen}), which moves them along the lines but does not by itself refine them across the lines. We therefore assume that the turbulence cascades every slice in the same way. If the perpendicular spectrum of $g_m$ then has the same shape for every $m$, the dissipation, which acts alike on every moment, removes free energy from each moment in proportion to its free energy,
+\begin{equation}\label{eq:uniformsink}
+  D_\perp(m)=\frac{W(m)}{T},
+\end{equation}
+with one time $T$ for all $m$. Equivalently, for single-point statistics such as $W(m)$, the nonlinearity of KRMHD acts as a damping at a rate $1/T$ that does not depend on $m$.
+
+In the steady state of (\ref{eq:budget}), treated as continuous in $m$, (\ref{eq:pmflux}) and (\ref{eq:uniformsink}) give, without collisions,
+\begin{equation}\label{eq:Wmodel}
+  \frac{\dd}{\dd m}\big[s\kappa\sqrt{2m}\,W(m)\big]=-\frac{W(m)}{T}
+  \qquad\Longrightarrow\qquad
+  W(m)=\frac{\eps}{s\kappa\sqrt{2m}}\exp\!\Big(-\frac{\sqrt{2m}}{s\kappa T}\Big),
+\end{equation}
+where $\eps$ is the rate of injection into $g_0$. The free energy at $m$ was injected a time $\sqrt{2m}/(s\kappa)$ earlier and has survived the sink for that long. Because the injected pattern is fixed in the Eulerian frame and the field lines are tilted, the injected free energy has a distribution $P(\kappa)$ of field-aligned wavenumbers, and
+\begin{equation}\label{eq:Wspread}
+  W(m)=\eps\int P(\kappa)\,\frac{1}{s\kappa\sqrt{2m}}\exp\!\Big(-\frac{\sqrt{2m}}{s\kappa T}\Big)\,\dd\kappa ,
+\end{equation}
+with each $\kappa$ breaking at its own $m$, so that a broad $P(\kappa)$ turns the stretched exponential into a more gradual decline. \placeholder{work out the large-$m$ form of (\ref{eq:Wspread}) for the measured $P(\kappa)$, and whether a spread of $\kappa$ can mimic a power law steeper than $m^{-1/2}$} Hypercollisions add the sink $D_\nu(m)$ to (\ref{eq:Wmodel}). For the comparison with simulations we solve, for each $\kappa$, the forced linear hierarchy (\ref{mod:hierarchy}) with $\gradpar$ replaced by $\ii\kappa$, with the damping rate $1/(2T)$ added to every amplitude and with the hypercollisions of the run, and sum over the measured $P(\kappa)$ (appendix~\ref{app:methods}). This reproduces (\ref{eq:Wspread}) at large $m$ and is exact for the linear problem at small $m$. Once $T$ and $P(\kappa)$ are measured, the model has no free parameter.
+
+The form (\ref{eq:Wmodel}) is that of \citet[eq.~112]{ZoccoSchekochihin2011} for the Hermite spectrum of growing modes, with their $2\gamma$ replaced by $1/T$, and \citet[eqs~2.58--2.59]{Schekochihin2016} solved the same continuity equation in $m$ with the collisional sink $2\nu m$ in place of $1/T$. What the model adds is the identification of the sink with the passive-scalar cascade, which the exact results of sections~\ref{sec:hermite} and~\ref{sec:frozen} make the only effect of the nonlinearity on $W(m)$ once the field lines are frozen.
+
+\subsection{Scales}\label{tc:scales}
+
+The spectrum (\ref{eq:Wmodel}) follows $m^{-1/2}$ up to the break
+\begin{equation}\label{eq:mstar}
+  m_*=\frac{(s\kappa T)^2}{2}=\frac{C^2}{2}\,\frac{\beta_i}{\chi^2},
+\end{equation}
+where the second form takes $T=C/(k_\perp u_\perp)$ and $\kappa\simeq k_\parallel$ at the outer scale, $s=\beta_i^{1/2}$ with $v_A=1$, and the nonlinearity parameter $\chi=k_\perp u_\perp/(k_\parallel v_A)$. This is the phase-mixing threshold $k_\parallel\vth\sim\sqrt m\,k_\perp u_\perp$ of \citet[eq.~4.5]{Schekochihin2016}, written in KRMHD variables, with its coefficient tied to the cascade time; for $\chi\sim1$ it is the crossover $m\sim\beta_i$ stated by \citet{Kawazura2019}. Beyond $m_*$ the model gives an exponential decay in $\sqrt m$, not a power law. If the collisional cutoff $m_c$ lies below $m_*$, most of the injected free energy reaches it and is dissipated by collisions; if it lies above, most is dissipated at small perpendicular scales, and the collisional share is about $\exp(-\sqrt{2m_c}/(s\kappa T))$.
+
+By (\ref{eq:corrspec}), the exponential factor in (\ref{eq:Wmodel}) is the cosine transform at $q=\sqrt{2m}$ of a Lorentzian correlation between slices with width
+\begin{equation}\label{eq:deltauc}
+  \delta u_c=\frac{1}{s\kappa T}=\frac{1}{\sqrt{2m_*}} .
+\end{equation}
+Two slices loaded with the same pattern dephase at the rate $s\kappa|u-u'|$ and are removed at the rate $1/T$, so in the steady state slices closer than $\delta u_c$ in phase velocity remain correlated.
+
+\subsection{Predictions}\label{tc:predictions}
+
+The model predicts the following, each measurable independently of the others.
+\begin{itemize}
+\item[(i)] \emph{Uniform sink.} $D_\perp(m)/W(m)$ is independent of $m$, and the budget (\ref{eq:budget}) closes with the flux (\ref{eq:fluxCD}) computed with the full $\gradpar$, but not with the $k_z$-only flux.
+\item[(ii)] \emph{Shape.} With $T$ from (i) and $P(\kappa)$ measured along field lines for the injected pattern, $W(m)$ and the field-aligned flux follow the model. A return flux would make both fall below it at large $m$.
+\item[(iii)] \emph{Dependence on $\beta_i$.} At fixed $\chi$ the Alfv\'enic turbulence does not depend on $\beta_i$, so $T$ and $P(\kappa)$ are unchanged and $m_*\propto\beta_i$: the break moves into a fixed range of $m$ as $\beta_i$ decreases.
+\item[(iv)] \emph{Anomaly.} $T$ stays finite and does not depend on the dissipation coefficients as the resolution increases.
+\item[(v)] \emph{Eulerian diagnostics.} A split of the flux by the sign of $k_z$ assigns to the backward direction the forward flux of modes whose $k_z$ and field-aligned wavenumber have opposite signs (\ref{lag:shear}), and so reports a backward flux where the field-aligned flux has none. \placeholder{estimate the backward fraction from the measured tilt distribution $\boldsymbol b_\perp\cdot\boldsymbol k_\perp$ and compare with section~\ref{sim:beta1}}
+\item[(vi)] \emph{Slice correlations.} The correlation between slices falls off over $\delta u_c$ (\ref{eq:deltauc}).
+\end{itemize}
+The echo picture \citep{Meyrand2019} predicts instead a return flux along the field, which reduces the net field-aligned flux and $W(m)$ below the model at large $m$, and a field-aligned wavenumber of $g$ that grows with $k_\perp$ through the inertial range as $g$ inherits the parallel cascade of the Alfv\'enic fields.
+
+\subsection{Limits of the model}\label{tc:limits}
+
+The model rests on two assumptions that the exact results do not guarantee. First, it assumes that the field lines stay frozen long enough for the injected $\kappa$ to be kept, although the hyper-resistivity of any simulation, and resistivity in a plasma, reconnect them. \citet{Meyrand2019} argued that this relabelling gives $g$ the parallel structure of the Alfv\'enic fields within about one eddy-turnover time. Second, it assumes that the perpendicular cascade has a dissipative anomaly. \citet{DrivasEyink2017} showed that anomalous dissipation of a passive scalar requires Lagrangian spontaneous stochasticity, the non-uniqueness of trajectories as the diffusivity goes to zero, and \citet[\S VIII.C]{Eyink2018} argued that the same stochasticity breaks flux freezing in a turbulent inertial range. If the two go together, the frozen $\kappa$ of the first assumption must fail at the scales where the anomaly of the second operates. The model can survive this only if the free energy that phase mixes sits at scales where the field lines are still effectively frozen and the relabelling acts on free energy that the perpendicular sink is already removing. Section~\ref{sec:simulations} measures the field-aligned wavenumber of $g$ as a function of $k_\perp$ to see where this holds. The model also takes the cascade rate to be the same for every slice; slices with large $|u|$ stream fast along wandering field lines, which may refine them across the lines faster than slow slices, and prediction~(i) measures how large this effect is.

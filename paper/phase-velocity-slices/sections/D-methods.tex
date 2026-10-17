@@ -1,0 +1,22 @@
+\section{Numerical methods}\label{app:methods}
+
+\subsection{Energy accounting}
+
+Each step of the simulations of section~\ref{sec:simulations} consists of GANDALF's Lawson-RK4 step with dissipation and hypercollisions, followed by the forcing increment. The hyper-resistivity and the hypercollisions are linear and diagonal in Fourier and Hermite space, so the free energy they remove from each moment during a step follows from the post-step fields and their damping factors, and the energy before dissipation is reconstructed exactly. The difference between that energy and the energy at the start of the step is the change due to the ideal part of the step, which the exact dynamics conserves; summed over the window it is the time-stepping error of table~\ref{tab:gates}. The injected energy of each step is the change across the forcing increment. This gives $D_\perp(m)$, $D_\nu(m)$ and the injection rate in (\ref{eq:budget}) per moment without finite differences in time, and the field-aligned flux is computed from (\ref{eq:fluxCD}) with GANDALF's dealiased bracket.
+
+\subsection{Field-line tracing}
+
+Field lines of $\bhat=\zhat+\zhat\times\nabla_\perp\Psi$ are integrated in $z$ with the classical fourth-order Runge--Kutta method and step $\Delta z=L/128$, with $\nabla_\perp\Psi$ interpolated by cubic B-splines on a grid refined by a factor of two by zero padding. We start 4096 lines at random points of the plane $z=0$ and follow each over four box lengths. Along each line we sample the field of interest and compute its spectrum in the arc length, which equals $z$ to first order in $b_\perp$. The mean field-aligned wavenumber $\kappa_1$ is the first moment of $|\kappa|$ of the spectrum averaged over lines, and we average it over the nine snapshots. For the injected pattern we draw four fresh realisations of the density forcing with the run's generator and trace them on the same lines; their field-aligned spectrum, averaged over lines, draws and snapshots, is $P(\kappa)$.
+
+\subsection{The two-channel model}
+
+For one field-aligned wavenumber $\kappa$ the model is the forced linear hierarchy
+\begin{equation}\label{appD:linear}
+  \frac{\dd g}{\dd t}=-\mathsf Lg+\xi\,\boldsymbol e_0,\qquad
+  \mathsf L=\ii s\kappa A+\mathrm{diag}\Big(\frac{1}{2T}+\nu\Big(\frac mM\Big)^{n}[m\ge2]\Big),
+\end{equation}
+where $A$ is the truncated ladder matrix of the run, $\boldsymbol e_0$ the unit vector of $g_0$ and $\xi$ white noise of intensity $q$. The damping $1/(2T)$ of every amplitude removes free energy from every moment at the rate $1/T$. The stationary covariance $\mathsf C=\langle gg^\dagger\rangle$ solves the Lyapunov equation $\mathsf L\mathsf C+\mathsf C\mathsf L^\dagger=q\,\boldsymbol e_0\boldsymbol e_0^{\mathsf T}$. Then $W(m)=p_m\mathsf C_{mm}$, the flux is $\Pi_{m+1/2}=-2s\kappa\,p_mA_{m,m+1}\,\mathrm{Im}\,\mathsf C_{m+1,m}$, the injection rate is $p_0q$, and the slice covariance is $\mathsf R^{\mathsf T}\Pw\,\mathrm{Re}\,\mathsf C\,\Pw\mathsf R$ with $\mathsf R$ the matrix of theorem~\ref{thm:trunc}. The model spectrum is the sum of these over the measured $P(\kappa)$, normalised so that the total injection rate equals the measured $\eps$. Free energy injected at $\kappa=0$ does not phase mix and is removed at $m=0$ at the rate $1/T$. At large $m$ and without hypercollisions, the sum reproduces (\ref{eq:Wspread}).
+
+\subsection{Code and data}
+
+The configuration files, the run script and the analysis scripts accompany the paper in the folders \texttt{configs/}, \texttt{scripts/} and \texttt{analysis/}; the scripts read only saved data and regenerate every number and figure of section~\ref{sec:simulations}. The self-checking scripts behind sections~\ref{sec:slices} to~\ref{sec:frozen} are in \texttt{derivations/}. \placeholder{data availability statement}

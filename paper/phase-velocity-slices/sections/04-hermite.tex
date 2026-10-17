@@ -1,0 +1,94 @@
+\section{Free energy and the Hermite spectrum in slice variables}\label{sec:hermite}
+
+This section collects the consequences of theorem~\ref{thm:slice} for the free energy and its Hermite spectrum. Without collisions, dissipation or sources the energy of every slice is conserved, so the free energy is not moved between phase velocities, and free energy moves between Hermite moments only as the correlations between slices change.
+
+\subsection{Slice energies}\label{hm:energy}
+
+Let $\mathcal E(u)=\langle a_u^2\rangle$ be the slice energy, so that $\tfrac12n_iT_i\,\mathcal E(u)\,\dd u$ is the free energy per unit volume in the slices with phase velocities in $[u,u+\dd u]$ and $\int\mathcal E\,\dd u=\langle\fe{G}{G}\rangle=\sum_mW(m)$ by (\ref{sl:parseval}). Under the hypotheses of theorem~\ref{thm:slice}, with no collisions, dissipation or sources acting on $G$, (\ref{eq:Uu}) and $\nabla\cdot\boldsymbol U_u=0$ give $\partial_ta_u^2+\nabla\cdot(\boldsymbol U_u\,a_u^2)=0$, so $\mathcal E(u)$ is independent of time for every $u$. Every functional $\int\varphi(u)\,\mathcal E(u)\,\dd u$ is then conserved. The free energy $W^\pm$ of each branch (S09) and the two further quadratic invariants found by \citet{Chandran2026}, $\Gamma^\pm$ and the phase-space helicity $\Hph^\pm$ (their eqs~B25 and~B18), are the members $\varphi=1$, $u$ and $1/u$, up to normalisation; we do not use the last two here.
+
+The nonlinearity of KRMHD therefore moves no free energy between phase velocities. Of the terms that act on $G$ in a simulation, damping at a rate that depends only on $k_\perp$ or $k_z$, applied alike to every Hermite moment, removes free energy from each slice separately (\ref{eq:sliceforcing}), and only velocity-dependent collisions exchange it between slices.
+
+\subsection{The two-slice law and the Hermite flux}\label{hm:flux}
+
+Let $C(u,u')=\langle a_u\,a_{u'}\rangle$ be the two-slice correlation, whose diagonal is $\mathcal E(u)$.
+
+\begin{proposition}[Two-slice law]\label{prop:twoslice}
+Under the hypotheses of theorem~\ref{thm:slice}, with no collision operator, source or dissipation acting on $G$, and for slice amplitudes that are continuously differentiable in $\boldsymbol r$ and $t$ with derivatives continuous in $u$,
+\begin{equation}\label{eq:twoslice}
+  \frac{\dd C(u,u')}{\dd t}=-s\,(u-u')\,\big\langle a_{u'}\,\gradpar a_u\big\rangle .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+By (\ref{eq:slice}), $\partial_ta_u=-\{\Phi,a_u\}-su\,\gradpar a_u$, and the Leibniz rule gives $\partial_t(a_ua_{u'})=-\{\Phi,a_ua_{u'}\}-su'\,\gradpar(a_ua_{u'})-s\,(u-u')\,a_{u'}\gradpar a_u$. Since $\nabla\cdot\uE=\nabla\cdot\bhat=0$, the first two terms are divergences, whose box averages vanish.
+\end{proof}
+
+The $\boldsymbol E\times\boldsymbol B$ flow carries the two slices of a pair together and cannot change their correlation, which changes only through their relative streaming along the perturbed field. Phase mixing and unmixing are therefore the decorrelation and recorrelation of slices along $\gradpar$, a definition that refers to no wavenumber.
+
+Free energy moves between Hermite moments only through the streaming term. In the Hermite form (\ref{mod:hierarchy}) the bracket does not change $\langle g_m^2\rangle$, and since $\Pw A$ is symmetric and $\langle g_n\gradpar g_{n'}\rangle$ antisymmetric, only the coupling between $m$ and $m+1$ survives in $E_{\le m}=\sum_{n\le m}W(n)$:
+\begin{equation}\label{eq:fluxCD}
+  \frac{\dd E_{\le m}}{\dd t}=-\Pi_{m+1/2},\qquad
+  \Pi_{m+1/2}=s\,b_m\big\langle g_m\gradpar g_{m+1}-g_{m+1}\gradpar g_m\big\rangle,\qquad b_m=p_mA_{m,m+1},
+\end{equation}
+the free energy per unit time and volume that passes from moment $m$ to $m+1$. In slice variables $\Pi_{m+1/2}=-\iint K_m(u,u')\,\partial_tC(u,u')\,\dd u\,\dd u'$, with the Christoffel--Darboux kernel $K_m(u,u')=\sum_{n\le m}\phi_n(u)\,\phi_n(u')$ of the functions $\phi_n$ of section~\ref{hm:dictionary}, which by (\ref{eq:twoslice}) is a weighted integral of the pair correlations $\langle a_{u'}\gradpar a_u\rangle$. The flux must be computed with the full $\gradpar$: the Hermite flux of \citet{Meyrand2019} uses it, whereas a flux computed with $\partial_z$ alone, which we call the $k_z$-only flux, omits the part of the streaming that follows the tilt of the field lines and does not close the budget below.
+
+With forcing of $g_0$ at the rate $\eps$, dissipation that acts on every $g_m$ in the same way and hypercollisions, the free energy in each moment obeys
+\begin{equation}\label{eq:budget}
+  \frac{\dd W(m)}{\dd t}=\Pi_{m-1/2}-\Pi_{m+1/2}+\eps\,\delta_{m0}-D_\perp(m)-D_\nu(m),\qquad \Pi_{-1/2}=0,
+\end{equation}
+where $D_\perp(m)$ and $D_\nu(m)$ are the rates at which the spatial dissipation and the hypercollisions remove free energy from moment $m$. The brackets and the hyper-resistivity of GANDALF act on all moments alike, so (\ref{eq:budget}) holds for its equations up to the error of the dealiased brackets, with the flux (\ref{eq:fluxCD}) evaluated with the same brackets; in the simulations of section~\ref{sec:simulations} it closes to $4\times10^{-4}\,\eps$.
+
+\subsection{The Hermite spectrum and the two-slice correlation}\label{hm:dictionary}
+
+With the orthonormal basis $\phi_m=\sqrt{p_m\varrho}\;r_m$ of $L^2(\mathbb R,\dd u)$ (section~\ref{sl:forcingsec}), $g_m=p_m^{-1/2}\int\phi_m\,a_u\,\dd u$, and the Hermite spectrum is a quadratic form in the two-slice correlation,
+\begin{equation}\label{eq:dictionary}
+  W(m)=\iint C(u,u')\,\phi_m(u)\,\phi_m(u')\,\dd u\,\dd u' .
+\end{equation}
+If the slices are completely decorrelated, $C(u,u')=e(u)\,\delta(u-u')$, then $W(m)=\int e\,\phi_m^2\,\dd u$. At $\Lambda=\infty$, $\phi_m$ is the Hermite function $\psi_m$, and for $e=F_M$
+\begin{equation}\label{eq:prefactor}
+  \int F_M\,\psi_m^2\,\dd u=\frac{\Gamma(m+\frac12)}{\sqrt2\,\pi\,m!}=\frac{1}{\pi\sqrt{2m}}\Big(1-\frac{1}{8m}+O(m^{-2})\Big),
+\end{equation}
+where $\Gamma(\cdot)$ is Euler's gamma function. This is the $m^{-1/2}$ spectrum of linear phase mixing. For one Fourier mode whose density moment is driven by white noise, the exact steady state of \citet[eq.~4.10]{Kanekar2015} is the spectrum of decorrelated slices with $e=\pi(1-1/\Lambda)^2\epsilon_k\,\varrho/(s|k_z|)$; at $\Lambda=\infty$
+\begin{equation}\label{eq:linforced}
+  W(m)=\frac{\pi\epsilon_k}{s|k_z|}\,\frac{\Gamma(m+\frac12)}{\sqrt2\,\pi\,m!}\;\simeq\;\frac{\eps}{s|k_z|\sqrt{2m}}\quad(m\gg1),
+\end{equation}
+and at every $\Lambda$ the large-$m$ form is $\eps/(s|k_z|\sqrt{2m})$, with $\eps$ the free-energy injection rate, and the flux (\ref{eq:fluxCD}) is $\eps$ through every $m$. Density forcing loads every slice with the same spatial pattern (section~\ref{sl:forcingsec}), two slices loaded together dephase at the rate $s|k_z(u-u')|$, and the steady state superposes all past injections, so the slices are decorrelated in the mean. Free energy injected at $m=0$ thus moves up the ladder at the speed $\dd m/\dd t=\Pi/W=s|k_z|\sqrt{2m}$ and reaches $m\simeq(sk_zt)^2/2$ after a time $t$.
+
+Correlated slices give steeper spectra. If $C(u,u')=[e(u)e(u')]^{1/2}\,c(u-u')$ at $\Lambda=\infty$, with $e$ slowly varying, the large-$m$ form of $\psi_m$ gives
+\begin{equation}\label{eq:corrspec}
+  W(m)\simeq\frac{\hat c(\sqrt{2m})}{\pi\sqrt{2m}}\int e\,\dd u,\qquad \hat c(q)=\int c(\delta)\cos(q\delta)\,\dd\delta ,
+\end{equation}
+so $\sqrt{2m}$ acts as a wavenumber in velocity space \citep{Schekochihin2016,AdkinsSchekochihin2018}. A power law $\hat c\propto q^{-p}$ gives $W\propto m^{-(p+1)/2}$, and a Lorentzian correlation $c(\delta)=\delta_c/[\pi(\delta^2+\delta_c^2)]$ of width $\delta_c$ gives $\hat c=e^{-q\delta_c}$ and $W(m)\propto m^{-1/2}\exp(-\sqrt{2m}\,\delta_c)$. A spectrum that falls exponentially in $\sqrt m$ is therefore one in which slices further apart than $\delta_c$ in phase velocity are decorrelated and nearer ones are not.
+
+\subsection{Truncated hierarchies}\label{hm:trunc}
+
+Codes such as GANDALF evolve the moments $g_0,\dots,g_M$ of a branch and close the hierarchy at $m=M$. For the zero closure $A$ is the leading $(M+1)\times(M+1)$ block of the ladder matrix (\ref{mod:ladder}); the copy closure $g_{M+1}=g_{M-1}$ changes, for $M\ge2$, only $A_{M,M-1}$, to $\sqrt{M/2}+\sqrt{(M+1)/2}$.
+
+\begin{theorem}\label{thm:trunc}
+Let $\Lambda\notin[0,1]$, the value $\Lambda=\infty$ included, and use the zero closure or, for $M\ge2$, the copy closure.
+\begin{itemize}
+\item[(i)] $A$ has $M+1$ real and simple eigenvalues $u_0<\dots<u_M$. The right eigenvector of $u_j$ is $\boldsymbol r_j=(r_0(u_j),\dots,r_M(u_j))^{\mathsf T}$, with $r_m$ the polynomials of section~\ref{sl:forcingsec}; the left eigenvector is $\boldsymbol w_j=\Pw\boldsymbol r_j$, and $\boldsymbol w_j^{\mathsf T}\boldsymbol r_l=n_j\,\delta_{jl}$ with $n_j>0$.
+\item[(ii)] For arbitrary real $\Phi$ and $\Psi$, and brackets evaluated by any bilinear rule, possibly followed by linear operations, such as dealiasing, that act on every $g_m$ alike, $g$ solves (\ref{mod:hierarchy}) if and only if the slice amplitudes $a_j=\boldsymbol w_j^{\mathsf T}g/\sqrt{n_j}=\sum_mp_mR_{mj}g_m$, with $R_{mj}=r_m(u_j)/\sqrt{n_j}$, satisfy
+\begin{equation}\label{eq:truncslice}
+  \partial_ta_j+\{\Phi+su_j\Psi,\,a_j\}+su_j\,\partial_za_j=0,\qquad j=0,\dots,M .
+\end{equation}
+\item[(iii)] $g_m=\sum_jR_{mj}\,a_j$, and $\sum_mp_m|g_m(\boldsymbol k)|^2=\sum_j|a_j(\boldsymbol k)|^2$ for every Fourier mode.
+\end{itemize}
+\end{theorem}
+
+\begin{proposition}\label{tr:gaussprop}
+For the zero closure, the $u_j$ are the zeros of $r_{M+1}$, and with $\lambda_j=1/n_j$
+\begin{equation}\label{eq:gauss}
+  \sum_{j=0}^M\lambda_j\,f(u_j)=\int\varrho(u)\,f(u)\,\dd u\qquad\text{for every polynomial $f$ of degree at most $2M+1$:}
+\end{equation}
+the $u_j$ and $\lambda_j$ are the nodes and weights of the Gauss rule of the spectral density $\varrho\,\dd u$, and $a_j=\sqrt{\lambda_j}\,\Tr[G](u_j)$ for states in the span of the retained moments.
+\end{proposition}
+
+Appendix~\ref{app:truncated} gives the proofs. A truncated hierarchy is therefore exactly $M+1$ passive slices at the Gauss nodes of the Case--Van Kampen measure, and the results above hold for it with sums over $j$ in place of integrals over $u$. At $\Lambda=\infty$ the nodes are the Gauss--Hermite nodes \citep{ParkerDellar2015,Tassi2022}; in KRMHD the Landau coupling enters only $A_{10}$ of a matrix that does not depend on the wavenumber, and the Alfv\'enic fields do not depend on $g$, so the decoupling is exact in three dimensions. The largest phase velocity $u_{\max}=u_M$ hardly depends on $\Lambda$; with $q_m=(2m+1)^{1/2}$,
+\begin{equation}\label{eq:umax}
+\begin{aligned}
+  u_{\max}&=q+2^{-1/3}\alpha_1\,q^{-1/3}-\frac{2^{-2/3}\alpha_1^2}{10}\,q^{-5/3}+O(q^{-3}),&\qquad q&=q_{M+1}\quad\text{(zero closure)},\\
+  u_{\max}&=q+2^{-1/3}\alpha_1'\,q^{-1/3}-2^{-5/3}\Big(\frac{4}{5\alpha_1'}+\frac{\alpha_1'^2}{5}\Big)q^{-5/3}+O(q^{-3}),&\qquad q&=q_M\quad\text{(copy closure)},
+\end{aligned}
+\end{equation}
+where $\alpha_1=-2.3381074$ and $\alpha_1'=-1.0187930$ are the first zeros of the Airy function and of its derivative \citep[theorem~6.32]{Szego1975,Olver1959}; $u_{\max}=7.25$ at $M=32$. Slice $j$ is advected with the stream function $\Phi+su_j\Psi$, so an explicit time step for the nonlinear term must resolve the speed $\max|\nabla_\perp\Phi|+su_{\max}\max|\nabla_\perp\Psi|$, not $\max|\nabla_\perp\Phi|+s\max|\nabla_\perp\Psi|$; the simulations of section~\ref{sec:simulations} set their time step in this way.

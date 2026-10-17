@@ -1,0 +1,99 @@
+\section{Simulations}\label{sec:simulations}
+
+\subsection{Set-up}\label{sim:setup}
+
+We integrate (\ref{eq:rmhd}) in Elsasser form with one compressive branch (\ref{mod:hierarchy}), the branch $\Lambda^+$ of (\ref{eq:Lambdapm}) with $\tau=Z=1$, truncated at $M=32$ with the zero closure, using GANDALF \citep[version 0.7.0;][]{Kanekar2025} in double precision on a CPU. The box is periodic with side $L=1$ and $64^3$ grid points, so $k_1=2\pi$; $v_A=1$ and $\tau_A=L/v_A=1$. This section reports the run at $\beta_i=1$, where $\Lambda^+=\sqrt5$; section~\ref{sim:beta} describes the runs at lower $\beta_i$.
+
+The Alfv\'enic fluctuations are forced through $\Phi$ alone, so that $z^+$ and $z^-$ receive the same increment, which keeps the forcing out of the induction equation (section~\ref{sec:frozen}). The forcing is white in time and acts on the Fourier modes with $1\le k_\perp/k_1\le2$ and $|k_z|=k_1$, with injection rate $\eps_A=0.3$. Excluding $k_z=0$ from the band avoids the two-dimensional condensate that a band including it drove at this resolution. The density moment $g_0$ is forced on the same band, white in time, with its amplitude rescaled at every step so that the expected injection rate is $\eps=0.3$; the band excludes $k_\perp=0$, where injected free energy would phase mix with no perpendicular cascade. Every injection therefore has the single Eulerian parallel wavenumber $k_z=\pm k_1$, and its field-aligned wavenumbers differ from $k_1$ only through the tilt of the field lines.
+
+GANDALF applies the hyper-resistivity $\eta\,(k_\perp^2/k_{\perp,\max}^2)^2$, with $\eta=300$, alike to $z^\pm$ and to every $g_m$; there is no parallel dissipation. Hypercollisions $\nu\,(m/M)^6$ with $\nu=30$ act on $g_m$ for $m\ge2$. Free energy moving up the ladder at $\dd m/\dd t=s\kappa\sqrt{2m}$ is attenuated by them mainly above $m=M/2$, so the range $m\le M/2$ is nearly collision-free. The time step is GANDALF's Lawson--Runge--Kutta scheme \citep[Lawson-RK4;][]{Lawson1967}, which integrates the streaming exactly through an integrating factor and treats the nonlinear terms with explicit RK4. Following section~\ref{hm:trunc}, $\Delta t=0.8\times2\sqrt2/\rho$, where $\rho$ is the spectral radius of the explicit slice-advection operator at the extreme nodes $u=\pm u_{\max}$, computed by a Lanczos iteration every 25 steps, or the Alfv\'enic limit $0.8\,\Delta x/\max|\nabla_\perp z^\pm|$ if that is smaller. The Alfv\'enic turbulence is first spun up with the same forcing and dissipation. The run then starts from $g=0$ and lasts $53\,\tau_A$, and all averages are over the final $50\,\tau_A$, $3\le t\le53$; $W$ reaches its mean level within about $3\,\tau_A$.
+
+We characterise the outer scale by the part of $\Phi$ in the shells $k_\perp/k_1\le2.5$. Its energy-weighted mean $k_\perp$ and $|k_z|$ are $k_{\perp,\mathrm{out}}=9.7=1.55\,k_1$ and $k_{\parallel,\mathrm{out}}$, and its rms $\boldsymbol E\times\boldsymbol B$ velocity is $u_{\mathrm{out}}=0.71$. The nonlinearity parameter is $\chi=k_{\perp,\mathrm{out}}u_{\mathrm{out}}/k_{\parallel,\mathrm{out}}=0.99$ (0.85 with the rms field-aligned wavenumber of the same field in place of $|k_z|$), and the outer eddy time is $\tau_{\rm nl}=1/(k_{\perp,\mathrm{out}}u_{\mathrm{out}})=0.144$. The measured free-energy injection rate over the window is $\eps=0.307$.
+
+\subsection{Diagnostics}\label{sim:diag}
+
+The energy change of every step is split into the parts due to the ideal dynamics, the forcing, the hyper-resistivity and the hypercollisions. This gives $D_\perp(m)$ and $D_\nu(m)$ in (\ref{eq:budget}) exactly for every moment, and the remainder is the time-stepping error of the ideal part. Every 20 steps we record $W(m)$, its perpendicular spectrum $W(m,k_\perp)$, the field-aligned flux (\ref{eq:fluxCD}) and the $k_z$-only flux, the split of the $k_z$-only flux into phase-mixing and unmixing parts by the sign of $k_z$ \citep{Schekochihin2016}, the slice amplitudes $a_j$ at the $M+1$ nodes of theorem~\ref{thm:trunc} with their correlation matrix $C_{jl}=\langle a_ja_l\rangle$, and the Alfv\'enic energy $E_A=\frac12\langle|\nabla_\perp\Phi|^2+|\nabla_\perp\Psi|^2\rangle$ and its spectrum.
+
+Field-aligned wavenumbers are measured along traced field lines, as is done for the Alfv\'enic fields \citep{ChoVishniac2000,Meyrand2019}. On nine snapshots ($t=10$, 15, \dots, 50) we trace 4096 lines of $\bhat=\zhat+\zhat\times\nabla_\perp\Psi$ over four box lengths in $z$, sample $g_m$, $\Phi$ and $\Psi$ along them, the last three also filtered into the bands $k_\perp/k_1\in[0,2]$, $[2,4]$, $[4,8]$ and $[8,16]$, and compute the spectra along the lines. We report $\kappa_1$, the first moment of $|\kappa|$. The distribution $P(\kappa)$ of the injected free energy is measured in the same way, on fresh realisations of the density forcing sampled along the same lines. Appendix~\ref{app:methods} gives the details and the computation of the model.
+
+\subsection{Validation}\label{sim:gates}
+
+\begin{table}[t]
+  \centering
+  \caption{Checks of the $\beta_i=1$ run over the window $3\le t\le53$.}
+  \label{tab:gates}
+  \begin{tabular}{lll}
+    \toprule
+    Check & Alfv\'enic & Compressive \\
+    \midrule
+    Time-stepping error / injected energy & $5.0\times10^{-4}$ & $3.8\times10^{-8}$ \\
+    $|\text{injection}-\text{dissipation}|$ / injection & 1.7\% & 0.06\% \\
+    Standard deviation / mean of $E_A$ and $W$ & 0.117 & 0.141 \\
+    Spread of block means, four blocks of $12.5\,\tau_A$ & 2.4\% ($E_A$) & 8.8\% ($W(m)$), 6.9\% ($\Pi$), 15.5\% ($D_\perp$), 8.4\% ($D_\nu$) \\
+    Energy fraction beyond $k_\perp/k_1=21$ & $4\times10^{-5}$ & $2\times10^{-5}$ \\
+    Free energy at $m>3M/4$ & -- & 1.1\% \\
+    Share of $D_\nu$ at $m\ge M/2$ & -- & 95\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:gates} lists the checks. Energy is conserved by the time step and balanced between injection and dissipation. The Alfv\'enic energy fluctuates by 12\% about its mean, which at this box size is intrinsic to the forced turbulence. The block means of the averages used below, each divided by the injection rate of its block, agree to within 9\% except $D_\perp$ at $m=0$ (15.5\%), so the averages are converged to about that level. The perpendicular spectrum $E_A(k_\perp)$ follows $k_\perp^{-5/3}$ only over $2\le k_\perp/k_1\le8$ and is steeper than $k_\perp^{-4}$ from $k_\perp/k_1=9$, so the inertial range is short. The hierarchy is marginally resolved: 1.1\% of the free energy lies at $m>3M/4$. We therefore treat this run as a pilot, which tests predictions (i), (ii), (v) and (vi) but cannot place the break $m_*$ inside the hierarchy (section~\ref{sim:beta1}).
+
+\begin{figure}[t]
+  \centering
+  \placeholderfig{run overview at $\beta_i=1$: (a) $E_A$ and $W$ against $t$ with the averaging blocks; (b) $E_A(k_\perp)$ and $W(k_\perp)$; (c) $W(m)/\eps$ for each block; (d) $D_\perp(m)/\eps$ and $D_\nu(m)/\eps$. A quick-look version exists; it needs redrawing to the journal's figure standard.}
+  \caption{Overview of the run at $\beta_i=1$.}
+  \label{fig:overview}
+\end{figure}
+
+\subsection{Results at \texorpdfstring{$\beta_i=1$}{beta = 1}}\label{sim:beta1}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{h1_wm}
+  \caption{(a) The Hermite spectrum $W(m)/\eps$ at $\beta_i=1$ (black dots) and the two-channel model with the measured $T$ and four choices of $\kappa$: a single $\kappa=k_z^F=k_1$, the wavenumber of the forcing (blue); $\kappa=k_z^F+\boldsymbol b_\perp\cdot\boldsymbol k_\perp$ with a Gaussian distribution of the tilt (red); the distribution $P(\kappa)$ of the injected pattern traced along field lines (green); and the distribution of $g_0$ itself traced along field lines (yellow). The dotted line is the formula (\ref{eq:Wmodel}) with $\kappa=k_z$ and no collisions. (b) The rates at which the perpendicular dissipation (circles) and the hypercollisions (squares) remove free energy from moment $m$, divided by $W(m)$ and multiplied by $T$. The shading marks $m>M/2$, where the hypercollisions act.}
+  \label{fig:wm}
+\end{figure}
+
+\emph{(i) A uniform sink.} Figure~\ref{fig:wm}(b) shows $D_\perp(m)/W(m)$. It lies between 0.37 and 0.47 for $0\le m\le16$, varies by a factor of 1.20 between its extremes and by 6\% in rms over $1\le m\le16$, and rises to 0.54 at $m=24$, where the hypercollisions dominate. We take $1/T=0.437$, its median over $2\le m\le16$, so $T=2.29=15.9\,\tau_{\rm nl}$. The budget (\ref{eq:budget}) closes to $4\times10^{-4}\,\eps$ in every moment with the field-aligned flux, and to 8\% with the $k_z$-only flux. The perpendicular dissipation is therefore close to an $m$-independent sink, as (\ref{eq:uniformsink}) assumes, with a systematic rise of 20\% over $1\le m\le16$. Two causes are possible: slices with large $|u|$, which dominate the high moments, may be cascaded faster (section~\ref{tc:limits}), or the free energy at higher $m$, which was injected longer ago, has had more time to reach small perpendicular scales. \placeholder{distinguish the two, e.g.\ from $W(m,k_\perp)$ or from the slice energies resolved in $k_\perp$}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.55\textwidth]{h1_kpar}
+  \caption{The mean field-aligned wavenumber $\kappa_1$ of $g_0$ (blue), $\Phi$ (red) and $\Psi$ (green) in four bands of $k_\perp$, measured along traced field lines (solid) and from the Eulerian $k_z$ (dotted), at $\beta_i=1$. The dashed line is the injected pattern traced along the same lines; the thin line is proportional to $k_\perp^{2/3}$.}
+  \label{fig:kpar}
+\end{figure}
+
+\emph{Field-aligned wavenumbers.} The injected pattern, which has $k_z=k_1$, has $\kappa_1=1.14\,k_1$ along the field lines; the rms of the tilt $\boldsymbol b_\perp\cdot\boldsymbol k_\perp$ over the pattern is $0.89\,k_1$, and the rms field-aligned wavenumber is $1.34\,k_1$. The moments $g_m$ have $\kappa_1$ between $1.07\,k_1$ and $1.19\,k_1$ for $1\le m\le21$, with no trend in $m$, and the wavenumber implied by the flux, $\Pi_{m+1/2}/[s\sqrt{2(m+1)}\,W(m)]$, lies between $1.02\,k_1$ and $1.10\,k_1$ for $3\le m\le23$. Figure~\ref{fig:kpar} resolves $\kappa_1$ in $k_\perp$. In the bands centred on $k_\perp/k_1=1.5$, 3, 6 and 12, $g_0$ has $\kappa_1/k_1=0.91$, 0.97, 1.36 and 2.04, whereas $\Phi$ has 1.11, 1.55, 2.12 and 3.18 and $\Psi$ has 1.13, 1.47, 1.94 and 2.60. The Alfv\'enic fields gain parallel structure from the outer scale on, though more slowly than $k_\perp^{2/3}$ at this resolution. The density moment keeps the injected field-aligned wavenumber up to $k_\perp=3k_1$, exceeds it by 20\% in the band $4\le k_\perp/k_1\le8$ at the end of the inertial range, and reaches $2.04\,k_1$ only in the band $8\le k_\perp/k_1\le16$, where $E_A$ is steeper than $k_\perp^{-4}$. Measured with $k_z$, $g_0$ would appear to have $\kappa_1/k_1=0.78$, 0.93, 1.83 and 3.12, close to the Alfv\'enic values at small scales. In this run, then, $g$ acquires substantial structure along the field only at the end of the inertial range and in the dissipation range, where the hyper-resistivity reconnects the field lines and the perpendicular sink is already removing it.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{h1_flux}
+  \caption{(a) Hermite fluxes divided by $\eps$ at $\beta_i=1$: the field-aligned flux (\ref{eq:fluxCD}) (black), the $k_z$-only flux (blue), its phase-mixing part (dashed) and its unmixing part with the sign reversed (dotted), the two-channel model (green), and the flux $s\sqrt{2(m+1)}\,\kappa_1(m)\,W(m)$ that $W(m)$ would carry if all of it phase mixed at the measured field-aligned wavenumber (dash-dotted). (b) Correlations $C_{jl}/(C_{jj}C_{ll})^{1/2}$ between slices with $|u|<2.5$ against $|u_j-u_l|$: measured (black) and two-channel model (green); the line is the Lorentzian $[1+(\Delta u\,sk_zT)^2]^{-1}$ of width (\ref{eq:deltauc}).}
+  \label{fig:flux}
+\end{figure}
+
+\emph{(ii) The shape of $W(m)$ and the flux.} With $T$ from (i) and $P(\kappa)$ of the injected pattern, the model reproduces $W(m)$ to within $-7\%$ and $+8\%$ for $1\le m\le30$, with an rms deviation of 3.3\% in $\ln W$ over $2\le m\le16$ (figure~\ref{fig:wm}a, green), and the field-aligned flux to within 3--7\% for $m\le24$ (figure~\ref{fig:flux}a). Neither falls below the model at large $m$; the measured flux lies slightly above it. The flux that $W(m)$ would carry if all of it phase mixed at its measured $\kappa_1(m)$ is close to the measured flux, so there is no room for a return flux of more than a few per cent. With a single $\kappa=k_1$ the model gives $W$ 14--16\% too high, because it omits the tilt. With the field-aligned distribution of $g_0$ itself in place of that of the injected pattern, it overdamps, giving $W$ too low by a factor of up to 1.9 at $m=24$: the free energy phase mixes at the wavenumber at which it was injected, not at the larger one that $g_0$ shows at small perpendicular scales.
+
+\emph{The break.} With these values the break lies far beyond the hierarchy: $m_*=(s\kappa T)^2/2$ is 103 for $\kappa=k_1$ and 185 for the rms field-aligned wavenumber, and $C^2\beta_i/(2\chi^2)=127$ with $C=T/\tau_{\rm nl}$. Free energy injected at $m=0$ reaches $m=16$ after about $0.8\,\tau_A$ and $m=32$ after $1.1\,\tau_A$, against $T=2.3\,\tau_A$, and the hypercollisions remove 57--61\% of the injected free energy (the range over the four blocks). At $\beta_i=1$ the exponential factor in (\ref{eq:Wmodel}) therefore reduces $W$ by only 29\% at $m=16$ and 39\% at $m=32$, and the test of the shape is correspondingly weak: it confirms that there is no deficit, not that the sink produces a break.
+
+\emph{(v) Eulerian diagnostics.} The $k_z$-only flux split by the sign of $k_z$ has an unmixing part of $-0.11$ to $-0.14$ times its phase-mixing part for $m\ge1$, and $-0.52$ at $m=0$ (figure~\ref{fig:flux}a), whereas the field-aligned flux is reproduced by a model that has no return flux. A diagnostic of this kind would report a backward flux of about 12\% of the forward one where, by the field-aligned measures, there is none. \placeholder{compare with the estimate from the tilt distribution, prediction (v)}
+
+\emph{(vi) Slice correlations.} The width (\ref{eq:deltauc}) is $\delta u_c=0.05$--0.07, below the spacing of the nodes, about 0.4 near $u=0$ at $M=32$, so it cannot be resolved here. The model, evaluated at the nodes, reproduces the measured normalised correlations $C_{jl}/(C_{jj}C_{ll})^{1/2}$ to an rms difference of 0.027 (figure~\ref{fig:flux}b).
+
+\subsection{Dependence on \texorpdfstring{$\beta_i$}{beta} at fixed \texorpdfstring{$\chi$}{chi}}\label{sim:beta}
+
+To bring the break into the hierarchy, we ran the same set-up at $\beta_i=0.3$ and $0.1$. The Alfv\'enic sector does not depend on $\beta_i$, so the same Alfv\'enic forcing gives the same $\chi$; the branch is $\Lambda^+=6.2206$ and $19.198$, and the hypercollision coefficient is scaled as $\nu=30\,\beta_i^{1/2}$, because the attenuation of free energy streaming up the ladder depends on $\nu/s$, which keeps the collisional cutoff at the same $m$. With $T$ and $P(\kappa)$ from $\beta_i=1$, (\ref{eq:mstar}) gives $m_*\approx31$--56 at $\beta_i=0.3$ and $m_*\approx10$--19 at $\beta_i=0.1$. At $\beta_i=0.1$ the time step also uses a safety factor of 0.4 on the Alfv\'enic limit, with both limits updated every step, and the run lasts $66\,\tau_A$ so that the averaging window excludes a longer initial transient.
+
+\placeholder{gates and convergence of the two runs (the free energy fluctuates more and for longer at low $\beta_i$: its correlation time is about $0.8$, $1.4$ and $3.6\,\tau_A$ at $\beta_i=1$, 0.3 and 0.1); $D_\perp(m)/W(m)$ and $T$ at each $\beta_i$; $P(\kappa)$; $W(m)$ against the model; $m_*$ against $\beta_i$; the collisional share against $\beta_i$}
+
+\begin{figure}[t]
+  \centering
+  \placeholderfig{$W(m)/\eps$ at $\beta_i=0.1$, 0.3 and 1 with the two-channel model for each; inset or second panel: measured break $m_*$ (or the fitted decay rate in $\sqrt{2m}$) against $\beta_i$, with the prediction $m_*\propto\beta_i$}
+  \caption{Dependence on $\beta_i$ at fixed $\chi$.}
+  \label{fig:beta}
+\end{figure}
+
+\subsection{Dependence on resolution}\label{sim:resolution}
+
+\placeholder{a run at higher resolution ($128^3$ and/or $M=64$) at $\beta_i=1$ or 0.3: whether $T$ (in units of $\tau_{\rm nl}$) changes as the hyper-resistivity is reduced, prediction (iv); whether $g_0$ still keeps the injected field-aligned wavenumber through a longer inertial range; and the Hermite resolution}
