@@ -334,8 +334,23 @@ class Run:
         self.t0 = time.time()
         self.started_local = datetime.now().isoformat(timespec="seconds")
 
+    @classmethod
+    def reopen(cls, run_dir: str | Path, config: Mapping[str, Any], config_path: str | Path | None,
+               started_local: str, prior_wall: float) -> "Run":
+        """The Run of an unfinished run folder, to continue it in place: same run ID and folder, start time kept,
+        and the wall time continuing from `prior_wall` seconds."""
+        self = cls.__new__(cls)
+        self.dir = Path(run_dir)
+        self.run_id = self.dir.name
+        self.label = str(config["label"])
+        self.config = dict(config)
+        self.config_path = config_relpath(config_path) if config_path is not None else ""
+        self.t0 = time.time() - float(prior_wall)
+        self.started_local = started_local
+        return self
+
     def wall(self) -> float:
-        """Wall time in seconds since the run object was created."""
+        """Wall time in seconds since the run object was created (including earlier segments of a reopened run)."""
         return time.time() - self.t0
 
     def save(self, arrays: Mapping[str, Any], gates: Mapping[str, Any], notes: str = "",

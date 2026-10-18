@@ -10,7 +10,11 @@ the step before the dissipative factors).  Every `sample_every` steps (h1lib.mak
 W(m, k_z), the field-aligned and k_z-only Hermite fluxes, the sign(k_z) split, D_perp(m), D_nu(m), the slice energies
 and correlation matrix, the field-aligned and Eulerian parallel wavenumbers per m and of the injected pattern, the
 Alfvenic energies, spectra, dissipation, chi (energy-weighted and outer-scale).  Periodic snapshots of z+- and g
-(complex64) and a restart file (complex128, with the forcing PRNG keys) are written to the run folder.
+(complex64) and a restart file (complex128, with the forcing PRNG keys) are written to the run folder, together with
+resume.npz, the complete state of the loop (fields, keys, accumulators, time-step state, the records so far).  With
+--resume the script continues the latest unfinished run of the config's label in the data folder in place (same run
+ID and folder, one time series), so that a run interrupted after the start of the averaging window (a preemption, a
+timeout, a retry on Modal) need not be restarted or stitched; without an unfinished run it starts a new one.
 
 Gates (CLAUDE.md; tau_A = L_z/v_A = 1 as in Studies 02 and 04): energy conservation of the ideal part (time-stepping
 error below 1% of the injected energy, Alfvenic and free energy); energy balance (injection = dissipation within 5%,
@@ -18,7 +22,7 @@ both energies); steady state (std/mean < 10% over the final 50 tau_A, Alfvenic e
 sanity and resolution.  The last three apply only to runs that cover the steady-state window.
 
 Usage (from the repository root):
-    uv run python paper/phase-velocity-slices/scripts/run_forced_turbulence.py paper/phase-velocity-slices/configs/forced_beta1.yaml
+    uv run python paper/phase-velocity-slices/scripts/run_forced_turbulence.py paper/phase-velocity-slices/configs/forced_beta1.yaml [--resume]
 """
 from __future__ import annotations
 
@@ -64,10 +68,31 @@ def initial_fields(box: P.Box, M: int, cfg: dict) -> tuple[np.ndarray, np.ndarra
     return zp, zm, g, (t0 if ini.get("keep_time", False) else 0.0), (keys if ini.get("keep_keys", False) else {})
 
 
+RESUME_FILE = "resume.npz"
+
+
+def find_resumable(base: str | os.PathLike, label: str) -> P.Path | None:
+    """The latest unfinished run folder of `label` under `base`: it holds resume.npz but not the final <run ID>.json."""
+    runs = sorted(P.Path(base).glob(f"{P.RUN_PREFIX}_{label}_*"))
+    for d in reversed(runs):
+        if (d / RESUME_FILE).exists() and not (d / f"{d.name}.json").exists():
+            return d
+    return None
+
+
+def config_for_resume(cfg: dict) -> str:
+    """The config as compared on resume: everything except time.t_end, which may be extended."""
+    c = json.loads(json.dumps(cfg))
+    c.get("time", {}).pop("t_end", None)
+    return json.dumps(c, sort_keys=True)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("config")
     ap.add_argument("--base", default=None, help="data folder (default paper/phase-velocity-slices/data)")
+    ap.add_argument("--resume", action="store_true",
+                    help="continue the latest unfinished run of this config's label in the data folder, in place")
     args = ap.parse_args()
     cfg = P.load_config(args.config)
     v = cfg["velocity"]
@@ -82,11 +107,24 @@ def main() -> int:
     sp = P.StepParams.from_config(cfg["stepper"])
     if sp.closure != closure:
         raise ValueError("stepper.closure and velocity.closure differ")
-    run = P.Run(cfg["label"], cfg, args.config, base=args.base or P.DATA)
+    base = args.base or P.DATA
     fo = H.WhiteForcing(box, cfg["forcing"], sl.p[0])
-    zp, zm, g, t, keys = initial_fields(box, M, cfg)
-    if keys:
-        fo.set_keys(keys["key_A"], keys["key_g"])
+    resume_dir = find_resumable(base, cfg["label"]) if args.resume else None
+    rs: dict = {}
+    if resume_dir is not None:
+        with np.load(resume_dir / RESUME_FILE) as z:
+            rs = {k: z[k] for k in z.files}
+        if str(rs["config_cmp"]) != config_for_resume(cfg):
+            raise SystemExit(f"{resume_dir.name}: its config differs from {args.config} (other than time.t_end); "
+                             "not resuming")
+        run = P.Run.reopen(resume_dir, cfg, args.config, str(rs["started_local"]), float(rs["elapsed"]))
+        zp, zm, g, t = rs["zp"], rs["zm"], rs["g"], float(rs["t"])
+        fo.set_keys(rs["key_A"], rs["key_g"])
+    else:
+        run = P.Run(cfg["label"], cfg, args.config, base=base)
+        zp, zm, g, t, keys = initial_fields(box, M, cfg)
+        if keys:
+            fo.set_keys(keys["key_A"], keys["key_g"])
     state = P.make_state(box, zp, zm, g, Lam, beta, t=t)
     post, energies = H.make_accounting(box, sl, sp)
     sample = H.make_sampler(box, sl, s, sp, n_outer=int(cfg.get("diagnostics", {}).get("n_outer", 2)))
@@ -115,7 +153,9 @@ def main() -> int:
     p_every = int(tc.get("print_every", 200))
     snap_dt = float(tc.get("snapshot_every", math.inf))
     rst_dt = float(tc.get("restart_every", math.inf))
-    t_start = t
+    t_start = float(rs["t_start"]) if rs else t
+    if rs:
+        print(f"[{run.run_id}] resuming in place from t = {t:.4f}, step {int(rs['n'])} ({resume_dir})", flush=True)
     print(f"[{run.run_id}] N = {box.N}, M = {M}, Lambda = {Lam:+.4f}, beta_i = {beta}, closure {closure}; "
           f"eta = {sp.eta} (r = {sp.hyper_r}), nu = {sp.nu} (n = {sp.hyper_n}), scheme {sp.scheme}; dt from u_max = "
           f"{umax:.4f} (M = {M_dt}), rule {dt_rule}, safety {safety} (Alfvenic {safety_A}), limits every {every} steps "
@@ -138,6 +178,20 @@ def main() -> int:
     n_snap = 0
     wall0 = time.time()
     wall_steps = 0.0
+    if rs:
+        for k in ACC_KEYS:
+            acc[k] = float(rs[f"acc_{k}"])
+        acc_le, acc_ln, acc_errm = rs["acc_le"].copy(), rs["acc_ln"].copy(), rs["acc_errm"].copy()
+        recs = {k[5:]: rs[k] for k in rs if k.startswith("rec__")}
+        rec = [{k: v[i] for k, v in recs.items()} for i in range(len(recs["t"]))]
+        dts_all = [float(x) for x in rs["dts_all"]]
+        lims = json.loads(str(rs["lims_json"]))
+        n, dt = int(rs["n"]), float(rs["dt"])
+        EA_s, pW_s = np.asarray(rs["EA_s"]), np.asarray(rs["pW_s"]).copy()   # as accumulated, not recomputed
+        ref = tuple(float(x) for x in rs["ref"]) if rs["ref"].size else None
+        next_snap, next_rst, n_snap = float(rs["next_snap"]), float(rs["next_rst"]), int(rs["n_snap"])
+        wall0 = time.time() - float(rs["elapsed"])
+        wall_steps = float(rs["wall_steps"])
 
     def record(d: dict) -> None:
         d = {k: np.asarray(x) for k, x in d.items()}
@@ -153,7 +207,24 @@ def main() -> int:
         np.savez(path, zp=np.asarray(state.z_plus), zm=np.asarray(state.z_minus), g=np.asarray(state.g),
                  t=np.asarray(t), n=np.asarray(n), **fo.keys())
 
-    record(sample(state.z_plus, state.z_minus, state.g, fo.F_g_last))
+    def save_resume() -> None:
+        """The complete loop state, written atomically (resume.npz), for --resume."""
+        tmp = run.dir / "resume.tmp.npz"
+        np.savez(tmp, zp=np.asarray(state.z_plus), zm=np.asarray(state.z_minus), g=np.asarray(state.g),
+                 t=np.asarray(t), n=np.asarray(n), dt=np.asarray(dt), t_start=np.asarray(t_start),
+                 ref=np.asarray(ref if ref is not None else [], dtype=float),
+                 next_snap=np.asarray(next_snap), next_rst=np.asarray(next_rst), n_snap=np.asarray(n_snap),
+                 elapsed=np.asarray(time.time() - wall0), wall_steps=np.asarray(wall_steps),
+                 acc_le=acc_le, acc_ln=acc_ln, acc_errm=acc_errm, dts_all=np.asarray(dts_all),
+                 EA_s=np.asarray(EA_s), pW_s=np.asarray(pW_s),
+                 lims_json=np.asarray(json.dumps([{k: float(v) for k, v in x.items()} for x in lims])),
+                 config_cmp=np.asarray(config_for_resume(cfg)), started_local=np.asarray(run.started_local),
+                 **{f"acc_{k}": np.asarray(acc[k]) for k in ACC_KEYS}, **fo.keys(),
+                 **{f"rec__{k}": v for k, v in P.stack_records(rec).items()})
+        os.replace(tmp, run.dir / RESUME_FILE)
+
+    if not rs:
+        record(sample(state.z_plus, state.z_minus, state.g, fo.F_g_last))
     while t < t_end - 1e-12:
         if n % every == 0:
             lim = H.dt_limits(box, state.z_plus, state.z_minus, s, umax)
@@ -229,6 +300,7 @@ def main() -> int:
             save_restart(str(run.dir / "restart.npz"))
             np.savez_compressed(run.dir / "partial_timeseries.npz", **P.stack_records(rec))
             next_rst += rst_dt
+            save_resume()
     save_restart(str(run.dir / "restart.npz"))
     if (run.dir / "partial_timeseries.npz").exists():
         os.remove(run.dir / "partial_timeseries.npz")
@@ -331,6 +403,8 @@ def main() -> int:
              f"time-stepping error / injection: A {errA / max(injA, 1e-300):.1e}, W {errW / max(injg, 1e-300):.1e}; "
              f"inj vs diss: A {bal_A.get('rel_diff', float('nan')):.3f}, W {bal_W.get('rel_diff', float('nan')):.3f}")
     meta = run.save(arrays, gates, notes=notes, extra=extra)
+    if (run.dir / RESUME_FILE).exists():
+        os.remove(run.dir / RESUME_FILE)
     print(run.summary(meta), flush=True)
     print("gates:", json.dumps({k: (gv.get("pass") if isinstance(gv, dict) else gv) for k, gv in gates.items()}))
     print("extra:", json.dumps(P._jsonable(extra))[:3000])
