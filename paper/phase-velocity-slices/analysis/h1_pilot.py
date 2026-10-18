@@ -98,16 +98,27 @@ def corr_norm(S: np.ndarray) -> np.ndarray:
 def apply_gate_decisions(meta: dict, ts: dict, first: int, M: int, acc: dict) -> dict:
     """Re-evaluate a forced run's gates with Anjor's decisions (configs/h1_acceptance.yaml): energy conservation and
     energy balance as recorded; steady state with acc.steady_state.tol on the recorded std/mean plus the block-average
-    check (h1lib.gate_block_convergence); spectral sanity with the run's own tolerances unless acc.runs.<run ID>
-    overrides m_tol.  Returns the gates, the decisions applied and an overall pass."""
+    check (h1lib.gate_block_convergence); spectral sanity with the run's own tolerances.  acc.runs.<run ID> may override
+    m_tol, steady_tol and block_tol, and set the averaging window (window, tau_A, ending at the end of the run; read in
+    main): the std/mean of E_A and W is then recomputed (dt-weighted) over the window that starts at sample `first`.
+    Returns the gates, the decisions applied and an overall pass."""
     g = meta["gates"]
     gc = meta["config"]["gates"]
     ss = acc["steady_state"]
     run_acc = (acc.get("runs") or {}).get(meta["run_id"], {})
-    tol = float(ss["tol"])
+    tol = float(run_acc.get("steady_tol", ss["tol"]))
     flucts = {k: float(v) for k, v in g["steady_state"].items() if k.endswith("_fluct")}
-    steady = dict(applies=True, criterion=f"std/mean < {tol} over the final {gc['steady_window']} tau_A, each series",
-                  tol=tol, **flucts, **{"pass": bool(all(f < tol for f in flucts.values()))})
+    width = float(run_acc.get("window", gc["steady_window"]))
+    if "window" in run_acc:
+        dtw = ts["acc_sum_dt"][first + 1:]
+        def fl(x: np.ndarray) -> float:
+            mu = np.average(x[first + 1:], weights=dtw)
+            return float(np.sqrt(np.average((x[first + 1:] - mu) ** 2, weights=dtw)) / mu)
+        flucts = dict(E_A_fluct=fl(ts["E"]), W_fluct=fl(ts["pWm"].sum(1)),
+                      recorded={k: v for k, v in flucts.items()})
+    tested = {k: v for k, v in flucts.items() if k.endswith("_fluct")}
+    steady = dict(applies=True, criterion=f"std/mean < {tol} over the final {width} tau_A, each series",
+                  tol=tol, window=width, **flucts, **{"pass": bool(all(f < tol for f in tested.values()))})
     b = H.block_averages(ts["t"], ts["acc_sum_dt"], first, int(ss["n_blocks"]),
                          dict(W=ts["pWm"], Pi_fa=ts["Pi_fa"], E_A=ts["E"]),
                          dict(eps=ts["acc_inj_g"], D_perp=ts["acc_loss_eta"], D_nu=ts["acc_loss_nu"]))
@@ -117,7 +128,7 @@ def apply_gate_decisions(meta: dict, ts: dict, first: int, M: int, acc: dict) ->
                                                  "D_perp(m), m <= 3M/4": ("D_perp", slice(0, 3 * M // 4 + 1), True),
                                                  "D_nu(m), m >= M/2": ("D_nu", slice(M // 2, M + 1), True),
                                                  "collisional share of the dissipation": ("nu_share", None, False)},
-                                      float(ss["block_tol"]))
+                                      float(run_acc.get("block_tol", ss["block_tol"])))
     blocks["E_A_blocks"] = b["E_A"].tolist()
     blocks["W_total_blocks"] = b["W"].sum(1).tolist()
     steady["blocks"] = blocks
@@ -157,14 +168,16 @@ def main() -> int:
     nu, hn = P.parse_number(st["nu"]), int(st["hyper_n"])
     ts = {k[4:]: a for k, a in arr.items() if k.startswith("ts__")}
     t = ts["t"]
-    width = args.window if args.window is not None else float(cfg["gates"]["steady_window"])
+    acc = P.load_config(args.acceptance)
+    run_acc = (acc.get("runs") or {}).get(meta["run_id"], {})
+    width = args.window if args.window is not None else float(run_acc.get("window", cfg["gates"]["steady_window"]))
     win = H.window_slice(t, width) if t[-1] - t[0] >= width else np.ones_like(t, dtype=bool)
     first = int(np.where(win)[0][0])
     sel = np.zeros_like(win)
     sel[first + 1:] = True
     dtk = ts["acc_sum_dt"]
     Tw = float(dtk[sel].sum())
-    applied = apply_gate_decisions(meta, ts, first, M, P.load_config(args.acceptance))
+    applied = apply_gate_decisions(meta, ts, first, M, acc)
     if not applied["pass"] and not args.check:
         raise SystemExit(f"{meta['run_id']}: gates fail under configs/{Path(args.acceptance).name}; CLAUDE.md: stop and "
                          f"report (no analysis)\n{json.dumps(P._jsonable(applied), indent=1)}")

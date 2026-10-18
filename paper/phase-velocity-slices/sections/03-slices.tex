@@ -1,81 +1,50 @@
 \section{Phase-velocity slices}\label{sec:slices}
 
-This section diagonalises the operator $L$ of (\ref{eq:branch}) and shows that the diagonalising transform commutes with the nonlinear terms. The Alfv\'enic fields $\Phi$ and $\Psi$ are given functions of $\boldsymbol r$ and $t$; (\ref{eq:rmhd}) is not used.
+This section shows that each branch (\ref{eq:branch}) is a continuum of passive scalars, or slices, labelled by the parallel phase velocity. The Alfv\'enic fields $\Phi$ and $\Psi$ are given functions of $\boldsymbol r$ and $t$; (\ref{eq:rmhd}) is not used.
 
-\subsection{The slice transform}\label{sl:transformsec}
+\subsection{Without the Landau coupling}\label{sl:nocoupling}
 
-Let $\mathcal W$ be the space of real functions $G(u)$ with $\ip{G}{G}<\infty$, where $\ip{f}{g}=\int fg\,F_M^{-1}\,\dd u$, so that $\mathsf Q=F_M\,M_0$ is the orthogonal projector onto $F_M$. The free-energy product is
+For $\Lambda=\infty$ the operator $L$ is multiplication by $u$, and (\ref{eq:branch}) holds separately at every $u$:
+\begin{equation*}
+  \partial_tG+\{\Phi,G\}+su\,\gradpar G=0 .
+\end{equation*}
+Since $\gradpar=\partial_z+\{\Psi,\cdot\}$ and $\{\chi,G\}=(\zhat\times\nabla_\perp\chi)\cdot\nabla G$, this is the advection equation $\partial_tG+\boldsymbol U_u\cdot\nabla G=0$ with the velocity
+\begin{equation}\label{eq:Uu}
+  \boldsymbol U_u=\zhat\times\nabla_\perp(\Phi+su\Psi)+su\,\zhat=\uE+su\,\bhat,\qquad\nabla\cdot\boldsymbol U_u=0 .
+\end{equation}
+At each $u$, $G$ is a passive scalar, carried by the $\boldsymbol E\times\boldsymbol B$ flow and streaming along the perturbed field at the speed $su$, which is the motion of the guiding centre of a free ion with $v_\parallel=u\vth$. Values of $G$ at different $u$ do not interact. This is the exact equation for the Laguerre coefficients $G_l$ with $l\ge2$ (S09, eqs~210 and~212).
+
+\subsection{With the Landau coupling}\label{sl:transformsec}
+
+For finite $\Lambda$, $LG=uG-(uF_M/\Lambda)\,M_0[G]$ ties every velocity to the density $M_0[G]$, through the parallel electric field and the mirror force, so $G$ at fixed $u$ is no longer a passive scalar. Two properties of $L$ restore the picture. First, $L$ acts on velocity only and is the same at every point and at every wavenumber, because the field relations (\ref{mod:fields}) are algebraic. Second, $L$ is self-adjoint in the free-energy product
 \begin{equation}\label{eq:fe}
-  \fe{f}{g}=\ip{f}{g}-\frac{M_0[f]\,M_0[g]}{\Lambda}=\ip{f}{Pg},\qquad P=I-\frac{\mathsf Q}{\Lambda},
+  \fe{f}{g}=\int\frac{fg}{F_M}\,\dd u-\frac{M_0[f]\,M_0[g]}{\Lambda},
 \end{equation}
-which is positive definite if and only if $\Lambda\notin[0,1]$, as for every compressive sector of KRMHD. With $U$ the multiplication by $u$,
-\begin{equation}\label{eq:LUP}
-  L=UP ,
-\end{equation}
-so $\fe{f}{Lg}=\ip{Pf}{UPg}$ is symmetric in $f$ and $g$, and $L$ is self-adjoint in the free-energy product (appendix~\ref{app:spectral}). For $\mathrm{Im}\,z>0$,
-\begin{equation}\label{sl:resolvent}
-  (z-L)^{-1}G=\frac{1}{z-u}\left[G-\frac{uF_M}{\Lambda\,\eps(z)}\int\frac{G(v)}{z-v}\,\dd v\right],\qquad
-  \eps(\zeta)=1-\frac{1+\zeta Z(\zeta)}{\Lambda},
-\end{equation}
-where $Z$ is the plasma dispersion function of \citet{FriedConte1961}, not the charge number, and we write $\eps$ also for its continuation into the lower half plane, whose zeros are the Landau roots. On the real axis
-\begin{equation}\label{sl:epsRI}
-  \eps(u+\ii0)=\eps_R(u)+\ii\,\eps_I(u),\qquad
-  \eps_R=1-\frac{1+u\,\mathrm{Re}\,Z(u)}{\Lambda},\qquad
-  \eps_I=-\frac{\pi\,u\,F_M(u)}{\Lambda},
-\end{equation}
-and $\mathsf H[f](u)=\pi^{-1}\PVint f(v)\,(v-u)^{-1}\,\dd v$ is the Hilbert transform. By the argument of \citet{Penrose1960}, $\eps$ has no zeros in the closed upper half plane for $\Lambda\notin[0,1]$. The spectral density of the branch,
-\begin{equation}\label{eq:varrho}
-  \varrho(u)=\frac{F_M(u)}{|\eps(u+\ii0)|^2},
-\end{equation}
-is then positive, smooth and even, with $\int\varrho\,\dd u=1/p_0$, and $\varrho=F_M$ for $\Lambda=\infty$.
-
-For real $u$ the equation $(L-u)F=0$ has the Case--Van Kampen solutions \citep{vanKampen1955,Case1959}
-\begin{equation}\label{sl:Fu}
-  F_u(v)=\frac{1}{\Lambda}\,\mathrm P\frac{vF_M(v)}{v-u}+\eps_R(u)\,\delta(v-u),\qquad M_0[F_u]=1,
-\end{equation}
-a beam of particles at $v=u$ dressed by the response of the Maxwellian, through the Landau coupling, to the density of the beam; for $\Lambda=\infty$, $F_u=\delta(v-u)$. The slice transform is the projection on these modes in the free-energy product, and the slice amplitude is its unit-weight form,
-\begin{equation}\label{eq:transform}
-  \Tr[G](u)=\fe{F_u}{G}=\frac{\eps_R\,G-\eps_I\,\mathsf H[G]}{F_M}(u),\qquad
-  \Tr[LG](u)=u\,\Tr[G](u),
-\end{equation}
+which is positive definite for $\Lambda\notin[0,1]$, as for every compressive branch of KRMHD ($\Lambda^+>1$, $\Lambda^-<0$; section~\ref{sec:model}). It therefore has a complete set of generalised eigenfunctions, the Case--Van Kampen modes $F_u$ of the branch \citep{vanKampen1955,Case1959}, with $LF_u=uF_u$ for every real $u$. Each is a beam of particles at $v_\parallel=u\vth$ dressed by the response of the Maxwellian, through the Landau coupling, to the density of the beam. Expanding $G$ in these modes is a fixed linear change of variables in velocity, $G\mapsto a_u$, with
 \begin{equation}\label{eq:aunit}
-  a_u=\sqrt{\varrho(u)}\;\Tr[G](u)=\frac{\eps_R\,G-\eps_I\,\mathsf H[G]}{\sqrt{F_M}\;|\eps|}(u),
+  a_u=\frac{\eps_R\,G-\eps_I\,\mathsf H[G]}{\sqrt{F_M}\;|\eps|}(u),
 \end{equation}
-and $\mathcal A$ denotes the map $G\mapsto a$. For $\Lambda=\infty$, $a_u=G(u)/\sqrt{F_M(u)}$, so the Laguerre coefficients with $l\ge2$ are already slices. The inverse of the transform is the G-transform of \citet{MorrisonPfirsch1992}, \citet{Morrison1994} and \citet{Morrison2000}.
-
-\begin{theorem}\label{thm:spectrum}
-Let $\Lambda\notin[0,1]$, the value $\Lambda=\infty$ included. Then $L$, with the domain of $U$, is self-adjoint in $(\mathcal W,\fe{\cdot}{\cdot})$, its spectrum is the real line, purely absolutely continuous and simple, and $\mathcal A$ is a unitary map from $(\mathcal W,\fe{\cdot}{\cdot})$ onto $L^2(\mathbb R,\dd u)$ with $\mathcal ALG=u\,\mathcal AG$. In particular, for every bounded Borel function $\varphi$,
+where $\eps(u+\ii0)=\eps_R+\ii\eps_I$ is the dielectric function of the branch on the real axis, which contains the plasma dispersion function, and $\mathsf H$ is the Hilbert transform in $u$ (appendix~\ref{app:spectral}, (\ref{sl:epsRI})). For $\Lambda=\infty$, $\eps=1$ and $a_u=G/\sqrt{F_M}$. The change of variables is invertible, divides the free energy among phase velocities without cross terms, and turns $L$ into multiplication by $u$:
 \begin{equation}\label{sl:parseval}
-  \fe{G}{G}=\int a_u^2\,\dd u,\qquad \fe{G}{\varphi(L)G}=\int\varphi(u)\,a_u^2\,\dd u,
+  \fe{G}{G}=\int a_u^2\,\dd u,\qquad G\mapsto a_u\ \text{ takes }\ LG\mapsto u\,a_u
 \end{equation}
-and $G$ is recovered from its slices by
-\begin{equation}\label{sl:inverse}
-  G=\int\varrho(u)\,\Tr[G](u)\,F_u\,\dd u=\eps_R\,c+\eps_I\,\mathsf H[c],\qquad c=\sqrt\varrho\;a .
-\end{equation}
-\end{theorem}
-
-Appendix~\ref{app:spectral} gives the proof. The slices divide the free energy among phase velocities, without cross terms.
+(theorem~\ref{thm:spectrum}). Its inverse is, up to normalisation, the G-transform that \citet{MorrisonPfirsch1992} and \citet{Morrison2000} introduced for linearised Vlasov--Poisson; \citet{Heninger2018} applied it to electrostatic drift kinetics, where the transformed components remain coupled through the potential. The function $\varrho=F_M/|\eps|^2$ that appears below is the spectral density of the branch, with $\int\varrho\,\dd u=1/p_0$ and $\varrho=F_M$ for $\Lambda=\infty$.
 
 \subsection{The slice theorem}\label{sl:slicesec}
 
 \begin{theorem}\label{thm:slice}
-Assume that (i) $\Lambda\notin[0,1]$, the value $\Lambda=\infty$ included; (ii) $\Phi(\boldsymbol r,t)$ and $\Psi(\boldsymbol r,t)$ are real functions on $\mathbb T^3\times[0,t_1]$, with $\mathbb T^3$ a periodic box, whose gradients are continuous and Lipschitz in $\boldsymbol r$, uniformly in $t$; they need not satisfy (\ref{eq:rmhd}) and may obey resistive or forced RMHD, or be prescribed; (iii) $G$ and $UG$ are continuously differentiable functions of $(\boldsymbol r,t)$ with values in $\mathcal W$. Then $G$ solves (\ref{eq:branch}) if and only if, at every $(\boldsymbol r,t)$ and for almost every $u$,
+Assume that (i) $\Lambda\notin[0,1]$, the value $\Lambda=\infty$ included; (ii) $\Phi(\boldsymbol r,t)$ and $\Psi(\boldsymbol r,t)$ are real functions on $\mathbb T^3\times[0,t_1]$, with $\mathbb T^3$ a periodic box, whose gradients are continuous and Lipschitz in $\boldsymbol r$, uniformly in $t$; they need not satisfy (\ref{eq:rmhd}) and may obey resistive or forced RMHD, or be prescribed; (iii) $G$ and $uG$ are continuously differentiable functions of $(\boldsymbol r,t)$ with values in the space $\mathcal W$ of functions of $u$ with finite $\int G^2F_M^{-1}\,\dd u$ (appendix~\ref{app:spectral}). Then $G$ solves (\ref{eq:branch}) if and only if, at every $(\boldsymbol r,t)$ and for almost every $u$,
 \begin{equation}\label{eq:slice}
-  \partial_ta_u+\{\Phi+su\Psi,\,a_u\}+su\,\partial_za_u=0,
+  \partial_ta_u+\boldsymbol U_u\cdot\nabla a_u=\partial_ta_u+\{\Phi+su\Psi,\,a_u\}+su\,\partial_za_u=0,
 \end{equation}
-which is the advection equation
-\begin{equation}\label{eq:Uu}
-  \partial_ta_u+\boldsymbol U_u\cdot\nabla a_u=0,\qquad
-  \boldsymbol U_u=\zhat\times\nabla_\perp(\Phi+su\Psi)+su\,\zhat=\uE+su\,\bhat,\qquad
-  \nabla\cdot\boldsymbol U_u=0 .
-\end{equation}
+with $\boldsymbol U_u$ of (\ref{eq:Uu}).
 \end{theorem}
 
 \begin{proof}
-By theorem~\ref{thm:spectrum}, $\mathcal A$ is bounded and injective and acts on $u$ only, through a kernel independent of $\boldsymbol r$ and $t$, so it commutes with $\partial_t$, with spatial derivatives and with multiplication by functions of $(\boldsymbol r,t)$, hence with $\{\Phi,\cdot\}$, $\{\Psi,\cdot\}$ and $\gradpar$. With $\mathcal ALG=u\,\mathcal AG$ this gives $\mathcal A[\partial_tG+\{\Phi,G\}+s\,\gradpar(LG)]=\partial_ta+\{\Phi,a\}+su\,\gradpar a$, and $u\,\gradpar a_u=u\,\partial_za_u+\{u\Psi,a_u\}$ gives (\ref{eq:slice}). The identity $\{\chi,a\}=(\zhat\times\nabla_\perp\chi)\cdot\nabla a$ gives (\ref{eq:Uu}).
+The map $\mathcal A:G\mapsto a$ of (\ref{eq:aunit}) is bounded and injective (theorem~\ref{thm:spectrum}) and acts on $u$ only, through a kernel independent of $\boldsymbol r$ and $t$, so it commutes with $\partial_t$, with spatial derivatives and with multiplication by functions of $(\boldsymbol r,t)$, hence with $\{\Phi,\cdot\}$, $\{\Psi,\cdot\}$ and $\gradpar$. With $\mathcal ALG=u\,\mathcal AG$ this gives $\mathcal A[\partial_tG+\{\Phi,G\}+s\,\gradpar(LG)]=\partial_ta+\{\Phi,a\}+su\,\gradpar a$, and $u\,\gradpar a_u=u\,\partial_za_u+\{u\Psi,a_u\}$ gives (\ref{eq:slice}).
 \end{proof}
 
-Each slice is a passive scalar carried by the divergence-free velocity $\boldsymbol U_u$, in three dimensions, and slices with different $u$ do not interact. The velocity $\boldsymbol U_u$ is that of the guiding centre of a free ion that drifts with $\uE$ and streams along $\bhat$ at $v_\parallel=u\vth$. The parallel electric field and the mirror force, which enter through the Landau coupling, only dress the slices: the distribution at fixed $u$ is not a passive scalar, but its projection $a_u$ on $F_u$ is. In terms of the Elsasser potentials, the stream function of the slice at $u$ is
+With the Landau coupling, therefore, each slice is again a passive scalar carried by $\boldsymbol U_u$, in three dimensions, and slices with different $u$ do not interact; the Landau coupling has been absorbed into the definition of the slices. The parallel electric field and the mirror force, which enter through the Landau coupling, only dress the slices: the distribution at fixed $u$ is not a passive scalar, but its projection $a_u$ on $F_u$ is. In terms of the Elsasser potentials, the stream function of the slice at $u$ is
 \begin{equation}\label{eq:elsasserpot}
   \Phi+su\Psi=\tfrac12\big[(1+su)\,z^++(1-su)\,z^-\big],
 \end{equation}

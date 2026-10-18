@@ -1,6 +1,48 @@
-\section{Spectral theory of the branch operator}\label{app:spectral}
+\section{The slice transform and the spectral theory of the branch operator}\label{app:spectral}
 
-This appendix proves theorem~\ref{thm:spectrum} and the statements of section~\ref{sec:slices} about the eigenvalues of $L$ and the zeros of $\eps$. We work in the complexification of $\mathcal W$, with $\ip{f}{g}=\int\bar f\,g\,F_M^{-1}\,\dd u$. The set $\mathcal D_0$ of functions $pF_M$, with $p$ a polynomial, is dense in $\mathcal W$ (it contains the orthonormal basis $e_m$), lies in $D(U)$, and is mapped into itself by $U$, $P$ and $L$. Let $\mathcal S$ be the set of smooth $f$ with $|f(v)|\le C(1+|v|)^kF_M(v)$ for some $C$ and $k$; it contains $\mathcal D_0$ and the smooth functions with compact support. For $f\in\mathcal S$ the Cauchy integral
+\subsection{Definitions and statement}\label{appB:defs}
+
+Let $\mathcal W$ be the space of real functions $G(u)$ with $\ip{G}{G}<\infty$, where $\ip{f}{g}=\int fg\,F_M^{-1}\,\dd u$, so that $\mathsf Q=F_M\,M_0$ is the orthogonal projector onto $F_M$. The free-energy product (\ref{eq:fe}) is $\fe{f}{g}=\ip{f}{Pg}$ with $P=I-\mathsf Q/\Lambda$, and with $G=M_0[G]\,F_M+G_\perp$, $\fe{G}{G}=\ip{G_\perp}{G_\perp}+p_0\,M_0[G]^2$, which is positive definite, with a norm equivalent to that of $\ip{\cdot}{\cdot}$, if and only if $\Lambda\notin[0,1]$. With $U$ the multiplication by $u$,
+\begin{equation}\label{eq:LUP}
+  L=UP ,
+\end{equation}
+so $\fe{f}{Lg}=\ip{Pf}{UPg}$ is symmetric in $f$ and $g$. For $\mathrm{Im}\,z>0$,
+\begin{equation}\label{sl:resolvent}
+  (z-L)^{-1}G=\frac{1}{z-u}\left[G-\frac{uF_M}{\Lambda\,\eps(z)}\int\frac{G(v)}{z-v}\,\dd v\right],\qquad
+  \eps(\zeta)=1-\frac{1+\zeta Z(\zeta)}{\Lambda},
+\end{equation}
+where $Z$ is the plasma dispersion function of \citet{FriedConte1961}, not the charge number; we write $\eps$ also for its continuation into the lower half plane, whose zeros are the Landau roots. On the real axis
+\begin{equation}\label{sl:epsRI}
+  \eps(u+\ii0)=\eps_R(u)+\ii\,\eps_I(u),\qquad
+  \eps_R=1-\frac{1+u\,\mathrm{Re}\,Z(u)}{\Lambda},\qquad
+  \eps_I=-\frac{\pi\,u\,F_M(u)}{\Lambda},
+\end{equation}
+and $\mathsf H[f](u)=\pi^{-1}\PVint f(v)\,(v-u)^{-1}\,\dd v$. By the argument of \citet{Penrose1960}, $\eps$ has no zeros in the closed upper half plane for $\Lambda\notin[0,1]$ (section~\ref{appB:penrose}). The spectral density
+\begin{equation}\label{eq:varrho}
+  \varrho(u)=\frac{F_M(u)}{|\eps(u+\ii0)|^2}
+\end{equation}
+is then positive, smooth and even, with $\int\varrho\,\dd u=1/p_0$. For real $u$ the equation $(L-u)F=0$ has the Case--Van Kampen solutions
+\begin{equation}\label{sl:Fu}
+  F_u(v)=\frac{1}{\Lambda}\,\mathrm P\frac{vF_M(v)}{v-u}+\eps_R(u)\,\delta(v-u),\qquad M_0[F_u]=1,\qquad M_1[F_u]=u,
+\end{equation}
+and the slice transform is the projection on them in the free-energy product,
+\begin{equation}\label{eq:transform}
+  \Tr[G](u)=\fe{F_u}{G}=\frac{\eps_R\,G-\eps_I\,\mathsf H[G]}{F_M}(u),\qquad \Tr[LG](u)=u\,\Tr[G](u),
+\end{equation}
+of which the slice amplitude (\ref{eq:aunit}) is the unit-weight form, $a_u=\sqrt{\varrho(u)}\,\Tr[G](u)$; $\mathcal A$ denotes the map $G\mapsto a$.
+
+\begin{theorem}\label{thm:spectrum}
+Let $\Lambda\notin[0,1]$, the value $\Lambda=\infty$ included. Then $L$, with the domain $D(U)$ of $U$, is self-adjoint in $(\mathcal W,\fe{\cdot}{\cdot})$; it has no eigenvalues, and its spectrum is the real line, purely absolutely continuous and simple; and $\mathcal A$ is a unitary map from $(\mathcal W,\fe{\cdot}{\cdot})$ onto $L^2(\mathbb R,\dd u)$ with $\mathcal ALG=u\,\mathcal AG$ for $G\in D(U)$. In particular (\ref{sl:parseval}) holds, $\fe{G}{\varphi(L)G}=\int\varphi(u)\,a_u^2\,\dd u$ for every bounded Borel function $\varphi$, and
+\begin{equation}\label{sl:inverse}
+  G=\int\varrho(u)\,\Tr[G](u)\,F_u\,\dd u=\eps_R\,c+\eps_I\,\mathsf H[c],\qquad c=\sqrt\varrho\;a .
+\end{equation}
+\end{theorem}
+
+The rest of this appendix proves the theorem and the statements about the eigenvalues of $L$ and the zeros of $\eps$. For $0<\Lambda<1$, $\eps$ has one zero in the upper half plane, on the imaginary axis, $L$ has the eigenvalues $\pm\ii\gamma$, and the slice decomposition is incomplete.
+
+\subsection{Preliminaries}\label{appB:prelim}
+
+We work in the complexification of $\mathcal W$, with $\ip{f}{g}=\int\bar f\,g\,F_M^{-1}\,\dd u$. The set $\mathcal D_0$ of functions $pF_M$, with $p$ a polynomial, is dense in $\mathcal W$ (it contains the orthonormal basis $e_m$), lies in $D(U)$, and is mapped into itself by $U$, $P$ and $L$. Let $\mathcal S$ be the set of smooth $f$ with $|f(v)|\le C(1+|v|)^kF_M(v)$ for some $C$ and $k$; it contains $\mathcal D_0$ and the smooth functions with compact support. For $f\in\mathcal S$ the Cauchy integral
 \begin{equation*}
   \chi_f(\zeta)=\frac{1}{\pi}\int\frac{f(v)}{v-\zeta}\,\dd v\qquad(\mathrm{Im}\,\zeta>0)
 \end{equation*}

@@ -22,3 +22,17 @@ runs:
     decision: >-
       Anjor 2026-10-16: accept as a pilot with the Hermite-resolution limit (free energy at m > 3M/4) relaxed from 1%
       to 2% (measured 1.11%); a larger run later checks resolution
+  P1_forced-beta0p3_20261016_145938:
+    window: 37.5
+    m_tol: 0.02
+    decision: >-
+      Anjor 2026-10-18, option (A): averaging window t = 15.5..53 (37.5 tau_A) because W and E_A were still settling
+      during the first 12.5 tau_A of the 50 tau_A window (block means W 0.346 vs 0.41); Hermite-resolution limit 2% as
+      for beta_i = 1 (measured 1.01%)
+  P1_forced-beta0p1dt_20261016_234138:
+    steady_tol: 0.20
+    block_tol: 0.25
+    decision: >-
+      Anjor 2026-10-18, option (A): accepted as run; W std/mean 0.180 and block spreads up to 23% (W(m), D_nu) match the
+      scatter expected from the 3.6 tau_A correlation time of W over 50 tau_A (no blow-up in the spectra); the block
+      spreads are quoted as error bars.  Supersedes P1_forced-beta0p1_20261016_092043 (failed energy conservation)
