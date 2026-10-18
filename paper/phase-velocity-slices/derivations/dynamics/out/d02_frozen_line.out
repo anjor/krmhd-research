@@ -1,8 +1,8 @@
 === nu = 0.0 (hyper_n = 4), M = 8, Lambda = sqrt5, s = 1, rms|grad Phi| = rms|grad Psi| = 1.0, dt = 0.002, T = 0.25
   N = 16: wall 4s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
-  N = 24: wall 6s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
-  N = 32: wall 11s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
-  N = 48: wall 38s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 24: wall 7s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 32: wall 12s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 48: wall 43s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
   quantile difference NL vs FR at N=48, t=0.062 vs sampling refinement: pad 2: 2.1e-04, pad 3: 3.1e-04, pad 4: 1.3e-04
   [PASS] quantile difference shrinks as the sampling grid is refined (sampling-limited, not dynamical)  (2.1e-04, 3.1e-04, 1.3e-04)
   t = 0.062:  relative difference NL vs FR (frozen-line prediction) [NL vs LZ in brackets]
@@ -56,9 +56,9 @@
   [PASS] nu=0.0 t=0.124 Pz: NL - FR does NOT vanish (not a single-point statistic)  (1.2e-01 -> 1.4e-01 -> 1.4e-01 -> 1.4e-01)
 === nu = 20.0 (hyper_n = 4), M = 8, Lambda = sqrt5, s = 1, rms|grad Phi| = rms|grad Psi| = 1.0, dt = 0.002, T = 0.25
   N = 16: wall 4s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
-  N = 24: wall 6s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
-  N = 32: wall 11s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
-  N = 48: wall 37s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 24: wall 7s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 32: wall 12s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
+  N = 48: wall 39s; ||{Phi,g0}||/||s d_z (Ag)_0|| at t=0: 2.91
   t = 0.062:  relative difference NL vs FR (frozen-line prediction) [NL vs LZ in brackets]
     W(m)                         N=16:  3.2e-04 [6.0e-02]  N=24:  6.2e-05 [6.0e-02]  N=32:  8.7e-06 [6.0e-02]  N=48:  3.4e-07 [6.0e-02]
     C(j,j') slice corr.          N=16:  2.3e-04 [3.1e-02]  N=24:  5.9e-05 [3.1e-02]  N=32:  1.1e-05 [3.1e-02]  N=48:  4.9e-07 [3.1e-02]

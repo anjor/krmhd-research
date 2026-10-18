@@ -12,7 +12,7 @@ N = 24: rms|grad Phi| during run 1.00 .. 1.20; wall 11s
   correlated forcing, gap 0.08: response to the second injection vs frozen-at-t_1 2.9e-03; cross term sum|2<y_A,y_B>_m| = 0.69 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.12 (relative)
   correlated forcing, gap 0.12: response to the second injection vs frozen-at-t_1 7.2e-04; cross term sum|2<y_A,y_B>_m| = 0.49 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.38 (relative)
   [PASS] N=24 F4 the cross term needs the relabelling: the no-relabelling estimate gets worse with the gap and is off by > 10% at gap 0.12  (0.03, 0.12, 0.38)
-N = 32: rms|grad Phi| during run 1.00 .. 1.19; wall 19s
+N = 32: rms|grad Phi| during run 1.00 .. 1.19; wall 20s
   [PASS] N=32 F1 combined forced run = sum of single responses  (4.2e-16)
   injection at t=0.00: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 1.13e-03
   injection at t=0.04: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 2.30e-03
@@ -26,7 +26,7 @@ N = 32: rms|grad Phi| during run 1.00 .. 1.19; wall 19s
   correlated forcing, gap 0.08: response to the second injection vs frozen-at-t_1 9.8e-04; cross term sum|2<y_A,y_B>_m| = 0.69 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.12 (relative)
   correlated forcing, gap 0.12: response to the second injection vs frozen-at-t_1 2.3e-04; cross term sum|2<y_A,y_B>_m| = 0.49 of sum(W_A + W_B); frozen responses without relabelling miss it by 0.38 (relative)
   [PASS] N=32 F4 the cross term needs the relabelling: the no-relabelling estimate gets worse with the gap and is off by > 10% at gap 0.12  (0.03, 0.12, 0.38)
-N = 48: rms|grad Phi| during run 1.00 .. 1.19; wall 71s
+N = 48: rms|grad Phi| during run 1.00 .. 1.19; wall 73s
   [PASS] N=48 F1 combined forced run = sum of single responses  (5.7e-16)
   injection at t=0.00: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 5.01e-04
   injection at t=0.04: W_n(m, t=0.16) NL vs frozen-at-t_n: rel. diff 9.00e-04

@@ -1,14 +1,14 @@
-paper/phase-velocity-slices/derivations/dynamics: 2026-10-14 23:33:07, Python 3.14.3
-d00_sympy_identities: PASS (exit 0; checks passed 36, failed 0), started 20261014_233307, wall 2 s
-d01_gandalf_conventions: PASS (exit 0; checks passed 14, failed 0), started 20261014_233309, wall 2 s
-d02_frozen_line: PASS (exit 0; checks passed 47, failed 0), started 20261014_233311, wall 119 s
-d03_frozen_gandalf_step: PASS (exit 0; checks passed 13, failed 0), started 20261014_233510, wall 51 s
-d04_forcing_superposition: PASS (exit 0; checks passed 18, failed 0), started 20261014_233601, wall 105 s
-d05_breakers: PASS (exit 0; checks passed 7, failed 0), started 20261014_233746, wall 153 s
-d06_tilt_kz_decomposition: PASS (exit 0; checks passed 17, failed 0), started 20261014_234019, wall 16 s
-d07_two_slice_law: PASS (exit 0; checks passed 19, failed 0), started 20261014_234035, wall 5 s
-d08_no_fjortoft: PASS (exit 0; checks passed 16, failed 0), started 20261014_234040, wall 1 s
-d09_mirror: PASS (exit 0; checks passed 40, failed 0), started 20261014_234041, wall 7 s
-d09b_parity_lemma_gandalf: PASS (exit 0; checks passed 11, failed 0), started 20261014_234048, wall 53 s
-d10_elsasser_slices: PASS (exit 0; checks passed 8, failed 0), started 20261014_234141, wall 4 s
-overall: PASS, total wall 518 s
+paper/phase-velocity-slices/derivations/dynamics: 2026-10-18 16:11:48, Python 3.14.3
+d00_sympy_identities: PASS (exit 0; checks passed 36, failed 0), started 20261018_161148, wall 2 s
+d01_gandalf_conventions: PASS (exit 0; checks passed 14, failed 0), started 20261018_161150, wall 2 s
+d02_frozen_line: PASS (exit 0; checks passed 47, failed 0), started 20261018_161152, wall 131 s
+d03_frozen_gandalf_step: PASS (exit 0; checks passed 13, failed 0), started 20261018_161403, wall 55 s
+d04_forcing_superposition: PASS (exit 0; checks passed 18, failed 0), started 20261018_161458, wall 107 s
+d05_breakers: PASS (exit 0; checks passed 7, failed 0), started 20261018_161645, wall 154 s
+d06_tilt_kz_decomposition: PASS (exit 0; checks passed 17, failed 0), started 20261018_161919, wall 17 s
+d07_two_slice_law: PASS (exit 0; checks passed 19, failed 0), started 20261018_161936, wall 4 s
+d08_no_fjortoft: PASS (exit 0; checks passed 16, failed 0), started 20261018_161940, wall 1 s
+d09_mirror: PASS (exit 0; checks passed 40, failed 0), started 20261018_161941, wall 8 s
+d09b_parity_lemma_gandalf: PASS (exit 0; checks passed 11, failed 0), started 20261018_161949, wall 53 s
+d10_elsasser_slices: PASS (exit 0; checks passed 8, failed 0), started 20261018_162042, wall 4 s
+overall: PASS, total wall 538 s
