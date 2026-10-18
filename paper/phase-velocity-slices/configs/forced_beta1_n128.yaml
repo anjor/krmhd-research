@@ -9,6 +9,8 @@
 #  * Start: the Alfvenic state of the 64^3 spin-up, zero-padded to 128^3 (init.pad, exact for the band-limited field);
 #    g = 0.  The small scales fill in within a few tau_A, well before the averaging window t = 16..66.
 #  * Snapshots every 10 tau_A (t = 10, 20, ..., 60) instead of 5: each is about 0.6 GB at this size.
+#  * Exact slice-radius evaluation every 100 steps instead of 25, diagnostics every 80 steps instead of 20 (smoke run
+#    P1_smoke-n128_20261018_183732: the evaluation took ~0.4 of the 0.9 s per step).
 
 label: forced-beta1-n128
 
@@ -66,9 +68,9 @@ time:
   dt_rule: exact
   safety: 0.8
   safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
-  recompute_every: 25
+  recompute_every: 100          # exact slice radius (9 s on the CPU at 128^3); rescaled every step in between
   limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
-  sample_every: 20
+  sample_every: 80             # dt is ~2.6x smaller than at 64^3; about 50 samples per tau_A
   print_every: 500
   snapshot_every: 10.0
   restart_every: 2.0
