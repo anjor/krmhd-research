@@ -48,3 +48,11 @@ runs:
     decision: >-
       Anjor 2026-10-18, option (A) extended to the M = 64 runs: accepted with E_A std/mean 0.158 (limit 0.15); the
       block check of the averages used passes (largest spread 18.5%)
+  P1_forced-beta1-m64_20261018_144645:
+    m_tol: 0.02
+    block_tol: 0.32
+    decision: >-
+      Anjor 2026-10-18: accepted like its M = 32 counterpart: Hermite-resolution limit 2% (measured 1.19%; at
+      beta_i = 1 the break lies beyond M, so doubling M does not lower the tail fraction); block spread of D_perp(m)
+      31% at m = 0 and 20.3% at m = 1 (the injection moment, following the Alfvenic fluctuation), at most 12% for
+      m >= 2 and within 0.20 for W(m), Pi and D_nu; noted, block spreads quoted as error bars
