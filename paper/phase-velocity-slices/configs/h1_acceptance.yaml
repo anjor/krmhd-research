@@ -36,3 +36,15 @@ runs:
       Anjor 2026-10-18, option (A): accepted as run; W std/mean 0.180 and block spreads up to 23% (W(m), D_nu) match the
       scatter expected from the 3.6 tau_A correlation time of W over 50 tau_A (no blow-up in the spectra); the block
       spreads are quoted as error bars.  Supersedes P1_forced-beta0p1_20261016_092043 (failed energy conservation)
+  P1_forced-beta0p1-m64_20261018_144649:
+    steady_tol: 0.20
+    block_tol: 0.25
+    decision: >-
+      Anjor 2026-10-18, option (A) extended to the M = 64 runs: accepted as run, like its M = 32 counterpart
+      (W std/mean 0.186, block spreads up to 21%, from the slow fluctuation of W at low beta_i; no blow-up); the block
+      spreads are quoted as error bars
+  P1_forced-beta0p3-m64_20261018_144656:
+    steady_tol: 0.16
+    decision: >-
+      Anjor 2026-10-18, option (A) extended to the M = 64 runs: accepted with E_A std/mean 0.158 (limit 0.15); the
+      block check of the averages used passes (largest spread 18.5%)
