@@ -44,6 +44,21 @@ from krmhd.timestepping import gandalf_step  # noqa: E402
 ACC_KEYS = ("steps", "sum_dt", "inj_A", "inj_g", "loss_A", "err_A", "err_W")
 
 
+def pad_spectral(f: np.ndarray, N: int) -> np.ndarray:
+    """Zero-pad rfft coefficients [kz, ky, kx(, ...)] of an N0^3 grid to N^3 (N >= N0): the same band-limited field on
+    the finer grid.  The Nyquist rows of the coarse grid (empty under its 2/3 mask) are dropped, and the coefficients
+    are scaled by (N/N0)^3 for GANDALF's unnormalised transform, so that volume averages are unchanged."""
+    N0 = f.shape[0]
+    if N < N0 or f.shape[1] != N0 or f.shape[2] != N0 // 2 + 1:
+        raise ValueError(f"cannot pad a {f.shape[:3]} array to {N}^3")
+    h = N0 // 2
+    src = np.r_[0:h, N0 - h + 1:N0]
+    dst = np.r_[0:h, N - h + 1:N]
+    out = np.zeros((N, N, N // 2 + 1) + f.shape[3:], dtype=complex)
+    out[np.ix_(dst, dst, np.arange(h))] = f[np.ix_(src, src, np.arange(h))] * (N / N0) ** 3
+    return out
+
+
 def initial_fields(box: P.Box, M: int, cfg: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, dict]:
     """Initial z+-, g and time: from rest, or from a restart file of an earlier run (`init.path`, relative to the
     repository or absolute).  With keep_g false (or a different M) g starts at zero; the time restarts at 0 unless
@@ -60,7 +75,9 @@ def initial_fields(box: P.Box, M: int, cfg: dict) -> tuple[np.ndarray, np.ndarra
         t0 = float(z["t"])
         keys = dict(key_A=z["key_A"], key_g=z["key_g"])
     if zp.shape != shape:
-        raise ValueError(f"restart grid {zp.shape} differs from {shape}")
+        if not ini.get("pad", False):
+            raise ValueError(f"restart grid {zp.shape} differs from {shape} (set init.pad to zero-pad it)")
+        zp, zm, g0 = (pad_spectral(a, box.N) for a in (zp, zm, g0))
     g = np.zeros(shape + (M + 1,), complex)
     if ini.get("keep_g", False):
         mm = min(M, g0.shape[-1] - 1)

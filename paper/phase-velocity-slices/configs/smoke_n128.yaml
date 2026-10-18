@@ -1,0 +1,96 @@
+# Smoke test of the 128^3, M = 64 set-up on Modal (A100): forced_beta1_n128.yaml to t = 0.06; measures the cost per step.
+
+# H1 resolution check in k_perp (Anjor 2026-10-18: "we will eventually want to do a larger run to ensure we are
+# resolved"; prediction (iv): the perpendicular sink rate 1/T does not depend on the dissipation as the resolution
+# grows): forced KRMHD at beta_i = 1 on a 128^3 grid with M = 64, otherwise as configs/forced_beta1_m64.yaml.
+# Read by scripts/run_forced_turbulence.py (run with --resume so that a Modal retry or relaunch continues in place).
+#
+# Changes from forced_beta1_m64.yaml:
+#  * N = 128.  The hyper-resistivity eta (k_perp^2/k_perp,max^2)^2 with eta = 300 is normalised to the grid, so its
+#    reach moves to twice the wavenumber and the inertial range roughly doubles.
+#  * Start: the Alfvenic state of the 64^3 spin-up, zero-padded to 128^3 (init.pad, exact for the band-limited field);
+#    g = 0.  The small scales fill in within a few tau_A, well before the averaging window t = 16..66.
+#  * Snapshots every 10 tau_A (t = 10, 20, ..., 60) instead of 5: each is about 0.6 GB at this size.
+
+label: smoke-n128
+
+box:
+  L: 1.0
+  N: 128
+
+velocity:
+  M: 64
+  Lambda: sqrt5
+  beta_i: 1.0
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0
+  hyper_r: 2
+  nu: "30*sqrt(0.5)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: paper/phase-velocity-slices/data/P1_forced-spinup64_20261015_110112/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+  pad: true                     # zero-pad the 64^3 restart to 128^3
+
+time:
+  t_end: 0.06
+                               # t ~ 15 (first block of the 50 tau_A window off by 24%), so here the gate window (the final
+                               # 50 tau_A) is t = 16..66
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
+  recompute_every: 25
+  limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
+  sample_every: 20
+  print_every: 25
+  snapshot_every: 10.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
