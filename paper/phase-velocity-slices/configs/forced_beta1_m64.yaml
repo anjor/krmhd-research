@@ -1,0 +1,96 @@
+# H1 resolution check in m (Anjor 2026-10-18: "a few higher M runs to make sure we are resolved"; on Modal):
+# forced KRMHD at beta_i = 1 with M = 64 instead of 32, otherwise as the M = 32 runs of the beta_i scan.
+# Read by scripts/run_forced_turbulence.py; analysis by analysis/h1_fieldlines.py and analysis/h1_pilot.py.
+#
+# Changes from the M = 32 runs:
+#  * M = 64.  Hypercollisions nu (m/M)^6 with nu = 30 sqrt(32/64) sqrt(beta_i): the attenuation of free energy that
+#    streams up the ladder at dm/dt = s kappa sqrt(2m) is exp[-nu sqrt(2M)/(s kappa (n + 1/2))], so nu ~ sqrt(beta_i/M)
+#    keeps the total collisional attenuation of the M = 32 runs while moving the sink to m > M/2 = 32.  The range
+#    m <= 32, which the M = 32 runs resolve only up to their own collisional range (m > 16), is then collision-free.
+#  * Time step as in forced_beta0p1dt.yaml for every beta_i: safety 0.4 on the Alfvenic CFL limit and both limits
+#    rescaled every step; u_max = 10.6 at M = 64 (7.25 at M = 32), so the slice-advection limit is tighter.
+#  * t_end 66, so that the 50 tau_A gate window starts at t = 16, after the free-energy transient.
+# Everything else (box, forcing and seeds, hyper-resistivity, Alfvenic hand-off from the spin-up, g = 0 at t = 0) is
+# the same as in forced_beta1.yaml.
+
+label: forced-beta1-m64
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 64
+  Lambda: sqrt5
+  beta_i: 1.0
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0
+  hyper_r: 2
+  nu: "30*sqrt(0.5)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: paper/phase-velocity-slices/data/P1_forced-spinup64_20261015_110112/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 66.0                  # tau_A: 53 in forced_beta0p1.yaml; at beta_i = 0.3 W and E_A were still settling until
+                               # t ~ 15 (first block of the 50 tau_A window off by 24%), so here the gate window (the final
+                               # 50 tau_A) is t = 16..66
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
+  recompute_every: 25
+  limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
+  sample_every: 20
+  print_every: 500
+  snapshot_every: 5.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
