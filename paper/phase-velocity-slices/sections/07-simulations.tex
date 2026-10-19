@@ -64,7 +64,7 @@ Table~\ref{tab:gates} lists the checks. Energy is conserved by the time step and
   \label{fig:kpar}
 \end{figure}
 
-\emph{Field-aligned wavenumbers.} The injected pattern, which has $k_z=k_1$, has $\kappa_1=1.14\,k_1$ along the field lines; the rms of the tilt $\boldsymbol b_\perp\cdot\boldsymbol k_\perp$ over the pattern is $0.89\,k_1$, and the rms field-aligned wavenumber is $1.34\,k_1$. The moments $g_m$ have $\kappa_1$ between $1.07\,k_1$ and $1.19\,k_1$ for $1\le m\le21$, with no trend in $m$, and the wavenumber implied by the flux, $\Pi_{m+1/2}/[s\sqrt{2(m+1)}\,W(m)]$, lies between $1.02\,k_1$ and $1.10\,k_1$ for $3\le m\le23$. Figure~\ref{fig:kpar} resolves $\kappa_1$ in $k_\perp$. In the bands centred on $k_\perp/k_1=1.5$, 3, 6 and 12, $g_0$ has $\kappa_1/k_1=0.91$, 0.97, 1.36 and 2.04, whereas $\Phi$ has 1.11, 1.55, 2.12 and 3.18 and $\Psi$ has 1.13, 1.47, 1.94 and 2.60. The Alfv\'enic fields gain parallel structure from the outer scale on, though more slowly than $k_\perp^{2/3}$ at this resolution. The density moment keeps the injected field-aligned wavenumber up to $k_\perp=3k_1$, exceeds it by 20\% in the band $4\le k_\perp/k_1\le8$ at the end of the inertial range, and reaches $2.04\,k_1$ only in the band $8\le k_\perp/k_1\le16$, where $E_A$ is steeper than $k_\perp^{-4}$. Measured with $k_z$, $g_0$ would appear to have $\kappa_1/k_1=0.78$, 0.93, 1.83 and 3.12, close to the Alfv\'enic values at small scales. In this run, then, $g$ acquires substantial structure along the field only at the end of the inertial range and in the dissipation range, where the hyper-resistivity reconnects the field lines and the perpendicular sink is already removing it.
+\emph{Field-aligned wavenumbers.} The injected pattern, which has $k_z=k_1$, has $\kappa_1=1.14\,k_1$ along the field lines; the rms of the tilt $\boldsymbol b_\perp\cdot\boldsymbol k_\perp$ over the pattern is $0.89\,k_1$, and the rms field-aligned wavenumber is $1.34\,k_1$. The moments $g_m$ have $\kappa_1$ between $1.07\,k_1$ and $1.19\,k_1$ for $1\le m\le21$, with no trend in $m$, and the wavenumber implied by the flux, $\Pi_{m+1/2}/[s\sqrt{2(m+1)}\,W(m)]$, lies between $1.02\,k_1$ and $1.10\,k_1$ for $3\le m\le23$. Figure~\ref{fig:kpar} resolves $\kappa_1$ in $k_\perp$. In the bands centred on $k_\perp/k_1=1.5$, 3, 6 and 12, $g_0$ has $\kappa_1/k_1=0.91$, 0.97, 1.36 and 2.04, whereas $\Phi$ has 1.11, 1.55, 2.12 and 3.18 and $\Psi$ has 1.13, 1.47, 1.94 and 2.60. The Alfv\'enic fields gain parallel structure from the outer scale on, though more slowly than $k_\perp^{2/3}$ at this resolution. The density moment keeps the injected field-aligned wavenumber up to $k_\perp=3k_1$, exceeds it by 20\% in the band $4\le k_\perp/k_1\le8$ at the end of the inertial range, and reaches $2.04\,k_1$ only in the band $8\le k_\perp/k_1\le16$, where $E_A$ is steeper than $k_\perp^{-4}$. Measured with $k_z$, $g_0$ would appear to have $\kappa_1/k_1=0.78$, 0.93, 1.83 and 3.12, close to the Alfv\'enic values at small scales. In this run, then, $g$ acquires substantial structure along the field only at the end of the inertial range and in the dissipation range, where the hyper-resistivity reconnects the field lines and the perpendicular sink is already removing it. At $128^3$, with a longer inertial range, $g_0$ gains field-aligned structure more gradually and throughout it (section~\ref{sim:resolution}).
 
 \begin{figure}[t]
   \centering
@@ -87,23 +87,25 @@ To bring the break into the hierarchy, we ran the same set-up at $\beta_i=0.3$ a
 
 \begin{table}[t]
   \centering
-  \caption{The forced runs. The window is the averaging interval in units of $\tau_A$; std/mean is that of $E_A$ and $W$ over the window; the block spread is the largest relative spread of the four block means of $W(m)$, $\Pi$, $D_\perp(m)$ and $D_\nu(m)$; $W_{>}$ is the fraction of the free energy at $m>3M/4$; $1/T$ is the median of $D_\perp(m)/W(m)$ over $2\le m\le16$, the range below the collisional cutoff in every run.}
+  \caption{The forced runs, on $N^3$ grid points with $M$ Hermite moments. The window is the averaging interval in units of $\tau_A$; std/mean is that of $E_A$ and $W$ over the window; the block spread is the largest relative spread of the four block means of $W(m)$, $\Pi$, $D_\perp(m)$ and $D_\nu(m)$; $W_{>}$ is the fraction of the free energy at $m>3M/4$; $1/T$ is the median of $D_\perp(m)/W(m)$ over $2\le m\le16$, the range below the collisional cutoff in every run.}
   \label{tab:runs}
-  \begin{tabular}{cccccccc}
+  \begin{tabular}{ccccccccc}
     \toprule
-    $\beta_i$ & $M$ & window & std/mean ($E_A$, $W$) & block spread & $W_{>}$ & $1/T$ & $T/\tau_{\rm nl}$ \\
+    $\beta_i$ & $N$ & $M$ & window & std/mean ($E_A$, $W$) & block spread & $W_{>}$ & $1/T$ & $T/\tau_{\rm nl}$ \\
     \midrule
-    1 & 32 & 3--53 & 0.117, 0.141 & 0.155 & 1.1\% & 0.437 & 15.9 \\
-    0.3 & 32 & 15.5--53 & 0.076, 0.147 & 0.174 & 1.0\% & 0.478 & 13.5 \\
-    0.1 & 32 & 16--66 & 0.120, 0.180 & 0.229 & 0.65\% & 0.590 & 11.2 \\
-    1 & 64 & 16--66 & 0.146, 0.143 & 0.312$^a$ & 1.2\% & 0.421 & 15.4 \\
-    0.3 & 64 & 16--66 & 0.158, 0.136 & 0.185 & 0.87\% & 0.508 & 13.2 \\
-    0.1 & 64 & 16--66 & 0.114, 0.186 & 0.212 & 0.44\% & 0.604 & 11.0 \\
+    1 & 64 & 32 & 3--53 & 0.117, 0.141 & 0.155 & 1.1\% & 0.437 & 15.9 \\
+    0.3 & 64 & 32 & 15.5--53 & 0.076, 0.147 & 0.174 & 1.0\% & 0.478 & 13.5 \\
+    0.1 & 64 & 32 & 16--66 & 0.120, 0.180 & 0.229 & 0.65\% & 0.590 & 11.2 \\
+    1 & 64 & 64 & 16--66 & 0.146, 0.143 & 0.312$^a$ & 1.2\% & 0.421 & 15.4 \\
+    0.3 & 64 & 64 & 16--66 & 0.158, 0.136 & 0.185 & 0.87\% & 0.508 & 13.2 \\
+    0.1 & 64 & 64 & 16--66 & 0.114, 0.186 & 0.212 & 0.44\% & 0.604 & 11.0 \\
+    0.3 & 128 & 64 & 16--66 & 0.114, 0.156 & 0.236$^a$ & 1.06\% & 0.352 & 18.4 \\
+    1 & 128 & 64 & 16--66 & \placeholder{} & \placeholder{} & \placeholder{} & \placeholder{} & \placeholder{} \\
     \bottomrule
   \end{tabular}
 
   \smallskip
-  {\footnotesize $^a$ $D_\perp(m)$ at $m=0$ and 1 (31\% and 20\%); at most 19\% for every other average and $m$.}
+  {\footnotesize $^a$ $D_\perp(m)$ at $m=0$ (31\% and 24\%; 20\% at $m=1$ for $\beta_i=1$); at most 19\% for every other average and $m$.}
 \end{table}
 
 Table~\ref{tab:runs} lists the runs. All conserve energy to within $2.1\times10^{-3}$ of the injection and balance injection and dissipation to within 2\%. The free energy fluctuates more slowly as $\beta_i$ decreases: its integrated correlation time is about 0.8, 1.4 and $3.6\,\tau_A$ at $\beta_i=1$, 0.3 and 0.1 (at $M=32$), so a window of $50\,\tau_A$ holds fewer independent samples, and at $\beta_i=0.1$ the four block means differ by up to 23\%, about the scatter expected from that correlation time. We quote the block spread as the uncertainty of the averages, about $\pm12\%$ on $W(m)$ at $\beta_i=0.1$. In the run at $\beta_i=0.3$ and $M=32$ the free energy was still settling during the first $12\,\tau_A$ of the nominal window, which we therefore start at $t=15.5$. The spectra show no sign of numerical instability at small scales in any run.
@@ -132,4 +134,15 @@ Table~\ref{tab:runs} lists the runs. All conserve energy to within $2.1\times10^
 
 Doubling $M$ leaves the spectra in the range both runs resolve nearly unchanged (figure~\ref{fig:resolution}). For $1\le m\le10$, $W(m)$ at $M=64$ is within 1.01--1.05 of its value at $M=32$ at $\beta_i=1$, 0.96--0.99 at $\beta_i=0.3$ and 1.00--1.01 at $\beta_i=0.1$, inside the block uncertainty. Between $m=12$ and 16 the runs at $M=32$ fall below those at $M=64$, by up to 7\% beyond that offset at $\beta_i=1$ and 5\% at $\beta_i=0.3$ and 0.1, because there the hypercollisions of the $M=32$ runs, at the rate $\nu(m/M)^6$, begin to compete with the perpendicular sink; at $m=16$ and $\beta_i=1$ the two rates are equal. The rate $1/T$ changes by $-4$\%, 6\% and 2\% at $\beta_i=1$, 0.3 and 0.1. What changes is the share of the free energy that reaches the hypercollisions: it falls from 59\% to 50\% at $\beta_i=1$, from 43\% to 27\% at $\beta_i=0.3$ and from 20\% to 10\% at $\beta_i=0.1$ when the collisional range moves from $m>16$ to $m>32$. The model predicts this. Free energy injected at $\kappa$ reaches the collisional cutoff $m_c$ with probability $\exp(-\sqrt{2m_c}/(s\kappa T))$, which with $m_c=M/2$, the measured $T$ and $\kappa=\kappa_1$ gives 71\% and 63\% at $\beta_i=1$, 50\% and 36\% at $\beta_i=0.3$, and 23\% and 12\% at $\beta_i=0.1$. The model reproduces the factor by which the share falls and overestimates its level by 15--30\%, as the age-dependent sink, stronger at the large ages that $m_c$ corresponds to, would make it. The collisional share of the dissipation is therefore not a converged quantity at $M=32$: at fixed $\beta_i$ and $\chi$, free energy that would be dissipated by collisions at a low cutoff is removed at small perpendicular scales when the cutoff is raised.
 
-\placeholder{resolution in $k_\perp$: a run at $128^3$ at $\beta_i=0.3$ or 1, to test whether $T$ in units of $\tau_{\rm nl}$ is independent of the hyper-resistivity (prediction iv) and whether $g_0$ keeps the injected field-aligned wavenumber through a longer inertial range}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{h1_resolution_n}
+  \caption{Resolution in $k_\perp$ at $\beta_i=0.3$ and $M=64$: $64^3$ (dashed) and $128^3$ (solid), with the hyper-resistivity normalised to the grid. (a) $W(m)/\eps$. (b) $D_\perp(m)/W(m)$. \placeholder{add $\beta_i=1$}}
+  \label{fig:resolution-n}
+\end{figure}
+
+Doubling the perpendicular resolution at $\beta_i=0.3$ and $M=64$, with the hyper-resistivity normalised to the grid, lengthens the inertial range: the spectral slope of $E_A$ over the fitted shells is $-3.5$ at $128^3$ against $-4.1$ at $64^3$. The outer scale is unchanged ($\tau_{\rm nl}=0.150$ and 0.154, $\chi=0.97$ and 0.93). The perpendicular sink is not (figure~\ref{fig:resolution-n}): $D_\perp(m)/W(m)$ is 25--30\% lower at every $m$, $1/T$ falls from 0.51 to 0.35 and $T/\tau_{\rm nl}$ rises from 13.1 to 18.4, and the share of the free energy dissipated by hypercollisions rises from 27\% to 38\%. The spectrum still decays as the model says, with a fitted $\lambda=9.7$ against $s\kappa_1T=10.9$, so the break moves out with $T$, from $m_*\approx26$ to about 47. $W(m)$ and the field-aligned flux still lie at or above the model, by up to 27\% and 24\%, and the per-$m$ budget closes to $6\times10^{-5}\,\eps$.
+
+The field-aligned wavenumber of $g_0$ also changes. In the bands centred on $k_\perp/k_1=1.5$, 3, 6 and 12 it is 1.02, 1.27, 1.52 and $2.07\,k_1$ at $128^3$, against 0.98, 1.08, 1.37 and $2.04\,k_1$ at $64^3$, while $\Phi$ has 1.08, 1.66, 2.18 and $3.12\,k_1$. With the longer inertial range, $g_0$ gains structure along the field gradually across it, roughly as $k_\perp^{1/3}$ against about $k_\perp^{1/2}$ for $\Phi$, rather than only at the dissipation scale. Measured with $k_z$, its wavenumber in the band at $12\,k_1$ would be $3.68\,k_1$, so Eulerian measures still overstate the parallel structure of $g$. The unmixing part of the $k_z$-split flux grows from about $-0.13$ to between $-0.20$ and $-0.25$ times the phase-mixing part, as the tilt of the field lines at the resolved scales grows, while the field-aligned flux shows no deficit.
+
+At the resolutions we reach, then, neither the rate of the perpendicular sink nor the field-aligned wavenumber of $g$ is independent of the dissipation scale, and prediction (iv) is not confirmed. Two readings remain. At $64^3$ the dissipation range reached almost to the forcing scales and made the sink artificially fast, in which case $T$ should level off at higher resolution; or the perpendicular cascade of the slices has no dissipative anomaly, in which case $T$, and with it $m_*$, keep growing as the dissipation weakens. A third resolution would decide between them. \placeholder{the $128^3$ run at $\beta_i=1$}
