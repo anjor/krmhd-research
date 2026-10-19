@@ -56,3 +56,12 @@ runs:
       beta_i = 1 the break lies beyond M, so doubling M does not lower the tail fraction); block spread of D_perp(m)
       31% at m = 0 and 20.3% at m = 1 (the injection moment, following the Alfvenic fluctuation), at most 12% for
       m >= 2 and within 0.20 for W(m), Pi and D_nu; noted, block spreads quoted as error bars
+  P1_forced-beta0p3-n128_20261018_184515:
+    steady_tol: 0.16
+    block_tol: 0.24
+    m_tol: 0.02
+    decision: >-
+      Anjor 2026-10-19: accepted on the terms of the earlier runs: W std/mean 0.156 (limit 0.15); block spread of
+      D_perp(m) 23.6% at m = 0 (the injection moment), every other block average within 18.4%; Hermite-resolution
+      limit 2% (measured 1.06%). The same terms apply to the 128^3 beta_i = 1 run if its departures are of the same
+      kind and size
