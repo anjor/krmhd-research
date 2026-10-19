@@ -41,8 +41,11 @@ Each part has a negative control that must fail by a clear margin (B2, C3, D3),
 so that a check cannot pass because it compares something with itself.
 
 Part D -- the diagnostics of SPEC.md §6
-    `hermite_flux(state)` must equal -k_z sqrt(2(m+1)) Im[g_{m+1} g_m^*] (so its
-    m = 0 prefactor is sqrt2, not c_0 = sqrt2 (1 - 1/Lambda), SPEC.md §2), and
+    With z+- = 0, `hermite_flux(state)` must equal
+    -k_z (sqrt(beta_i)/2) c_m Im[g_{m+1} g_m^*], with the Gamma weights c_m of
+    SPEC.md §2, so its m = 0 prefactor carries (1 - 1/Lambda) (GANDALF >= 0.7.0,
+    which returns the field-aligned free-energy flux, gandalf#159; up to 0.6.0
+    it was -k_z sqrt(2(m+1)) Im[g_{m+1} g_m^*], prefactor sqrt2 at m = 0), and
     `hermite_moment_energy(state)` must equal sum_k w |g_m|^2 with the rfft
     weights w = 1 on the kx = 0 and Nyquist planes and 2 elsewhere, both to
     relative tolerance TOL on a random state with k = 0 zeroed.
@@ -248,14 +251,18 @@ def part_d() -> None:
     zero_z = np.zeros(g.shape[:3], complex)
     state = _state(grid, M, zero_z, zero_z, g, 0.0, Lambda)
     kz = np.asarray(grid.kz)[:, None, None, None]
-    ref_flux = -kz * np.sqrt(2.0 * (np.arange(M) + 1.0)) * np.imag(g[..., 1:] * np.conj(g[..., :-1]))
+    beta_i = 1.0  # as in _state
+    c_m = np.sqrt(2.0 * (np.arange(M) + 1.0))
+    c_m[0] *= 1.0 - 1.0 / Lambda  # c_0 = sqrt2 (1 - 1/Lambda)
+    corr = np.imag(g[..., 1:] * np.conj(g[..., :-1]))
+    ref_flux = -kz * (np.sqrt(beta_i) / 2.0) * c_m * corr
     err = rel_err(np.asarray(hermite_flux(state)), ref_flux)
-    check("D1 hermite_flux = -kz sqrt(2(m+1)) Im[g_{m+1} g_m*], prefactor sqrt2 at m = 0",
+    check("D1 hermite_flux = -kz (sqrt(beta_i)/2) c_m Im[g_{m+1} g_m*] at z+- = 0, c_0 = sqrt2 (1 - 1/Lambda)",
           err < TOL, f"rel err {err:.1e}")
     wrong = ref_flux.copy()
-    wrong[..., 0] *= 1.0 - 1.0 / Lambda  # the Gamma weight c_0 / sqrt2 at m = 0
+    wrong[..., 0] /= 1.0 - 1.0 / Lambda  # the GANDALF <= 0.6.0 prefactor sqrt2 at m = 0
     err = rel_err(np.asarray(hermite_flux(state)), wrong)
-    check("D3 control: the m = 0 prefactor sqrt2 (1 - 1/Lambda) does not match", err > 1e-3,
+    check("D3 control: the m = 0 prefactor sqrt2 without (1 - 1/Lambda) does not match", err > 1e-3,
           f"rel err {err:.1e}")
     w = np.full(N_GRID // 2 + 1, 2.0)
     w[0] = 1.0

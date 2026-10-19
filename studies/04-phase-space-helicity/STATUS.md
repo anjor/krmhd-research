@@ -2,6 +2,8 @@
 
 Front page of the autonomous loop. `LOOP.md` is the protocol. The log is in `log/`.
 
+**GANDALF pin changed to v0.8.1 (solver as in 0.7.0) on 2026-10-18** (decisions.md, 2026-10-19). Before part (b), bring SPEC.md §2 and §6, PLAN.md §3, the D01 docstring and C17 in line with the field-aligned `hermite_flux` of GANDALF ≥ 0.7.0, and run `smoke` before the next GPU launch.
+
 ## Next block
 
 **Gate 1 criteria part (b): the derivation-script rules and D03** (PLAN.md §4 Phase 0, Gate 1; LOOP.md §5). Part (a), the report machinery, is accepted on Anjor's Q10 answer (decisions.md 2026-10-10, R1; code at 35ae1f2), with no further review of part (a). Part (b) gets one narrow critic review naming the functions (`judge_script`, `judge_as2018`, `parse_as2018`, `compare_npz`, `GATE1_SCRIPTS`, `_RULE_TEXT`) and the LOOP.md lines to read, with Anjor's Q9 threat-model paragraph; then part (c), the claim rules (`claims_table`, `judge_claim`, `GATE1_CLAIMS`, `GATE1_PHASE0_VERDICTS`), the same way. Then the claim reviews, then the Gate 1 evaluation. For the evaluation: the critic's request must quote the sha256 of `evaluation.json` (the first file under Data files), and `gates.py verify` runs on the finished report just before the commit that adds it.
