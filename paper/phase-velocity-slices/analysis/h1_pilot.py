@@ -45,6 +45,10 @@ import p1lib as P  # noqa: E402
 import h1lib as H  # noqa: E402
 
 
+T_RANGE = (2, 16)   # 1/T is the median of D_perp(m)/W(m) over these moments: collision-free at M >= 32, and the same in
+                    # every run, so that runs at M = 32 and 64 are compared over the same range (h1_compare_m.py)
+
+
 # ------------------------------------------------------------------------------------------------------------------
 # two-channel model
 # ------------------------------------------------------------------------------------------------------------------
@@ -203,7 +207,7 @@ def main() -> int:
 
     # ---- P-a: uniform sink
     r = Dperp_exact / W
-    rng_a = (m >= 2) & (m <= M // 2)
+    rng_a = (m >= T_RANGE[0]) & (m <= min(T_RANGE[1], M // 2))
     invT = float(np.median(r[rng_a]))
     T = 1.0 / invT
     rr = r[(m >= 1) & (m <= M // 2)]

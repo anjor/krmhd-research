@@ -36,7 +36,7 @@ With forcing of $g_0$ at the rate $\eps$, dissipation that acts on every $g_m$ i
 \begin{equation}\label{eq:budget}
   \frac{\dd W(m)}{\dd t}=\Pi_{m-1/2}-\Pi_{m+1/2}+\eps\,\delta_{m0}-D_\perp(m)-D_\nu(m),\qquad \Pi_{-1/2}=0,
 \end{equation}
-where $D_\perp(m)$ and $D_\nu(m)$ are the rates at which the spatial dissipation and the hypercollisions remove free energy from moment $m$. The brackets and the hyper-resistivity of GANDALF act on all moments alike, so (\ref{eq:budget}) holds for its equations up to the error of the dealiased brackets, with the flux (\ref{eq:fluxCD}) evaluated with the same brackets; in the simulations of section~\ref{sec:simulations} it closes to $4\times10^{-4}\,\eps$.
+where $D_\perp(m)$ and $D_\nu(m)$ are the rates at which the spatial dissipation and the hypercollisions remove free energy from moment $m$. The brackets and the hyper-resistivity of GANDALF act on all moments alike, so (\ref{eq:budget}) holds for its equations up to the error of the dealiased brackets, with the flux (\ref{eq:fluxCD}) evaluated with the same brackets; in the simulations of section~\ref{sec:simulations} it closes to better than $5\times10^{-4}\,\eps$.
 
 \subsection{The Hermite spectrum and the two-slice correlation}\label{hm:dictionary}
 
@@ -48,7 +48,7 @@ If the slices are completely decorrelated, $C(u,u')=e(u)\,\delta(u-u')$, then $W
 \begin{equation}\label{eq:prefactor}
   \int F_M\,\psi_m^2\,\dd u=\frac{\Gamma(m+\frac12)}{\sqrt2\,\pi\,m!}=\frac{1}{\pi\sqrt{2m}}\Big(1-\frac{1}{8m}+O(m^{-2})\Big),
 \end{equation}
-where $\Gamma(\cdot)$ is Euler's gamma function. This is the $m^{-1/2}$ spectrum of linear phase mixing. For one Fourier mode whose density moment is driven by white noise, the exact steady state of \citet[eq.~4.10]{Kanekar2015} is the spectrum of decorrelated slices with $e=\pi(1-1/\Lambda)^2\epsilon_k\,\varrho/(s|k_z|)$; at $\Lambda=\infty$
+where $\Gamma(\cdot)$ is Euler's gamma function. This is the $m^{-1/2}$ spectrum of linear phase mixing. For one Fourier mode whose density moment is driven by white noise that injects free energy at the rate $\epsilon_k$, the exact steady state of \citet[eq.~4.10]{Kanekar2015} is the spectrum of decorrelated slices with $e=\pi(1-1/\Lambda)^2\epsilon_k\,\varrho/(s|k_z|)$; at $\Lambda=\infty$
 \begin{equation}\label{eq:linforced}
   W(m)=\frac{\pi\epsilon_k}{s|k_z|}\,\frac{\Gamma(m+\frac12)}{\sqrt2\,\pi\,m!}\;\simeq\;\frac{\eps}{s|k_z|\sqrt{2m}}\quad(m\gg1),
 \end{equation}

@@ -8,7 +8,7 @@ For $\Lambda=\infty$ the operator $L$ is multiplication by $u$, and (\ref{eq:bra
 \begin{equation*}
   \partial_tG+\{\Phi,G\}+su\,\gradpar G=0 .
 \end{equation*}
-Since $\gradpar=\partial_z+\{\Psi,\cdot\}$ and $\{\chi,G\}=(\zhat\times\nabla_\perp\chi)\cdot\nabla G$, this is the advection equation $\partial_tG+\boldsymbol U_u\cdot\nabla G=0$ with the velocity
+Since $\gradpar=\partial_z+\{\Psi,\cdot\}$ and $\{f,G\}=(\zhat\times\nabla_\perp f)\cdot\nabla G$, this is the advection equation $\partial_tG+\boldsymbol U_u\cdot\nabla G=0$ with the velocity
 \begin{equation}\label{eq:Uu}
   \boldsymbol U_u=\zhat\times\nabla_\perp(\Phi+su\Psi)+su\,\zhat=\uE+su\,\bhat,\qquad\nabla\cdot\boldsymbol U_u=0 .
 \end{equation}
@@ -22,13 +22,13 @@ For finite $\Lambda$, $LG=uG-(uF_M/\Lambda)\,M_0[G]$ ties every velocity to the 
 \end{equation}
 which is positive definite for $\Lambda\notin[0,1]$, as for every compressive branch of KRMHD ($\Lambda^+>1$, $\Lambda^-<0$; section~\ref{sec:model}). It therefore has a complete set of generalised eigenfunctions, the Case--Van Kampen modes $F_u$ of the branch \citep{vanKampen1955,Case1959}, with $LF_u=uF_u$ for every real $u$. Each is a beam of particles at $v_\parallel=u\vth$ dressed by the response of the Maxwellian, through the Landau coupling, to the density of the beam. Expanding $G$ in these modes is a fixed linear change of variables in velocity, $G\mapsto a_u$, with
 \begin{equation}\label{eq:aunit}
-  a_u=\frac{\eps_R\,G-\eps_I\,\mathsf H[G]}{\sqrt{F_M}\;|\eps|}(u),
+  a_u=\frac{\diel_R\,G-\diel_I\,\mathsf H[G]}{\sqrt{F_M}\;|\diel|}(u),
 \end{equation}
-where $\eps(u+\ii0)=\eps_R+\ii\eps_I$ is the dielectric function of the branch on the real axis, which contains the plasma dispersion function, and $\mathsf H$ is the Hilbert transform in $u$ (appendix~\ref{app:spectral}, (\ref{sl:epsRI})). For $\Lambda=\infty$, $\eps=1$ and $a_u=G/\sqrt{F_M}$. The change of variables is invertible, divides the free energy among phase velocities without cross terms, and turns $L$ into multiplication by $u$:
+where $\diel(u+\ii0)=\diel_R+\ii\diel_I$ is the dielectric function of the branch on the real axis, which contains the plasma dispersion function, and $\mathsf H$ is the Hilbert transform in $u$ (appendix~\ref{app:spectral}, (\ref{sl:epsRI})). For $\Lambda=\infty$, $\diel=1$ and $a_u=G/\sqrt{F_M}$. The change of variables is invertible, divides the free energy among phase velocities without cross terms, and turns $L$ into multiplication by $u$:
 \begin{equation}\label{sl:parseval}
   \fe{G}{G}=\int a_u^2\,\dd u,\qquad G\mapsto a_u\ \text{ takes }\ LG\mapsto u\,a_u
 \end{equation}
-(theorem~\ref{thm:spectrum}). Its inverse is, up to normalisation, the G-transform that \citet{MorrisonPfirsch1992} and \citet{Morrison2000} introduced for linearised Vlasov--Poisson; \citet{Heninger2018} applied it to electrostatic drift kinetics, where the transformed components remain coupled through the potential. The function $\varrho=F_M/|\eps|^2$ that appears below is the spectral density of the branch, with $\int\varrho\,\dd u=1/p_0$ and $\varrho=F_M$ for $\Lambda=\infty$.
+(theorem~\ref{thm:spectrum}). Its inverse is, up to normalisation, the G-transform that \citet{MorrisonPfirsch1992} and \citet{Morrison2000} introduced for linearised Vlasov--Poisson; \citet{Heninger2018} applied it to electrostatic drift kinetics, where the transformed components remain coupled through the potential. The function $\varrho=F_M/|\diel|^2$ that appears below is the spectral density of the branch, with $\int\varrho\,\dd u=1/p_0$ and $\varrho=F_M$ for $\Lambda=\infty$.
 
 \subsection{The slice theorem}\label{sl:slicesec}
 
@@ -67,7 +67,7 @@ where $\hat{\mathcal C}$ is the kernel of $\mathcal A\,\mathcal C\,\mathcal A^{-
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{snapshots}
-  \caption{A density blob in decaying Alfv\'enic turbulence, on the plane $z=0$ (coordinates in units of the box side $L=1$). GANDALF run on a $64^3$ grid with $M=16$ (zero closure), $\Lambda=\sqrt5$ and $\beta_i=1$; balanced Gaussian random Elsasser fields with $1\le k_\perp/k_1\le3$, $|k_z|/k_1\le2$ and $\chi=1.00$; hyper-resistivity damps $z^\pm$ and every $g_m$; no forcing or hypercollisions; $g(0)=f\,e_0$, with $f$ a Gaussian of standard deviation $1/8$ in $x$ and $y$ and $1/4$ in $z$; $t$ runs to $1.5\,t_{\rm nl}$, with $t_{\rm nl}=0.1357$ the outer eddy time. (a, b) The density moment $g_0$ at $t=0$ and $1.5\,t_{\rm nl}$. (c--e) The slices $a_j/(p_0R_{0j})$ of section~\ref{hm:trunc} at $t=1.5\,t_{\rm nl}$ at the nodes $su_j=-1.0218$, $u_j=0$ and $su_j=+1.0218$; all three equal $f$ at $t=0$. Each group of panels has one symmetric colour scale.}
+  \caption{A density blob in decaying Alfv\'enic turbulence, on the plane $z=0$ (coordinates in units of the box side $L=1$). GANDALF run on a $64^3$ grid with $M=16$ (zero closure), $\Lambda=\sqrt5$ and $\beta_i=1$; balanced Gaussian random Elsasser fields with $1\le k_\perp/k_1\le3$, $|k_z|/k_1\le2$ and $\chi=1.00$; hyper-resistivity damps $z^\pm$ and every $g_m$; no forcing or hypercollisions; $g(0)=f\,e_0$, with $f$ a Gaussian of standard deviation $1/8$ in $x$ and $y$ and $1/4$ in $z$; $t$ runs to $1.5\,\tau_{\rm nl}$, with $\tau_{\rm nl}=0.1357$ the outer eddy time. (a, b) The density moment $g_0$ at $t=0$ and $1.5\,\tau_{\rm nl}$. (c--e) The slices $a_j/(p_0R_{0j})$ of section~\ref{hm:trunc} at $t=1.5\,\tau_{\rm nl}$ at the nodes $su_j=-1.0218$, $u_j=0$ and $su_j=+1.0218$; all three equal $f$ at $t=0$. Each group of panels has one symmetric colour scale.}
   \label{fig:snapshots}
 \end{figure}
 
