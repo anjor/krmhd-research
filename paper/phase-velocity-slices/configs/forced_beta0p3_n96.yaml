@@ -1,0 +1,90 @@
+# H1 resolution check in k_perp, third point (64^3, 96^3, 128^3) at beta_i = 0.3, M = 64: forced KRMHD on a 96^3 grid,
+# otherwise as configs/forced_beta0p3_n128.yaml.  Between 64^3 and 128^3 the sink rate 1/T fell by 31% (T/tau_nl
+# 13.1 -> 18.4); this run shows whether the change is gradual or levels off.  Started autonomously while Anjor travels
+# (estimated ~7 h on an A100, ~$20).  Read by scripts/run_forced_turbulence.py (run with --resume).
+#
+# Changes from forced_beta0p3_n128.yaml: N = 96 (dealiasing band to |n| = 31); the exact slice-radius evaluation every
+# 50 steps and diagnostics every 40 (dt sits between the 64^3 and 128^3 values).
+
+label: forced-beta0p3-n96
+
+box:
+  L: 1.0
+  N: 96
+
+velocity:
+  M: 64
+  Lambda: "-1 + 10/3 + sqrt(4 + 100/9)"
+  beta_i: 0.3
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0
+  hyper_r: 2
+  nu: "30*sqrt(0.5)*sqrt(0.3)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: paper/phase-velocity-slices/data/P1_forced-spinup64_20261015_110112/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+  pad: true                     # zero-pad the 64^3 restart to 128^3
+
+time:
+  t_end: 66.0                  # tau_A: 53 in forced_beta0p1.yaml; at beta_i = 0.3 W and E_A were still settling until
+                               # t ~ 15 (first block of the 50 tau_A window off by 24%), so here the gate window (the final
+                               # 50 tau_A) is t = 16..66
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
+  recompute_every: 50
+  limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
+  sample_every: 40
+  print_every: 500
+  snapshot_every: 10.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
