@@ -52,7 +52,7 @@ init:
   keep_g: false
   keep_time: false
   keep_keys: false
-  pad: true                     # zero-pad the 64^3 restart to 128^3
+  pad: true                     # zero-pad the 64^3 restart to 96^3
 
 time:
   t_end: 66.0                  # tau_A: 53 in forced_beta0p1.yaml; at beta_i = 0.3 W and E_A were still settling until
