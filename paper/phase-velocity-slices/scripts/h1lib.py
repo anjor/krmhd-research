@@ -53,15 +53,16 @@ def state_from(template: KRMHDState, zp: Any = None, zm: Any = None, g: Any = No
 # forcing at a fixed injection rate
 # ------------------------------------------------------------------------------------------------------------------
 class WhiteForcing:
-    """White-in-time forcing of Phi (as GANDALF's force_alfven_modes: the same increment on z+ and z-) and of g_0, with the amplitude
-    rescaled every step so that the expected injection rates are fixed.
+    """White-in-time forcing of Phi (as GANDALF's force_alfven_modes: the same increment on z+ and z-) and of one
+    Hermite moment g_mf of the compressive sector (g_0 by default), with the amplitude rescaled every step so that the
+    expected injection rates are fixed.
 
     GANDALF adds the increment (A/sqrt(dt)) xi per step, xi complex Gaussian with unit-variance real and imaginary
     parts on the forced Fourier entries, then projects the k_x = 0 plane onto its Hermitian part (which halves the
     expected power there).  So E|F_k|^2 = v_k A^2/dt with v_k = 2 (k_x > 0) or 1 (k_x = 0 plane), and the expected
     energy added per step is c A^2/dt with
         c_A = sum_forced (1/2) w_k v_k k_perp^2 / N^6      (Alfvenic energy; F is added to z+ and z-, i.e. to Phi),
-        c_g = p_0 sum_forced w_k v_k / N^6                   (free energy; F is added to g_0).
+        c_g = p_mf sum_forced w_k v_k / N^6                  (free energy; F is added to g_mf).
     The injection rate is c A^2/dt^2, so A = dt sqrt(eps/c) holds it at eps for any dt (white noise, Ito: the cross
     term with the state averages to zero).  The forced entries are read off one draw of the generator itself.
 
@@ -74,10 +75,10 @@ class WhiteForcing:
       density: eps (target rate of W), generator "perp_lowkz" (krmhd.forcing.gaussian_white_noise_fourier_perp_lowkz:
                k_perp L/2 pi in [n_min, n_max], |n_z| <= max_nz, n_z = 0 included only with include_nz0) or
                "isotropic" (krmhd.forcing.force_hermite_moments on g_0, the same |k| band as the Alfvenic forcing),
-               n_min, n_max, max_nz, include_nz0, seed.
-    eps = 0 switches a forcing off."""
+               n_min, n_max, max_nz, include_nz0, seed, moment (the forced Hermite moment mf, default 0).
+    eps = 0 switches a forcing off.  p is the array of free-energy weights p_m, or p_0 alone when mf = 0."""
 
-    def __init__(self, box: P.Box, cfg: Mapping[str, Any], p0: float) -> None:
+    def __init__(self, box: P.Box, cfg: Mapping[str, Any], p: float | np.ndarray) -> None:
         self.box = box
         a, d = cfg["alfven"], cfg["density"]
         self.eps_A = P.parse_number(a["eps"])
@@ -96,7 +97,11 @@ class WhiteForcing:
         self.max_nz = int(d.get("max_nz", 1))
         self.include_nz0 = bool(d.get("include_nz0", False))
         self.key_g = jax.random.PRNGKey(int(d["seed"]))
-        self.p0 = float(p0)
+        self.moment = int(d.get("moment", 0))
+        pa = np.atleast_1d(np.asarray(p, dtype=float))
+        if self.moment >= len(pa):
+            raise ValueError(f"forced moment {self.moment} needs the weights p_m up to m = {self.moment}")
+        self.p0 = float(pa[self.moment])                 # weight of the forced moment
         v = np.where(np.arange(box.N // 2 + 1) == 0, 1.0, 2.0)[None, None, :]
         mA = self._mask("alfven")
         mg = self._mask("density")
@@ -133,7 +138,7 @@ class WhiteForcing:
                                    alfven_generator=self.gen_A, alfven_band=list(self.nA),
                                    alfven_max_nz=self.max_nz_A if self.gen_A == "perp_lowkz" else None,
                                    alfven_include_nz0=self.include_nz0_A if self.gen_A == "perp_lowkz" else None,
-                                   density_generator=self.gen_g,
+                                   density_generator=self.gen_g, density_moment=self.moment,
                                    density_band=list(self.ng), density_max_nz=self.max_nz,
                                    density_include_nz0=self.include_nz0)
         for name, m in (("alfven", self.mask_A), ("density", self.mask_g)):
@@ -146,8 +151,8 @@ class WhiteForcing:
         return out
 
     def apply(self, state: KRMHDState, dt: float) -> KRMHDState:
-        """Add one step's increments to Phi and g_0 (amplitudes rescaled with dt).  The density increment is kept in
-        F_g_last (for the field-aligned wavenumber of the injected pattern)."""
+        """Add one step's increments to Phi and g_mf (amplitudes rescaled with dt).  The compressive increment is kept
+        in F_g_last (for the field-aligned wavenumber of the injected pattern)."""
         aA, ag = self.amplitudes(dt)
         if aA > 0:
             if self.gen_A == "isotropic":
@@ -160,15 +165,16 @@ class WhiteForcing:
                 state = state_from(state, zp=state.z_plus + F, zm=state.z_minus + F)
         if ag > 0:
             if self.gen_g == "isotropic":
-                g_old = state.g[..., 0]
-                state, self.key_g = force_hermite_moments(state, ag, self.ng[0], self.ng[1], dt, self.key_g, (0,))
-                self.F_g_last = state.g[..., 0] - g_old
+                g_old = state.g[..., self.moment]
+                state, self.key_g = force_hermite_moments(state, ag, self.ng[0], self.ng[1], dt, self.key_g,
+                                                          (self.moment,))
+                self.F_g_last = state.g[..., self.moment] - g_old
             else:
                 F, self.key_g = gaussian_white_noise_fourier_perp_lowkz(state.grid, ag, self.ng[0], self.ng[1],
                                                                         self.max_nz, self.include_nz0, dt,
                                                                         self.key_g)
                 F = jnp.asarray(F, dtype=jnp.complex128)
-                state = state_from(state, g=state.g.at[..., 0].add(F))
+                state = state_from(state, g=state.g.at[..., self.moment].add(F))
                 self.F_g_last = F
         return state
 

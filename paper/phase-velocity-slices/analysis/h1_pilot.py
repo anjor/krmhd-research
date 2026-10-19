@@ -48,13 +48,14 @@ import h1lib as H  # noqa: E402
 # ------------------------------------------------------------------------------------------------------------------
 # two-channel model
 # ------------------------------------------------------------------------------------------------------------------
-def lyapunov_mode(sl: P.Slices, s: float, kappa: float, T: float, nu: float, hyper_n: int) -> dict:
-    """Stationary statistics of one field-aligned wavenumber with unit free-energy injection (p_0 q = 1)."""
+def lyapunov_mode(sl: P.Slices, s: float, kappa: float, T: float, nu: float, hyper_n: int, mf: int = 0) -> dict:
+    """Stationary statistics of one field-aligned wavenumber with unit free-energy injection into moment mf
+    (p_mf q = 1)."""
     M = sl.M
     D = np.full(M + 1, 0.5 / T) + P.coll_rates(M, nu, hyper_n)      # amplitude rates: free energy decays at 1/T
     L = 1j * s * kappa * sl.A + np.diag(D)
     Q = np.zeros((M + 1, M + 1), complex)
-    Q[0, 0] = 1.0 / sl.p[0]
+    Q[mf, mf] = 1.0 / sl.p[mf]
     C = scipy.linalg.solve_continuous_lyapunov(-L, -Q)
     W = sl.p * np.real(np.diag(C))
     Pi = np.array([-2.0 * s * sl.p[m] * sl.A[m, m + 1] * kappa * np.imag(C[m + 1, m]) for m in range(M)])
@@ -63,8 +64,9 @@ def lyapunov_mode(sl: P.Slices, s: float, kappa: float, T: float, nu: float, hyp
 
 
 def two_channel(sl: P.Slices, s: float, kappas: np.ndarray, weights: np.ndarray, T: float, nu: float, hyper_n: int,
-                eps: float) -> dict:
-    """Sum of lyapunov_mode over a kappa distribution (weights normalised to 1), scaled to injection eps."""
+                eps: float, mf: int = 0) -> dict:
+    """Sum of lyapunov_mode over a kappa distribution (weights normalised to 1), scaled to injection eps into
+    moment mf."""
     w = np.asarray(weights, dtype=float)
     w = w / w.sum()
     W = np.zeros(sl.M + 1)
@@ -72,11 +74,11 @@ def two_channel(sl: P.Slices, s: float, kappas: np.ndarray, weights: np.ndarray,
     S = np.zeros((sl.M + 1, sl.M + 1))
     for k, wk in zip(kappas, w):
         if wk <= 0 or k <= 0:
-            if wk > 0:                                   # kappa = 0: no phase mixing, all of it decays at m = 0
-                W[0] += eps * wk * T
-                S += eps * wk * T * np.outer(sl.Wl[0], sl.Wl[0]) / sl.p[0]
+            if wk > 0:                                   # kappa = 0: no phase mixing, all of it decays at m = mf
+                W[mf] += eps * wk * T
+                S += eps * wk * T * np.outer(sl.Wl[mf], sl.Wl[mf]) / sl.p[mf]
             continue
-        r = lyapunov_mode(sl, s, float(k), T, nu, hyper_n)
+        r = lyapunov_mode(sl, s, float(k), T, nu, hyper_n, mf)
         W += eps * wk * r["W"]
         Pi += eps * wk * r["Pi"]
         S += eps * wk * r["S"]
@@ -188,6 +190,7 @@ def main() -> int:
     k1 = 2 * np.pi / float(cfg["box"]["L"])
     eps = float(ts["acc_inj_g"][sel].sum() / Tw)
     eps_target = P.parse_number(cfg["forcing"]["density"]["eps"])
+    mf = int(cfg["forcing"]["density"].get("moment", 0))   # the forced Hermite moment
     W = tav("pWm")
     Dperp_exact = ts["acc_loss_eta"][sel].sum(0) / Tw
     Dnu_exact = ts["acc_loss_nu"][sel].sum(0) / Tw
@@ -210,7 +213,7 @@ def main() -> int:
     Pe = lambda Pi: np.concatenate([[0.0], Pi, [0.0]])  # noqa: E731
     dWdt = (ts["pWm"][-1] - ts["pWm"][first]) / Tw
     inj = np.zeros(M + 1)
-    inj[0] = eps
+    inj[mf] = eps
     for name, Pi in (("fa", Pfa), ("kz", Pkz)):
         pe = Pe(Pi)
         res = (pe[:-1] - pe[1:]) + inj - Dperp_exact - Dnu_exact - dWdt
@@ -256,13 +259,13 @@ def main() -> int:
                                  kappa1_g_m_over_k1=(k1m / k1).tolist())
     # ---- models
     models: dict = {}
-    models["single kappa = k_z(forcing)"] = two_channel(sl, s, np.array([kF_z]), np.array([1.0]), T, nu, hn, eps)
+    models["single kappa = k_z(forcing)"] = two_channel(sl, s, np.array([kF_z]), np.array([1.0]), T, nu, hn, eps, mf)
     xi = np.linspace(-4, 4, 81)
     gk = np.abs(kF_z + sig_tilt * xi)
-    models["kappa = k_z + tilt (Gaussian)"] = two_channel(sl, s, gk, np.exp(-xi ** 2 / 2), T, nu, hn, eps)
+    models["kappa = k_z + tilt (Gaussian)"] = two_channel(sl, s, gk, np.exp(-xi ** 2 / 2), T, nu, hn, eps, mf)
     if fl is not None:
-        models["traced P(kappa) of the injected pattern"] = two_channel(sl, s, fl["kap"], fl["PF"], T, nu, hn, eps)
-        models["traced P(kappa) of g_0"] = two_channel(sl, s, fl["kap"], fl["Pg0"], T, nu, hn, eps)
+        models["traced P(kappa) of the injected pattern"] = two_channel(sl, s, fl["kap"], fl["PF"], T, nu, hn, eps, mf)
+        models["traced P(kappa) of g_0"] = two_channel(sl, s, fl["kap"], fl["Pg0"], T, nu, hn, eps, mf)
         noecho = s * np.sqrt(2.0 * (m[:-1] + 1)) * fl["k1m"][:-1] * W[:-1]
     else:
         noecho = None

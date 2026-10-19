@@ -125,7 +125,8 @@ def main() -> int:
     if sp.closure != closure:
         raise ValueError("stepper.closure and velocity.closure differ")
     base = args.base or P.DATA
-    fo = H.WhiteForcing(box, cfg["forcing"], sl.p[0])
+    fo = H.WhiteForcing(box, cfg["forcing"], sl.p)
+    mf = fo.moment                                       # the forced Hermite moment
     resume_dir = find_resumable(base, cfg["label"]) if args.resume else None
     rs: dict = {}
     if resume_dir is not None:
@@ -148,12 +149,13 @@ def main() -> int:
     N6 = float(box.Ntot) ** 2
     wj = jnp.asarray(box.w)
     kp2j = jnp.asarray(box.KP2)
-    p0 = float(sl.p[0])
+    pf = float(sl.p[mf])
 
     @jax.jit
-    def ea_w0(zp_, zm_, g0_):
+    def ea_wf(zp_, zm_, gf_):
+        """E_A and the free energy of the forced moment g_mf."""
         return (jnp.sum(0.25 * wj * kp2j * (jnp.abs(zp_) ** 2 + jnp.abs(zm_) ** 2)) / N6,
-                p0 * jnp.sum(wj * jnp.abs(g0_) ** 2) / N6)
+                pf * jnp.sum(wj * jnp.abs(gf_) ** 2) / N6)
 
     t_end = float(tc["t_end"])
     dt_max = float(tc["dt_max"])
@@ -278,12 +280,12 @@ def main() -> int:
         acc_le += le
         acc_ln += ln
         state = fo.apply(state, dt_step)
-        EA2, w02 = (float(x) for x in ea_w0(state.z_plus, state.z_minus, state.g[..., 0]))
+        EA2, wf2 = (float(x) for x in ea_wf(state.z_plus, state.z_minus, state.g[..., mf]))
         acc["inj_A"] += EA2 - float(EA1)
-        acc["inj_g"] += w02 - float(pW1[0])
+        acc["inj_g"] += wf2 - float(pW1[mf])
         EA_s = EA2
         pW_s = pW1.copy()
-        pW_s[0] = w02
+        pW_s[mf] = wf2
         t += dt_step
         n += 1
         acc["steps"] += 1
@@ -383,7 +385,7 @@ def main() -> int:
     Dm = (ts["acc_loss_eta"][sel].sum(0) + ts["acc_loss_nu"][sel].sum(0)) / Tw
     dWm = (ts["pWm"][-1] - ts["pWm"][first]) / Tw
     inj_m = np.zeros(M + 1)
-    inj_m[0] = injg / Tw
+    inj_m[mf] = injg / Tw
 
     def resid(Pi: np.ndarray) -> np.ndarray:
         Pe = np.concatenate([[0.0], Pi, [0.0]])

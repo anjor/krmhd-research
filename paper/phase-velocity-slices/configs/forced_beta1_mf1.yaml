@@ -1,0 +1,93 @@
+# Comparison with the set-up of Meyrand et al. (2019): forced KRMHD at beta_i = 1, 64^3, M = 64, with the compressive
+# forcing on the parallel flow g_1 (their m = 1) at |k_z| <= 2 k_1 instead of on g_0 at |k_z| = k_1.  Everything else as
+# configs/forced_beta1_m64.yaml, so the two runs differ only in the compressive forcing.  The two-channel model, with
+# the injection moved to m = 1 and the traced P(kappa) of the new injected pattern, makes a prediction for W(m), the
+# sink and the k_z-split backward flux (prediction (v)) of this run with nothing fitted to it.  Started autonomously
+# while Anjor travels (64^3 M = 64: about 3 h on an A100).  Read by scripts/run_forced_turbulence.py (run with --resume).
+#
+# Changes from forced_beta1_m64.yaml: forcing.density.moment 1 (h1lib.WhiteForcing), max_nz 2.  Their forcing band is
+# the cube |k_x|, |k_y|, |k_z| <= 2 k_1; here k_perp <= 2 k_1 (the perp_lowkz generator's band is a ring in k_perp).
+# They also damp g with mu k_perp^8 and nu m^6 at 256^3 to 512^3; those are not changed here.
+
+label: forced-beta1-mf1
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 64
+  Lambda: sqrt5
+  beta_i: 1.0
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0
+  hyper_r: 2
+  nu: "30*sqrt(0.5)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    moment: 1                  # force the parallel flow g_1 (Meyrand et al. 2019), not g_0
+    n_min: 1
+    n_max: 2
+    max_nz: 2                  # |n_z| = 1, 2
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: paper/phase-velocity-slices/data/P1_forced-spinup64_20261015_110112/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 66.0                  # tau_A: 53 in forced_beta0p1.yaml; at beta_i = 0.3 W and E_A were still settling until
+                               # t ~ 15 (first block of the 50 tau_A window off by 24%), so here the gate window (the final
+                               # 50 tau_A) is t = 16..66
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
+  recompute_every: 25
+  limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
+  sample_every: 20
+  print_every: 500
+  snapshot_every: 5.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01

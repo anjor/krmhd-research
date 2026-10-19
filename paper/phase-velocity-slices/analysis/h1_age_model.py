@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """The two-channel model with a perpendicular sink that depends on the age of the free energy.
 
-Each injection into g_0 at field-aligned wavenumber kappa evolves by the linear hierarchy (streaming i s kappa A and
+Each injection into the forced moment g_mf at field-aligned wavenumber kappa evolves by the linear hierarchy (streaming i s kappa A and
 the run's hypercollisions), and the perpendicular cascade removes it at a rate gamma(t) that depends only on the time
 t since injection, the same at every m.  With E_m(t; kappa) the free energy at moment m of a unit injection and
 S(t) = exp(-int_0^t gamma), the steady state is
@@ -61,17 +61,17 @@ def load(run_id: str, acc: dict) -> dict:
     v, st = cfg["velocity"], cfg["stepper"]
     return dict(run_id=run_id, beta=P.parse_number(v["beta_i"]), M=int(v["M"]), N=int(cfg["box"]["N"]),
                 Lam=P.parse_number(v["Lambda"]), closure=v["closure"], nu=P.parse_number(st["nu"]),
-                hyper_n=int(st["hyper_n"]), W=W, eps=eps, q=Dp / W, kap=kap[keep], P=PF[keep] / PF[keep].sum())
+                hyper_n=int(st["hyper_n"]), mf=int(cfg["forcing"]["density"].get("moment", 0)), W=W, eps=eps, q=Dp / W, kap=kap[keep], P=PF[keep] / PF[keep].sum())
 
 
 def green(d: dict) -> tuple[np.ndarray, np.ndarray]:
-    """Ebar[m, t] = sum_kappa P(kappa) E_m(t; kappa) for a unit injection into g_0, on the time grid."""
+    """Ebar[m, t] = sum_kappa P(kappa) E_m(t; kappa) for a unit injection into g_mf, on the time grid."""
     sl = P.make_slices(d["M"], d["Lam"], d["closure"])
     s = math.sqrt(d["beta"])
     coll = P.coll_rates(d["M"], d["nu"], d["hyper_n"])
     t = np.arange(0.0, T_MAX + DT / 2, DT)
     g0 = np.zeros(d["M"] + 1, complex)
-    g0[0] = 1.0 / math.sqrt(sl.p[0])
+    g0[d["mf"]] = 1.0 / math.sqrt(sl.p[d["mf"]])
     Ebar = np.zeros((d["M"] + 1, len(t)))
     for kap, w in zip(d["kap"], d["P"]):
         L = 1j * s * kap * sl.A + np.diag(coll)

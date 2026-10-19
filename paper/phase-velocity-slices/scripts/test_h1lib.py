@@ -153,6 +153,25 @@ def main() -> int:
     check("E5 density increment in g_0 only, equal to F_g_last", np.abs(dg3[..., 1:]).max() == 0.0
           and np.abs(dg3[..., 0] - np.asarray(fo.F_g_last)).max() < 1e-14 * np.abs(dg3[..., 0]).max())
 
+    cfg1 = dict(alfven=dict(eps=0.0, generator="isotropic", n_min=1, n_max=2, seed=1),
+                density=dict(eps=1.0, generator="perp_lowkz", n_min=1, n_max=2, max_nz=2, include_nz0=False, seed=5,
+                             moment=1))
+    fo1 = H.WhiteForcing(box, cfg1, sl.p)
+    inj1 = []
+    for _ in range(400):
+        s6 = fo1.apply(zero, dt)
+        pw = np.asarray(energies0(s6.z_plus, s6.z_minus, s6.g)[1])
+        inj1.append((float(pw[1]), float(np.abs(pw).sum() - abs(pw[1]))))
+    r1 = np.mean([x[0] for x in inj1]) / dt
+    e1 = np.std([x[0] for x in inj1]) / np.mean([x[0] for x in inj1]) / math.sqrt(400)
+    check("E8 forcing of g_1: rate = eps, nothing in the other moments, n_z = +-1, +-2",
+          abs(r1 - 1.0) < 4 * e1 and max(x[1] for x in inj1) == 0.0 and fo1.describe()["density_nz_values"] == [1, 2],
+          f"{r1:.4f} +- {e1:.4f}")
+    s7 = fo1.apply(st, dt)
+    dg7 = np.asarray(s7.g) - g
+    check("E9 ... increment in g_1 only, equal to F_g_last", np.abs(dg7[..., [0] + list(range(2, dg7.shape[-1]))]).max()
+          == 0.0 and np.abs(dg7[..., 1] - np.asarray(fo1.F_g_last)).max() < 1e-14 * np.abs(dg7[..., 1]).max())
+
     cfg2 = dict(alfven=dict(eps=1.0, generator="perp_lowkz", n_min=1, n_max=2, max_nz=1, include_nz0=False, seed=3),
                 density=dict(eps=0.0, generator="perp_lowkz", n_min=1, n_max=2, seed=4))
     fo2 = H.WhiteForcing(box, cfg2, sl.p[0])
