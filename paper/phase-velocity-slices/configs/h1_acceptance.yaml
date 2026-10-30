@@ -65,3 +65,26 @@ runs:
       D_perp(m) 23.6% at m = 0 (the injection moment), every other block average within 18.4%; Hermite-resolution
       limit 2% (measured 1.06%). The same terms apply to the 128^3 beta_i = 1 run if its departures are of the same
       kind and size
+  P1_forced-beta1-n128_20261018_184509:
+    steady_tol: 0.17
+    block_tol: 0.24
+    m_tol: 0.02
+    decision: >-
+      Anjor 2026-10-30: accepted on the terms of the 128^3 beta_i = 0.3 run with the steady-state limit at 0.17: W
+      std/mean 0.165 (E_A 0.112); block check passes at 0.20 (largest spread 14.3%, D_perp at m = 2); Hermite-resolution
+      limit 2% (measured 1.35%); spectra smooth to the dealiasing edge, no trend in W
+  P1_forced-beta0p3-n96_20261019_200712:
+    steady_tol: 0.16
+    block_tol: 0.24
+    m_tol: 0.02
+    decision: >-
+      Anjor 2026-10-30: accepted on the terms of the 128^3 beta_i = 0.3 run: W std/mean 0.154; block spread 23.8% (W at
+      m = 47, D_nu at m = 51); Hermite-resolution limit 2% (measured 1.02%)
+  P1_forced-beta1-mf1_20261019_201321:
+    steady_tol: 0.16
+    block_tol: 0.33
+    m_tol: 0.025
+    decision: >-
+      Anjor 2026-10-30: accepted (Meyrand-like forcing of g_1 at |n_z| <= 2): E_A std/mean 0.156; block spread 32.1% for
+      D_perp and 29.3% for W at the forced moment m = 1 (as at the forced moment of the beta_i = 1 M = 64 run);
+      Hermite-resolution limit 2.5% (measured 2.15%); the comparison with Meyrand et al. rests on m <= 16
