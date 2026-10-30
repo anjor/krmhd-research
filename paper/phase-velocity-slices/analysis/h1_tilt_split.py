@@ -67,16 +67,20 @@ def main() -> int:
     plt = FS.setup_style(fcfg, usetex=True)
     pal = fcfg["palette"]
     fig, a = plt.subplots(1, 1, figsize=(fcfg["single_width_in"], 2.7))
-    for i, (r, d) in enumerate(out.items()):
-        c = pal[i % len(pal)]
-        lab = rf"$\beta_i={d['beta']:g}$, ${d['N']}^3$, $M={d['M']}$"
-        a.plot(d["m"], d["measured"], "o", ms=3, color=c, label=lab)
-        a.plot(d["m"], d["predicted"], "-", lw=0.9, color=c)
+    betas = sorted({d["beta"] for d in out.values()}, reverse=True)       # colour by beta_i as in the other figures
+    marks = {64: ("o", "-"), 96: ("s", ":"), 128: ("^", "--")}              # marker and line style by N
+    for r, d in out.items():
+        c = pal[betas.index(d["beta"]) % len(pal)]
+        mk, ls = marks.get(d["N"], ("D", "-."))
+        lab = rf"$\beta_i={d['beta']:g}$, ${d['N']}^3$"
+        a.plot(d["m"], d["measured"], mk, ms=3, color=c, label=lab)
+        a.plot(d["m"], d["predicted"], ls, lw=0.9, color=c)
     a.set_xscale("log")
     a.set_xlabel(r"$m$")
     a.set_ylabel(r"$-\Pi^-_{m+1/2}/\Pi^+_{m+1/2}$")
-    a.set_ylim(0, None)
-    a.legend(frameon=False, fontsize=6)
+    top = max(max(d["measured"] + d["predicted"]) for d in out.values())
+    a.set_ylim(0, 1.45 * top)
+    a.legend(frameon=False, fontsize=6, ncol=2, loc="upper left")
     outdir = Path(args.outdir) if args.outdir else FS.FIG_DIR
     outdir.mkdir(parents=True, exist_ok=True)
     fig.savefig(outdir / "h1_tilt_split.pdf", bbox_inches="tight")

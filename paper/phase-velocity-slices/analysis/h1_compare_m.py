@@ -7,7 +7,11 @@ the grid).
 For each pair (or series of runs at increasing resolution, --pair beta:<low>:<mid>:...:<high>): the free-energy spectrum W(m)/eps and the perpendicular sink D_perp(m)/W(m), time-averaged over each
 run's accepted window (configs/h1_acceptance.yaml, default the final 50 tau_A), with eps the measured injection rate;
 the ratio W_64/W_32 over m <= 16 (collision-free in both), 1/T (median of D_perp/W over 2 <= m <= 16), the collisional
-share of the free-energy dissipation and the free energy at m > 3M/4.  Writes figures/<name>.{pdf,png} and
+share of the free-energy dissipation and the free energy at m > 3M/4.  For a series of three or more runs in k_perp
+(--by N) it also fits T/tau_nl against N by least squares with two forms, one that levels off,
+T/tau_nl = T_inf - B (N/N_0)^(-2/3) (each doubling of N adds a time proportional to the eddy time at the dissipation
+scale, which scales as k_d^(-2/3) in a Kolmogorov range), and one that grows without bound, T/tau_nl = a + b ln(N/N_0)
+(N_0 the lowest N), and gives both at N = 192 and 256.  Writes figures/<name>.{pdf,png} and
 data/<name>.json (default name h1_resolution_m).  Reads only saved data.
 
 Usage (from the repository root):
@@ -59,6 +63,26 @@ def averages(run_id: str, acc: dict) -> dict:
                 nu_share=float(Dn.sum() / (Dn.sum() + Dp.sum())), W_frac_high=float(W[3 * M // 4 + 1:].sum() / W.sum()))
 
 
+def fit_T_of_N(series: list[dict]) -> dict:
+    """Least-squares fits of T/tau_nl against N: levelling off, T_inf - B (N/N_0)^(-2/3), and logarithmic, a + b ln(N/N_0)."""
+    N = np.array([a["N"] for a in series], float)
+    y = np.array([a["T_over_tau_nl"] for a in series], float)
+    x = N / N[0]
+    out = {}
+    for name, col in (("level", -(x ** (-2.0 / 3.0))), ("log", np.log(x))):
+        A = np.vstack([np.ones_like(x), col]).T
+        c = np.linalg.lstsq(A, y, rcond=None)[0]
+        at = {}
+        for n in (192, 256):
+            xn = n / N[0]
+            at[str(n)] = float(c[0] + c[1] * (-(xn ** (-2.0 / 3.0)) if name == "level" else np.log(xn)))
+        out[name] = dict(coef=c.tolist(), at=at, rms_rel=float(np.sqrt(np.mean(((A @ c - y) / y) ** 2))))
+    out["level"]["T_inf"] = out["level"]["coef"][0]
+    out["log"]["b"] = out["log"]["coef"][1]
+    out.update(N=N.tolist(), T_over_tau_nl=y.tolist())
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--pair", action="append", required=True,
@@ -86,6 +110,12 @@ def main() -> int:
         print(f"beta_i = {b}: W_high/W_low (m = 1..16) {ratio.min():.3f}..{ratio.max():.3f}; 1/T {inv_t}; "
               f"T/tau_nl {t_tau}; collisional share {share}; "
               f"W at m > 3M/4 {a32['W_frac_high']:.4f} -> {a64['W_frac_high']:.4f}")
+        if args.by == "N" and len(series) >= 3:
+            out[b]["T_of_N"] = fit_T_of_N(series)
+            f = out[b]["T_of_N"]
+            print(f"    T/tau_nl(N): levelling off T_inf {f['level']['T_inf']:.1f}, ln N slope {f['log']['b']:.2f}; at N = 192, 256: "
+                  + ", ".join(f"{n}: {f['level']['at'][str(n)]:.1f} vs {f['log']['at'][str(n)]:.1f}" for n in (192, 256))
+                  + f"; rms residuals {f['level']['rms_rel']:.3f}, {f['log']['rms_rel']:.3f}")
     (P.DATA / f"{args.name}.json").write_text(json.dumps(P._jsonable(out), indent=1))
 
     fcfg = FS.style_config()
