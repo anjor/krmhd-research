@@ -1,0 +1,97 @@
+# H1 resolution check in k_perp, fourth point (64^3, 96^3, 128^3, 256^3) at beta_i = 0.3, M = 64: forced KRMHD on a
+# 256^3 grid, otherwise as configs/forced_beta0p3_n128.yaml.  T/tau_nl was 13.2, 16.4 and 18.4 at 64^3, 96^3 and
+# 128^3; a T that levels off (fit 27.3 - 14.2 (N/64)^(-2/3)) and one that grows as ln N (13.2 + 7.6 ln(N/64)) fit all
+# three and differ by 10% at 256^3, about three standard errors of T.  Approved by Anjor 2026-10-31 (estimate ~330 h on
+# an A100, ~$900-1000, after a short test).  Read by scripts/run_forced_turbulence.py; run on Modal with
+# scripts/modal_chain.py, which continues it with --resume past the 24 h limit of a call.
+#
+# Changes from forced_beta0p3_n128.yaml:
+#  * N = 256 (dealiasing band to |n| = 85); eta = 300 is normalised to the grid, so the hyper-resistive range moves to
+#    twice the wavenumber again.
+#  * Start: the end state of the 128^3 run (t = 66), zero-padded to 256^3, with g kept (keep_g) and the forcing keys
+#    continued (keep_keys); the time restarts at 0.  The new small scales and the sink adjust within a few T ~ 3 tau_A,
+#    so the run is 60 tau_A with the gate window (the final 50 tau_A) t = 10..60.  On Modal the restart file is read
+#    from the results volume (mounted at /results); elsewhere, copy it to data/ and change init.path.
+#  * The exact slice-radius evaluation every 200 steps and diagnostics every 160, twice the 128^3 values (dt halves).
+#  * Field lines: dz = 1/256 and a fifth k_perp band, 16..32.
+
+label: forced-beta0p3-n256
+
+box:
+  L: 1.0
+  N: 256
+
+velocity:
+  M: 64
+  Lambda: "-1 + 10/3 + sqrt(4 + 100/9)"
+  beta_i: 0.3
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0
+  hyper_r: 2
+  nu: "30*sqrt(0.5)*sqrt(0.3)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: /results/p1-n128/beta0p3/P1_forced-beta0p3-n128_20261018_184515/restart.npz   # end of the 128^3 run, t = 66
+  keep_g: true
+  keep_time: false
+  keep_keys: true
+  pad: true                     # zero-pad the 128^3 state to 256^3
+
+time:
+  t_end: 60.0                  # tau_A; gate window (the final 50 tau_A) t = 10..60
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
+  recompute_every: 200          # exact slice radius; rescaled every step in between
+  limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
+  sample_every: 160            # about 50 samples per tau_A
+  print_every: 1000
+  snapshot_every: 10.0         # complex64, about 4.4 GB each at this size
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.00390625             # 1/256
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16], [16, 32]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01

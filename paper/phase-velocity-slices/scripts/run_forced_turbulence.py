@@ -14,7 +14,9 @@ Alfvenic energies, spectra, dissipation, chi (energy-weighted and outer-scale). 
 resume.npz, the complete state of the loop (fields, keys, accumulators, time-step state, the records so far).  With
 --resume the script continues the latest unfinished run of the config's label in the data folder in place (same run
 ID and folder, one time series), so that a run interrupted after the start of the averaging window (a preemption, a
-timeout, a retry on Modal) need not be restarted or stitched; without an unfinished run it starts a new one.
+timeout, a retry on Modal) need not be restarted or stitched; without an unfinished run it starts a new one.  With
+--max-wall-hours H the script writes resume.npz and exits with status 3 (paused) once this invocation has run for H
+hours, so that a job with a wall-time limit (24 h on Modal) stops cleanly and is continued with --resume.
 
 Gates (CLAUDE.md; tau_A = L_z/v_A = 1 as in Studies 02 and 04): energy conservation of the ideal part (time-stepping
 error below 1% of the injected energy, Alfvenic and free energy); energy balance (injection = dissipation within 5%,
@@ -22,7 +24,7 @@ both energies); steady state (std/mean < 10% over the final 50 tau_A, Alfvenic e
 sanity and resolution.  The last three apply only to runs that cover the steady-state window.
 
 Usage (from the repository root):
-    uv run python paper/phase-velocity-slices/scripts/run_forced_turbulence.py paper/phase-velocity-slices/configs/forced_beta1.yaml [--resume]
+    uv run python paper/phase-velocity-slices/scripts/run_forced_turbulence.py paper/phase-velocity-slices/configs/forced_beta1.yaml [--resume] [--max-wall-hours H]
 """
 from __future__ import annotations
 
@@ -59,6 +61,15 @@ def pad_spectral(f: np.ndarray, N: int) -> np.ndarray:
     return out
 
 
+def device_peak() -> str:
+    """Peak memory in use on the (GPU) device so far, for the progress lines; empty where JAX does not report it."""
+    try:
+        st = jax.devices()[0].memory_stats() or {}
+    except Exception:
+        return ""
+    return f", device peak {st['peak_bytes_in_use'] / 2**30:.1f} GiB" if "peak_bytes_in_use" in st else ""
+
+
 def initial_fields(box: P.Box, M: int, cfg: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, dict]:
     """Initial z+-, g and time: from rest, or from a restart file of an earlier run (`init.path`, relative to the
     repository or absolute).  With keep_g false (or a different M) g starts at zero; the time restarts at 0 unless
@@ -86,6 +97,7 @@ def initial_fields(box: P.Box, M: int, cfg: dict) -> tuple[np.ndarray, np.ndarra
 
 
 RESUME_FILE = "resume.npz"
+PAUSED = 3                                               # exit status after --max-wall-hours
 
 
 def find_resumable(base: str | os.PathLike, label: str) -> P.Path | None:
@@ -110,7 +122,10 @@ def main() -> int:
     ap.add_argument("--base", default=None, help="data folder (default paper/phase-velocity-slices/data)")
     ap.add_argument("--resume", action="store_true",
                     help="continue the latest unfinished run of this config's label in the data folder, in place")
+    ap.add_argument("--max-wall-hours", type=float, default=None,
+                    help="write resume.npz and exit with status 3 once this invocation has run this long")
     args = ap.parse_args()
+    session0 = time.time()
     cfg = P.load_config(args.config)
     v = cfg["velocity"]
     M, Lam, beta = int(v["M"]), P.parse_number(v["Lambda"]), P.parse_number(v["beta_i"])
@@ -308,7 +323,7 @@ def main() -> int:
                   f"{float(r['pWm'][-1] / max(r['pWm'][0], 1e-300)):.1e}  res A/g "
                   f"{float(r['EAk'][box.nmax:].sum() / r['EAk'].sum()):.1e}/"
                   f"{float(r['Wmk'][box.nmax:].sum() / max(r['Wmk'].sum(), 1e-300)):.1e}  wall {el:.0f} s "
-                  f"({wall_steps / n:.3f} s/step)", flush=True)
+                  f"({wall_steps / n:.3f} s/step{device_peak()})", flush=True)
         if t >= next_snap - 1e-12:
             np.savez_compressed(run.dir / f"snap_{n_snap:03d}.npz", zp=np.asarray(state.z_plus, np.complex64),
                                 zm=np.asarray(state.z_minus, np.complex64), g=np.asarray(state.g, np.complex64),
@@ -320,6 +335,11 @@ def main() -> int:
             np.savez_compressed(run.dir / "partial_timeseries.npz", **P.stack_records(rec))
             next_rst += rst_dt
             save_resume()
+        if args.max_wall_hours is not None and t < t_end - 1e-12 and time.time() - session0 >= 3600 * args.max_wall_hours:
+            save_resume()
+            print(f"[{run.run_id}] paused at t = {t:.4f}, step {n}, after {args.max_wall_hours:g} h of wall time; "
+                  "continue with --resume", flush=True)
+            return PAUSED
     save_restart(str(run.dir / "restart.npz"))
     if (run.dir / "partial_timeseries.npz").exists():
         os.remove(run.dir / "partial_timeseries.npz")

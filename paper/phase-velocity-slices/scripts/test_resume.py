@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """Check of run_forced_turbulence.py --resume: a run that is killed after a resume file exists and then continued in
 place with --resume gives the same outputs (every float array of the run's .npz, to 1e-12) as the same run left
-uninterrupted, in one run folder, with resume.npz removed at the end.  The test config is forced_beta1.yaml at 32^3,
+uninterrupted, in one run folder, with resume.npz removed at the end.  The same for a run paused twice by
+--max-wall-hours 0 (exit status 3 after one step of each invocation, between samples and between the full time-step
+limits) and then continued to the end.  The test config is forced_beta1.yaml at 32^3,
 M = 8, from rest, for 24 steps (about a minute on a laptop CPU, mostly JIT compilation).  Exits with status 1 on failure.
 
 Usage (from the repository root):
@@ -48,15 +50,27 @@ def load(base: Path) -> dict[str, np.ndarray]:
         return {k: z[k] for k in z.files}
 
 
+def compare(a: dict[str, np.ndarray], b: dict[str, np.ndarray]) -> list:
+    """Arrays of two runs' .npz that differ in shape, type or (floats) by more than 1e-12 relative."""
+    bad = []
+    for k in a:
+        if a[k].shape != b[k].shape or a[k].dtype != b[k].dtype:
+            bad.append((k, f"{a[k].dtype}{a[k].shape} vs {b[k].dtype}{b[k].shape}"))
+        elif a[k].dtype.kind in "fc" and not np.allclose(a[k], b[k], rtol=1e-12, atol=1e-300, equal_nan=True):
+            bad.append((k, float(np.nanmax(np.abs(a[k] - b[k])))))
+    return bad
+
+
 def main() -> int:
     tmp = Path(tempfile.mkdtemp(prefix="resume_test_"))
     try:
         cfg = tmp / "resume_test.yaml"
         make_config(cfg)
         cmd = [sys.executable, SCRIPT, str(cfg)]
-        full, split = tmp / "full", tmp / "split"
+        full, split, paused = tmp / "full", tmp / "split", tmp / "paused"
         full.mkdir()
         split.mkdir()
+        paused.mkdir()
 
         # 1. uninterrupted
         subprocess.run(cmd + ["--base", str(full)], check=True, capture_output=True)
@@ -87,17 +101,25 @@ def main() -> int:
                   "one run folder": len(list(split.glob("P1_resume-test_*"))) == 1,
                   "resume.npz removed": not (dirs[0] / "resume.npz").exists()}
 
-        # 3. compare
-        a, b = load(full), load(split)
-        bad = []
-        for k in a:
-            if a[k].shape != b[k].shape or a[k].dtype != b[k].dtype:
-                bad.append((k, f"{a[k].dtype}{a[k].shape} vs {b[k].dtype}{b[k].shape}"))
-            elif a[k].dtype.kind in "fc" and not np.allclose(a[k], b[k], rtol=1e-12, atol=1e-300, equal_nan=True):
-                bad.append((k, float(np.nanmax(np.abs(a[k] - b[k])))))
-        ok = all(checks.values()) and not bad
-        print(f"interrupted at t = {t_kill:.4f}; checks {checks}; {len(a)} arrays compared; "
-              f"mismatches: {bad if bad else 'none'}")
+        # 3. paused twice by --max-wall-hours 0 (after one step of each invocation), then continued to the end
+        codes, t_pause = [], []
+        for extra in (["--max-wall-hours", "0"], ["--resume", "--max-wall-hours", "0"], ["--resume"]):
+            r = subprocess.run(cmd + ["--base", str(paused)] + extra, capture_output=True, text=True)
+            codes.append(r.returncode)
+            t_pause += re.findall(r"paused at t = ([0-9.]+), step (\d+)", r.stdout)
+        pdirs = list(paused.glob("P1_resume-test_*"))
+        checks.update({"pause exit statuses 3, 3, 0": codes == [3, 3, 0],
+                       "paused after steps 1 and 2": [int(x[1]) for x in t_pause] == [1, 2],
+                       "paused run in one folder": len(pdirs) == 1,
+                       "paused run: resume.npz removed": not (pdirs[0] / "resume.npz").exists()})
+
+        # 4. compare
+        a, b, c = load(full), load(split), load(paused)
+        bad = compare(a, b)
+        bad_p = compare(a, c)
+        ok = all(checks.values()) and not bad and not bad_p
+        print(f"interrupted at t = {t_kill:.4f}; paused at {t_pause}; checks {checks}; {len(a)} arrays compared; "
+              f"mismatches: killed {bad if bad else 'none'}, paused {bad_p if bad_p else 'none'}")
         print("PASS" if ok else "FAIL")
         return 0 if ok else 1
     finally:
