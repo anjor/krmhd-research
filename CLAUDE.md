@@ -1,13 +1,5 @@
 # CLAUDE.md — Instructions for AI-Assisted Research
 
-## Setup
-
-```bash
-uv sync
-```
-
-This installs all dependencies (GANDALF, JAX, NumPy, etc.) into a local `.venv/`. Use `uv run` to execute scripts, e.g. `uv run python scripts/run.py`.
-
 ## Project Context
 
 This repo orchestrates numerical experiments using the GANDALF KRMHD spectral solver. You are helping a plasma physicist run simulations, analyze data, and write papers. The physicist provides physics judgment; you handle implementation.
@@ -56,17 +48,6 @@ Study 04's loop follows `studies/04-phase-space-helicity/LOOP.md`. Its checkpoin
 - Wrap API or critic calls in timeouts of 15 minutes or less, never 2 hours. On timeout, log it and retry or skip; don't hang.
 - Keep critic review rounds bounded (max 2 per artifact) so gates don't stall.
 
-### Status reports
-When asked for status, answer in this fixed format:
-1. Running / stopped
-2. Current phase & gate
-3. Last completed step
-4. Blockers
-5. What I need from you
-6. Next action
-
-Read it from the checkpoint file (`STATUS.md` for Study 04) instead of reconstructing it from logs.
-
 ## Environment
 
 ### Environment & permissions
@@ -81,7 +62,6 @@ Read it from the checkpoint file (`STATUS.md` for Study 04) instead of reconstru
 
 ## Code Style
 
-- Python 3.10+
 - Type hints on all functions
 - Docstrings with physics context (what quantity, what units, what equation)
 - JAX idioms: prefer `jax.vmap`, `jax.lax.scan` over Python loops
@@ -98,52 +78,9 @@ Target: Journal of Plasma Physics
 - Always label axes with physics notation (e.g., $k_\perp \rho_i$, $W(m)$)
 - Save as both PDF (for paper) and PNG (for quick inspection)
 
-## GANDALF API Quick Reference
-
-```python
-from krmhd.config import SimulationConfig
-from krmhd.timestepping import gandalf_step, compute_cfl_timestep
-from krmhd.diagnostics import (
-    EnergyHistory,            # Energy time series tracker
-    compute_energy,           # Dict with 'magnetic', 'kinetic', 'compressive', 'total'
-    hermite_moment_energy,    # W(m) spectrum
-    hermite_flux,             # Forward/backward Hermite flux
-    energy_spectrum_perpendicular,  # E(k_perp)
-)
-from krmhd.forcing import force_alfven_modes_gandalf
-from krmhd.io import save_checkpoint, save_timeseries, load_timeseries
-
-# Load config from YAML
-config = SimulationConfig.from_yaml("configs/M032.yaml")
-
-# Create grid and initial state
-grid = config.create_grid()
-state = config.create_initial_state(grid)
-
-# Time stepping (no single run_simulation — loop with gandalf_step)
-dt = compute_cfl_timestep(state, config.physics.v_A)
-state = gandalf_step(state, dt, config.physics.eta, config.physics.v_A)
-```
-
 ## Directory Conventions
 
-- `configs/` — YAML parameter files (committed)
-- `scripts/` — Run orchestration and sweeps (committed)
-- `analysis/` — Post-processing and plotting (committed)
-- `figures/` — Output plots (committed, PDF + PNG)
 - `data/` — Simulation outputs (**.gitignored**, stored on Modal volumes or S3)
-
-## Modal Usage
-
-```python
-from infrastructure.modal_runner import submit_run, fetch_results
-
-# Submit a single run
-run_id = submit_run("studies/01-hermite-convergence/configs/M032.yaml")
-
-# Fetch diagnostic data when complete
-data = fetch_results(run_id)
-```
 
 ## What NOT to do
 
