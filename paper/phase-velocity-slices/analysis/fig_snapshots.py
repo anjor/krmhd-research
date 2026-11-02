@@ -9,8 +9,10 @@ advected by u_E alone, and the slices with s u_j = -1 and +1 by z- and z+ alone 
 patterns differ although they start identical.  The density moment g_0 = sum_j R_0j a_j is their superposition.
 
 Panels, on the plane z = z0 of the run: (a) g_0 at t = 0; (b) g_0 at the last output (1.5 outer eddy times);
-(c)-(e) the slices with s u_j nearest to -1, 0 and +1 at the last output, each normalised by p_0 R_0j so that all
-three start from the same f.  viridis, symmetric colour scale shared within each group ((a)-(b) and (c)-(e)).
+(c)-(e) the slices with s u_j nearest to -1, 0 and +1 at the last output, each divided by c_j = p_0 R_0j, the
+constant with a_j(0) = c_j f, so that all three start from the same f.  The material of slice j on the plane z = z0
+started on the plane z0 - s u_j t (the z-component of U_u is s u_j), so its peak there falls by about
+exp[-(s u_j t)^2/(2 sigma_z^2)]; peak_ratio_shown and streaming_prediction in the json compare the two.  viridis, symmetric colour scale shared within each group ((a)-(b) and (c)-(e)).
 
 Reads only the saved .npz of the latest run P1_slices-turb_*; writes figures/snapshots.pdf and .png and
 data/computed/fig_snapshots.json (the numbers quoted in the text: chi, tau, the u_j shown, slice energies, the
@@ -80,6 +82,10 @@ def main() -> int:
                    u_shown=[float(u[j]) for j in j_show], su_shown=[float(s * u[j]) for j in j_show],
                    u_nodes=u.tolist(), g0_max=[float(np.abs(g).max()) for g in g0],
                    slice_max_shown=[float(np.abs(a).max()) for a in slices_norm],
+                   peak_ratio_shown=[float(np.abs(a).max() / np.abs(g0[0]).max()) for a in slices_norm],
+                   streaming_shift_shown=[float(s * u[j] * t_out[-1]) for j in j_show],
+                   streaming_prediction=[float(np.exp(-(s * u[j] * t_out[-1]) ** 2
+                                                      / (2.0 * float(cfg["blob"]["sigma"][2]) ** 2))) for j in j_show],
                    E_slice=d["snap__E_slice"].tolist(),
                    E_slice_ratio_last=(d["snap__E_slice"][-1] / d["snap__E_slice"][0]).tolist(),
                    budget_residual_last=((d["E_slice_series"][-1] + d["D_slice_series"][-1])
@@ -106,7 +112,7 @@ def main() -> int:
         v2 = float(max(np.abs(a).max() for a in slices_norm))
         imgs = [g0[0], g0[-1]] + slices_norm
         vm = [v1, v1, v2, v2, v2]
-        labels = [r"(a) $t=0$", rf"(b) $t={t_out[-1] / tau:.1f}\,t_{{\rm nl}}$"] + \
+        labels = [r"(a) $t=0$", rf"(b) $t={t_out[-1] / tau:.1f}\,\tau_{{\rm nl}}$"] + \
                  [(rf"({c}) $su_j={s * u[j]:+.2f}$" if abs(s * u[j]) > 1e-9 else rf"({c}) $u_j=0$")
                   for c, j in zip("cde", j_show)]
         for k, (ax, im, v, lab) in enumerate(zip(axes, imgs, vm, labels)):
@@ -128,7 +134,7 @@ def main() -> int:
         for cb in (cb1, cb2):
             cb.ax.tick_params(labelsize=style["legend_font_size_pt"], length=2, direction="out")
         cb1.ax.set_title(r"$g_0$", fontsize=style["legend_font_size_pt"] + 1, pad=4)
-        cb2.set_label(r"$a_j/(p_0R_{0j})$", labelpad=2)
+        cb2.set_label(r"$a_j/c_j$", labelpad=2)
         return fig
 
     numbers["rendering"] = render(draw, NAME, style)
