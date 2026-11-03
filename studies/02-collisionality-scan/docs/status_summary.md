@@ -1,97 +1,49 @@
-# Study 02 — Current Status Summary (2026-03-30)
+# Study 02 — Closed (2026-11-03)
 
 ## Goal
 
-Demonstrate the KRMHD **dissipative anomaly**: ε_ν → const as ν → 0.
+Study 02 set out to show the KRMHD dissipative anomaly: a collisional
+dissipation rate ε_ν in Hermite space that stays finite and independent of ν
+as ν → 0 in driven, nonlinear turbulence.
 
-ε_ν = 2ν Σ_{m≥2} (m/M)^n W_m is the collisional dissipation rate in Hermite
-velocity space. The anomaly predicts this is independent of ν at steady state.
+## What was done
 
-## Physics setup
+After the March–April calibration (see `run_log.md` here, `docs/run_log.md`
+and `docs/collaboration_report.md`), the production scan ran six values of ν
+(1, 3, 5, 10, 20, 50) at 128³ and M = 128 on GANDALF v0.5.0 with the
+IMEX-RK222 integrator. Each run lasted 200 τ_A from a common Alfvénic
+checkpoint. A Hermite-resolution check at ν = 3 used M = 64 and M = 256. The
+time-averaged ε_ν came out the same at every ν, and W(m) followed m^{-1/2}.
+A paper draft was written in `paper/dissipative-anomaly/`.
 
-- **Alfvénic cascade** (z± modes): forced externally with `force_alfven_modes_gandalf`,
-  fampl=0.005, k_min=1, k_max=2. These evolve independently of g.
-- **Hermite cascade** (g_m modes): forced on g₀ with `force_hermite_moments`,
-  amplitude=0.0035. Energy cascades from m=0 to higher m via parallel streaming,
-  and is dissipated by collisions ν(m/M)^n at m≥2.
-- z± advects g via Poisson bracket {Φ, g_m} (mixes but doesn't inject net energy).
-- Both cascades must independently reach steady state.
+## Outcome
 
-## What we've tried and what happened
+The Alfvénic base state turned out to be weakly turbulent, and the Hermite
+sector evolved almost entirely by linear phase mixing. The flat ε_ν and the
+m^{-1/2} spectrum are the linear phase-mixing result already derived by Zocco
+& Schekochihin (2011, Phys. Plasmas 18, 102309) and Kanekar, Schekochihin,
+Dorland & Loureiro (2015, J. Plasma Phys. 81, 305810104). They are not
+evidence of a dissipative anomaly in nonlinear turbulence. The forcing on g_0
+is white noise, so it fixes the injected power, and in steady state ε_ν equals
+that power whatever the value of ν.
 
-### Attempt 1: hyper_n=2, M=32, amplitude=0.15
-- **Result**: Blowup at t≈135 τ_A (ν=0.1). eps_nu grows exponentially.
-- **Diagnosis**: amplitude too large (ε_inj ≈ 1.1/τ_A, 900× too strong).
+## Decision
 
-### Attempt 2: hyper_n=2, M=32, amplitude=0.005
-- **Result**: Also blows up, just slower (eps_nu doubles every 3-4 τ_A).
-- **Diagnosis**: Not an amplitude problem. Cascade rate (~14/τ_A) >> damping rate
-  (ν=0.01/τ_A) at truncation m=M. Energy reflects off the zero closure at m=M.
+On 2026-11-03 Anjor decided not to submit the paper and to close the study. A
+paper limited to the linear problem would mostly repeat Kanekar et al. (2015).
+A rerun of the scan at χ ~ 1 was considered and not taken up.
 
-### Attempt 3: hyper_n=6, M=128, amplitude=0.0035 (GANDALF benchmark params)
-- **GANDALF benchmark** (ν=0.25, Lambda=-1.0, 0.84 τ_A): Appeared to work —
-  clean m^{-1/2} spectrum from m=2-20, 98% forward flux. But the run was too
-  short to reveal the instability.
-- **Study 02 run** (ν=0.01, Lambda=2.236, 94+ τ_A): Blows up identically.
-  eps_nu exponential from t≈25 τ_A onward.
-- **Diagnosis**: hyper_n=6 doesn't fix the fundamental problem. With GANDALF's
-  normalization ν(m/M)^6, the damping at m=M is just ν — still orders of magnitude
-  below the cascade rate.
+## What is kept
 
-### Attempt 4: ν stability scan (ν = 0.25 to 100, M=32, hyper_n=6)
-- **Status**: Submitted to Modal, partial results before crash.
-- ν=0.5 confirmed BLOWUP (27× growth in 20k steps).
-- Higher ν runs (10, 25, 50, 100) may be more stable but results lost to
-  numpy version mismatch in deserialization. Need to rerun.
+- `configs/`, `scripts/` and `analysis/` are unchanged. Study 04's `SPEC.md`
+  was written from `scripts/modal_128_hermite.py` and from §2 of the paper
+  draft, so both stay.
+- `paper/dissipative-anomaly/` keeps the draft as a record, with a README
+  saying it will not be submitted.
+- Data: `studies/02-collisionality-scan/data/` on Anjor's laptop (6.7 GB,
+  gitignored) and the Modal volume `krmhd-benchmark-vol`.
+- The run records in `run_log.md` and `docs/run_log.md` are left as written.
+  Their "dissipative anomaly" notes predate this outcome.
 
-## The core problem
-
-The Hermite cascade rate at mode m scales as √β_i · k_∥ · √(m/2). At the
-truncation m=M, this is roughly 2π·√(M/2) ≈ 25-50 per τ_A (for M=32-128).
-
-The collisional damping at m=M is ν·(M/M)^n = ν, regardless of n.
-
-For steady state, damping must balance cascade flux at or before the truncation.
-This requires **ν ≫ 1** (potentially ν > 25-50) — far above our intended scan
-range of ν = 0.01 to 0.1.
-
-The zero closure (g_{M+1} = 0) acts as a reflecting boundary. Energy that reaches
-m=M bounces back, piling up and growing without bound.
-
-## What's left to try
-
-1. **Very high ν** (ν = 10-100) to confirm stability exists, then find the
-   minimum stable ν. The scan is interrupted — needs rerun with fixed deserialization.
-
-2. **Absorbing closure** instead of zero closure at m=M — GANDALF supports
-   `closure_symmetric()`. This might absorb energy at the truncation rather than
-   reflecting it.
-
-3. **Hermite-only runs** (disable Alfvénic forcing) to check if the {Φ, g_m}
-   mixing term is contributing to the instability by concentrating g energy at
-   high-k_∥ modes where the cascade is faster.
-
-4. **Much larger M** (M=512 or 1024) to give the spectrum room to decay before
-   the truncation. Expensive but might be necessary.
-
-5. **Different hyper_n convention** — the thesis uses νm^n (not ν(m/M)^n). Could
-   use standard collisions (hyper_n=1) with higher ν to match thesis behavior.
-
-## Code state
-
-- Branch: `collisionality-scan-benchmark-params`
-- GANDALF: pinned to v0.4.4
-- All 9 configs: M=128, hyper_n=6, amplitude=0.0035, forced_moments=[0]
-- `modal_app.py` and `run_local.py`: hermite forcing is config-driven
-- `modal_nu_scan.py`: parallel ν scan script (needs numpy fix for deserialization)
-
-## Key files
-
-- `infrastructure/modal_app.py` — Modal GPU runner
-- `studies/02-collisionality-scan/configs/*.yaml` — simulation configs
-- `studies/02-collisionality-scan/scripts/modal_nu_scan.py` — parallel ν scan
-- `studies/02-collisionality-scan/analysis/dissipation_plateau.py` — analysis/plots
-- GANDALF source: `.venv/lib/python3.14/site-packages/krmhd/`
-  - `forcing.py:1120-1239` — force_hermite_moments
-  - `timestepping.py:549-585` — collision operator
-  - `physics.py:876-1127` — g_m RHS equations (includes {Φ, g_m} coupling)
+The previous version of this file (status on 2026-03-30) is in git history:
+`git show c89540a:studies/02-collisionality-scan/docs/status_summary.md`.

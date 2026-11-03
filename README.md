@@ -5,7 +5,7 @@ Numerical experiments on phase-space cascades in kinetic plasma turbulence, usin
 ## Studies
 
 1. **Hermite convergence in nonlinear driven turbulence** — How many velocity-space moments are needed? What is the Hermite spectrum scaling?
-2. **Collisionality scan** — Verifying the dissipative anomaly (heating rate independent of collision frequency)
+2. **Collisionality scan** — Verifying the dissipative anomaly (heating rate independent of collision frequency). Closed on 2026-11-03 without a paper: the runs were weakly turbulent and reproduced the known linear phase-mixing result (see `studies/02-collisionality-scan/docs/status_summary.md`).
 3. **Echo efficiency in imbalanced turbulence** — How does cross-helicity suppress plasma echo?
 
 See [RESEARCH_PLAN.md](RESEARCH_PLAN.md) for full details.

@@ -1,5 +1,10 @@
 # Hermite Cascade Handoff — April 2026
 
+> **Superseded (2026-11-03).** The ν-independent ε_ν reported below is the
+> linear phase-mixing result, not a dissipative anomaly in nonlinear
+> turbulence: the base state was weakly turbulent. Study 02 is closed; see
+> `studies/02-collisionality-scan/docs/status_summary.md`.
+
 ## Current status (2026-04-18)
 
 **Unblocked.** GANDALF v0.5.0 (PR anjor/gandalf#138) ships an IMEX-RK222

@@ -91,6 +91,10 @@ The measured Hermite exponents range from −1/2 to −2 across different models
 
 ## Study 2: Collisionality Scan — The Dissipative Anomaly
 
+### Outcome (closed 2026-11-03)
+
+The ν-scan ran at 128³ and M = 128 over ν = 1 to 50 and found ε_ν independent of ν. The base state turned out to be weakly turbulent, so the result is the linear phase-mixing one already known from Zocco & Schekochihin (2011) and Kanekar et al. (2015), not a dissipative anomaly in nonlinear turbulence. Paper 2 was dropped and the study closed. See `studies/02-collisionality-scan/docs/status_summary.md`. The plan below is kept as originally written.
+
 ### Motivation
 
 The "dissipative anomaly" — the collisionless analogue of the zeroth law of turbulence — predicts that the total turbulent heating rate Q_tot becomes independent of collision frequency ν as ν → 0. This is a foundational result: it guarantees efficient heating in extremely collisionless plasmas (solar wind, accretion flows, ICM). Nastac, Tatsuno & Schekochihin (2024) extended the theoretical proof to the phase-space entropy cascade. Numerical confirmation in driven 3D KRMHD turbulence has never been published.
@@ -166,7 +170,7 @@ This connects directly to the helicity barrier (Squire et al. 2022, Nature Astro
 
 ### Prerequisites
 
-Studies 1 and 2 establish resolution requirements and confirm the dissipative anomaly. We know how to set up a converged, steady-state driven turbulence run.
+Studies 1 and 2 establish resolution requirements and confirm the dissipative anomaly. We know how to set up a converged, steady-state driven turbulence run. (2026-11-03: Study 2 closed without confirming the anomaly in nonlinear turbulence; see its Outcome. Study 3 cannot rely on a measured ν plateau.)
 
 ### Parameter space
 
@@ -175,7 +179,7 @@ Studies 1 and 2 establish resolution requirements and confirm the dissipative an
 | **σ_c** | 0.0, 0.3, 0.5, 0.7, 0.9 | Balanced → strongly imbalanced |
 | **Forcing amplitude** | 3 levels (weak/moderate/strong) | Controls δB/B_0 |
 | M | From Study 1 | Fixed |
-| ν | 0.01 (in plateau from Study 2) | Fixed |
+| ν | 0.01 (planned as "in plateau from Study 2"; Study 2 did not establish one) | Fixed |
 | β_i | 0.3, 1.0 | Low-β (solar wind–like) + moderate |
 | N⊥ | 128² | Higher resolution for echo diagnostics |
 
