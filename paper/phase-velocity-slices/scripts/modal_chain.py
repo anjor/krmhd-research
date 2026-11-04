@@ -8,7 +8,10 @@ fixes when the app is deployed: from a GANDALF clone at the pinned release,
 --resume (the first starts a new run, later ones continue it in place) and --max-wall-hours (default 23), so that it
 writes resume.npz and exits with status 3 before the limit.  The chain stops when the run finishes (status 0), when
 a call ends any other way (an error, a non-zero status other than 3, a call that fails or is cancelled), when a paused
-call made no progress, or after --max-calls calls.  The live call ID is kept in data/modal_chain_<subdir>.json: a
+call made no progress, or after --max-calls calls.  Network errors while waiting for a call (this computer asleep or
+offline) do not stop the chain: the call runs on Modal regardless, so the wait is retried, with pauses growing from
+30 s to 5 min.  A failed spawn is retried only when the error shows the request never reached Modal (name lookup or
+connection refused); after any other spawn error a call may exist, so the chain stops.  The live call ID is kept in data/modal_chain_<subdir>.json: a
 restarted chain waits for that call instead of spawning a second one into the same run folder.  Each event is printed
 and appended to --log.
 
@@ -22,10 +25,12 @@ import argparse
 import io
 import json
 import re
+import socket
 import sys
 import tarfile
 import time
 from pathlib import Path
+from typing import Callable
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent.parent
@@ -33,6 +38,57 @@ DATA = HERE.parent / "data"
 FUNCTION = "run_script_gpu"
 SCRIPT = "paper/phase-velocity-slices/scripts/run_forced_turbulence.py"
 PAUSED = 3
+RETRY_FIRST, RETRY_MAX = 30.0, 300.0      # pauses (s) between retries after a network error
+
+
+def network_error(exc: BaseException) -> bool:
+    """True for errors of the local connection to Modal (name lookup, refused or dropped connections, gRPC
+    deadlines), which say nothing about the state of a call.  Modal raises its own ConnectionError for these once its
+    internal retries are used up."""
+    import modal.exception
+    return isinstance(exc, (modal.exception.ConnectionError, OSError))
+
+
+def never_sent(exc: BaseException | None) -> bool:
+    """True if a network error happened before any request reached Modal (failed name lookup, refused connection),
+    so that a spawn which raised it cannot have started a call."""
+    while exc is not None:
+        if isinstance(exc, (socket.gaierror, ConnectionRefusedError)) or "Could not connect to the Modal server" in str(exc):
+            return True
+        exc = exc.__cause__ or exc.__context__
+    return False
+
+
+def wait_for(call_id: str, poll: float, event: Callable[[str], None], tick: Callable[[], None] | None = None) -> dict:
+    """Result of a spawned call, checked every `poll` seconds (`tick` runs after each check that finds it unfinished).
+    Network errors are retried; any other error (the call failed, was cancelled, timed out or its output expired) is
+    raised."""
+    import modal
+    call, down, pause, retries = None, None, RETRY_FIRST, 0
+    while True:
+        try:
+            if call is None:
+                call = modal.FunctionCall.from_id(call_id)
+            result = call.get(timeout=poll)
+        except TimeoutError:              # the builtin one: still running (subclass of OSError, so caught first)
+            result = None
+        except Exception as exc:
+            if not network_error(exc):
+                raise
+            if down is None:
+                down = time.time()
+                event(f"network error while waiting for {call_id} ({type(exc).__name__}: {exc}); retrying")
+            retries += 1
+            time.sleep(pause)
+            pause = min(2 * pause, RETRY_MAX)
+            continue
+        if down is not None:
+            event(f"reconnected to {call_id} after {time.time() - down:.0f} s ({retries} retries)")
+            down, pause, retries = None, RETRY_FIRST, 0
+        if result is not None:
+            return result
+        if tick is not None:
+            tick()
 
 
 def pack(paths: list[str]) -> bytes:
@@ -84,13 +140,25 @@ def main() -> int:
     env = {"JAX_PLATFORMS": "cuda", "XLA_PYTHON_CLIENT_MEM_FRACTION": "0.95"}
     fn = modal.Function.from_name(args.app, FUNCTION)
     last_t = -1.0
+    spawn_pause = RETRY_FIRST
     while True:
         live = state.get("live")
         if live is None:
             if len(state["calls"]) >= args.max_calls:
                 event(f"stopping: {args.max_calls} calls made")
                 return 1
-            call = fn.spawn(data, SCRIPT, cmd, args.subdir, 600.0, env)
+            try:
+                call = fn.spawn(data, SCRIPT, cmd, args.subdir, 600.0, env)
+            except Exception as exc:
+                if network_error(exc) and never_sent(exc):
+                    event(f"spawn did not reach Modal ({type(exc).__name__}: {exc}); retrying in {spawn_pause:.0f} s")
+                    time.sleep(spawn_pause)
+                    spawn_pause = min(2 * spawn_pause, RETRY_MAX)
+                    continue
+                event(f"STOP: spawn failed with {type(exc).__name__}: {exc}; a call may have started, so check the "
+                      f"app's running calls on the Modal dashboard before restarting the chain")
+                return 1
+            spawn_pause = RETRY_FIRST
             live = state["live"] = call.object_id
             state["calls"].append(dict(id=live, app=args.app, spawned=time.strftime("%Y-%m-%d %H:%M:%S")))
             save_state()
@@ -98,19 +166,14 @@ def main() -> int:
                   f"{SCRIPT} {' '.join(cmd)} -> gandalf-results:{args.subdir}")
         else:
             event(f"waiting for live call {live}")
-        call = modal.FunctionCall.from_id(live)
-        while True:
-            try:
-                result = call.get(timeout=args.poll)
-                break
-            except TimeoutError:
-                continue
-            except Exception as exc:          # failed, cancelled, expired or timed out
-                state["live"] = None
-                state["calls"][-1].update(ended=time.strftime("%Y-%m-%d %H:%M:%S"), outcome=f"{type(exc).__name__}: {exc}")
-                save_state()
-                event(f"STOP: call {live} ended with {type(exc).__name__}: {exc}")
-                return 1
+        try:
+            result = wait_for(live, args.poll, event)
+        except Exception as exc:              # failed, cancelled, expired or timed out
+            state["live"] = None
+            state["calls"][-1].update(ended=time.strftime("%Y-%m-%d %H:%M:%S"), outcome=f"{type(exc).__name__}: {exc}")
+            save_state()
+            event(f"STOP: call {live} ended with {type(exc).__name__}: {exc}")
+            return 1
         rc = result.get("returncode")
         tail = result.get("log_tail") or ""
         state["live"] = None

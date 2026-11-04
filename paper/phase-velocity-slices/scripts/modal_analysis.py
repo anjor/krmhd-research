@@ -5,7 +5,7 @@ Spawns one of the paper's scripts on the CPU function (run_script_cpu) of a depl
 scripts/, analysis/ and configs/ folders packed as in modal_chain.py, waits for it, and downloads the small outputs it
 wrote on the gandalf-results volume.  The script's arguments name volume paths as the container sees them
 (/results/...).  The CPU count and memory are those of the deployment (MODAL_SCRIPT_CPU, MODAL_SCRIPT_MEMORY_MB).
-The output of the script goes to modal_run.log in --subdir on the volume and its last lines are printed.  On the
+The output of the script goes to modal_run.log in --subdir on the volume and its last lines are printed.  Network errors while waiting are retried as in modal_chain.py.  On the
 B200 deployment (8 CPUs, 64 GB) h1_fieldlines.py takes about 3.5 min for a 128^3 snapshot, matching a local run to
 3e-10, and 22 min for a 256^3 snapshot; snapshots can go to separate calls in parallel.
 
@@ -26,7 +26,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from modal_chain import REPO, pack  # noqa: E402
+from modal_chain import REPO, pack, wait_for  # noqa: E402
 
 FUNCTION = "run_script_cpu"
 PACKED = ["paper/phase-velocity-slices/scripts", "paper/phase-velocity-slices/analysis",
@@ -74,12 +74,8 @@ def main() -> int:
     t0 = time.time()
     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} spawned {call.object_id} on {args.app}/{FUNCTION}: "
           f"{script} {' '.join(script_args)}", flush=True)
-    while True:
-        try:
-            result = call.get(timeout=args.poll)
-            break
-        except TimeoutError:
-            print(f"  ... {time.time() - t0:.0f} s", flush=True)
+    result = wait_for(call.object_id, args.poll, lambda msg: print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {msg}", flush=True),
+                      tick=lambda: print(f"  ... {time.time() - t0:.0f} s", flush=True))
     print(result.get("log_tail") or result.get("traceback") or "", flush=True)
     rc = result.get("returncode")
     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {call.object_id}: status {result.get('status')}, return code {rc}, "
