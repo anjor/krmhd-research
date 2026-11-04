@@ -11,17 +11,21 @@ share of the free-energy dissipation and the free energy at m > 3M/4.  For a ser
 (--by N) it also fits T/tau_nl against N by least squares with two forms, one that levels off,
 T/tau_nl = T_inf - B (N/N_0)^(-2/3) (each doubling of N adds a time proportional to the eddy time at the dissipation
 scale, which scales as k_d^(-2/3) in a Kolmogorov range), and one that grows without bound, T/tau_nl = a + b ln(N/N_0)
-(N_0 the lowest N), and gives both at N = 192 and 256.  Writes figures/<name>.{pdf,png} and
-data/<name>.json (default name h1_resolution_m).  Reads only saved data.
+(N_0 the lowest N), and gives both at N = 192 and 256.  The uncertainty of each T is the standard error of 1/T over
+four equal blocks of the window.  For four or more runs it also fits the forms to all runs but the highest N and
+compares their prediction there, with the uncertainty propagated from the fitted values, to the measured T (the test
+the highest resolution was run for), and gives the chi^2 of fits weighted by the uncertainties to all runs.  Writes
+figures/<name>.{pdf,png} and data/<name>.json (default name h1_resolution_m).  Reads only saved data.
 
 Usage (from the repository root):
     uv run python paper/phase-velocity-slices/analysis/h1_compare_m.py --pair 1:<run M=32>:<run M=64> [--pair ...]
-    uv run python paper/phase-velocity-slices/analysis/h1_compare_m.py --by N --name h1_resolution_n --pair 0.3:<64^3>:<96^3>:<128^3>
+    uv run python paper/phase-velocity-slices/analysis/h1_compare_m.py --by N --name h1_resolution_n --pair 0.3:<64^3>:<96^3>:<128^3>:<256^3>
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -33,6 +37,24 @@ sys.path.insert(0, str(HERE.parent / "scripts"))
 import figstyle as FS  # noqa: E402
 import p1lib as P  # noqa: E402
 import h1lib as H  # noqa: E402
+
+
+def block_inv_T(run_id: str, window: list[float], n_blocks: int = 4) -> list[float]:
+    """1/T (median of D_perp(m)/W(m) over 2 <= m <= 16) in each of n_blocks equal parts of the window."""
+    rd = P.DATA / run_id
+    with np.load(rd / f"{run_id}.npz") as z:
+        ts = {k[4:]: z[k] for k in z.files if k.startswith("ts__")}
+    t, dtk = ts["t"], ts["acc_sum_dt"]
+    edges = np.linspace(window[0], window[1], n_blocks + 1)
+    out = []
+    for a, b in zip(edges[:-1], edges[1:]):
+        first = int(np.searchsorted(t, a - 1e-9))
+        last = int(np.searchsorted(t, b + 1e-9))          # samples first..last-1
+        W = H.time_average(ts["pWm"][:last], dtk[:last], first)
+        Dp = ts["acc_loss_eta"][first + 1:last].sum(0) / dtk[first + 1:last].sum()
+        m = np.arange(len(W))
+        out.append(float(np.median((Dp / W)[(m >= 2) & (m <= 16)])))
+    return out
 
 
 def averages(run_id: str, acc: dict) -> dict:
@@ -60,26 +82,49 @@ def averages(run_id: str, acc: dict) -> dict:
     return dict(run_id=run_id, M=M, N=int(meta["config"]["box"]["N"]), tau_nl=tau_nl,
                 T_over_tau_nl=(1.0 / inv_T / tau_nl) if tau_nl else None, window=[float(t[first]), float(t[-1])], eps=eps, W_over_eps=(W / eps).tolist(),
                 Dperp_over_W=q.tolist(), inv_T=inv_T,
-                nu_share=float(Dn.sum() / (Dn.sum() + Dp.sum())), W_frac_high=float(W[3 * M // 4 + 1:].sum() / W.sum()))
+                nu_share=float(Dn.sum() / (Dn.sum() + Dp.sum())), W_frac_high=float(W[3 * M // 4 + 1:].sum() / W.sum()),
+                inv_T_block_se=inv_T_se(block_inv_T(run_id, [float(t[first]), float(t[-1])])))
+
+
+def inv_T_se(binv: list[float]) -> float:
+    """Relative standard error of the mean of the block values of 1/T (also that of T, to first order)."""
+    return float(np.std(binv, ddof=1) / math.sqrt(len(binv)) / np.mean(binv))
 
 
 def fit_T_of_N(series: list[dict]) -> dict:
-    """Least-squares fits of T/tau_nl against N: levelling off, T_inf - B (N/N_0)^(-2/3), and logarithmic, a + b ln(N/N_0)."""
+    """Fits of T/tau_nl against N: levelling off, T_inf - B (N/N_0)^(-2/3), and logarithmic, a + b ln(N/N_0).
+
+    Unweighted least squares to all runs (coef, values at N = 192 and 256, rms relative residual) and, with the block
+    standard errors sigma of T, the weighted fit and its chi^2.  With four or more runs, the unweighted fit to all but
+    the highest N predicts T there, with the uncertainty propagated from sigma of the fitted runs, against the measured
+    value: z = (measured - predicted) / sqrt(sigma_pred^2 + sigma_meas^2)."""
     N = np.array([a["N"] for a in series], float)
     y = np.array([a["T_over_tau_nl"] for a in series], float)
+    sig = y * np.array([a["inv_T_block_se"] for a in series], float)
     x = N / N[0]
+    cols = {"level": lambda u: -(u ** (-2.0 / 3.0)), "log": np.log}
     out = {}
-    for name, col in (("level", -(x ** (-2.0 / 3.0))), ("log", np.log(x))):
-        A = np.vstack([np.ones_like(x), col]).T
+    for name, col in cols.items():
+        A = np.vstack([np.ones_like(x), col(x)]).T
         c = np.linalg.lstsq(A, y, rcond=None)[0]
-        at = {}
-        for n in (192, 256):
-            xn = n / N[0]
-            at[str(n)] = float(c[0] + c[1] * (-(xn ** (-2.0 / 3.0)) if name == "level" else np.log(xn)))
-        out[name] = dict(coef=c.tolist(), at=at, rms_rel=float(np.sqrt(np.mean(((A @ c - y) / y) ** 2))))
+        at = {str(n): float(c[0] + c[1] * col(n / N[0])) for n in (192, 256)}
+        cw = np.linalg.lstsq(A / sig[:, None], y / sig, rcond=None)[0]
+        out[name] = dict(coef=c.tolist(), at=at, rms_rel=float(np.sqrt(np.mean(((A @ c - y) / y) ** 2))),
+                         coef_weighted=cw.tolist(), chi2_weighted=float(np.sum(((A @ cw - y) / sig) ** 2)),
+                         dof=len(y) - 2)
+        if len(y) >= 4:
+            Ah, yh, sh = A[:-1], y[:-1], sig[:-1]
+            pinv = np.linalg.pinv(Ah)                         # unweighted fit: c = pinv y
+            ch = pinv @ yh
+            a_new = A[-1]
+            pred = float(a_new @ ch)
+            sp = float(np.sqrt(a_new @ pinv @ np.diag(sh ** 2) @ pinv.T @ a_new))
+            out[name]["holdout"] = dict(N=float(N[-1]), coef=ch.tolist(), predicted=pred, sigma_predicted=sp,
+                                        measured=float(y[-1]), sigma_measured=float(sig[-1]),
+                                        z=float((y[-1] - pred) / math.hypot(sp, sig[-1])))
     out["level"]["T_inf"] = out["level"]["coef"][0]
     out["log"]["b"] = out["log"]["coef"][1]
-    out.update(N=N.tolist(), T_over_tau_nl=y.tolist())
+    out.update(N=N.tolist(), T_over_tau_nl=y.tolist(), sigma=sig.tolist())
     return out
 
 
@@ -115,7 +160,13 @@ def main() -> int:
             f = out[b]["T_of_N"]
             print(f"    T/tau_nl(N): levelling off T_inf {f['level']['T_inf']:.1f}, ln N slope {f['log']['b']:.2f}; at N = 192, 256: "
                   + ", ".join(f"{n}: {f['level']['at'][str(n)]:.1f} vs {f['log']['at'][str(n)]:.1f}" for n in (192, 256))
-                  + f"; rms residuals {f['level']['rms_rel']:.3f}, {f['log']['rms_rel']:.3f}")
+                  + f"; rms residuals {f['level']['rms_rel']:.3f}, {f['log']['rms_rel']:.3f}; weighted chi^2 "
+                  + f"{f['level']['chi2_weighted']:.2f}, {f['log']['chi2_weighted']:.2f} ({f['log']['dof']} dof)")
+            for nm in ("level", "log"):
+                h = f[nm].get("holdout")
+                if h:
+                    print(f"    {nm}: fit without N = {h['N']:.0f} predicts {h['predicted']:.2f} +- {h['sigma_predicted']:.2f}, "
+                          f"measured {h['measured']:.2f} +- {h['sigma_measured']:.2f}, z = {h['z']:.2f}")
     (P.DATA / f"{args.name}.json").write_text(json.dumps(P._jsonable(out), indent=1))
 
     fcfg = FS.style_config()

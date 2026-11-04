@@ -88,3 +88,9 @@ runs:
       Anjor 2026-10-30: accepted (Meyrand-like forcing of g_1 at |n_z| <= 2): E_A std/mean 0.156; block spread 32.1% for
       D_perp and 29.3% for W at the forced moment m = 1 (as at the forced moment of the beta_i = 1 M = 64 run);
       Hermite-resolution limit 2.5% (measured 2.15%); the comparison with Meyrand et al. rests on m <= 16
+  P1_forced-beta0p3-n256_20261031_115113:
+    m_tol: 0.02
+    decision: >-
+      Anjor 2026-11-04: accepted on the terms of the earlier beta_i = 0.3 runs: Hermite-resolution limit 2% (measured
+      1.19%; 0.87, 1.02 and 1.06% at 64^3, 96^3 and 128^3, no pile-up at either truncation edge); steady state (E_A
+      0.112, W 0.123) and block check (largest spread 16.2%) pass at the default limits

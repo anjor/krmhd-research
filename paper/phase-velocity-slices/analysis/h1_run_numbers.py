@@ -36,25 +36,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "scripts"))
 import p1lib as P  # noqa: E402
 import h1lib as H  # noqa: E402
-from h1_compare_m import averages  # noqa: E402
-
-
-def block_inv_T(run_id: str, window: list[float], n_blocks: int = 4) -> list[float]:
-    """1/T (median of D_perp(m)/W(m) over 2 <= m <= 16) in each of n_blocks equal parts of the window."""
-    rd = P.DATA / run_id
-    with np.load(rd / f"{run_id}.npz") as z:
-        ts = {k[4:]: z[k] for k in z.files if k.startswith("ts__")}
-    t, dtk = ts["t"], ts["acc_sum_dt"]
-    edges = np.linspace(window[0], window[1], n_blocks + 1)
-    out = []
-    for a, b in zip(edges[:-1], edges[1:]):
-        first = int(np.searchsorted(t, a - 1e-9))
-        last = int(np.searchsorted(t, b + 1e-9))          # samples first..last-1
-        W = H.time_average(ts["pWm"][:last], dtk[:last], first)
-        Dp = ts["acc_loss_eta"][first + 1:last].sum(0) / dtk[first + 1:last].sum()
-        m = np.arange(len(W))
-        out.append(float(np.median((Dp / W)[(m >= 2) & (m <= 16)])))
-    return out
+from h1_compare_m import averages, block_inv_T, inv_T_se  # noqa: E402
 
 
 def numbers(run_id: str, acc: dict) -> dict:
@@ -105,7 +87,7 @@ def numbers(run_id: str, acc: dict) -> dict:
         kz_rms_gm_range=[float(np.min(kap["kz_rms_m_over_k1"][1:M // 2 + 1])), float(np.max(kap["kz_rms_m_over_k1"][1:M // 2 + 1]))],
         split_ratio_m_ge1=dict(zip(pe.keys(), ratio)),
         inv_T_blocks=binv, inv_T_block_spread=(max(binv) - min(binv)) / av["inv_T"],
-        inv_T_block_se=float(np.std(binv, ddof=1) / math.sqrt(len(binv)) / np.mean(binv)), W_slopes=slopes,
+        inv_T_block_se=inv_T_se(binv), W_slopes=slopes,
         nu_share_model=nu_share_model,
     )
 
