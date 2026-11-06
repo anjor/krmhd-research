@@ -1,0 +1,9 @@
+# Python environment of paper/phase-velocity-slices/scripts/run_forced_turbulence.py on a GPU cluster, built by
+# setup_env.sh, which adds JAX's CUDA wheels (jax[cuda12] or jax[cuda13]) at the version pinned here.  The versions
+# are those recorded by the earlier GPU runs, e.g. P1_forced-beta0p3-n128_20261018_184515: GANDALF 0.8.1, JAX 0.9.1,
+# NumPy 2.4.6, SciPy 1.17.1 (Python 3.11).
+gandalf-krmhd @ git+https://github.com/anjor/gandalf.git@v0.8.1
+jax==0.9.1
+numpy==2.4.6
+scipy==1.17.1
+pyyaml

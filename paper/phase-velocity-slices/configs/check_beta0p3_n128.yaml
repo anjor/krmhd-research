@@ -1,0 +1,88 @@
+# Hardware check at 128^3, M = 64: configs/forced_beta0p3_n128.yaml to t = 0.2 (about 420 steps, samples every 80),
+# printing every 20 steps.  Everything that sets the dynamics (grid, M, Lambda, beta_i, dissipation, time-step rule,
+# forcing and seeds, the Alfvenic start from the 64^3 spin-up zero-padded to 128^3) is unchanged, so on any hardware
+# the run must reproduce the first 0.2 tau_A of P1_forced-beta0p3-n128_20261018_184515 (Modal A100) to round-off.
+# Compare with analysis/compare_runs.py.  It also gives the cost per step at 128^3 on new hardware (A100: 0.48 s/step
+# over that run; 2115 steps per tau_A, so the 66 tau_A run took 22.9 h including diagnostics).
+# The label differs from the production run's, so that the analysis scripts never mistake this run for it.
+
+label: check-beta0p3-n128
+
+box:
+  L: 1.0
+  N: 128
+
+velocity:
+  M: 64
+  Lambda: "-1 + 10/3 + sqrt(4 + 100/9)"
+  beta_i: 0.3
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0
+  hyper_r: 2
+  nu: "30*sqrt(0.5)*sqrt(0.3)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: paper/phase-velocity-slices/data/P1_forced-spinup64_20261015_110112/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+  pad: true                     # zero-pad the 64^3 restart to 128^3
+
+time:
+  t_end: 0.2
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
+  recompute_every: 100          # exact slice radius (9 s on the CPU at 128^3); rescaled every step in between
+  limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
+  sample_every: 80             # dt is ~2.6x smaller than at 64^3; about 50 samples per tau_A
+  print_every: 20
+  snapshot_every: 10.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
