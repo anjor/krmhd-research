@@ -13,6 +13,10 @@
 #   E  a malformed time limit and a time limit under 10 minutes: refused.
 #   F  submit.sh --dry-run on a committed config with a repo-relative init.path lists the code, the config and the
 #      restart file and contacts nothing; a config with an absolute init.path is refused.
+#   G  end to end with an ssh stand-in that runs commands here: submit.sh copies the files (11 of them) and submits,
+#      the chain pauses and resumes, fetch.sh copies the run, the logs and the ledger back (needs a committed tree).
+#   H  the one-GPU guard: with REQUIRE_GPU=1, a job without CUDA_VISIBLE_DEVICES, or whose JAX backend is the CPU,
+#      stops before the run.
 #
 # Usage (from the repository root): bash infrastructure/slurm/tests/test_chain.sh      Exit status 1 on failure.
 set -uo pipefail
@@ -260,6 +264,21 @@ else
   check "fetch.sh copied the finished run" test -f "${runs[0]}/$(basename "${runs[0]}").json"
   check "fetch.sh copied the logs and the ledger" test -f "$R/local_logs/p1-forced-test32-1002.out" -a -f "$R/local_logs/ledger.tsv"
 fi
+
+echo "H: the one-GPU guard of job.sh (REQUIRE_GPU=1)"
+R=$(new_site H)
+sed 's/^REQUIRE_GPU=0$/REQUIRE_GPU=1/' "$R/site.env" > "$R/site.env.new" && mv "$R/site.env.new" "$R/site.env"
+submit "$R" "$CFG" > /dev/null
+(unset CUDA_VISIBLE_DEVICES; run_jobs "$R")
+check "no CUDA_VISIBLE_DEVICES: refused before the run" grep -q "CUDA_VISIBLE_DEVICES is not set" "$R/logs/p1-chain-test-1001.out"
+check "no run folder written" test -z "$(ls "$R/results" 2>/dev/null)"
+check "ledger: exit status 5, no resubmission" test "$(awk '$1 == "end" { printf "%s", $5 }' "$R/ledger.tsv")$(grep -c '^submit' "$R/ledger.tsv")" = 51
+R=$(new_site H2)
+sed 's/^REQUIRE_GPU=0$/REQUIRE_GPU=1/' "$R/site.env" > "$R/site.env.new" && mv "$R/site.env.new" "$R/site.env"
+submit "$R" "$CFG" > /dev/null
+CUDA_VISIBLE_DEVICES=0 run_jobs "$R"
+check "JAX on the CPU: refused before the run" grep -q "no GPU visible to JAX: not running on the CPU" "$R/logs/p1-chain-test-1001.out"
+check "no run folder written" test -z "$(ls "$R/results" 2>/dev/null)"
 
 echo
 if [ "$fails" = 0 ]; then echo "PASS"; else echo "FAIL ($fails)"; exit 1; fi

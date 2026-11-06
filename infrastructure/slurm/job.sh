@@ -3,10 +3,11 @@
 # cluster_submit.sh submits it.  Slurm runs a copy of this file, so everything comes in the environment: SITE_ENV,
 # P1S_HERE (this folder), P1S_CONFIG, P1S_RESUME, P1S_RESUBMIT, P1S_TIME and P1S_PAUSE_AFTER.
 #
-# It loads the site's modules and the environment that setup_env.sh built, prints the GPU and the versions, stops at
-# once if JAX sees no GPU, and runs the config with --max-wall-hours a little under the time limit (5% of it, at least
-# 5 minutes and at most 1 hour, left for writing resume.npz), so that a run longer than one job pauses cleanly with
-# exit status 3.  It continues the run in place (--resume) when the job is a resubmission, was asked to, or was
+# It loads the site's modules and the environment that setup_env.sh built, prints the GPU and the versions, and stops
+# at once unless the job sees exactly one GPU (CUDA_VISIBLE_DEVICES set by Slurm and one device in JAX; REQUIRE_GPU=0
+# in the site file turns this off for tests on a CPU).  It runs the config with --max-wall-hours a little under the
+# time limit (5% of it, at least 5 minutes and at most 1 hour, left for writing resume.npz), so that a run longer than
+# one job pauses cleanly with exit status 3.  It continues the run in place (--resume) when the job is a resubmission, was asked to, or was
 # requeued by Slurm.  It appends an 'end' line (time, job ID, hours used, exit status) to the ledger, and on exit status
 # 3 calls cluster_submit.sh --resubmit N+1, which checks the limits again.  The results stay in REMOTE_RESULTS until
 # fetch.sh on the laptop copies them back.
@@ -29,25 +30,30 @@ echo "=== job ${SLURM_JOB_ID:-?}, $(date -u '+%Y-%m-%d %H:%M:%S') UTC: $P1S_CONF
 if command -v nvidia-smi >/dev/null 2>&1; then
   nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader | sed 's/^/GPU: /'
 fi
-python - <<'EOF'
+# The job must see exactly its own GPU: JAX takes memory on every GPU it can see, which would interfere with other
+# users' jobs on the node.  Slurm limits a job to its GPUs through CUDA_VISIBLE_DEVICES.
+check=0
+if [ "${REQUIRE_GPU:-1}" = 1 ] && [ -z "${CUDA_VISIBLE_DEVICES:-}" ]; then
+  echo "CUDA_VISIBLE_DEVICES is not set, so the job is not limited to its GPU; not running (check the GPU request in SBATCH_OPTS)"
+  check=5
+fi
+if [ "$check" = 0 ]; then
+  XLA_PYTHON_CLIENT_PREALLOCATE=false python - <<'EOF'
 import os
 import sys
 
 import jax
 
 devs = jax.devices()
-lim = ""
-try:
-    st = devs[0].memory_stats() or {}
-    if "bytes_limit" in st:
-        lim = f", {st['bytes_limit'] / 2**30:.1f} GiB usable by JAX"
-except Exception:
-    pass
-print(f"python {sys.version.split()[0]}, jax {jax.__version__}, backend {jax.default_backend()}, devices {devs}{lim}")
-if os.environ.get("REQUIRE_GPU", "1") == "1" and jax.default_backend() != "gpu":
-    sys.exit("no GPU visible to JAX: not running on the CPU")
+print(f"python {sys.version.split()[0]}, jax {jax.__version__}, backend {jax.default_backend()}, devices {devs}")
+if os.environ.get("REQUIRE_GPU", "1") == "1":
+    if jax.default_backend() != "gpu":
+        sys.exit("no GPU visible to JAX: not running on the CPU")
+    if len(devs) != 1:
+        sys.exit(f"{len(devs)} GPUs visible to JAX, expected the job's one GPU: not running")
 EOF
-check=$?
+  check=$?
+fi
 
 rc=$check
 if [ "$check" = 0 ]; then
