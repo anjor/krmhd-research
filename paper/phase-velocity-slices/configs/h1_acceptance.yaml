@@ -97,7 +97,7 @@ runs:
   # m_* scan (.loop/specs/mstar-scan.md).  Anjor 2026-11-10, in advance for every beta_i = 0.05 run of the scan: the
   # terms of the beta_i = 0.1 runs apply (steady_tol 0.20, block_tol 0.25); the slow fluctuation of W at low beta_i
   # (correlation time 3.6 tau_A at beta_i = 0.1) makes the default 0.15/0.20 likely to fail on a finite window.  The
-  # other gates keep their default limits.  The chi ~ 0.35 run is added here when its run ID exists.
+  # other gates keep their default limits.
   P1_forced-beta0p05-m128_20261110_110114:
     steady_tol: 0.20
     block_tol: 0.25
@@ -107,6 +107,10 @@ runs:
     block_tol: 0.25
     decision: "Anjor 2026-11-10: the beta_i = 0.1 terms, approved in advance for the beta_i = 0.05 runs of the m_* scan"
   P1_forced-beta0p05-chi0p5-m256_20261110_115438:
+    steady_tol: 0.20
+    block_tol: 0.25
+    decision: "Anjor 2026-11-10: the beta_i = 0.1 terms, approved in advance for the beta_i = 0.05 runs of the m_* scan"
+  P1_forced-beta0p05-chi0p35-m512_20261110_200914:
     steady_tol: 0.20
     block_tol: 0.25
     decision: "Anjor 2026-11-10: the beta_i = 0.1 terms, approved in advance for the beta_i = 0.05 runs of the m_* scan"
