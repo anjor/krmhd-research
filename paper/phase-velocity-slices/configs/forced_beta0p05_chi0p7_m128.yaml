@@ -1,0 +1,95 @@
+# m_* against chi at fixed beta_i (Anjor 2026-11-10: plots of m_* against beta_i and chi to back m_* ~ beta_i/chi^2):
+# forced KRMHD at beta_i = 0.05, M = 128, chi_out ~ 0.77 (target 0.7).  As forced_beta0p05_m128.yaml (chi_out ~ 0.95) except for the
+# Alfvenic injection and the dissipation, which follow the spin-up of this chi.
+# Read by scripts/run_forced_turbulence.py (on Modal with scripts/modal_chain.py); analysis by analysis/h1_fieldlines.py
+# and analysis/h1_pilot.py.
+#
+# Changes from forced_beta0p05_m128.yaml:
+#  * eps_A = 0.10 and eta = 300 x 0.7/0.96 = 218.75, as in forced_spinup64_chi0p7.yaml (measured chi_out 0.768 over t = 20..40, std 0.09; eta scaled with the
+#    outer nonlinear rate so that the dissipation range stays at the same k_perp).
+#  * Start: the end of that spin-up (on the results volume), z+- only; g = 0 at t = 0.
+#  * M = 128: expected ell_* 3.0 (chi^-2) to 3.8 (chi^-4) from 2.4 at chi ~ 0.95; a 1.5 e-fold window from sqrt(2m) = 2
+#    needs sqrt(M) >= 2 + 1.5 ell_*, i.e. M >= 42-58.
+#  * t_end 200, window t = 20..200: the outer eddy time is ~1.25 times longer than at chi ~ 0.95; the run is extended in
+#    place (--resume with a larger t_end) if the block check needs a longer window.  The time step grows with 1/chi, so
+#    the number of steps per tau_nl is about that of the chi ~ 0.95 run.
+
+label: forced-beta0p05-chi0p7-m128
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 128
+  Lambda: "19 + sqrt(404)"
+  beta_i: 0.05
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 218.75
+  hyper_r: 2
+  nu: "30*sqrt(0.25)*sqrt(0.05)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.1
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: /results/p1-mstar/spinup-chi0p7/P1_forced-spinup64-chi0p7_20261110_110114/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 200.0                 # gate window (the final 180 tau_A) t = 20..200; extended in place if W's correlation time needs it
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
+  recompute_every: 25
+  limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
+  sample_every: 20
+  print_every: 500
+  snapshot_every: 20.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 180.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
