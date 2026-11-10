@@ -1,0 +1,85 @@
+# Alfvenic spin-up for the chi scan at beta_i = 0.05 (Anjor 2026-11-10: plots of m_* against beta_i and chi to back
+# m_* ~ beta_i/chi^2): as configs/forced_spinup64.yaml (64^3, M = 2, no density forcing; z+- do not depend on g or
+# beta_i), but with a weaker Alfvenic injection so that chi_out ~ 0.7 instead of 0.95.  Hands the steady z+- to the
+# production run of this chi (init.path there).
+#
+# Changes from forced_spinup64.yaml:
+#  * eps_A = 0.10 (0.3 gave chi_out 0.95).  First guess chi ~ eps_A^(1/3.5), between the strong (1/3) and weak (1/4)
+#    turbulence laws; if the measured chi_out (second half of the run) is off the target by more than 10%, eps_A is
+#    rescaled by (chi_target/chi_out)^3.5 and the spin-up repeated once.
+#  * eta = 300 x 0.7/0.96 = 218.75: the hyper-resistive rate scales with the outer nonlinear rate (proportional to chi),
+#    so that the dissipation range stays at the same k_perp as at chi ~ 1 (E_A steeper than k_perp^-4 from k_perp/k_1 ~ 9).
+#  * Starts from the end of the chi ~ 1 spin-up (P1_forced-spinup64_20261015_110112, t = 10) and runs 40 tau_A, many
+#    outer cascade times; steady-state gate over the second half.
+#
+# Units: v_A = 1, box side L = 1 (k = 2 pi n), tau_A = L_z/v_A = 1.
+
+label: forced-spinup64-chi0p7
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 2
+  Lambda: sqrt5
+  beta_i: 1.0
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 218.75                  # damping rate eta (k_perp^2/k_perp,max^2)^r on z+- and every g_m
+  hyper_r: 2
+  nu: 0.0
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.10
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.0                   # off during the Alfvenic spin-up
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: paper/phase-velocity-slices/data/P1_forced-spinup64_20261015_110112/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 40.0                  # tau_A
+  dt_max: 5.0e-3
+  dt_umax_M: 32
+  dt_rule: bound
+  safety: 0.8
+  recompute_every: 25
+  sample_every: 20
+  print_every: 500
+  snapshot_every: 10.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+gates:
+  steady_window: 20.0
+  steady_tol: 0.10
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01

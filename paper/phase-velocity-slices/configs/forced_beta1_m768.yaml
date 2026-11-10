@@ -1,0 +1,96 @@
+# m_* against beta_i (Anjor 2026-11-10: plots of m_* against beta_i and chi to back m_* ~ beta_i/chi^2; "768 sounds
+# fine"): forced KRMHD at beta_i = 1 with M = 768, otherwise as forced_beta1_m64.yaml.  At beta_i = 1 the break lies
+# at m_* ~ 125-140 at 64^3 (ell_* ~ 16), beyond the M = 64 fit range.  The fit over 1.5 e-folds of exp(-sqrt(2m)/ell_*)
+# from sqrt(2m) = 2 needs sqrt(M) >= 2 + 1.5 ell_*, i.e. M >= ~680, below the collisional range m > M/2.
+# Read by scripts/run_forced_turbulence.py (on Modal with scripts/modal_chain.py); analysis by analysis/h1_fieldlines.py
+# and analysis/h1_pilot.py.
+#
+# Changes from forced_beta1_m64.yaml:
+#  * M = 768, nu = 30 sqrt(32/768): keeps the total collisional attenuation of the M = 32 runs (nu ~ sqrt(beta_i/M))
+#    with the sink at m > M/2 = 384.  u_max = 38.7, so the slice-advection limit sets dt (~2e-4).
+#  * t_end 58, window t = 8..58: at beta_i = 1 free energy injected at m = 0 reaches m = 384 within ~4 tau_A and W
+#    decorrelates in 0.8 tau_A (the M = 32 pilot's window started at t = 3).
+#  * Samples every 80 steps (about as many per tau_A as at M = 64, where dt was four times larger) and snapshots every
+#    10 tau_A (1.7 GB each).
+# Everything else (box, forcing and seeds, hyper-resistivity, Alfvenic hand-off from the spin-up, g = 0 at t = 0, time
+# step rule) is the same as in forced_beta1_m64.yaml.
+
+label: forced-beta1-m768
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 768
+  Lambda: sqrt5
+  beta_i: 1.0
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0
+  hyper_r: 2
+  nu: "30*sqrt(1/24)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: paper/phase-velocity-slices/data/P1_forced-spinup64_20261015_110112/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 58.0                  # gate window (the final 50 tau_A) t = 8..58
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
+  recompute_every: 25
+  limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
+  sample_every: 80
+  print_every: 500
+  snapshot_every: 10.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
