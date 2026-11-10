@@ -14,7 +14,9 @@ Alfvenic energies, spectra, dissipation, chi (energy-weighted and outer-scale). 
 resume.npz, the complete state of the loop (fields, keys, accumulators, time-step state, the records so far).  With
 --resume the script continues the latest unfinished run of the config's label in the data folder in place (same run
 ID and folder, one time series), so that a run interrupted after the start of the averaging window (a preemption, a
-timeout, a retry on Modal) need not be restarted or stitched; without an unfinished run it starts a new one.  With
+timeout, a retry on Modal) need not be restarted or stitched; without an unfinished run it starts a new one.  On
+resume the config must match the run's except for time.t_end and the output cadences (time.sample_every,
+print_every, restart_every), which may change; a cadence change is printed with the time it takes effect.  With
 --max-wall-hours H the script writes resume.npz and exits with status 3 (paused) once this invocation has run for H
 hours, so that a job with a wall-time limit (24 h on Modal) stops cleanly and is continued with --resume.
 
@@ -109,11 +111,37 @@ def find_resumable(base: str | os.PathLike, label: str) -> P.Path | None:
     return None
 
 
+OUTPUT_CADENCE = ("sample_every", "print_every", "restart_every")   # time.* keys that may change on resume
+
+
+def _resume_key(c: dict) -> str:
+    """c without time.t_end (which may be extended) and the output cadences (how often the state is sampled, printed
+    and saved; they do not change the evolution), as sorted JSON."""
+    c = json.loads(json.dumps(c))
+    for k in ("t_end",) + OUTPUT_CADENCE:
+        c.get("time", {}).pop(k, None)
+    return json.dumps(c, sort_keys=True)
+
+
 def config_for_resume(cfg: dict) -> str:
-    """The config as compared on resume: everything except time.t_end, which may be extended."""
+    """The config as stored in resume.npz for the check on resume: everything except time.t_end."""
     c = json.loads(json.dumps(cfg))
     c.get("time", {}).pop("t_end", None)
     return json.dumps(c, sort_keys=True)
+
+
+def resume_config_matches(stored: str, cfg: dict) -> bool:
+    """Whether a run whose resume file stores `stored` (config_for_resume of its config) may be continued with cfg:
+    the configs agree except for time.t_end and the output cadences OUTPUT_CADENCE (e.g. a sparser sample_every to
+    bound the memory of the records at large M; the sampled time series then changes cadence at the resume time, and
+    its averages are dt-weighted, so they are unaffected)."""
+    return _resume_key(json.loads(stored)) == _resume_key(cfg)
+
+
+def cadence_changes(stored: str, cfg: dict) -> dict:
+    """The output cadences that differ between the stored config and cfg: {key: (stored, new)}."""
+    old, new = json.loads(stored).get("time", {}), cfg.get("time", {})
+    return {k: (old.get(k), new.get(k)) for k in OUTPUT_CADENCE if old.get(k) != new.get(k)}
 
 
 def main() -> int:
@@ -147,9 +175,11 @@ def main() -> int:
     if resume_dir is not None:
         with np.load(resume_dir / RESUME_FILE) as z:
             rs = {k: z[k] for k in z.files}
-        if str(rs["config_cmp"]) != config_for_resume(cfg):
-            raise SystemExit(f"{resume_dir.name}: its config differs from {args.config} (other than time.t_end); "
-                             "not resuming")
+        if not resume_config_matches(str(rs["config_cmp"]), cfg):
+            raise SystemExit(f"{resume_dir.name}: its config differs from {args.config} (other than time.t_end and "
+                             f"the output cadences {', '.join(OUTPUT_CADENCE)}); not resuming")
+        for k, (a, b) in cadence_changes(str(rs["config_cmp"]), cfg).items():
+            print(f"[{resume_dir.name}] time.{k} changed on resume at t = {float(rs['t']):.4f}: {a} -> {b}", flush=True)
         run = P.Run.reopen(resume_dir, cfg, args.config, str(rs["started_local"]), float(rs["elapsed"]))
         zp, zm, g, t = rs["zp"], rs["zm"], rs["g"], float(rs["t"])
         fo.set_keys(rs["key_A"], rs["key_g"])

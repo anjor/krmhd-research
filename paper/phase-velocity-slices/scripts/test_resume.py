@@ -3,7 +3,9 @@
 place with --resume gives the same outputs (every float array of the run's .npz, to 1e-12) as the same run left
 uninterrupted, in one run folder, with resume.npz removed at the end.  The same for a run paused twice by
 --max-wall-hours 0 (exit status 3 after one step of each invocation, between samples and between the full time-step
-limits) and then continued to the end.  The test config is forced_beta1.yaml at 32^3,
+limits) and then continued to the end.  A run paused once and continued with a different output cadence (sample_every,
+restart_every) ends in the same state with the same totals of the interval sums; a resume with a changed eta is
+refused.  The test config is forced_beta1.yaml at 32^3,
 M = 8, from rest, for 24 steps (about a minute on a laptop CPU, mostly JIT compilation).  Exits with status 1 on failure.
 
 Usage (from the repository root):
@@ -113,7 +115,42 @@ def main() -> int:
                        "paused run in one folder": len(pdirs) == 1,
                        "paused run: resume.npz removed": not (pdirs[0] / "resume.npz").exists()})
 
-        # 4. compare
+        # 4. paused once, then continued with a different output cadence (sample_every 3 -> 6, restart_every 0.02 ->
+        #    0.04): resumes, prints the change, ends in the same state as the uninterrupted run, with the same totals
+        #    of the interval sums and samples every 6 steps after the pause
+        cad, cfg2 = tmp / "cadence", tmp / "resume_test_cadence.yaml"
+        cad.mkdir()
+        cfg2.write_text(cfg.read_text().replace("  sample_every: 3", "  sample_every: 6", 1)
+                        .replace("  restart_every: 0.02", "  restart_every: 0.04", 1))
+        r1 = subprocess.run(cmd + ["--base", str(cad), "--max-wall-hours", "0"], capture_output=True, text=True)
+        r2 = subprocess.run([sys.executable, SCRIPT, str(cfg2), "--base", str(cad), "--resume"], capture_output=True,
+                            text=True)
+        d_full, d_cad = next(full.glob("P1_resume-test_*")), next(cad.glob("P1_resume-test_*"))
+        with np.load(d_full / "restart.npz") as zf, np.load(d_cad / "restart.npz") as zc:
+            same_state = all(np.allclose(zf[k], zc[k], rtol=1e-12, atol=1e-300) for k in ("zp", "zm", "g", "t"))
+        a = load(full)
+        e = load(cad)
+        totals = all(np.isclose(a[f"ts__acc_{k}"].sum(), e[f"ts__acc_{k}"].sum(), rtol=1e-10, atol=1e-300)
+                     for k in ("steps", "sum_dt", "inj_A", "inj_g", "loss_A"))
+        steps = np.cumsum(e["ts__acc_steps"]).astype(int)          # step number of each sample
+        checks.update({"cadence: pause 3 then 0": [r1.returncode, r2.returncode] == [3, 0],
+                       "cadence: change printed": "time.sample_every changed on resume" in r2.stdout
+                       and "time.restart_every changed on resume" in r2.stdout,
+                       "cadence: same final state": same_state, "cadence: same interval-sum totals": totals,
+                       "cadence: samples every 6 steps after the pause": len(steps) > 3 and bool(np.all(steps[1:-1] % 6 == 0))})
+
+        # 5. a change other than t_end or the output cadences (eta) is refused
+        bad_dir, cfg3 = tmp / "refused", tmp / "resume_test_eta.yaml"
+        bad_dir.mkdir()
+        s3, k3 = re.subn(r"\n  eta: ([0-9.]+)", lambda m_: f"\n  eta: {2 * float(m_.group(1))}", cfg.read_text(), count=1)
+        assert k3 == 1
+        cfg3.write_text(s3)
+        subprocess.run(cmd + ["--base", str(bad_dir), "--max-wall-hours", "0"], capture_output=True, text=True)
+        r3 = subprocess.run([sys.executable, SCRIPT, str(cfg3), "--base", str(bad_dir), "--resume"],
+                            capture_output=True, text=True)
+        checks["changed eta refused"] = r3.returncode != 0 and "not resuming" in (r3.stdout + r3.stderr)
+
+        # 6. compare
         a, b, c = load(full), load(split), load(paused)
         bad = compare(a, b)
         bad_p = compare(a, c)

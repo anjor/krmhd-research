@@ -1,0 +1,100 @@
+# m_* against chi at fixed beta_i (Anjor 2026-11-10: plots of m_* against beta_i and chi to back m_* ~ beta_i/chi^2;
+# Anjor chose M = 512 at the lowest chi, "Run B"): forced KRMHD at beta_i = 0.05, M = 512, chi_out ~ 0.34 (target 0.35).
+# As forced_beta0p05_chi0p5_m256.yaml except for the Alfvenic injection and dissipation, which follow the spin-up of
+# this chi, M, and the output cadence.
+# Read by scripts/run_forced_turbulence.py (on Modal with scripts/modal_chain.py); analysis by analysis/h1_fieldlines.py
+# and analysis/h1_pilot.py.
+#
+# Changes from forced_beta0p05_chi0p5_m256.yaml:
+#  * eps_A = 0.005 and eta = 300 x 0.35/0.96 = 109.375, as in forced_spinup64_chi0p35b.yaml (measured chi_out 0.342 over
+#    t = 50..100, std 0.044; the hyper-resistive dissipation sits two shells lower than at chi ~ 0.95, median shell 8).
+#  * Start: the end of that spin-up (on the results volume), z+- only; g = 0 at t = 0.
+#  * M = 512, nu = 30 sqrt(32/512) sqrt(beta_i) (same total collisional attenuation, sink at m > 256).  The partial
+#    series of the chi ~ 0.96, 0.75 and 0.58 runs gave ell_* 2.75, 3.74, 5.13 (ell_* ~ chi^-1.22); extrapolated,
+#    ell_* ~ 9.7 at chi 0.34, and a 1.5 e-fold window from sqrt(2m) = 2 then ends at m ~ 137 (n_e ~ 2.2 at M = 512,
+#    ~1.5 at M = 256).  u_max = 31.5.
+#  * t_end 330, window t = 30..330 (300 tau_A): the E_A correlation time grew 0.8, 1.9, 4.1 tau_A at chi 0.96, 0.75,
+#    0.58; extended in place (--resume with a larger t_end) if the block check needs a longer window.
+#  * Output: samples every 60 steps (~5 per tau_A; each sample stores the (M+1)^2 slice correlation matrix, 2.1 MB at
+#    M = 512, so ~3.7 GB of records over the run), restart files every 10 tau_A (each save rewrites all records), and
+#    snapshots every 50 tau_A (0.55 GB each).
+
+label: forced-beta0p05-chi0p35-m512
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 512
+  Lambda: "19 + sqrt(404)"
+  beta_i: 0.05
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 109.375
+  hyper_r: 2
+  nu: "30*sqrt(0.0625)*sqrt(0.05)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.005
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: /results/p1-mstar/spinup-chi0p35b/P1_forced-spinup64-chi0p35b_20261110_115444/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 330.0                 # gate window (the final 300 tau_A) t = 30..330; extended in place if the block check needs it
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
+  recompute_every: 25
+  limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
+  sample_every: 60
+  print_every: 500
+  snapshot_every: 50.0
+  restart_every: 10.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 300.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01

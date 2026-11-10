@@ -12,6 +12,10 @@
 #    decorrelates in 0.8 tau_A (the M = 32 pilot's window started at t = 3).
 #  * Samples every 80 steps (about as many per tau_A as at M = 64, where dt was four times larger) and snapshots every
 #    10 tau_A (1.7 GB each).
+#  * From the second call on (resume at t ~ 20, 2026-11-11) samples every 400 steps (~14 per tau_A; W decorrelates in
+#    0.8 tau_A): every sample stores the (M+1)^2 slice correlation matrix (4.7 MB at M = 768), so at 80 steps the
+#    records would reach ~35 GB by t = 58, and each save stacks a second copy, beyond the 64 GB of host memory.
+#    The output cadence may change on resume (run_forced_turbulence.py); averages are dt-weighted.
 # Everything else (box, forcing and seeds, hyper-resistivity, Alfvenic hand-off from the spin-up, g = 0 at t = 0, time
 # step rule) is the same as in forced_beta1_m64.yaml.
 
@@ -70,7 +74,7 @@ time:
   safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
   recompute_every: 25
   limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
-  sample_every: 80
+  sample_every: 400              # 80 until the first pause (t ~ 20); see the header
   print_every: 500
   snapshot_every: 10.0
   restart_every: 2.0
