@@ -72,16 +72,30 @@ def measured(points: list[dict]) -> list[dict]:
     return [p for p in points if p["fit_status"] == "measured"]
 
 
+def plain_log_ticks(axis, candidates: list[float], lo: float, hi: float) -> None:
+    """Major ticks of a log axis at the candidate values inside [lo, hi], labelled as plain numbers."""
+    from matplotlib.ticker import FixedLocator, FuncFormatter, NullFormatter
+    ticks = [c for c in candidates if lo <= c <= hi]
+    axis.set_major_locator(FixedLocator(ticks))
+    axis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
+    axis.set_minor_formatter(NullFormatter())
+
+
 def draw_panel(ax, points: list[dict], xkey: str, colors: list[str]) -> None:
     """m_* against points[xkey]: data (filled if measured, open if marginal, error bars from the blocks) and the
     model value (s kappa_1 T)^2/2 (crosses)."""
+    labelled = set()
     for p in points:
         if p["fit_status"] == "unresolved":
             continue
         filled = p["fit_status"] == "measured"
+        lab = "measured" if filled else "marginal"
         ax.errorbar(p[xkey], p["m_star_win"], yerr=p["m_star_win_sigma"], fmt="o", ms=5, color=colors[0],
-                    mfc=colors[0] if filled else "white", capsize=2, zorder=3)
-        ax.plot(p[xkey], p["m_star_model"], "x", ms=6, color=colors[1], zorder=4)
+                    mfc=colors[0] if filled else "white", capsize=2, zorder=3,
+                    label=None if lab in labelled else rf"$m_*$ {lab}")
+        ax.plot(p[xkey], p["m_star_model"], "x", ms=6, color=colors[1], zorder=4,
+                label=None if "model" in labelled else r"$(s\kappa_1 T)^2/2$")
+        labelled |= {lab, "model"}
     ax.set_xscale("log")
     ax.set_yscale("log")
 
@@ -149,6 +163,10 @@ def main() -> int:
     axb.set_ylabel(r"$m_*$")
     axb.legend(loc="upper right", frameon=False)
     FS.panel_label(axb, "(b)")
+    mticks = [1, 2, 3, 5, 10, 20, 30, 50, 100, 200, 300, 500]
+    for ax, xt in ((axa, [0.03, 0.05, 0.1, 0.2, 0.3, 0.5, 1.0]), (axb, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0])):
+        plain_log_ticks(ax.xaxis, xt, *ax.get_xlim())
+        plain_log_ticks(ax.yaxis, mticks, *ax.get_ylim())
     fig.tight_layout()
 
     outdir = Path(args.outdir) if args.outdir else FS.FIG_DIR
