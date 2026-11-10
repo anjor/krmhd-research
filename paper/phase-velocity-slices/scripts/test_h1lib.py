@@ -16,6 +16,9 @@ E  Forcing: the expected injection per step c A^2/dt (WhiteForcing constants) ag
 F  Block averages (steady-state block check): exact rates from accumulated increments on a variable time step,
    dt-weighted means of sampled series, and the spread of a series that differs between blocks.
 G  Per-step time-step limits: make_fast_limits reproduces dt_limits' maxima on the refined grid.
+H  Decay length of the Hermite spectrum (fit_decay_window): on W = exp(-x/ell)/x, x = sqrt(2m), the windowed fit
+   recovers ell, the window spans 1.5 e-folds from x = 2, and the status is measured / marginal / unresolved by the
+   e-fold count (sqrt(M) - 2)/ell.
 """
 from __future__ import annotations
 
@@ -213,6 +216,23 @@ def main() -> int:
           f"{V2:.6g} vs {lim_g['V_slice']:.6g}, {vp2:.6g} vs {lim_g['v_perp_max']:.6g}")
     check("G2 pad = 1 maxima within 25% below the refined ones", 0.75 < V1 / V2 <= 1 + 1e-12 and 0.75 < vp1 / vp2 <= 1 + 1e-12,
           f"{V1 / V2:.3f}, {vp1 / vp2:.3f}")
+
+    # H: decay length of W(m) sqrt(2m) = exp(-sqrt(2m)/ell) (an exact two-channel spectrum for a single kappa)
+    def spec(ell: float, M: int) -> np.ndarray:
+        x = np.sqrt(2.0 * np.arange(M + 1))
+        return np.concatenate([[1.0], np.exp(-x[1:] / ell) / x[1:]])
+
+    h1 = H.fit_decay_window(spec(3.0, 128), 128)
+    check("H1 measured: ell recovered, window m <= (2 + 1.5 ell)^2/2", h1["status"] == "measured"
+          and abs(h1["ell"] / 3.0 - 1) < 1e-10 and h1["m_max"] == 21 and abs(h1["n_e"] - (math.sqrt(128) - 2) / 3) < 1e-9,
+          f"{h1}")
+    h2 = H.fit_decay_window(spec(5.0, 64), 64)
+    check("H2 marginal: window does not fit below M/2, 1 <= n_e < 1.5, full-range fit", h2["status"] == "marginal"
+          and h2["m_max"] == 32 and abs(h2["ell"] / 5.0 - 1) < 1e-10 and abs(h2["n_e"] - 1.2) < 1e-9, f"{h2}")
+    h3 = H.fit_decay_window(spec(16.0, 64), 64)
+    check("H3 unresolved: n_e < 1", h3["status"] == "unresolved" and abs(h3["n_e"] - 0.375) < 1e-9, f"{h3}")
+    h4 = H.fit_decay(spec(3.0, 128), 2, 21)
+    check("H4 fit_decay on a fixed window", abs(h4 / 3.0 - 1) < 1e-10, f"{h4}")
 
     print(f"{'ALL PASS' if not FAILED else 'FAILED: ' + ', '.join(FAILED)} ({time.time() - T0:.0f} s)")
     return 1 if FAILED else 0

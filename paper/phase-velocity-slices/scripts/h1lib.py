@@ -559,6 +559,54 @@ def block_averages(t: np.ndarray, dts: np.ndarray, first: int, n_blocks: int, sa
     return out
 
 
+def fit_decay(W: np.ndarray, m_lo: int, m_hi: int) -> float:
+    """Decay length ell_* of the two-channel form W(m) sqrt(2m) ~ exp(-sqrt(2m)/ell_*) (paper eq. Wmodel): least
+    squares of ln[W sqrt(2m)] against x = sqrt(2m) over m_lo <= m <= m_hi; ell_* = -1/slope (in units of x)."""
+    W = np.asarray(W, dtype=float)
+    m = np.arange(len(W))
+    sel = (m >= m_lo) & (m <= m_hi)
+    x = np.sqrt(2.0 * m[sel])
+    return float(-1.0 / np.polyfit(x, np.log(W[sel] * x), 1)[0])
+
+
+def fit_decay_window(W: np.ndarray, M: int, efolds: float = 1.5, m_lo: int = 2, max_iter: int = 50) -> dict[str, Any]:
+    """Decay length of W(m) fitted over the same number of e-folds of its own decay at every run (m_* scan spec,
+    2026-11-10): starting from the whole collision-free range m_lo <= m <= M/2, refit over x = sqrt(2m) from
+    sqrt(2 m_lo) to sqrt(2 m_lo) + efolds ell_*, with ell_* from the previous fit, until the window stops changing.
+    The window depends on the measured decay only, never on a prediction.
+
+    status: "measured" if that window fits below the collisional range (m_max <= M/2); otherwise the fit is over the
+    whole collision-free range and the status is "marginal" if it spans n_e >= 1 e-folds, "unresolved" if not.
+    n_e = (sqrt(2 (M/2)) - sqrt(2 m_lo))/ell_full, the e-folds of exp(-sqrt(2m)/ell) over the whole range.
+    Returns ell, m_max (upper end of the window used), n_e, ell_full, status, iterations."""
+    m_top = M // 2
+    ell_full = fit_decay(W, m_lo, m_top)
+    x_lo = math.sqrt(2.0 * m_lo)
+    n_e = (math.sqrt(2.0 * m_top) - x_lo) / ell_full
+    ell, m_max, seen, it = ell_full, m_top, set(), 0
+    fits = False
+    for it in range(1, max_iter + 1):
+        m_new = int(math.floor((x_lo + efolds * ell) ** 2 / 2.0))
+        if m_new > m_top or m_new < m_lo + 2:
+            fits = False
+            break
+        fits = True
+        if m_new == m_max and it > 1:
+            break
+        if m_new in seen:                      # a two-window cycle (integer m): keep the larger window
+            m_new = max(m_new, m_max)
+            ell, m_max = fit_decay(W, m_lo, m_new), m_new
+            break
+        seen.add(m_new)
+        ell, m_max = fit_decay(W, m_lo, m_new), m_new
+    if fits:
+        status = "measured"
+    else:
+        ell, m_max = ell_full, m_top
+        status = "marginal" if n_e >= 1.0 else "unresolved"
+    return dict(ell=ell, m_max=m_max, n_e=n_e, ell_full=ell_full, status=status, iterations=it)
+
+
 def rel_spread(X: np.ndarray) -> np.ndarray:
     """(max - min)/|mean| over the leading (block) axis."""
     X = np.asarray(X, dtype=float)

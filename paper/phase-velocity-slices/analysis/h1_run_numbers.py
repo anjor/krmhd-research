@@ -7,6 +7,10 @@ h1_pilot.py):
     over 2 <= m <= M/2 (below the collisional range), against the model's s kappa_1 T, with s = beta_i^{1/2}, kappa_1
     the mean field-aligned wavenumber of the injected pattern (traced field lines) and 1/T the median of D_perp/W over
     2 <= m <= 16; the breaks m_* = ell_*^2/2 and (s kappa_1 T)^2/2;
+  * the same fit over 1.5 e-folds of the run's own decay (h1lib.fit_decay_window; m_* scan, 2026-11-10): ell_* with
+    its standard error from the four block averages of W(m) on that window, the e-fold count n_e over the whole
+    collision-free range, the status (measured, marginal, unresolved), and the same windowed fit applied to the model
+    spectrum with the traced P(kappa);
   * W(m) and the field-aligned flux divided by the two-channel model with the traced P(kappa), over 1 <= m <= M/2;
   * the outer scale (tau_nl, chi), 1/T, T/tau_nl, the collisional share of the free-energy dissipation, the E_A
     spectral slope, the per-m budget residual, D_perp/W at m <= 1 and m = 16;
@@ -39,6 +43,21 @@ import h1lib as H  # noqa: E402
 from h1_compare_m import averages, block_inv_T, inv_T_se  # noqa: E402
 
 
+def block_W(run_id: str, window: list[float], n_blocks: int = 4) -> list[np.ndarray]:
+    """W(m) (dt-weighted mean of the sampled p_m <g_m^2>) in each of n_blocks equal parts of the averaging window, as
+    h1_compare_m.block_inv_T divides it; for the block standard error of the decay length ell_*."""
+    rd = P.DATA / run_id
+    with np.load(rd / f"{run_id}.npz") as z:
+        t, dtk, pW = z["ts__t"], z["ts__acc_sum_dt"], z["ts__pWm"]
+    edges = np.linspace(window[0], window[1], n_blocks + 1)
+    out = []
+    for a, b in zip(edges[:-1], edges[1:]):
+        first = int(np.searchsorted(t, a - 1e-9))
+        last = int(np.searchsorted(t, b + 1e-9))
+        out.append(H.time_average(pW[:last], dtk[:last], first))
+    return out
+
+
 def numbers(run_id: str, acc: dict) -> dict:
     """The quoted numbers of one run (see the module docstring); wavenumbers in units of k_1 = 2 pi / L."""
     rd = P.DATA / run_id
@@ -51,10 +70,9 @@ def numbers(run_id: str, acc: dict) -> dict:
     m = np.arange(M + 1)
     W = np.array(av["W_over_eps"])
     q = np.array(av["Dperp_over_W"])
-    fit = (m >= 2) & (m <= M // 2)
-    x = np.sqrt(2.0 * m[fit])
-    slope = np.polyfit(x, np.log(W[fit] * x), 1)[0]
-    ell = -1.0 / slope
+    ell = H.fit_decay(W, 2, M // 2)                     # whole collision-free range (the paper's fit up to 2026-11-10)
+    win = H.fit_decay_window(W, M)                      # 1.5 e-folds of the run's own decay (m_* scan spec)
+    ell_blocks = [H.fit_decay(Wb, 2, win["m_max"]) for Wb in block_W(run_id, av["window"])]
     fl = an["fieldlines"]
     kap1 = fl["kappa1_F_over_k1"]
     T = 1.0 / av["inv_T"]
@@ -62,6 +80,8 @@ def numbers(run_id: str, acc: dict) -> dict:
     tr = an["P_b"]["traced P(kappa) of the injected pattern"]
     rW = np.array(tr["W_over_model_m"])
     rP = np.array(tr["Pi_over_model_m"])
+    m_hi_model = min(win["m_max"], len(rW) - 1)         # the model spectrum W/(W/model) on the same window
+    ell_model_win = H.fit_decay(W[:len(rW)] / rW, 2, m_hi_model)
     mm = (m >= 1) & (m <= M // 2)
     kap = an["kappa"]
     pe = {k: v for k, v in an["P_e"].items() if k.isdigit() and int(k) >= 1}
@@ -78,6 +98,11 @@ def numbers(run_id: str, acc: dict) -> dict:
         budget_resid_fa=an["P_a"]["budget_resid_fa_max_over_eps"],
         Dperp_over_W_m01=[float(q[0]), float(q[1])], Dperp_over_W_m16=float(q[16]),
         ell_star=ell, s_kappa1_T=skT, ell_over_skT=ell / skT, m_star_fit=ell ** 2 / 2, m_star_model=skT ** 2 / 2,
+        ell_win=win["ell"], ell_win_blocks=ell_blocks,
+        ell_win_se=float(np.std(ell_blocks, ddof=1) / math.sqrt(len(ell_blocks))),
+        m_star_win=win["ell"] ** 2 / 2, fit_m_max=win["m_max"], fit_n_e=win["n_e"], fit_status=win["status"],
+        ell_model_win=ell_model_win, m_star_model_win=ell_model_win ** 2 / 2, model_fit_m_max=m_hi_model,
+        coll_over_sink_at_m_max=float(2.0 * coll[win["m_max"]] / av["inv_T"]),     # hypercollisional / perpendicular rate
         kappa1_injected=kap1,
         W_over_model_range=[float(rW[mm[:len(rW)]].min()), float(rW[mm[:len(rW)]].max())],
         Pi_over_model_range=[float(rP[: M // 2].min()), float(rP[: M // 2].max())],
@@ -106,6 +131,10 @@ def main() -> int:
         print(f"    ell_* {d['ell_star']:.2f} vs s kappa_1 T {d['s_kappa1_T']:.2f} (ratio {d['ell_over_skT']:.3f}); "
               f"m_* {d['m_star_fit']:.0f} (fit) {d['m_star_model']:.0f} (model); kappa_1 {d['kappa1_injected']:.2f}; "
               f"D_perp/W m=0,1 {d['Dperp_over_W_m01'][0]:.2f},{d['Dperp_over_W_m01'][1]:.2f}, m=16 {d['Dperp_over_W_m16']:.2f}")
+        print(f"    windowed fit ({d['fit_status']}, n_e {d['fit_n_e']:.2f}, 2 <= m <= {d['fit_m_max']}): ell_* "
+              f"{d['ell_win']:.2f} +- {d['ell_win_se']:.2f}, m_* {d['m_star_win']:.1f}; model spectrum on the same "
+              f"window (m <= {d['model_fit_m_max']}) ell_* {d['ell_model_win']:.2f}, m_* {d['m_star_model_win']:.1f}; "
+              f"2 nu_m T at the window's top {d['coll_over_sink_at_m_max']:.3f}")
         print(f"    W/model {d['W_over_model_range'][0]:.3f}-{d['W_over_model_range'][1]:.3f}; "
               f"Pi/model {d['Pi_over_model_range'][0]:.3f}-{d['Pi_over_model_range'][1]:.3f}; "
               f"g0 kappa_1 per band {', '.join(f'{v:.2f}' for v in d['kappa1_g0_bands'])}; "
