@@ -123,6 +123,12 @@ runs:
     steady_tol: 0.20
     block_tol: 0.25
     decision: "Anjor 2026-11-10: the beta_i = 0.1 terms, approved in advance for the beta_i = 0.05 runs of the m_* scan"
+  P1_forced-beta0p05-chi0p35-m512-eta33_20261111_202716:
+    steady_tol: 0.20
+    block_tol: 0.25
+    decision: >-
+      Anjor 2026-11-10: the beta_i = 0.1 terms, approved in advance for the beta_i = 0.05 runs of the m_* scan, and the
+      ell_* block rule of the chi ~ 0.34 run; this is that run repeated with eta = 33 (Anjor 2026-11-11, option B)
   P1_forced-beta0p3-m192_20261110_110132:
     window: 37.5
     block_tol: 0.27
