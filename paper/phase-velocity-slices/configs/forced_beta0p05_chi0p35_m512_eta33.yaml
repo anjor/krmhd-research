@@ -1,0 +1,98 @@
+# m_* against chi at fixed beta_i (Anjor 2026-11-10: plots of m_* against beta_i and chi to back m_* ~ beta_i/chi^2):
+# forced KRMHD at beta_i = 0.05, M = 512, chi_out ~ 0.35, rerun with a smaller hyper-resistivity (Anjor 2026-11-11,
+# option B).  The first run at this chi, P1_forced-beta0p05-chi0p35-m512_20261110_200914 (forced_beta0p05_chi0p35_m512.yaml,
+# eta = 109.375 = 300 x 0.35/0.96), failed the E_A slope test (-6.55): its hyper-resistive dissipation sat at median shell
+# 7 (quartiles 6-9) against 10 (7-13) at chi ~ 0.96.  It is kept as the eta comparison for this run.
+# Read by scripts/run_forced_turbulence.py (on Modal with scripts/modal_chain.py); analysis by analysis/h1_fieldlines.py
+# and analysis/h1_pilot.py.
+#
+# Changes from forced_beta0p05_chi0p35_m512.yaml:
+#  * eps_A = 0.0035 and eta = 33, as in forced_spinup64_chi0p35_eta33.yaml.  At chi ~ 0.35 the dissipation scale lies
+#    where the cascade is still weak (k_d^3 ~ chi^2/eta), so eta scales with chi^2, not chi: 300 x (0.345/0.96)^2 = 39.
+#    Calibration spin-ups (64^3, M = 2, from the end of the eta = 109 run): eta 28/40/56 at eps_A 0.005 gave dissipation
+#    median shells 11/10/9 but chi_out 0.38 (less mid-k_perp dissipation raises the outer amplitude); eps_A rescaled once
+#    by (0.345/0.381)^3.5 and eta by (0.345/0.381)^2: eps_A 0.0035, eta 33 gave chi_out 0.367 (std 0.039) over
+#    t = 50..100, dissipation median shell 11 (49.7% of it at n_perp <= 10; quartiles 8-13), E_A slope over the
+#    spectral-sanity shells -3.90 and energy fraction at n_perp >= 21 3.8e-5 (chi ~ 0.96 run: -4.12, 3.5e-5).
+#  * Start: the end of that spin-up (on the results volume), z+- only; g = 0 at t = 0.
+#  * Unchanged: M = 512, nu, t_end 330 (window t = 30..330), output cadence, analysis and gates.
+
+label: forced-beta0p05-chi0p35-m512-eta33
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 512
+  Lambda: "19 + sqrt(404)"
+  beta_i: 0.05
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 33.0
+  hyper_r: 2
+  nu: "30*sqrt(0.0625)*sqrt(0.05)"
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.0035
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: /results/p1-mstar/spinup-chi0p35-eta33/P1_forced-spinup64-chi0p35-eta33_20261111_200601/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 330.0                 # gate window (the final 300 tau_A) t = 30..330; extended in place if the block check needs it
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  safety_alfven: 0.4          # Alfvenic CFL limit (the slice-advection limit keeps 0.8)
+  recompute_every: 25
+  limit_every: 1               # rescale both limits every step (h1lib.make_fast_limits)
+  sample_every: 60
+  print_every: 500
+  snapshot_every: 50.0
+  restart_every: 10.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 300.0
+  steady_tol: 0.15
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
