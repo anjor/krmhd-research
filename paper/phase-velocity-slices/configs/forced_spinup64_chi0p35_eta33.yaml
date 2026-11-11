@@ -1,0 +1,87 @@
+# Calibration of the chi ~ 0.34 rerun at beta_i = 0.05 (Anjor 2026-11-11, option B: rerun at chi ~ 0.34 with a smaller
+# eta), second round.  The first round (forced_spinup64_chi0p35_eta{28,40,56}.yaml, eps_A = 0.005, from the end of the
+# chi ~ 0.34 M = 512 run) put the hyper-resistive dissipation median at shells 11, 10, 9 (quartiles 9-14, 8-13, 7-12;
+# chi ~ 0.96: 10, 7-13), but chi_out rose to 0.381, 0.389, 0.374 over t = 50..100 (std 0.03-0.05; 0.342 at eta = 109):
+# with less dissipation at intermediate k_perp the cascade carries the injected power further and the outer amplitude
+# is larger.  The rerun should sit at the chi of the eta = 109 run (0.345 over its window), so that the two compare eta
+# alone.
+#
+# As forced_spinup64_chi0p35_eta40.yaml, except (the spin-up rule: eps_A rescaled by (chi_target/chi_out)^3.5, once):
+#  * eps_A = 0.005 x (0.345/0.381)^3.5 = 0.0035, with chi_out = 0.381 the mean of the three first-round runs (no trend
+#    with eta between 28 and 56).
+#  * eta = 40 x (0.345/0.381)^2 = 33: eta ~ chi^2 keeps the dissipation scale where the first round put it at eta = 40
+#    (k_d^3 ~ chi^2/eta in weak turbulence).
+#  * Same start (end of the chi ~ 0.34 M = 512 run), 100 tau_A, measured over the second half.  Accepted if chi_out is
+#    within 10% of 0.345 and the dissipation median is at shell 9-10.
+#
+# Units: v_A = 1, box side L = 1 (k = 2 pi n), tau_A = L_z/v_A = 1.
+
+label: forced-spinup64-chi0p35-eta33
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 2
+  Lambda: sqrt5
+  beta_i: 1.0
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 33.0                     # damping rate eta (k_perp^2/k_perp,max^2)^r on z+- and every g_m
+  hyper_r: 2
+  nu: 0.0
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.0035
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.0                   # off during the Alfvenic spin-up
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: /results/p1-mstar/beta0p05-chi0p35-m512/P1_forced-beta0p05-chi0p35-m512_20261110_200914/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 100.0                  # tau_A
+  dt_max: 5.0e-3
+  dt_umax_M: 32
+  dt_rule: bound
+  safety: 0.8
+  recompute_every: 25
+  sample_every: 20
+  print_every: 500
+  snapshot_every: 10.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.10
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
