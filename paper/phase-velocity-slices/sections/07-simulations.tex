@@ -140,6 +140,48 @@ Table~\ref{tab:runs} lists the runs. All conserve energy to within $2.1\times10^
 
 \emph{Diagnostics.} The $k_z$-only flux split by the sign of $k_z$ has an unmixing part of $-0.10$ to $-0.15$ times its phase-mixing part for $1\le m\le M/2$ at every $\beta_i$, which the tilt of the field lines accounts for to within 0.03 for $m\ge4$ (0.05 at $m=1$) with no return flux (figure~\ref{fig:tilt}), while the per-$m$ budget closes to better than $5\times10^{-4}\,\eps$ with the field-aligned flux in every run, and to 2--8\% with the $k_z$-only flux. The slice correlation width, fitted at the nodes, is 0.30 at $\beta_i=0.3$ and 0.38 at $\beta_i=0.1$, against the predicted 0.11--0.14 and 0.22--0.30; the node spacing near $u=0$ is about 0.4 at $M=32$, so it is not resolved. At $M=64$, where the spacing is about 0.28, the fitted widths are 0.25 and 0.35 against the predicted 0.11--0.15 and 0.23--0.30, so at $\beta_i=0.1$ the width approaches the prediction as it becomes resolved.
 
+\subsection{The break against \texorpdfstring{$\beta_i$}{beta} and \texorpdfstring{$\chi$}{chi}}\label{sim:mstar}
+
+Of the runs in table~\ref{tab:runs}, only those at $\beta_i=0.1$ place the break well inside the collision-free range $m\le M/2$. To measure $m_*$ against $\beta_i$ and $\chi$ we made the runs of table~\ref{tab:mstar}, all on $64^3$ points with the forcing of section~\ref{sim:setup}, with $M$ large enough in each that the break lies below $M/2$, and with $\nu=30\,\beta_i^{1/2}(32/M)^{1/2}$ as in section~\ref{sim:beta}. At $\chi\approx0.95$ we ran $\beta_i=0.05$ and 0.3, and we use the run at $\beta_i=0.1$ and $M=64$ of table~\ref{tab:runs}. At $\beta_i=0.05$ we lowered $\chi$ to 0.75, 0.56 and 0.40 by lowering the Alfv\'enic injection rate $\eps_A$ from 0.3 to 0.1, 0.031 and 0.0035. As $\chi$ decreases the hyper-resistive dissipation of $E_A$ moves to larger scales unless $\eta$ decreases with it, so we lowered $\eta$ from 300 to 219 and 156, in proportion to $\chi$, and to 33 at $\chi=0.40$, where $\eta$ and $\eps_A$ were set by short runs at $M=2$. The median shell of the hyper-resistive dissipation of $E_A$ is then $k_\perp/k_1=9$--11 in every run. At $\beta_i=0.05$ the free energy fluctuates slowly, so these runs are averaged over 160--$300\,\tau_A$.
+
+\begin{table}[t]
+  \centering
+  \caption{The runs of the $m_*$ scan, on $64^3$ points. $\eta$ is the hyper-resistivity; the window, std/mean and block spread are as in table~\ref{tab:runs}; $n_e=(\sqrt M-2)/\ell_*$ is the number of decay lengths that fit in the collision-free range; $m_*=\ell_*^2/2$ from the fit over $2\le\sqrt{2m}\le2+1.5\,\ell_*$, with the standard error of the fits to the four block averages; $T$ is the median of $D_\perp(m)/W(m)$ over $2\le m\le16$ and $\kappa_1$ the mean field-aligned wavenumber of the injected pattern.}
+  \label{tab:mstar}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{ccccccccccc}
+    \toprule
+    $\beta_i$ & $\chi$ & $M$ & $\eta$ & window & std/mean & block & $n_e$ & $m_*$ & $(s\kappa_1T)^2/2$ & $T/\tau_{\rm nl}$ \\
+    & & & & & ($E_A$, $W$) & spread & & & & \\
+    \midrule
+    0.05 & 0.96 & 128 & 300 & 20--180 & 0.117, 0.172 & 0.47$^a$ & 3.45 & $3.7\pm0.3$ & 3.3 & 10.9 \\
+    0.1 & 0.96 & 64 & 300 & 16--66 & 0.114, 0.186 & 0.21 & 1.69 & $6.6\pm0.4$ & 6.9 & 11.0 \\
+    0.3 & 0.94 & 192 & 300 & 28.5--66 & 0.124, 0.095 & 0.26$^b$ & 1.73 & $24.2\pm0.6$ & 31.4 & 13.6 \\
+    0.05 & 0.75 & 128 & 219 & 20--200 & 0.135, 0.139 & 0.18 & 2.65 & $7.0\pm0.1$ & 6.6 & 11.9 \\
+    0.05 & 0.56 & 256 & 156 & 30--300 & 0.150, 0.143 & 0.12 & 2.81 & $14.9\pm0.6$ & 16.6 & 13.9 \\
+    0.05 & 0.40 & 512 & 33 & 30--330 & 0.102, 0.107 & 0.16 & 1.87 & $60.5\pm1.1$ & 167 & 25.9 \\
+    \bottomrule
+  \end{tabular}
+
+  \smallskip
+  {\footnotesize $^a$ $W(m)$ and $D_\nu(m)$ at $m=65$, in the collisional range, from the slow fluctuation of $W$; on the fit range the four block fits of $\ell_*$ agree to within 15\%. $^b$ $D_\perp$ at $m=0$; every other average within 19\%. The window starts after $28.5\,\tau_A$, because $W$ was still settling before, as in the run at $\beta_i=0.3$ and $M=32$.}
+\end{table}
+
+We measure the break from a fit of $W(m)\sqrt{2m}\propto\exp(-\sqrt{2m}/\ell_*)$, as in section~\ref{sim:beta}, but over a range set by each run's own decay: from $m=2$ to $\sqrt{2m}=2+1.5\,\ell_*$, found by iterating from the whole range $2\le m\le M/2$. Then $m_*=\ell_*^2/2$. The collision-free range holds 1.7 to 3.5 decay lengths in these runs (table~\ref{tab:mstar}), and at the top of the fit range the hypercollisional rate $2\nu_m$ is at most 13\% of the perpendicular rate $1/T$. The model value is $(s\kappa_1T)^2/2$, with $T$ the median rate over $2\le m\le16$ of each run and $\kappa_1$ from lines traced on its snapshots.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{h1_mstar}
+  \caption{The break $m_*=\ell_*^2/2$ from the fit to $W(m)$ (circles, with the standard error of the four block fits) and the model value $(s\kappa_1T)^2/2$ (crosses). (a) Against $\beta_i$ at $\chi\approx0.95$, with a weighted power-law fit (solid) and $m_*\propto\beta_i$ (dotted). (b) Against the outer-scale $\chi$ at $\beta_i=0.05$, with $\chi^{-2}$ (dotted) and $\chi^{-4}$ (dashed) through the run at $\chi=0.96$.}
+  \label{fig:mstar}
+\end{figure}
+
+\emph{Dependence on $\beta_i$.} At $\chi\approx0.95$ the break grows from $m_*=3.7$ at $\beta_i=0.05$ to 6.6 and 24.2 at $\beta_i=0.1$ and 0.3 (figure~\ref{fig:mstar}a). A weighted fit gives $m_*\propto\beta_i^{1.09\pm0.04}$, close to the $m_*\propto\beta_i$ of (\ref{eq:mstar-scaling}). The model values follow $\beta_i^{1.31\pm0.04}$. They agree with the measured $m_*$ to within 12\% at $\beta_i\le0.1$ and lie 30\% above it at $\beta_i=0.3$, where $T/\tau_{\rm nl}$ is larger, 13.6 against 10.9 and 11.0, because the moments $2\le m\le16$ that set $T$ hold younger free energy at larger $\beta_i$ (section~\ref{sim:beta}).
+
+\emph{Dependence on $\chi$.} At $\beta_i=0.05$ the break grows from $m_*=3.7$ at $\chi=0.96$ to 7.0, 14.9 and 60.5 at $\chi=0.75$, 0.56 and 0.40 (figure~\ref{fig:mstar}b). Between neighbouring runs the local exponent $-\dd\ln m_*/\dd\ln\chi$ is 2.5, 2.7 and 4.1. Down to $\chi\approx0.56$ the break therefore grows somewhat faster than the $\chi^{-2}$ of (\ref{eq:mstar-scaling}), and below it the growth steepens towards $\chi^{-4}$; no single power law describes the four runs. The model value follows the measured $m_*$ to within 12\% for $\chi\ge0.56$, but at $\chi=0.40$ it is 167, 2.8 times the measured value.
+
+Both departures come from the perpendicular sink. With the age $\vartheta=\sqrt{2m}/(s\kappa_1)$ and the rate $D_\perp/W$ both measured in units of the outer eddy time $\tau_{\rm nl}$, the sinks of the runs at $\chi\ge0.56$ agree to within about 10\% for $\vartheta\ge12\,\tau_{\rm nl}$: the rate switches on over the first 10--$15\,\tau_{\rm nl}$ and levels off at $0.087$--$0.094/\tau_{\rm nl}$, slightly lower at smaller $\chi$. The range $2\le m\le16$ that defines $T$ covers the same ages in units of $\tau_A$ in every run at $\beta_i=0.05$, but as $\chi$ decreases and $\tau_{\rm nl}$ grows it holds free energy that is younger in units of $\tau_{\rm nl}$, from 8.5--$24\,\tau_{\rm nl}$ at $\chi=0.96$ to 5--$14\,\tau_{\rm nl}$ at $\chi=0.56$. The sink there is weaker, so $T/\tau_{\rm nl}$ rises from 10.9 to 13.9 and $m_*$ grows faster than $\chi^{-2}$. At $\chi=0.40$ the moments $2\le m\le16$ hold free energy of age 3--$8\,\tau_{\rm nl}$, and the sink itself changes: it switches on as at larger $\chi$, reaches $0.069/\tau_{\rm nl}$ between $\vartheta=12$ and $16\,\tau_{\rm nl}$ and falls to $0.055/\tau_{\rm nl}$ at $30\,\tau_{\rm nl}$, where the runs at larger $\chi$ are at 0.087--$0.094/\tau_{\rm nl}$. The cascade then removes the free energy more slowly per outer eddy time, as expected once the outer-scale turbulence is weak and its cascade time exceeds $\tau_{\rm nl}$. Over $1\le m\le M/2$ the rate $D_\perp/W$ varies by a factor of 10 at $\chi=0.40$, against 1.4, 1.7 and 2.5 at $\chi=0.96$, 0.75 and 0.56, so the median over $2\le m\le16$ no longer represents the rate over the range $m\le171$ on which the break is measured, and $(s\kappa_1T)^2/2$ overestimates $m_*$. With the rate averaged over each run's fit range instead, uniformly in $\sqrt{2m}$ as the fit weights it, $s\kappa_1T$ agrees with the fitted $\ell_*$ to within 9\% at $\chi=0.40$ and to within 5\% in every other run of table~\ref{tab:mstar}. The decay beyond the break is therefore still set by phase mixing at $\kappa_1$ against the perpendicular sink, as in (\ref{eq:Wage}). What departs from (\ref{eq:mstar-scaling}) at small $\chi$ is the assumption that the sink rate is a fixed multiple of $1/\tau_{\rm nl}$.
+
 \subsection{Dependence on resolution}\label{sim:resolution}
 
 \begin{figure}[t]

@@ -19,7 +19,12 @@ h1_pilot.py):
   * the collisional share of the dissipation in the two-channel model with the traced P(kappa), sum_m 2 nu_m W_model(m)
     / eps with nu_m the hypercollisional amplitude damping rate, against the measured share;
   * field-aligned and Eulerian wavenumbers: kappa_1 of g_0 and Phi per k_perp band, the rms field-aligned and k_z
-    wavenumbers of g_m over 1 <= m <= M/2, and the unmixing/phase-mixing ratio of the k_z-split flux for m >= 1.
+    wavenumbers of g_m over 1 <= m <= M/2, and the unmixing/phase-mixing ratio of the k_z-split flux for m >= 1;
+  * for the m_* scan (section 7, the break against beta_i and chi): the perpendicular rate D_perp/W averaged over the
+    windowed fit range uniformly in sqrt(2m) and the decay length s kappa_1 T it gives against the fitted ell_*; the
+    max/min of D_perp/W over 1 <= m <= M/2; the sink D_perp/W x tau_nl at ages sqrt(2m)/(s kappa_1 k_1) of 4..30
+    tau_nl and the ages of m = 2 and 16 in units of tau_nl; eta and the shells at which the cumulative hyper-resistive
+    dissipation of E_A reaches 25, 50 and 75%.
 Writes data/h1_run_numbers.json.
 
 Usage (from the repository root):
@@ -58,6 +63,25 @@ def block_W(run_id: str, window: list[float], n_blocks: int = 4) -> list[np.ndar
     return out
 
 
+def dissipation_median_shell(run_id: str, window: list[float]) -> list[int]:
+    """Shells n_perp = k_perp/k_1 at which the cumulative hyper-resistive dissipation of E_A, eta (k_perp/k_max)^(2r)
+    E_A(k_perp) averaged over the window (dt-weighted), reaches 25%, 50% and 75%; the shape only, so k_max is taken
+    as the largest recorded shell.  Locates the dissipation range when eta changes between runs (m_* scan)."""
+    rd = P.DATA / run_id
+    cfg = json.load(open(rd / f"{run_id}.json"))["config"]
+    with np.load(rd / f"{run_id}.npz") as z:
+        t, dt, EAk, n = z["ts__t"], z["ts__acc_sum_dt"], z["ts__EAk"], z["nperp"]
+    h = (t >= window[0] - 1e-9) & (t <= window[1] + 1e-9)
+    Ek = (EAk[h] * dt[h][:, None]).sum(0) / dt[h].sum()
+    r = int(cfg["stepper"]["hyper_r"])
+    D = (n / n.max()) ** (2 * r) * Ek
+    cum = np.cumsum(D) / D.sum()
+    return [int(round(float(n[np.searchsorted(cum, f)]))) for f in (0.25, 0.5, 0.75)]
+
+
+AGES_EDDY = (4, 8, 12, 16, 20, 25, 30)
+
+
 def numbers(run_id: str, acc: dict) -> dict:
     """The quoted numbers of one run (see the module docstring); wavenumbers in units of k_1 = 2 pi / L."""
     rd = P.DATA / run_id
@@ -88,6 +112,16 @@ def numbers(run_id: str, acc: dict) -> dict:
     ratio = [v["minus_over_plus"] for v in pe.values()]
     slopes = {f"{a}-{b}": float(np.polyfit(np.log(m[a:b + 1]), np.log(W[a:b + 1]), 1)[0]) for a, b in ((2, 8), (4, 16), (8, 32))}
     binv = block_inv_T(run_id, av["window"])
+    # the perpendicular rate averaged over the windowed fit range uniformly in sqrt(2m), as the fit weights it: with an
+    # age-dependent sink (eq. Wage) the decay over that range is s kappa_1 / <D_perp/W>
+    x = np.sqrt(2.0 * m[2:win["m_max"] + 1])
+    inv_T_fit = float(np.trapezoid(q[2:win["m_max"] + 1], x) / (x[-1] - x[0]))
+    skT_fit = math.sqrt(beta) * kap1 * k1 / inv_T_fit
+    # the sink against the age theta = sqrt(2m)/(s kappa_1 k_1) of the free energy, both in units of tau_nl
+    m1 = m[1:M // 2 + 1]
+    age_eddy = np.sqrt(2.0 * m1) / (math.sqrt(beta) * kap1 * k1) / av["tau_nl"]
+    rate_eddy = q[1:M // 2 + 1] * av["tau_nl"]
+    a2_16 = np.sqrt(2.0 * np.array([2, 16])) / (math.sqrt(beta) * kap1 * k1) / av["tau_nl"]
     st = cfg["stepper"]
     coll = P.coll_rates(M, P.parse_number(st["nu"]), int(st["hyper_n"]))
     nu_share_model = float(np.sum(2.0 * coll[:len(rW)] * W[:len(rW)] / rW))      # W is W/eps, rW = W/W_model
@@ -114,6 +148,11 @@ def numbers(run_id: str, acc: dict) -> dict:
         inv_T_blocks=binv, inv_T_block_spread=(max(binv) - min(binv)) / av["inv_T"],
         inv_T_block_se=inv_T_se(binv), W_slopes=slopes,
         nu_share_model=nu_share_model,
+        inv_T_fit_range=inv_T_fit, s_kappa1_T_fit_range=skT_fit, ell_win_over_skT_fit_range=win["ell"] / skT_fit,
+        Dperp_over_W_max_over_min=an["P_a"]["spread_max_over_min_m1_to_M2"],
+        sink_eddy_at_age={a: float(np.interp(a, age_eddy, rate_eddy, left=np.nan, right=np.nan)) for a in AGES_EDDY},
+        age_eddy_m2_m16=[float(a2_16[0]), float(a2_16[1])],
+        eta=P.parse_number(st["eta"]), dissipation_shells_EA=dissipation_median_shell(run_id, av["window"]),
     )
 
 
@@ -145,6 +184,11 @@ def main() -> int:
         print(f"    1/T blocks {', '.join(f'{v:.3f}' for v in d['inv_T_blocks'])} (spread {d['inv_T_block_spread']:.3f}, "
               f"standard error {d['inv_T_block_se']:.3f}); W slopes " + ", ".join(f"{k}: {v:.2f}" for k, v in d["W_slopes"].items())
               + f"; collisional share measured {d['nu_share']:.3f}, model {d['nu_share_model']:.3f}")
+        print(f"    rate over the fit range {d['inv_T_fit_range']:.3f} (s kappa_1 T {d['s_kappa1_T_fit_range']:.2f}, ell_win/that "
+              f"{d['ell_win_over_skT_fit_range']:.3f}); D_perp/W max/min over 1..M/2 {d['Dperp_over_W_max_over_min']:.2f}; "
+              f"sink x tau_nl at age/tau_nl " + ", ".join(f"{a}: {v:.3f}" for a, v in d["sink_eddy_at_age"].items())
+              + f"; m = 2..16 at age {d['age_eddy_m2_m16'][0]:.1f}-{d['age_eddy_m2_m16'][1]:.1f} tau_nl; eta {d['eta']:g}, "
+              f"E_A hyper-resistive dissipation shells (25/50/75%) {d['dissipation_shells_EA']}")
     (P.DATA / "h1_run_numbers.json").write_text(json.dumps(P._jsonable(out), indent=1))
     return 0
 
