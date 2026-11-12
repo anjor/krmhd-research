@@ -13,8 +13,10 @@ h1_pilot.py) the numbers come from h1_run_numbers.numbers:
   * the model value (s kappa_1 T)^2/2 with the run's measured T (median of D_perp/W over 2 <= m <= 16) and the mean
     field-aligned wavenumber kappa_1 of the injected pattern (traced field lines), and the model spectrum with the
     traced P(kappa) fitted over the same window as the data.
-Power laws m_* ~ beta_i^a (panel a) and m_* ~ chi^-b (panel b) are fitted to the measured points by weighted least
-squares in ln m_*.
+A power law m_* ~ beta_i^a (panel a) is fitted to the measured points by weighted least squares in ln m_*.  Against chi
+no single power law is drawn (Anjor 2026-11-12, option A: the chi points steepen from about chi^-2.5 to chi^-4 below
+chi ~ 0.5); the local exponents -d ln m_*/d ln chi between neighbouring points are written to the .json, as is the
+weighted single power law for reference.
 
 Writes figures/h1_mstar.{pdf,png} (JPP double column) and data/h1_mstar_scan.json.
   (a) m_* against beta_i, runs given with --beta (chi_out ~ 0.95);
@@ -128,6 +130,12 @@ def main() -> int:
         out["fit_chi_model"] = dict(g, exponent=-g["exponent"])
         t = power_law([p["chi_out"] for p in mb], [p["T_over_tau_nl"] for p in mb], [0.03 * p["T_over_tau_nl"] for p in mb])
         out["fit_T_over_tau_nl_chi"] = t                             # constant T/tau_nl is the chi^-2 law
+        s = sorted(mb, key=lambda p: -p["chi_out"])
+        out["local_exponents_chi"] = [
+            dict(chi=[a["chi_out"], b["chi_out"]],
+                 m_star=-math.log(b["m_star_win"] / a["m_star_win"]) / math.log(b["chi_out"] / a["chi_out"]),
+                 m_star_model=-math.log(b["m_star_model"] / a["m_star_model"]) / math.log(b["chi_out"] / a["chi_out"]))
+            for a, b in zip(s[:-1], s[1:])]
 
     fcfg = FS.style_config()
     plt = FS.setup_style(fcfg, usetex=True)
@@ -155,10 +163,6 @@ def main() -> int:
     for k, ls in ((2, ":"), (4, "--")):
         axb.plot(xs, top["m_star_win"] * (xs / top["chi_out"]) ** (-k), ls, color=fcfg["reference_color"], lw=0.8,
                  label=rf"$\propto\chi^{{-{k}}}$")
-    if "fit_chi" in out:
-        f = out["fit_chi"]
-        axb.plot(xs, math.exp(f["log_prefactor"]) * xs ** (-f["exponent"]), "-", color=pal[0], lw=0.8,
-                 label=rf"fit $\propto\chi^{{-{f['exponent']:.2f}}}$")
     axb.set_xlabel(r"$\chi$")
     axb.set_ylabel(r"$m_*$")
     axb.legend(loc="upper right", frameon=False)
@@ -184,6 +188,9 @@ def main() -> int:
         if k in out:
             f = out[k]
             print(f"{k}: exponent {f['exponent']:.3f} +- {f['exponent_se']:.3f} (chi^2 {f['chi2']:.2f}, {f['n']} points)")
+    for e in out.get("local_exponents_chi", []):
+        print(f"local exponent -dln m_*/dln chi over chi {e['chi'][0]:.2f}-{e['chi'][1]:.2f}: measured {e['m_star']:.2f}, "
+              f"model {e['m_star_model']:.2f}")
     return 0
 
 
