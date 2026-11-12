@@ -251,7 +251,10 @@ def main() -> int:
               for nm in ("g0", "phi", "psi")}
         kbz = {nm: np.array([[j[f"{nm}_band{i}"]["z"]["kappa_1"] for i in range(len(bands))] for j in js]).mean(0)
                for nm in ("g0", "phi", "psi")}
-        kbh = {nm: np.array([[j[f"{nm}_band{i}"]["par"]["kappa_half"] for i in range(len(bands))] for j in js]).mean(0)
+        # kappa_half is NaN (stored as the string "nan") when C_par does not fall to 1/2 within the traced length; the
+        # band's mean over snapshots is then NaN
+        kbh = {nm: np.array([[float(j[f"{nm}_band{i}"]["par"]["kappa_half"]) for i in range(len(bands))]
+                             for j in js]).mean(0)
                for nm in ("g0", "phi", "psi")}
         fl = dict(kap=kap, PF=PF, Pg0=Pg0, k1m=k1m, bands=bands, kb=kb, kbz=kbz, kbh=kbh, n=len(fls),
                   times=[j["t"] for j in js])
