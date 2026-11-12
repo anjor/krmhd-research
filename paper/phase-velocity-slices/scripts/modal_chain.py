@@ -44,9 +44,19 @@ RETRY_FIRST, RETRY_MAX = 30.0, 300.0      # pauses (s) between retries after a n
 def network_error(exc: BaseException) -> bool:
     """True for errors of the local connection to Modal (name lookup, refused or dropped connections, gRPC
     deadlines), which say nothing about the state of a call.  Modal raises its own ConnectionError for these once its
-    internal retries are used up."""
+    internal retries are used up, or a ServiceError with gRPC status DEADLINE_EXCEEDED or UNAVAILABLE (a chain stopped
+    on 'ServiceError: Deadline Exceeded' while this computer was offline, and its call ran on).  A ServiceError with
+    another status (CANCELLED, UNKNOWN) is not a network error."""
+    import grpclib
     import modal.exception
-    return isinstance(exc, (modal.exception.ConnectionError, OSError))
+    if isinstance(exc, (modal.exception.ConnectionError, OSError)):
+        return True
+    if isinstance(exc, modal.exception.ServiceError):
+        status = getattr(exc, "_grpc_status", None)
+        if status is not None:
+            return status in (grpclib.Status.DEADLINE_EXCEEDED, grpclib.Status.UNAVAILABLE)
+        return "Deadline Exceeded" in str(exc)
+    return False
 
 
 def never_sent(exc: BaseException | None) -> bool:
