@@ -136,3 +136,8 @@ runs:
       Anjor 2026-11-10: averaging window t = 28.5..66 (37.5 tau_A), as for the M = 32 beta_i = 0.3 run, because the first
       12.5 tau_A of the 50 tau_A window were still settling (W block means 0.508 vs 0.63-0.65); block limit 0.27 for
       D_perp at the injection moment m = 0 (26.2%); every other block average within 19.3% (collisional share 9.3%)
+  P1_forced-beta1-m768_20261110_110122:
+    decision: >-
+      Anjor 2026-11-13, option C: not accepted and not used (default terms kept, so the gates still fail: E_A std/mean
+      0.154 > 0.15, block check 0.23 > 0.20 for W(m) at m = 222 and D_nu). The m_* scan against beta_i stays at
+      beta_i = 0.05-0.3; the paper says that extending it to beta_i = 1 is ongoing work
