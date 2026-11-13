@@ -365,9 +365,9 @@ def main() -> int:
         fig.tight_layout()
         save(fig, "h1_wm")
         plt.close(fig)
-        # h1_flux
-        fig, ax = plt.subplots(1, 2, figsize=(fcfg["double_width_in"], 2.6))
-        a = ax[0]
+        # h1_flux (the slice correlations C_jl, out["P_f"], are no longer drawn: the correlation width is below the
+        # node spacing in every run)
+        fig, a = plt.subplots(1, 1, figsize=(fcfg["single_width_in"], 2.6))
         a.semilogx(mh, Pfa / eps, "o-", color=blk, ms=3, label=r"$\Pi_{m+1/2}$ field-aligned")
         a.semilogx(mh, Pkz / eps, "-", color=pal[0], label=r"$k_z$ only")
         a.semilogx(mh, Pp / eps, "--", color=pal[1], label=r"$k_z$ split: $+$")
@@ -379,17 +379,6 @@ def main() -> int:
         a.set_xlabel(r"$m + 1/2$")
         a.set_ylabel(r"flux$/\varepsilon$")
         a.legend(fontsize=6, loc="upper right")
-        FS.panel_label(a, "(a)")
-        a = ax[1]
-        a.plot(du, cv, ".", color=blk, ms=2, label=r"measured, $|u|<%.1f$" % ucut)
-        a.plot(du, Cm[I, J], ".", color=pal[2], ms=2, label="two-channel model")
-        x = np.linspace(0, du.max(), 200)
-        a.plot(x, 1 / (1 + (x * s * kF_z * T) ** 2), "-", color=pal[0], lw=0.9,
-               label=r"$[1+(\Delta u\, s k_z T)^2]^{-1}$")
-        a.set_xlabel(r"$|u_j - u_l|$")
-        a.set_ylabel(r"$C_{jl}/(C_{jj}C_{ll})^{1/2}$")
-        a.legend(fontsize=6)
-        FS.panel_label(a, "(b)")
         fig.tight_layout()
         save(fig, "h1_flux")
         plt.close(fig)
