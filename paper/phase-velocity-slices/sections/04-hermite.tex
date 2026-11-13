@@ -36,7 +36,7 @@ With forcing of $g_0$ at the rate $\eps$, dissipation that acts on every $g_m$ i
 \begin{equation}\label{eq:budget}
   \frac{\dd W(m)}{\dd t}=\Pi_{m-1/2}-\Pi_{m+1/2}+\eps\,\delta_{m0}-D_\perp(m)-D_\nu(m),\qquad \Pi_{-1/2}=0,
 \end{equation}
-where $D_\perp(m)$ and $D_\nu(m)$ are the rates at which the spatial dissipation and the hypercollisions remove free energy from moment $m$. The brackets and the hyper-resistivity of GANDALF act on all moments alike, so (\ref{eq:budget}) holds for its equations up to the error of the dealiased brackets, with the flux (\ref{eq:fluxCD}) evaluated with the same brackets; in the simulations of section~\ref{sec:simulations} it closes to better than $5\times10^{-4}\,\eps$.
+where $D_\perp(m)$ and $D_\nu(m)$ are the rates at which the spatial dissipation and the hypercollisions remove free energy from moment $m$. The brackets and the hyper-resistivity of GANDALF act on all moments alike, so (\ref{eq:budget}) holds for its equations up to the error of the dealiased brackets, with the flux (\ref{eq:fluxCD}) evaluated with the same brackets; in the simulations of section~\ref{sec:simulations} it closes to better than $10^{-3}\,\eps$.
 
 \subsection{The Hermite spectrum and the two-slice correlation}\label{hm:dictionary}
 
@@ -91,4 +91,4 @@ Appendix~\ref{app:truncated} gives the proofs. A truncated hierarchy is therefor
   u_{\max}&=q+2^{-1/3}\alpha_1'\,q^{-1/3}-2^{-5/3}\Big(\frac{4}{5\alpha_1'}+\frac{\alpha_1'^2}{5}\Big)q^{-5/3}+O(q^{-3}),&\qquad q&=q_M\quad\text{(copy closure)},
 \end{aligned}
 \end{equation}
-where $\alpha_1=-2.3381074$ and $\alpha_1'=-1.0187930$ are the first zeros of the Airy function and of its derivative \citep[theorem~6.32]{Szego1975,Olver1959}; $u_{\max}=7.25$ at $M=32$. Slice $j$ is advected with the stream function $\Phi+su_j\Psi$, so an explicit time step for the nonlinear term must resolve the speed $\max|\nabla_\perp\Phi|+su_{\max}\max|\nabla_\perp\Psi|$, not $\max|\nabla_\perp\Phi|+s\max|\nabla_\perp\Psi|$; the simulations of section~\ref{sec:simulations} set their time step in this way.
+where $\alpha_1=-2.3381074$ and $\alpha_1'=-1.0187930$ are the first zeros of the Airy function and of its derivative \citep[theorem~6.32]{Szego1975,Olver1959}; $u_{\max}=7.25$ at $M=32$. Slice $j$ is advected with the stream function $\Phi+su_j\Psi$, so an explicit time step for the nonlinear term must resolve the speed $\max|\nabla_\perp\Phi|+su_{\max}\max|\nabla_\perp\Psi|$, not $\max|\nabla_\perp\Phi|+s\max|\nabla_\perp\Psi|$; the simulations of section~\ref{sec:simulations} set their time step in this way (appendix~\ref{app:runs}).

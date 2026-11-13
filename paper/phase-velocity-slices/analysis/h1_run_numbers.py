@@ -140,6 +140,8 @@ def numbers(run_id: str, acc: dict) -> dict:
         kappa1_injected=kap1,
         W_over_model_range=[float(rW[mm[:len(rW)]].min()), float(rW[mm[:len(rW)]].max())],
         Pi_over_model_range=[float(rP[: M // 2].min()), float(rP[: M // 2].max())],
+        W_over_model_at_M2=float(rW[min(M // 2, len(rW) - 1)]), Pi_over_model_at_M2=float(rP[min(M // 2, len(rP) - 1)]),
+        noecho_range_m8=noecho_range(an, M),
         bands=fl["bands"], kappa1_g0_bands=fl["kappa1_par_over_k1"]["g0"], kappa1_phi_bands=fl["kappa1_par_over_k1"]["phi"],
         kappa1_z_g0_bands=fl["kappa1_z_over_k1"]["g0"],
         kfa_rms_gm_range=[float(np.min(kap["kfa_rms_m_over_k1"][1:M // 2 + 1])), float(np.max(kap["kfa_rms_m_over_k1"][1:M // 2 + 1]))],
@@ -154,6 +156,18 @@ def numbers(run_id: str, acc: dict) -> dict:
         age_eddy_m2_m16=[float(a2_16[0]), float(a2_16[1])],
         eta=P.parse_number(st["eta"]), dissipation_shells_EA=dissipation_median_shell(run_id, av["window"]),
     )
+
+
+def noecho_range(an: dict, M: int) -> list[float] | None:
+    """Range over 8 <= m <= M/2 of the field-aligned flux divided by the no-echo flux s sqrt(2(m+1)) kappa_1(m) W(m),
+    the flux W(m) carries if all of it phase mixes forward at its measured field-aligned wavenumber (h1_pilot.py); a
+    return flux would make the ratio fall below one increasingly at large m."""
+    r = (an.get("no_echo") or {}).get("Pi_fa_over_noecho")
+    if not r:
+        return None
+    v = np.array(r[8:M // 2 + 1], dtype=float)
+    v = v[np.isfinite(v)]
+    return [float(v.min()), float(v.max())] if v.size else None
 
 
 def main() -> int:
@@ -176,6 +190,9 @@ def main() -> int:
               f"2 nu_m T at the window's top {d['coll_over_sink_at_m_max']:.3f}")
         print(f"    W/model {d['W_over_model_range'][0]:.3f}-{d['W_over_model_range'][1]:.3f}; "
               f"Pi/model {d['Pi_over_model_range'][0]:.3f}-{d['Pi_over_model_range'][1]:.3f}; "
+              f"at m = M/2: W/model {d['W_over_model_at_M2']:.3f}, Pi/model {d['Pi_over_model_at_M2']:.3f}; "
+              + (f"Pi/no-echo over 8 <= m <= M/2 {d['noecho_range_m8'][0]:.3f}-{d['noecho_range_m8'][1]:.3f}; "
+                 if d['noecho_range_m8'] else "") +
               f"g0 kappa_1 per band {', '.join(f'{v:.2f}' for v in d['kappa1_g0_bands'])}; "
               f"phi {', '.join(f'{v:.2f}' for v in d['kappa1_phi_bands'])}; g0 k_z {', '.join(f'{v:.2f}' for v in d['kappa1_z_g0_bands'])}")
         print(f"    k_fa rms g_m {d['kfa_rms_gm_range'][0]:.2f}-{d['kfa_rms_gm_range'][1]:.2f}; "
