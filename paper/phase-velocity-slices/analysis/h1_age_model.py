@@ -57,7 +57,9 @@ def load(run_id: str, acc: dict) -> dict:
     zs = [np.load(f) for f in fl]
     kap = zs[0]["kappa_par"]
     PF = np.mean([z["F__E_par"] for z in zs], axis=0)
-    keep = (kap > 0) & (PF > 1e-4 * PF.max())
+    # kappa = 0 is kept: that part of the injection does not phase mix and stays at the forced moment, where the sink
+    # removes it (as in h1_pilot.two_channel); dropping it and renormalising raised the model W(m) at m >= 1 by ~8%
+    keep = PF > 1e-4 * PF.max()
     v, st = cfg["velocity"], cfg["stepper"]
     return dict(run_id=run_id, beta=P.parse_number(v["beta_i"]), M=int(v["M"]), N=int(cfg["box"]["N"]),
                 Lam=P.parse_number(v["Lambda"]), closure=v["closure"], nu=P.parse_number(st["nu"]),
