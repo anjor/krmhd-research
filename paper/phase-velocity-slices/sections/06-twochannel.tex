@@ -62,11 +62,15 @@ where $\vth/v_A=\beta_i^{1/2}$ and $\chi=k_\perp u_\perp/(k_\parallel v_A)$ is t
 \end{equation}
 This is the phase-mixing threshold $k_\parallel\vth\sim\sqrt m\,k_\perp u_\perp$ of \citet[eq.~4.5]{Schekochihin2016}, written in KRMHD variables, with its coefficient fixed by (\ref{eq:mstar}) and the cascade time; for $\chi\sim1$ it is the crossover $m\sim\beta_i$ stated by \citet{Kawazura2019}. The estimate takes $T$ to be a fixed multiple of the outer eddy time $1/(k_\perp u_\perp)$; section~\ref{sim:mstar} finds that $m_*$ grows somewhat faster than $\chi^{-2}$ down to $\chi\approx0.56$ and about as $\chi^{-4}$ below it, because the sink per eddy time is not fixed. If the collisional cutoff $m_c$ lies below $m_*$, most of the injected free energy reaches it and is dissipated by collisions; if it lies above, most is dissipated at small perpendicular scales, and the collisional share is about $\exp(-\sqrt{2m_c}/(s\kappa T))$.
 
-By (\ref{eq:corrspec}), the exponential factor in (\ref{eq:Wmodel}) is the cosine transform at $q=\sqrt{2m}$ of a Lorentzian correlation between slices with width
+In slice variables the break is a correlation width. The forcing loads every slice with the same pattern, and two slices with phase velocities $u$ and $u'$ then dephase at the rate $s\kappa|u-u'|$ while the sink removes them at the rate $1/T$. Averaged over the age of the free energy, their correlation is
+\begin{equation}
+  c(u-u')\propto\int_0^\infty e^{-\vartheta/T}\cos[s\kappa(u-u')\vartheta]\,\dd\vartheta=\frac{T}{1+s^2\kappa^2T^2(u-u')^2},
+\end{equation}
+a Lorentzian of width
 \begin{equation}\label{eq:deltauc}
   \delta u_c=\frac{1}{s\kappa T}=\frac{1}{\sqrt{2m_*}} .
 \end{equation}
-Two slices loaded with the same pattern dephase at the rate $s\kappa|u-u'|$ and are removed at the rate $1/T$, so in the steady state slices closer than $\delta u_c$ in phase velocity remain correlated.
+By (\ref{eq:corrspec}) its cosine transform at $q=\sqrt{2m}$ is the exponential factor in (\ref{eq:Wmodel}). Slices closer than $\delta u_c$ in phase velocity have not dephased by the time the sink removes them, and the spectrum breaks at the moment $m_*$ whose resolution in phase velocity, $1/\sqrt{2m}$, equals this width.
 
 \subsection{Predictions}\label{tc:predictions}
 
