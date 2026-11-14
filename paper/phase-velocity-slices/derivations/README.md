@@ -1,5 +1,7 @@
 # Self-checking scripts for the paper
 
+Since 2026-11-14 these scripts serve two papers: P1 (`../`, sections 2 and 3 and appendix A) and the companion paper in `../../compressive-slices/` (the slice decomposition, its invariants and the truncated hierarchy). The section numbers in the table below and in the per-folder READMEs refer to the draft before that split.
+
 Every equation and number in the paper is checked by a script in this folder. Each script prints PASS or FAIL for each check and exits with status 1 if any check fails. The scripts use GANDALF (the installed `krmhd` package, version 0.7.0) read-only, in float64 on the CPU.
 
 | folder | what it covers | paper sections |
