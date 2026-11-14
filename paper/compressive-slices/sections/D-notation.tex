@@ -1,0 +1,41 @@
+\clearpage
+\section{Notation}\label{app:notation}
+
+Table~\ref{tab:conventions} compares our notation with that of CMM \citep{Chandran2026}, S09 \citep{Schekochihin2009} and the GANDALF code \citep{Kanekar2025}. Three symbols mean different things in the three papers. CMM use $\kappa$ for the square root that we call $\Delta$. Our $\chi$ is the nonlinearity parameter, whereas in S09 and CMM $\chi$ is the gyrokinetic potential. Our $W(m)$ is the Hermite spectrum of one branch, whereas in S09 and CMM $W$ is the free energy of the whole plasma, which S09 call the generalized energy. S09 also use $\zeta$ twice, for the Elsasser potentials $\zeta^\pm$ and for the phase velocity $\zeta_i$ of a linear mode.
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Notation of this paper, CMM \citep{Chandran2026}, S09 \citep{Schekochihin2009} and GANDALF \citep{Kanekar2025}, with equation or section numbers of the respective papers; ``same'' means as in this paper.}
+  \label{tab:conventions}
+  \small
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.31\textwidth}>{\raggedright\arraybackslash}p{0.25\textwidth}>{\raggedright\arraybackslash}p{0.20\textwidth}>{\raggedright\arraybackslash}p{0.16\textwidth}@{}}
+    \toprule
+    This paper & CMM & S09 & GANDALF \\
+    \midrule
+    \multicolumn{4}{@{}l}{\emph{Parameters and velocity}} \\[2pt]
+    $\vth=(2T_i/m_i)^{1/2}$, $s=\vth/v_A=\beta_i^{1/2}$ & same & same & $s=\beta_i^{1/2}$ \\[3pt]
+    $u=v_\parallel/\vth$, also the phase velocity of a slice; $F_M(u)=\pi^{-1/2}e^{-u^2}$ & $\hat v_\parallel$; $F_M$ in $v_\parallel$ (below B4) & $\zeta_i=\omega/|k_\parallel|\vth$ for a linear mode (\S6.2.2); $F_M$ as CMM & same \\[3pt]
+    $\Lambda^\pm$ of (\ref{eq:Lambdapm}); $\Lambda=\infty$ for $l\ge2$ & same (B7) & same (182) & input \\[3pt]
+    $\Delta$ in (\ref{eq:Lambdapm}) & $\kappa$ (B16, printed without the square) & written out (182) & --- \\[3pt]
+    $\chi=k_\perp u_\perp/(k_\parallel v_A)$, the nonlinearity parameter & $\chi=\phi-\boldsymbol v\cdot\boldsymbol A/c$, the gyrokinetic potential (2.7) & $\chi$ as CMM; critical balance is our $\chi\sim1$ & --- \\[3pt]
+    \addlinespace
+    \multicolumn{4}{@{}l}{\emph{Alfv\'enic fields}} \\[2pt]
+    $\Phi$, with $\uE=\zhat\times\nabla_\perp\Phi$ & $\varphi=2\Phi/(\rho_i\vth)$ (3.2); $\boldsymbol u_\perp=\uE$ & $\Phi=c\phi/B_0$ (135); $\boldsymbol u_\perp=\uE$ & $\Phi=(z^++z^-)/2$ \\[3pt]
+    $\Psi=-A_\parallel/(4\pi n_im_i)^{1/2}$ & $A=-\Psi/(\rho_iv_A)$ (3.2) & same (135) & $\Psi=(z^+-z^-)/2$ \\[3pt]
+    $\gradpar=\bhat\cdot\nabla=\partial_z+\{\Psi,\cdot\}$, with $\boldsymbol b_\perp=\zhat\times\nabla_\perp\Psi$ & $\partial_z+\boldsymbol b_\perp\cdot\nabla_\perp/v_A=\partial_z-\rho_i\{A,\cdot\}$ (3.4) & $\bhat\cdot\nabla$ & same \\[3pt]
+    $z^\pm=\Phi\pm\Psi$; $z^+$ propagates toward $-z$ & same by (3.23)--(3.24) & $\zeta^\pm$ (21) & same \\[3pt]
+    $k_\parallel$: wavenumber along the perturbed field; $k_z$: along $\zhat$ & --- & $k_{\parallel0}$ for the compressive fluctuations, $k_{\parallel A}$ for the Alfv\'en waves (\S6.3) & $k_z$ only \\[3pt]
+    \addlinespace
+    \multicolumn{4}{@{}l}{\emph{Compressive fields}} \\[2pt]
+    $g$ & $g_{09}$ (3.26), not their $g_i$ & same (157) & --- \\[3pt]
+    $G^\pm$; $G_l$ for $l\ge2$ & same (B5, B8) & same (183--184, 205) & one branch, set by $\Lambda$ \\[3pt]
+    $g_m=(2^mm!)^{-1/2}\int H_m(u)\,G\,\dd u$ & $\tilde G^\pm_m$ (B27, B30) & --- & same \\[3pt]
+    \addlinespace
+    \multicolumn{4}{@{}l}{\emph{Free energy and invariants of one branch}} \\[2pt]
+    $W(m)=p_m\langle g_m^2\rangle$, the Hermite spectrum; $\sum_mW(m)=\int\mathcal E(u)\,\dd u$ & $\sum_mW(m)=2W^\pm_{\rm compr}/(n_iT_i)$ (B13, B31); $W$ (2.13) is the gyrokinetic free energy & $W$ is the generalized energy (\S3.4) & --- \\[3pt]
+    $\int u\,\mathcal E(u)\,\dd u$ & $2\Gamma^\pm/\vth$ (B25, B32) & --- & --- \\[3pt]
+    $\Hph^\pm\propto\int\mathcal E(u)\,\dd u/u$ & $H^\pm_{\textrm{ph-sp}}$ (B18); $\mathcal H$ (2.15) is the gyrokinetic helicity & --- & --- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+\clearpage

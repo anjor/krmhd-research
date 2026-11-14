@@ -1,0 +1,95 @@
+\section{Phase mixing as decorrelation of slices}\label{sec:decorrelation}
+
+Without collisions, sources or dissipation of $G$, the energy of every slice is conserved (section~\ref{sec:invariants}). A Hermite moment $g_m$ is a fixed linear combination of slices, so free energy can move between Hermite moments only through changes in the correlations between different slices. Throughout, $C(u,u')=\langle a_u\,a_{u'}\rangle$ is the two-slice correlation, whose diagonal is the slice energy $\mathcal E(u)$ of \eqref{eq:Qphi}, and $W(m)=p_m\langle g_m^2\rangle$ is the Hermite spectrum of the free energy, with $\sum_mW(m)=\int C(u,u)\,\dd u=2W^\pm/n_iT_i$.
+
+\subsection{The two-slice law}\label{dec:sec-twoslice}
+
+\begin{proposition}[Two-slice law]\label{prop:twoslice}
+Assume the hypotheses of theorem~\ref{thm:slice}, with no collision operator, source or dissipation acting on $G$, and assume that the slice amplitudes $a_u(\boldsymbol r,t)$ are continuously differentiable in $\boldsymbol r$ and $t$, with derivatives that are continuous in $u$. Then, for all $u$ and $u'$,
+\begin{equation}\label{eq:twoslice}
+  \frac{\dd C(u,u')}{\dd t}=-s\,(u-u')\,\big\langle a_{u'}\,\gradpar a_u\big\rangle .
+\end{equation}
+In particular, $C(u,u)$ is constant for every $u$, and the $\boldsymbol E\times\boldsymbol B$ flow does not enter.
+\end{proposition}
+
+\begin{proof}
+Since $\partial_z+\{\Psi,\cdot\}=\gradpar$, the slice equation \eqref{eq:slice} reads $\partial_ta_u=-\{\Phi,a_u\}-su\,\gradpar a_u$. The bracket and $\gradpar$ obey the Leibniz rule, so
+\begin{equation*}
+  \partial_t(a_ua_{u'})=-\{\Phi,a_ua_{u'}\}-su'\,\gradpar(a_ua_{u'})-s\,(u-u')\,a_{u'}\gradpar a_u .
+\end{equation*}
+Since $\nabla\cdot\uE=\nabla\cdot\bhat=0$, $\{\Phi,f\}=\nabla\cdot(f\,\uE)$ and $\gradpar f=\nabla\cdot(f\,\bhat)$, so the first two terms are divergences, and their averages over the periodic box vanish.
+\end{proof}
+
+The $\boldsymbol E\times\boldsymbol B$ flow carries the two slices of a pair together and cannot change their correlation, which changes only through their relative velocity $s(u-u')\,\bhat$, that is, through relative streaming along the perturbed field. Phase mixing and phase unmixing are therefore the decorrelation and the recorrelation of slices along $\gradpar$, a definition that refers to no wavenumber. When the induction equation is ideal and the Alfv\'enic fields stay smooth, every volume-integrated single-point statistic of $G$, the correlations $C(u,u')$ among them, takes the value it has in linear phase mixing along the field lines frozen at $t=0$ \citep{KanekarPrep}.
+
+The law needs no assumption on the Alfv\'enic fields beyond smoothness; terms that act on $G$ add those of \eqref{eq:sliceforcing}. It holds for the truncated hierarchy, with $C_{jl}=\langle a_ja_l\rangle$ at the nodes $u_j$, under the conditions of section~\ref{sec:truncated}, and we checked it to round-off against GANDALF's right-hand side \citep{Kanekar2025}.
+
+With a straight guide field, in electrostatic drift kinetics \citep{Schekochihin2016,Parker2016} and in the linear model of \citet{Kanekar2015}, the Hermite moments of each Fourier mode are split by the sign of the parallel wavenumber into parts that propagate to larger and to smaller $m$. In KRMHD the field lines move; \citet{Meyrand2019} noted that the sign would then have to be taken with respect to the perturbed field and did not use such a split. The two-slice law describes phase mixing along the perturbed field without reference to a wavenumber. Where the field lines are tilted, a split by the sign of $k_z$ exchanges phase mixing and unmixing on modes whose $k_z$ and field-aligned wavenumber have opposite signs, whereas with an ideal induction equation no part of the distribution changes the sign of its field-aligned wavenumber \citep{KanekarPrep}.
+
+\subsection{The Hermite flux as a Christoffel--Darboux transform}\label{dec:sec-flux}
+
+With the orthonormal basis $\phi_n=\sqrt{p_n\varrho}\;r_n$ of $L^2(\mathbb R,\dd u)$ of section~\ref{sl:forcingsec}, unitarity gives
+\begin{equation}\label{dec:gn}
+\begin{gathered}
+  g_n=\frac{1}{\sqrt{p_n}}\int\phi_n(u)\,a_u\,\dd u,\\
+  E_{\le m}\equiv\sum_{n\le m}W(n)=\iint K_m(u,u')\,C(u,u')\,\dd u\,\dd u',\qquad
+  K_m(u,u')=\sum_{n\le m}\phi_n(u)\,\phi_n(u') .
+\end{gathered}
+\end{equation}
+Let $b_m=p_mA_{m,m+1}=p_{m+1}A_{m+1,m}$. In the Hermite form $\partial_tg+\{\Phi,g\}+s\gradpar(Ag)=0$ of \eqref{eq:branch}, the bracket does not change $E_{\le m}$, and in the streaming term only the coupling between $m$ and $m+1$ survives, because $\Pw A$ is symmetric and $\langle g_n\gradpar g_{n'}\rangle$ antisymmetric. With the two-slice law, the slice form of $E_{\le m}$ gives the same rate:
+\begin{equation}\label{eq:fluxCD}
+\begin{aligned}
+  \frac{\dd E_{\le m}}{\dd t}=-\Pi_{m+1/2},\qquad
+  \Pi_{m+1/2}&=s\,b_m\big\langle g_m\gradpar g_{m+1}-g_{m+1}\gradpar g_m\big\rangle\\
+  &=-\iint K_m(u,u')\,\frac{\partial C(u,u')}{\partial t}\,\dd u\,\dd u' ,
+\end{aligned}
+\end{equation}
+the free energy per unit time and volume that passes from moment $m$ to $m+1$. The first form is the Hermite flux of \citet{Schekochihin2016} and \citet{AdkinsSchekochihin2018} with the full field-aligned gradient, as used by \citet[eq.~9]{Meyrand2019}.
+
+The two forms are related by a Christoffel--Darboux identity. Since $\Tr[LG]=u\,\Tr[G]$ and $Le_n=A_{n-1,n}e_{n-1}+A_{n+1,n}e_{n+1}$, the symmetry of $\Pw A$ gives the recurrence $u\,r_n=A_{n,n+1}\,r_{n+1}+A_{n,n-1}\,r_{n-1}$, $r_{-1}=0$. Multiply it at $u$ by $p_nr_n(u')$, subtract the same with $u$ and $u'$ exchanged, and sum over $n\le m$; since $p_nA_{n,n+1}=b_n$ and $p_nA_{n,n-1}=b_{n-1}$, the sum telescopes to
+\begin{equation}\label{dec:CD}
+  (u-u')\,K_m(u,u')=b_m\sqrt{\varrho(u)\varrho(u')}\,\big[r_{m+1}(u)\,r_m(u')-r_m(u)\,r_{m+1}(u')\big] .
+\end{equation}
+With \eqref{eq:twoslice}, the second form of $\Pi_{m+1/2}$ is $s\iint(u-u')K_m\langle a_{u'}\gradpar a_u\rangle\,\dd u\,\dd u'$, which \eqref{dec:CD} and \eqref{dec:gn} turn into the first. The pairs $u=u'$ carry no flux: the free energy that passes through every $m$ is carried by the correlations between different slices. The truncated hierarchy has the same structure: for $m<M$ and both closures, rows $0$ to $m$ of $A\boldsymbol r_j=u_j\boldsymbol r_j$ are the recurrence of the $r_n$, so the same telescoping gives $(u_j-u_l)K_m(j,l)=b_m(R_{m+1,j}R_{ml}-R_{mj}R_{m+1,l})$, with $K_m(j,l)=\sum_{n\le m}p_nR_{nj}R_{nl}$ and $R_{mj}$ of theorem~\ref{thm:trunc}, normalised with the weight of the closure used. We checked this to round-off with GANDALF's ladder matrix and right-hand side.
+
+\subsection{The Hermite spectrum and the two-slice correlation}\label{dec:sec-dictionary}
+
+By \eqref{dec:gn}, the Hermite spectrum is a quadratic form in the two-slice correlation:
+\begin{equation}\label{eq:dictionary}
+  W(m)=\iint C(u,u')\,\phi_m(u)\,\phi_m(u')\,\dd u\,\dd u' .
+\end{equation}
+We call the slices $\delta$-correlated if $C(u,u')=e(u)\,\delta(u-u')$ with a density $e\ge0$. They are then completely decorrelated in velocity, and $W(m)=\int e\,\phi_m^2\,\dd u$. For $e=F_M$ at $\Lam=\infty$,
+\begin{equation}\label{eq:prefactor}
+  \int F_M\,\psi_m^2\,\dd u=\frac{\Gamma(m+\frac12)}{\sqrt2\,\pi\,m!}=\frac{1}{\pi\sqrt{2m}}\Big(1-\frac{1}{8m}+O(m^{-2})\Big),
+\end{equation}
+where $\Gamma(\cdot)$ is Euler's gamma function. This spectrum decays only as $m^{-1/2}$, so $\sum_mW(m)$ diverges: $\delta$-correlated slices idealise states with velocity structure on arbitrarily fine scales, such as the collisionless forced state below.
+
+\citet{Kanekar2015} studied a one-dimensional linear model of the form of one branch, with $\Lam=-1/\alpha$ for their parameter $\alpha$, whose density moment is driven by white noise of strength $\epsilon_k$. Their eq.~(4.10), derived without collisions, gives the exact steady-state Hermite spectrum of a Fourier mode for $m\ge1$, which in our variables (their $|k|$ is our $s|k_z|$) reads
+\begin{equation*}
+  W(m)=\frac{(1-1/\Lam)^2\,\epsilon_k}{2\pi\,s|k_z|}\,\frac{1}{2^mm!}\int\frac{|Z^{(m)}(\zeta)|^2}{|\eps(\zeta+\ii0)|^2}\,\dd\zeta ,
+\end{equation*}
+where $Z^{(m)}$ is the $m$th derivative of the plasma dispersion function. At $\Lam=\infty$, $\eps=1$, and on the real axis $\mathrm{Im}\,Z^{(m)}=(-1)^m\pi H_mF_M$ and $\mathrm{Re}\,Z^{(m)}=(-1)^m\pi\,\mathsf H[H_mF_M]$, with $\mathsf H$ the Hilbert transform, which preserves the $L^2$ norm. Hence $(2^mm!)^{-1}\int|Z^{(m)}|^2\,\dd\zeta=\sqrt2\,\pi\,\Gamma(m+\frac12)/m!$, and
+\begin{equation}\label{dec:kanekar}
+  W(m)=\frac{\pi\epsilon_k}{s|k_z|}\,\frac{\Gamma(m+\frac12)}{\sqrt2\,\pi\,m!} ,
+\end{equation}
+which is \eqref{eq:prefactor} with $e=(\pi\epsilon_k/s|k_z|)F_M$: the forced linear spectrum is the spectrum of $\delta$-correlated slices. The closed form is not written in their paper, whose eq.~(4.14) is its large-$m$ limit, and the slice argument covers $m=0$ as well.
+
+The forced slices are $\delta$-correlated because they dephase: density forcing loads every slice with the same spatial pattern \eqref{eq:sliceforcing}, two slices loaded together dephase at the rate $s|k_z(u-u')|$, and the steady state superposes all past injections, so the real part of the mean of $a_u(\boldsymbol k)\,a_{u'}(\boldsymbol k)^*$ vanishes for $u\ne u'$. The antisymmetric imaginary part, which does not enter \eqref{eq:dictionary}, carries the injection rate $\epsilon_W=(1-1/\Lam)\,\epsilon_k$ through every $m$. At finite $\Lam$ the slices are again $\delta$-correlated in the mean, with $e=\pi(1-1/\Lam)^2\epsilon_k\,\varrho/(s|k_z|)$, which reproduces their eq.~(4.10) exactly for every $m\ge1$. Proportionality to $(1-1/\Lam)$ times \eqref{dec:kanekar} holds only at large $m$, where both tend to $\epsilon_W/(s|k_z|\sqrt{2m})$, independent of $\Lam$ at fixed $\epsilon_W$ by their eq.~(4.15), which in our variables is $\int\varrho\,\dd u=1/p_0$.
+
+That $\sqrt{2m}$ acts as a wavenumber in velocity space is the duality noted by \citet{Schekochihin2016} and \citet{AdkinsSchekochihin2018}; \citet[note~81]{Eyink2018} related the $m^{-1/2}$ spectrum to a velocity-space regularity exponent of $-1/2$, and \citet{Nastac2024} describe linear phase mixing as producing a spectrum flat in the velocity-space wavenumber. The slice picture adds the representation \eqref{eq:dictionary}, the closed form \eqref{dec:kanekar}, and the reading of the $m^{-1/2}$ spectrum as complete decorrelation of the slices in velocity.
+
+\subsection{No Fj{\o}rtoft-type constraint}\label{dec:sec-fjortoft}
+
+\citet[section~4.1]{Chandran2026} discuss cascade directions in $m$ with the generalisation by \citet{AlexakisBiferale2018} of the argument of \citet{Fjortoft1953}: if $E_{\mathcal I_2}(m)\ge c\,m^n|E_{\mathcal I_1}(m)|$ for two invariants and positive $c$ and $n$, then $\mathcal I_1$ cannot cascade to large $m$ at a constant rate. In their appendix~B they note that this condition fails for $W$ and $\Gamma$, which is not sign-definite, and expect both to cascade to large $m$. We complete their argument for $\Gamma$ and extend it to every invariant that depends on $G$ alone. Let $\Gamma_m=2b_m\langle g_mg_{m+1}\rangle$, so that $\sum_m\Gamma_m=\langle\fe{G}{LG}\rangle$; up to normalisation, $\Gamma_m$ is the contribution of the pair $(m,m+1)$ to CMM's (B32).
+
+\begin{proposition}[No Fj{\o}rtoft-type constraint]\label{prop:nofjortoft}
+Let $\Lam\notin[0,1]$ and consider one compressive branch of collisionless KRMHD in a periodic box. Let $\mathcal I$ be a functional of $G$ that is defined and constant along every solution of the branch equation with $\Phi=\Psi=0$ that starts from a state with a finite Hermite expansion in $u$ (in particular, any invariant of collisionless KRMHD that depends on $G$ alone and is defined along these solutions), and let $\mathcal I=\sum_mE_{\mathcal I}(m)$ be any decomposition of it over Hermite indices. No constants $c>0$ and $n>0$ make $E_{\mathcal I}(m)\ge c\,m^nW(m)$, or $E_{\mathcal I}(m)\ge c\,m^n|\Gamma_m|$, hold for every $m$ and every state. Moreover, every $\Gamma_m$, like $\Gamma$ and $\Hph$ (section~\ref{sec:slices}), is odd under the mirror map \eqref{eq:mirror}, so every mirror-symmetric state has $\Gamma_m=0$ for all $m$ and $\Hph=0$, whatever its $W(m)$.
+\end{proposition}
+
+\begin{proof}
+With $\Phi=\Psi=0$, which solve \eqref{eq:rmhd}, \eqref{eq:slice} reduces to $\partial_ta_u+su\,\partial_za_u=0$, so every $\Qphi$ and every Casimir \eqref{eq:casimir} is conserved. Take initial data with a finite Hermite expansion in $u$, smooth in space, with $\langle\fe{G}{G}\rangle>0$ and no Fourier component at $k_z=0$; $\mathcal I$ is constant along this solution, and $G$ stays in the domain of $L$. By \eqref{dec:gn}, $g_m(\boldsymbol k,t)=\int\sqrt\varrho\,r_m\,a_u(\boldsymbol k,0)\,e^{-\ii sk_zut}\,\dd u$, with an integrand that is integrable in $u$ by the Cauchy--Schwarz inequality, so $g_m(\boldsymbol k,t)\to0$ by the Riemann--Lebesgue lemma. The bound $|g_m(\boldsymbol k,t)|^2\le p_m^{-1}\int|a_u(\boldsymbol k,0)|^2\,\dd u$ is summable over $\boldsymbol k$, so by dominated convergence $W(m,t)\to0$ and $\Gamma_m(t)\to0$ for every $m$. If $E_{\mathcal I}(m)\ge c\,m^nW(m)$ for every $m$ and state, then $E_{\mathcal I}(m)\ge0$ and $\mathcal I\ge c\,m_*^n\sum_{m>m_*}W(m,t)$ for every $m_*$; since $\sum_mW(m,t)=\langle\fe{G}{G}\rangle$ is constant, the right-hand side tends to $c\,m_*^n\langle\fe{G}{G}\rangle$, which exceeds the constant $\mathcal I$ for $m_*$ large enough. If instead $E_{\mathcal I}(m)\ge c\,m^n|\Gamma_m|$, take data with $\langle\fe{G}{LG}\rangle\ne0$. Since $G(t)$ stays in the domain of $L$, $\sum_m\Gamma_m(t)$ converges absolutely to the conserved $\langle\fe{G}{LG}\rangle$, so $\sum_{m>m_*}|\Gamma_m(t)|\ge|\langle\fe{G}{LG}\rangle-\sum_{m\le m_*}\Gamma_m(t)|\to|\langle\fe{G}{LG}\rangle|$, and the same argument applies.
+
+For the last statement, since $H_m(-u)=(-1)^mH_m(u)$, the map \eqref{eq:mirror} takes $g_m$ to $(-1)^mg_m(\tilde{\boldsymbol r})$, so it reverses the sign of every $\langle g_mg_{m+1}\rangle$ and leaves $W(m)$ unchanged; a mirror-symmetric state therefore has $\Gamma_m=-\Gamma_m=0$.
+\end{proof}
+
+Linear phase mixing in a uniform field thus conserves every invariant of section~\ref{sec:invariants} while it moves all of the free energy, and all of $\Gamma$, to arbitrarily large $m$ (in a truncated hierarchy, until the recurrence time); in two-dimensional hydrodynamics this is impossible, because the energy above a wavenumber $k_*$ is bounded by the enstrophy divided by $k_*^2$. The reason is that every invariant of section~\ref{sec:invariants} depends only on statistics of slices at one $u$, whereas the Hermite transfer \eqref{eq:fluxCD} is $-\iint K_m\,\partial_tC$, a change in the correlations between slices at different $u$. The expectation of \citet{Chandran2026} that $\Gamma$, like $W$, is transferred to large $m$ is therefore borne out by these exact solutions, for a reason that does not rely on the sign-indefiniteness of $\Gamma$. The argument concerns transient solutions of collisionless KRMHD; CMM's criterion refers to inertial-range fluxes in a forced and dissipative steady state, which this argument does not address.

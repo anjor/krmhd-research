@@ -1,0 +1,81 @@
+\section{Invariants}\label{sec:invariants}
+
+This section derives the invariants of one compressive branch from theorem~\ref{thm:slice}, under its hypotheses, the value $\Lam=\infty$ included, with no collisions, dissipation or sources acting on $G$. We write $\langle\cdot\rangle$ for the average over the periodic box, of volume $V$.
+
+\subsection{The quadratic family}\label{inv:family}
+
+For a function $\varphi$ on the real line, $\varphi(L)$ is defined by the functional calculus of the self-adjoint operator $L$ (theorem~\ref{thm:spectrum}), so that the slice amplitude of $\varphi(L)G$ is $\varphi(u)\,a_u$. Because $G\mapsto a$ is unitary from $(\mathcal W,\fe{\cdot}{\cdot})$ onto $L^2(\mathbb R,\dd u)$,
+\begin{equation}\label{eq:Qphi}
+  \Qphi\equiv\int\dd^3r\,\fe{G}{\varphi(L)G}=\int\dd u\;\varphi(u)\int\dd^3r\,a_u^2=V\!\int\varphi(u)\,\mathcal E(u)\,\dd u,
+  \qquad \mathcal E(u)\equiv\langle a_u^2\rangle ,
+\end{equation}
+where for unbounded $\varphi$ the last two expressions define $\Qphi$ whenever the integral converges. The slice energy $\mathcal E(u)$ is the distribution of free energy over phase velocity: $\tfrac12n_iT_i\,\mathcal E(u)\,\dd u$ is the free energy per unit volume in the slices with phase velocities in $[u,u+\dd u]$.
+
+\begin{proposition}\label{inv:energy}
+Under the hypotheses of this section the slice energy $\mathcal E(u)$ is independent of time. Hence $\Qphi$ is constant for every $\varphi$ for which the integral in (\ref{eq:Qphi}) exists at $t=0$, either absolutely or, for $\varphi=1/u$, as a principal value.
+\end{proposition}
+
+\begin{proof}
+By (\ref{eq:Uu}) and $\nabla\cdot\boldsymbol U_u=0$, $\partial_ta_u^2+\nabla\cdot(\boldsymbol U_u\,a_u^2)=0$, and integration over the periodic box gives $\dd\mathcal E(u)/\dd t=0$.
+\end{proof}
+
+For $\varphi(u)=u^n$ the integral converges absolutely when $\int\dd^3r\int(1+u^{2k})\,G^2F_M^{-1}\,\dd u<\infty$ for an integer $k\ge n/2$: $|u|^n\le1+u^{2k}$, and $\int u^{2k}a_u^2\,\dd u=\fe{L^kG}{L^kG}$ is finite when $G$ lies in the domain of $L^k$, which by (\ref{eq:LUP}) is that of $U^k$, because $P-I$ has rank one and its range, spanned by $F_M$, lies in the domain of every power of $U$. For $\varphi(u)=1/u$ the integral is a principal value, which exists when $G(\boldsymbol r,\cdot)$ is H\"older continuous near $u=0$, uniformly in $\boldsymbol r$, because $a_u$, by (\ref{eq:aunit}) a combination of $G$ and its Hilbert transform with coefficients smooth in $u$, is then H\"older continuous there.
+
+Per-velocity quadratic invariants are known in the simpler settings of remark~\ref{sl:remlit} \citep{PlunkParker2014,Plunk2015}, and, unstated, in the transformed equation of \citet[eq.~85]{Heninger2018}. \citet[\S5.1]{Kunz2015} remarked that the free energy of their collisionless pressure-anisotropic generalisation of KRMHD is one of infinitely many invariants, without specifying the others.
+
+\subsection{The invariants \texorpdfstring{$W$, $\Gamma$ and $\Hph$}{W, Gamma and H}}\label{inv:cmm}
+
+The free energy $W^\pm$ of each branch (CMM's B13) is conserved (S09), and CMM found two further quadratic invariants for each branch, the phase-space helicity $\Hph^\pm$ (their B18) and $\Gamma^\pm$ (their B25). Written in $u=v_\parallel/\vth$, with $G^\pm(v_\parallel)\,\dd v_\parallel=G^\pm(u)\,\dd u$, they are the members $\varphi=1$, $u$ and $1/u$ of (\ref{eq:Qphi}):
+\begin{equation}\label{eq:WGH}
+\begin{aligned}
+  W^\pm&=\frac{n_iT_i}{2}\,\big\langle\fe{G^\pm}{G^\pm}\big\rangle=\frac{n_iT_i}{2}\int\mathcal E^\pm(u)\,\dd u,\\
+  \Gamma^\pm&=\frac{\vth}{2}\,\big\langle\fe{G^\pm}{LG^\pm}\big\rangle=\frac{\vth}{2}\int u\,\mathcal E^\pm(u)\,\dd u,\\
+  \Hph^\pm&=\frac{n_iT_i}{2\vth}\,\Big\langle\PVint\frac{(G^\pm)^2}{uF_M}\,\dd u\Big\rangle=\frac{n_iT_i}{2\vth}\,\PVint\frac{\mathcal E^\pm(u)}{u}\,\dd u ,
+\end{aligned}
+\end{equation}
+where $L$, $\fe{\cdot}{\cdot}$ and $\mathcal E^\pm$ are those of branch $\pm$, $\vth=s$ in units with $v_A=1$, and the second form of $\Hph^\pm$ uses (\ref{inv:pv}) below. The normalisations are CMM's: $W^\pm$ carries the factor $n_iT_i$ and $\Gamma^\pm$ does not, so that $n_iT_i\Gamma^\pm$ has the dimensions of $\vth W^\pm$. CMM's (B14) and (B19) for the Laguerre sectors with $l\ge2$ are the members $\varphi=1$ and $1/u$ at $\Lam=\infty$, summed over $l$. The Hermite forms $\fe{G}{G}=\sum_mp_mg_m^2$ and $\fe{G}{LG}=g^{\mathsf T}\Pw Ag$ give CMM's (B31) and (B32), with the prefactors of (\ref{eq:WGH}); on $M+1$ retained moments with odd $M$, the Hermite matrix of the helicity is the inverse of the ladder matrix at $\Lam=\infty$ (section~\ref{sec:truncated}).
+
+The kernel of $\Hph^\pm$ contains no $\Lam$: by $PL^{-1}=U^{-1}$, which follows from (\ref{eq:LUP}), $\fe{G}{L^{-1}G}=\int G^2(uF_M)^{-1}\,\dd u$ when $G/u$ lies in $\mathcal W$. For a general $G$, the resolvent form $R_G(z)=\fe{G}{(z-L)^{-1}G}$, $\mathrm{Im}\,z>0$, is the Stieltjes transform $\int a_u^2(z-u)^{-1}\,\dd u$ of $a_u^2$ (theorem~\ref{thm:spectrum}), and appendix~\ref{appB:stone} gives $R_G(z)=\int G^2(z-u)^{-1}F_M^{-1}\,\dd u-(z/\Lam)\,C_G(z)^2/\eps(z)$, with $C_G(z)=\int G(v)\,(z-v)^{-1}\,\dd v$. For $G$ H\"older continuous near $u=0$ and $z=\ii\eta$, $\eta\to0^+$, the last term vanishes, because $C_G(\ii\eta)$ stays bounded and $\eps(\ii\eta)\to1-1/\Lam\neq0$, and the Sokhotski--Plemelj formula gives, at every point $\boldsymbol r$,
+\begin{equation}\label{inv:pv}
+  \PVint\frac{a_u^2}{u}\,\dd u=\PVint\frac{G^2}{uF_M}\,\dd u,\qquad a_0^2=\frac{G(0)^2}{F_M(0)} .
+\end{equation}
+
+CMM's gyrokinetic helicity (their 2.15) has the weight $1/(v_\parallel-\ii0)$, and the imaginary part of their Plemelj split (2.17) comes from $v_\parallel=0$. The branch analogue is the member $\varphi(u)=1/(u-\ii0)=\mathrm P(1/u)+\ii\pi\delta(u)$ of the family, and by (\ref{eq:aunit}) and (\ref{inv:pv})
+\begin{equation}\label{eq:Hcomplex}
+  \Hph^\pm_{\mathrm c}\equiv\frac{n_iT_i}{2\vth}\Big\langle\int\frac{(G^\pm)^2}{(u-\ii0)F_M}\,\dd u\Big\rangle
+  =\Hph^\pm+\ii\,\frac{\pi n_iT_i}{2\vth}\,\Big\langle\frac{G^\pm(\boldsymbol r,0,t)^2}{F_M(0)}\Big\rangle .
+\end{equation}
+The imaginary part, $\pi n_iT_i\,\mathcal E^\pm(0)/(2\vth)$, is proportional to the energy of the slice at $u=0$, which is advected by $\uE$ alone (section~\ref{sec:slices}) and conserved by proposition~\ref{inv:energy}. This is the KRMHD form of CMM's conservation of $\mathrm{Im}\,\Hph$ at each $v_\perp$ (their 2.23).
+
+\subsection{Non-quadratic and cross-sector invariants}\label{inv:casimirs}
+
+Each slice is a Lagrangian invariant of the volume-preserving flow of $\boldsymbol U_u$, so for every $u$ and every function $\mathcal F$ for which the integral exists
+\begin{equation}\label{eq:casimir}
+  \frac{\dd}{\dd t}\int\dd^3r\,\mathcal F(a_u)=0 .
+\end{equation}
+By (\ref{eq:sameflow}), the slices $a^\pm_u$ of the two branches and $a^{(l)}_u=G_l(u)/F_M(u)^{1/2}$ of the Laguerre sectors with $l\ge2$ share this flow, so that
+\begin{equation}\label{eq:crosssector}
+  \frac{\dd}{\dd t}\int\dd^3r\,\mathcal F\big(a^+_u,a^-_u,a^{(2)}_u,a^{(3)}_u,\dots\big)=0,\qquad\text{for example}\qquad\frac{\dd}{\dd t}\int\dd^3r\,a^+_u\,a^-_u=0,
+\end{equation}
+and integrating the last relation over $u$ with any weight gives quadratic invariants that couple the two branches. Under Fourier--Galerkin truncation in $\boldsymbol r$ only the quadratic members survive (section~\ref{sec:numerics}). Two-dimensional precedents are listed in remark~\ref{sl:remlit}. In three dimensions, \citet{Tassi2022} found in Hermite truncations of drift-kinetic models with an odd number of moments one field that is advected by the $\boldsymbol E\times\boldsymbol B$ flow alone \citep[see also][\S3.4]{Tassi2023} and has an infinite family of Casimirs, the truncated counterpart of the slice at $u=0$; invariants of the form (\ref{eq:casimir}) follow, unstated, from the transformed equation of \citet{Heninger2018}, whose components stream along the uniform guide field. For $u\neq0$, where the slices stream along the perturbed field lines, the non-quadratic members of (\ref{eq:casimir}) and the cross-sector invariants (\ref{eq:crosssector}) that involve the branches $G^\pm$ are new; for the sectors with $l\ge2$ alone they follow, unstated, from S09's eq.~(212).
+
+\subsection{The local conservation law and \texorpdfstring{$\Gamma$}{Gamma} as a flux}\label{inv:flux}
+
+\begin{proposition}\label{prop:localflux}
+Under the same hypotheses, the free-energy density per unit $n_iT_i$, $w=\tfrac12\fe{G}{G}$, and the density $\gamma=\tfrac{s}{2}\fe{G}{LG}$ satisfy, at every point,
+\begin{equation}\label{eq:localflux}
+  \partial_tw+\nabla\cdot\big(w\,\uE+\gamma\,\bhat\big)=0 .
+\end{equation}
+In slice variables $w=\tfrac12\int a_u^2\,\dd u$ and $\gamma=\tfrac{s}{2}\int u\,a_u^2\,\dd u$, so that $w\,\uE+\gamma\,\bhat=\tfrac12\int a_u^2\,\boldsymbol U_u\,\dd u$.
+\end{proposition}
+
+\begin{proof}
+The product $\fe{\cdot}{\cdot}$ acts on $u$ at fixed $\boldsymbol r$ with a kernel that does not depend on $\boldsymbol r$, so every derivation $D$ in $\boldsymbol r$ satisfies $D\fe{f}{h}=\fe{Df}{h}+\fe{f}{Dh}$. Both $\{\Phi,\cdot\}$ and $\gradpar$ are such derivations, and both commute with $L$. Since $L$ is symmetric in $\fe{\cdot}{\cdot}$ at each point, $\gradpar\fe{G}{LG}=\fe{\gradpar G}{LG}+\fe{G}{\gradpar LG}=2\,\fe{G}{\gradpar LG}$. Taking $\fe{G}{\cdot}$ of (\ref{eq:branch}) therefore gives $\partial_tw+\{\Phi,w\}+\gradpar\gamma=0$, and $\{\Phi,w\}=\nabla\cdot(w\,\uE)$ and $\gradpar\gamma=\nabla\cdot(\gamma\,\bhat)$ because $\nabla\cdot\uE=\nabla\cdot\bhat=0$. The slice forms follow from the unitarity of $G\mapsto a$ and from the fact that the slice amplitude of $LG$ is $u\,a_u$.
+\end{proof}
+
+Each slice thus carries its free-energy density $\tfrac12a_u^2$ at its own velocity $\boldsymbol U_u$. Since $\uE$ has no $z$ component and $\hat b_z=1$, the $z$ component of the volume-averaged flux is $\langle\gamma\rangle$, which by (\ref{eq:WGH}) is $\Gamma^\pm$:
+\begin{equation}\label{eq:Gammaflux}
+  \Gamma^\pm=\zhat\cdot\big\langle w\,\uE+\gamma\,\bhat\big\rangle,\qquad
+  \frac{n_iT_i\,\Gamma^\pm}{W^\pm}=\vth\,\frac{\int u\,\mathcal E^\pm(u)\,\dd u}{\int\mathcal E^\pm(u)\,\dd u}.
+\end{equation}
+Thus $n_iT_i\Gamma^\pm$ is the net flux of the free energy $W^\pm$ along $\boldsymbol B_0$, that is, the free-energy flux per unit area through the planes $z=\mathrm{const}$, averaged over $z$. The perpendicular components $\langle w\,\uE+\gamma\,\boldsymbol b_\perp\rangle$ need not vanish, and $\Gamma^\pm$ does not determine them. The ratio $n_iT_i\Gamma^\pm/W^\pm$ is the energy-weighted mean parallel velocity of the slices. CMM derived the conservation of $\Gamma^\pm$ from the moment equations (their B20--B26); its reading as a field-aligned flux of free energy is new.

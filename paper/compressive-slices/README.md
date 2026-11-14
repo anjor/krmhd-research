@@ -1,0 +1,3 @@
+# Compressive slices (companion paper)
+
+Analytical companion to the paper in `../phase-velocity-slices/`: the compressive sector of kinetic reduced MHD as a continuum of passive scalars, one per parallel phase velocity, with its invariants (including those of Chandran, Mallet & Meyrand 2026), phase mixing as decorrelation of slices, the absence of a Fjørtoft-type constraint, truncated Hermite hierarchies as slices at Gauss nodes, and checks with GANDALF. Build with `make` (or `latexmk -pdf main.tex`) in this folder. The self-checking scripts behind every equation and number are in `../phase-velocity-slices/derivations/`, and the figures `spectrum` and `snapshots` are copies of those made by `../phase-velocity-slices/analysis/fig_spectrum.py` and `fig_snapshots.py`.

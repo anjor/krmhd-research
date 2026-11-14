@@ -1,0 +1,138 @@
+\section{The slice transform and the spectral theory of the branch operator}\label{app:spectral}
+
+\subsection{Definitions and statement}\label{appB:defs}
+
+Let $\mathcal W$ be the space of real functions $G(u)$ with $\ip{G}{G}<\infty$, where $\ip{f}{g}=\int fg\,F_M^{-1}\,\dd u$, so that $\mathsf Q=F_M\,M_0$ is the orthogonal projector onto $F_M$. The free-energy product (\ref{eq:fe}) is $\fe{f}{g}=\ip{f}{Pg}$ with $P=I-\mathsf Q/\Lambda$, and with $G=M_0[G]\,F_M+G_\perp$, $\fe{G}{G}=\ip{G_\perp}{G_\perp}+p_0\,M_0[G]^2$, which is positive definite, with a norm equivalent to that of $\ip{\cdot}{\cdot}$, if and only if $\Lambda\notin[0,1]$. With $U$ the multiplication by $u$,
+\begin{equation}\label{eq:LUP}
+  L=UP ,
+\end{equation}
+so $\fe{f}{Lg}=\ip{Pf}{UPg}$ is symmetric in $f$ and $g$. For $\mathrm{Im}\,z>0$,
+\begin{equation}\label{sl:resolvent}
+  (z-L)^{-1}G=\frac{1}{z-u}\left[G-\frac{uF_M}{\Lambda\,\diel(z)}\int\frac{G(v)}{z-v}\,\dd v\right],\qquad
+  \diel(\zeta)=1-\frac{1+\zeta Z(\zeta)}{\Lambda},
+\end{equation}
+where $Z$ is the plasma dispersion function of \citet{FriedConte1961}, not the charge number; we write $\diel$ also for its continuation into the lower half plane, whose zeros are the Landau roots. On the real axis
+\begin{equation}\label{sl:epsRI}
+  \diel(u+\ii0)=\diel_R(u)+\ii\,\diel_I(u),\qquad
+  \diel_R=1-\frac{1+u\,\mathrm{Re}\,Z(u)}{\Lambda},\qquad
+  \diel_I=-\frac{\pi\,u\,F_M(u)}{\Lambda},
+\end{equation}
+and $\mathsf H[f](u)=\pi^{-1}\PVint f(v)\,(v-u)^{-1}\,\dd v$. By the argument of \citet{Penrose1960}, $\diel$ has no zeros in the closed upper half plane for $\Lambda\notin[0,1]$ (section~\ref{appB:penrose}). The spectral density
+\begin{equation}\label{eq:varrho}
+  \varrho(u)=\frac{F_M(u)}{|\diel(u+\ii0)|^2}
+\end{equation}
+is then positive, smooth and even, with $\int\varrho\,\dd u=1/p_0$. For real $u$ the equation $(L-u)F=0$ has the Case--Van Kampen solutions
+\begin{equation}\label{sl:Fu}
+  F_u(v)=\frac{1}{\Lambda}\,\mathrm P\frac{vF_M(v)}{v-u}+\diel_R(u)\,\delta(v-u),\qquad M_0[F_u]=1,\qquad M_1[F_u]=u,
+\end{equation}
+and the slice transform is the projection on them in the free-energy product,
+\begin{equation}\label{eq:transform}
+  \Tr[G](u)=\fe{F_u}{G}=\frac{\diel_R\,G-\diel_I\,\mathsf H[G]}{F_M}(u),\qquad \Tr[LG](u)=u\,\Tr[G](u),
+\end{equation}
+of which the slice amplitude (\ref{eq:aunit}) is the unit-weight form, $a_u=\sqrt{\varrho(u)}\,\Tr[G](u)$; $\mathcal A$ denotes the map $G\mapsto a$.
+
+\begin{theorem}\label{thm:spectrum}
+Let $\Lambda\notin[0,1]$, the value $\Lambda=\infty$ included. Then $L$, with the domain $D(U)$ of $U$, is self-adjoint in $(\mathcal W,\fe{\cdot}{\cdot})$; it has no eigenvalues, and its spectrum is the real line, purely absolutely continuous and simple; and $\mathcal A$ is a unitary map from $(\mathcal W,\fe{\cdot}{\cdot})$ onto $L^2(\mathbb R,\dd u)$ with $\mathcal ALG=u\,\mathcal AG$ for $G\in D(U)$. In particular (\ref{sl:parseval}) holds, $\fe{G}{\varphi(L)G}=\int\varphi(u)\,a_u^2\,\dd u$ for every bounded Borel function $\varphi$, and
+\begin{equation}\label{sl:inverse}
+  G=\int\varrho(u)\,\Tr[G](u)\,F_u\,\dd u=\diel_R\,c+\diel_I\,\mathsf H[c],\qquad c=\sqrt\varrho\;a .
+\end{equation}
+\end{theorem}
+
+The rest of this appendix proves the theorem and the statements about the eigenvalues of $L$ and the zeros of $\diel$. For $0<\Lambda<1$, $\diel$ has one zero in the upper half plane, on the imaginary axis, $L$ has the eigenvalues $\pm\ii\gamma$, and the slice decomposition is incomplete.
+
+\subsection{Preliminaries}\label{appB:prelim}
+
+We work in the complexification of $\mathcal W$, with $\ip{f}{g}=\int\bar f\,g\,F_M^{-1}\,\dd u$. The set $\mathcal D_0$ of functions $pF_M$, with $p$ a polynomial, is dense in $\mathcal W$ (it contains the orthonormal basis $e_m$), lies in $D(U)$, and is mapped into itself by $U$, $P$ and $L$. Let $\mathcal S$ be the set of smooth $f$ with $|f(v)|\le C(1+|v|)^kF_M(v)$ for some $C$ and $k$; it contains $\mathcal D_0$ and the smooth functions with compact support. For $f\in\mathcal S$ the Cauchy integral
+\begin{equation*}
+  \chi_f(\zeta)=\frac{1}{\pi}\int\frac{f(v)}{v-\zeta}\,\dd v\qquad(\mathrm{Im}\,\zeta>0)
+\end{equation*}
+is analytic in the upper half plane, extends continuously to the real axis with $\chi_f(u+\ii0)=\mathsf H[f](u)+\ii f(u)$ (the Plemelj formula), and is $O(1/\zeta)$ as $|\zeta|\to\infty$ in the closed upper half plane. The following converse is used twice.
+
+\begin{lemma}\label{appB:lemma}
+Let $Y$ be analytic in the upper half plane, continuous up to the real axis, and $O(1/\zeta)$ as $|\zeta|\to\infty$ in the closed upper half plane. Then $Y=\chi_y$ with $y(u)=\mathrm{Im}\,Y(u+\ii0)$.
+\end{lemma}
+
+\begin{proof}
+For $\mathrm{Im}\,\zeta>0$, Cauchy's formula on a large half disc gives $Y(\zeta)=(2\pi\ii)^{-1}\int Y(v+\ii0)\,(v-\zeta)^{-1}\,\dd v$, and Cauchy's theorem for $\overline{Y(\bar\zeta)}$, analytic in the lower half plane with the same decay, gives $\int\overline{Y(v+\ii0)}\,(v-\zeta)^{-1}\,\dd v=0$. Subtracting $(2\pi\ii)^{-1}$ times the second integral from the first gives $Y=\chi_y$.
+\end{proof}
+
+\subsection{Self-adjointness}\label{appB:sa}
+
+Let $\Lambda\notin[0,1]$, so that $p_0>0$. Since $P=(I-\mathsf Q)+p_0\mathsf Q$, the operator $P^{1/2}=I+(\sqrt{p_0}-1)\mathsf Q$ is bounded and symmetric, with bounded inverse, and $\fe{f}{g}=\ip{P^{1/2}f}{P^{1/2}g}$, so $V:G\mapsto P^{1/2}G$ is unitary from $(\mathcal W,\fe{\cdot}{\cdot})$ onto $(\mathcal W,\ip{\cdot}{\cdot})$. Since $V-I$ has its range in the span of $F_M\in D(U)$, $V$ maps $D(U)$ onto itself, and by (\ref{eq:LUP})
+\begin{equation}\label{appB:rank2}
+  VLV^{-1}=P^{1/2}UP^{1/2}=U+\mathsf K,\qquad
+  \mathsf K=(\sqrt{p_0}-1)\big(\mathsf QU+U\mathsf Q\big),
+\end{equation}
+where $(\sqrt{p_0}-1)^2\mathsf QU\mathsf Q$ is absent because $\mathsf QU\mathsf QG=M_1[F_M]\,M_0[G]\,F_M=0$. The operator $\mathsf KG=(\sqrt{p_0}-1)\big[\ip{uF_M}{G}\,F_M+\ip{F_M}{G}\,uF_M\big]$ is symmetric, of rank two and bounded, since $\ip{F_M}{F_M}=1$ and $\ip{uF_M}{uF_M}=1/2$. By the Kato--Rellich theorem \citep[][chapter~V]{Kato1966}, $U+\mathsf K$ is then self-adjoint on $D(U)$ in $(\mathcal W,\ip{\cdot}{\cdot})$, so $L=V^{-1}(U+\mathsf K)V$ is self-adjoint on $D(U)$ in $(\mathcal W,\fe{\cdot}{\cdot})$, which is part~(i) of theorem~\ref{thm:spectrum}.
+
+\subsection{Eigenvalues}\label{appB:eig}
+
+For every $\Lambda\neq0$, a function $G\in D(U)$ is an eigenfunction of $L$ with eigenvalue $\lambda$ if and only if
+\begin{equation*}
+  (u-\lambda)\,G=\frac{uF_M}{\Lambda}\,M_0[G],\qquad G\neq0 .
+\end{equation*}
+If $\lambda$ is not real, $G=M_0[G]\,uF_M/[\Lambda(u-\lambda)]$, and taking $M_0$ gives $M_0[G]\,\diel(\lambda)=0$ if $\mathrm{Im}\,\lambda>0$ and $M_0[G]\,\overline{\diel(\bar\lambda)}=0$ if $\mathrm{Im}\,\lambda<0$, because the integral in (\ref{sl:resolvent}) at a point of the lower half plane equals $\overline{\diel(\bar\lambda)}$ (for the same reason the resolvent for $\mathrm{Im}\,z<0$ is (\ref{sl:resolvent}) with $\overline{\diel(\bar z)}$ in place of $\diel(z)$). Since $M_0[G]=0$ would give $G=0$, a non-real $\lambda$ is an eigenvalue if and only if $\lambda$ or $\bar\lambda$ is a zero of $\diel$ in the upper half plane. For real $\lambda\neq0$, $uF_M/(u-\lambda)$ is not square integrable near $u=\lambda$, so $M_0[G]=0$ and $G=0$. For $\lambda=0$, $G=M_0[G]\,F_M/\Lambda$ requires $\Lambda=1$.
+
+\subsection{Zeros of the dielectric function}\label{appB:penrose}
+
+The function $\diel$ is analytic in the upper half plane and continuous up to the real axis, where it takes the values (\ref{sl:epsRI}). Since $1+\zeta Z(\zeta)=-1/(2\zeta^2)+O(\zeta^{-4})$ uniformly in $\mathrm{Im}\,\zeta\ge0$, $\diel\to1$ as $|\zeta|\to\infty$ there, so if $\diel$ has no real zeros, the number of its zeros in the upper half plane is the winding number about $0$ of the closed curve $u\mapsto\diel(u+\ii0)$. A real zero requires $\diel_I(u)=0$, hence $u=0$, and $\diel_R(0)=p_0$ vanishes only at $\Lambda=1$. For $\Lambda\neq1$, $\diel(u+\ii0)=1-\mathcal N(u)/\Lambda$ with $\mathcal N(u)=1+uZ(u+\ii0)$, and the winding number of $\diel$ about $0$ equals that of $\mathcal N$ about the point $\Lambda$. The curve $\mathcal N$ has $\mathrm{Im}\,\mathcal N(u)=\pi uF_M(u)$, $\mathcal N(0)=1$ and $\mathcal N(u)\to0$ as $|u|\to\infty$: it leaves $0$ at $u=-\infty$, runs through the lower half plane to the point $1$, reached at $u=0$, and returns to $0$ through the upper half plane, meeting the real axis only at $0$ and $1$. It therefore winds once around every point of $(0,1)$ and around no real point outside $[0,1]$, so
+\begin{equation}\label{appB:count}
+  \#\{\zeta:\ \diel(\zeta)=0,\ \mathrm{Im}\,\zeta\ge0\}=
+  \begin{cases}0, & \Lambda<0\ \text{or}\ \Lambda>1,\\ 1, & 0<\Lambda<1,\end{cases}
+\end{equation}
+which is the criterion of \citet{Penrose1960} for this dielectric function. By section~\ref{appB:eig}, $L$ has no eigenvalues for $\Lambda\notin[0,1]$.
+
+The plasma dispersion function continues to the entire function $Z(\zeta)=\ii\sqrt\pi\,e^{-\zeta^2}\mathrm{erfc}(-\ii\zeta)$, and the zeros of the continued $\diel$ in the lower half plane are the Landau roots. They are not eigenvalues of $L$, because in the lower half plane the resolvent contains $\overline{\diel(\bar\zeta)}$, which by (\ref{appB:count}) has no zeros there for $\Lambda\notin[0,1]$.
+
+\subsection{Spectral measure}\label{appB:stone}
+
+For $\mathrm{Im}\,z>0$ and real $G\in\mathcal W$, let
+\begin{equation*}
+  C_G(z)=\int\frac{G(v)}{z-v}\,\dd v,\qquad I_G(z)=\int\frac{G(v)^2}{(z-v)\,F_M(v)}\,\dd v .
+\end{equation*}
+By (\ref{sl:resolvent}), $M_0[(z-L)^{-1}G]=C_G(z)/\diel(z)$, and since $\int uG(u)\,(z-u)^{-1}\,\dd u=zC_G(z)-M_0[G]$, the resolvent form is
+\begin{equation*}
+  R_G(z)\equiv\fe{G}{(z-L)^{-1}G}=I_G(z)-\frac{z}{\Lambda}\,\frac{C_G(z)^2}{\diel(z)} .
+\end{equation*}
+It is the Stieltjes transform $\int(z-x)^{-1}\,\dd\mu_G(x)$ of the spectral measure $\mu_G$ of $L$ in the state $G$, which Stone's formula recovers:
+\begin{equation}\label{appB:stoneformula}
+  \mu_G\big((u_1,u_2)\big)+\tfrac12\mu_G\big(\{u_1\}\big)+\tfrac12\mu_G\big(\{u_2\}\big)
+  =-\frac{1}{\pi}\lim_{\eta\to0+}\int_{u_1}^{u_2}\mathrm{Im}\,R_G(u+\ii\eta)\,\dd u .
+\end{equation}
+
+Let $G\in\mathcal D_0$ be real and $\Lambda\notin[0,1]$. Then $C_G=-\pi\chi_G$ and $I_G=-\pi\chi_{G^2/F_M}$ extend continuously to the real axis, with $C_G(u+\ii0)=-\pi(\mathsf H[G]+\ii G)(u)$ and $\mathrm{Im}\,I_G(u+\ii0)=-\pi G(u)^2/F_M(u)$. By (\ref{appB:count}), $1/\diel$ is continuous on the closed upper half plane, so $R_G(u+\ii\eta)\to R_G(u+\ii0)$ as $\eta\to0+$, uniformly for $u$ in compact sets. With $\diel_I=-\pi uF_M/\Lambda$, the imaginary part of the boundary value is a square:
+\begin{equation*}
+  -\frac{1}{\pi}\,\mathrm{Im}\,R_G(u+\ii0)
+  =\frac{G^2}{F_M}-\frac{\diel_I}{F_M}\,\frac{2\diel_R\,G\,\mathsf H[G]-\diel_I\big(\mathsf H[G]^2-G^2\big)}{|\diel|^2}
+  =\frac{\big(\diel_RG-\diel_I\mathsf H[G]\big)^2}{F_M\,|\diel|^2}
+  =\varrho\,\Tr[G]^2=a_u^2 .
+\end{equation*}
+By (\ref{appB:stoneformula}) and the uniform convergence, $\mu_G$ has no atoms and $\dd\mu_G=a_u^2\,\dd u$.
+
+Three consequences follow. First, the absolutely continuous subspace of $L$ is closed and contains the dense set $\mathcal D_0$, so it is $\mathcal W$, and $L$ has no eigenvalues and no singular continuous spectrum. Second, $\mathsf K$ in (\ref{appB:rank2}) has rank two and is therefore of trace class, so by the Kato--Rosenblum theorem \citep[][chapter~X]{Kato1966} the absolutely continuous parts of $U+\mathsf K=VLV^{-1}$ and of $U$ are unitarily equivalent; since both operators are purely absolutely continuous, $L$ is unitarily equivalent to $U$, multiplication by $u$ in $L^2(\mathbb R,\dd u/F_M)$, whose spectrum is the real line with multiplicity one. This is part~(ii) of theorem~\ref{thm:spectrum}. Third, applying $\dd\mu_G=a_u^2\,\dd u$ to $G+G'$ and $G-G'$ gives, for real $G,G'\in\mathcal D_0$ and every bounded Borel function $\varphi$,
+\begin{equation}\label{appB:polar}
+  \fe{G'}{\varphi(L)G}=\int\varphi(u)\,a_u[G']\,a_u[G]\,\dd u,\qquad a[G]=\mathcal AG ,
+\end{equation}
+and by linearity the same holds for complex $G,G'\in\mathcal D_0$ with $a_u[G']$ replaced by its complex conjugate.
+
+\subsection{The slice transform}\label{appB:transform}
+
+The formula (\ref{eq:aunit}), with $\mathsf H$ the Hilbert transform on $L^2(\mathbb R,\dd u)$, defines a bounded operator $\mathcal A$ from $\mathcal W$ into $L^2(\mathbb R,\dd u)$: for $\Lambda\notin[0,1]$, $|\diel(u+\ii0)|$ is bounded below, since it has no real zeros and tends to $1$ at infinity, and since $|\diel_R|\le|\diel|$, the first term of (\ref{eq:aunit}) has norm at most $\ip{G}{G}^{1/2}$. In the second, $\diel_I\mathsf H[G]/(\sqrt{F_M}\,|\diel|)=-\pi u\sqrt{F_M}\,\mathsf H[G]/(\Lambda|\diel|)$, the factor $u\sqrt{F_M}/|\diel|$ is bounded, $\mathsf H$ is an isometry, and $\int|G|^2\,\dd u\le\pi^{-1/2}\ip{G}{G}$. By (\ref{appB:polar}) with $\varphi=1$, $\mathcal A$ is isometric on the dense set $\mathcal D_0$, so it is an isometry of $(\mathcal W,\fe{\cdot}{\cdot})$ into $L^2(\mathbb R,\dd u)$, and its range is closed.
+
+The following argument is the counterpart for $L$ of the invertibility proof of \citet{Morrison2000}. To show that the range of $\mathcal A$ is dense, let $b$ be a smooth function with compact support, $c=\sqrt\varrho\,b$, and
+\begin{equation*}
+  G=\diel_Rc+\diel_I\mathsf H[c]=\mathrm{Im}\big[\diel(u+\ii0)\,\chi_c(u+\ii0)\big].
+\end{equation*}
+Since $c$ has compact support, $\diel_I=-\pi uF_M/\Lambda$ and $\mathsf H[c]$ is smooth and bounded, $G$ belongs to $\mathcal S$ and to $\mathcal W$. The product $\diel\chi_c$ is analytic in the upper half plane, continuous up to the real axis and $O(1/\zeta)$, so by lemma~\ref{appB:lemma} it equals $\chi_G$, and $\chi_c(u+\ii0)=\chi_G(u+\ii0)/\diel(u+\ii0)$. Taking imaginary parts, with the Plemelj formula for $\chi_G$,
+\begin{equation*}
+  c=\frac{\mathrm{Im}\big[(\mathsf H[G]+\ii G)\,\bar\diel\big]}{|\diel|^2}=\frac{\diel_RG-\diel_I\mathsf H[G]}{|\diel|^2}=\varrho\,\Tr[G],
+\end{equation*}
+so that $\mathcal AG=b$. The smooth functions with compact support are dense in $L^2(\mathbb R,\dd u)$ and the range of $\mathcal A$ is closed, so $\mathcal A$ is onto, with the inverse
+\begin{equation}\label{appB:inv}
+  \mathcal A^{-1}a=\diel_R\sqrt\varrho\,a+\diel_I\,\mathsf H\big[\sqrt\varrho\,a\big],
+\end{equation}
+which is (\ref{sl:inverse}): since $|\diel_R|\sqrt{\varrho/F_M}\le1$ and $|\diel_I|/\sqrt{F_M}$ and $\varrho$ are bounded, the right-hand side is a bounded operator from $L^2(\mathbb R,\dd u)$ into $\mathcal W$ that equals $\mathcal A^{-1}$ on a dense set. Conversely, for $G\in\mathcal D_0$, $Y=\chi_G/\diel$ is analytic in the upper half plane, because $\diel$ has no zeros there, and $\mathrm{Im}\,Y(u+\ii0)=\varrho\Tr[G]=c\in\mathcal S$; by lemma~\ref{appB:lemma}, $Y=\chi_c$, and $G=\mathrm{Im}\,\chi_G(u+\ii0)=\mathrm{Im}[\diel\,Y](u+\ii0)=\diel_Rc+\diel_I\mathsf H[c]$. The first direction does not use the zeros of $\diel$ in the upper half plane; the second uses their absence, and fails by the residue of $Y$ at the zero $\ii\gamma$ that $\diel$ has for $0<\Lambda<1$, where $1-\sqrt\pi\,\gamma\,e^{\gamma^2}\mathrm{erfc}(\gamma)=\Lambda$ and $L$ has the eigenvalues $\pm\ii\gamma$ (section~\ref{appB:eig}); the slices are then not complete. The KRMHD branches never fall in this range, because $\Lambda^+>1$ and $\Lambda^-<0$.
+
+Part~(iii) of theorem~\ref{thm:spectrum} follows. By (\ref{appB:polar}) with $\varphi(u)=(z-u)^{-1}$, $\mathrm{Im}\,z\neq0$, $\fe{G'}{(z-L)^{-1}G}=\int\overline{a_u[G']}\,a_u[G]\,(z-u)^{-1}\,\dd u$ for $G,G'\in\mathcal D_0$, and by continuity for all $G,G'\in\mathcal W$. Since $\mathcal A$ is unitary, the left-hand side is $\int\overline{a_u[G']}\,a_u[(z-L)^{-1}G]\,\dd u$, and since $\mathcal AG'$ runs over $L^2(\mathbb R,\dd u)$, $\mathcal A(z-L)^{-1}G=(z-u)^{-1}\mathcal AG$. For $G\in D(U)$, applying this to $(z-L)G$ shows that $u\,\mathcal AG\in L^2(\mathbb R,\dd u)$ and $\mathcal ALG=u\,\mathcal AG$. The relations (\ref{sl:parseval}) are then the functional calculus of multiplication by $u$.
+
+By (\ref{sl:Fu}), $\int c(u)\,F_u(v)\,\dd u=\diel_R(v)\,c(v)+\diel_I(v)\,\mathsf H[c](v)$, so (\ref{appB:inv}) is the completeness relation $G=\int\varrho\,\Tr[G]\,F_u\,\dd u$ of the modes, and $\varrho\,\Tr[\mathcal A^{-1}a]=\sqrt\varrho\,a$ is the orthogonality relation $\fe{F_u}{F_{u'}}=\delta(u-u')/\varrho(u)$, in the sense of distributions.
