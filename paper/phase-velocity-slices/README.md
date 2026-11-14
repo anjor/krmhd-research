@@ -1,6 +1,6 @@
-# Phase-velocity slices
+# Phase mixing against a passive-scalar cascade (P1)
 
-Analytical paper: the compressive sector of kinetic reduced MHD as a continuum of passive scalars, one per parallel phase velocity, and its consequences (invariants, Lagrangian linearity, phase mixing as decorrelation of slices, mirror symmetry, truncated Hermite hierarchies). Target: Journal of Plasma Physics.
+Paper P1: the Hermite spectrum of kinetic reduced MHD turbulence. The frozen-line theorem, a two-channel model (phase mixing at the injected field-aligned wavenumber against a uniform perpendicular sink) and its test in forced simulations. Target: Journal of Plasma Physics. The exact decomposition of the compressive sector into passive scalars, one per parallel phase velocity, and its invariants are in the companion paper in `../compressive-slices/`; the self-checking scripts for both papers stay in `derivations/` here.
 
 Layout:
 

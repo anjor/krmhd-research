@@ -64,6 +64,31 @@ where the ladder matrix $A$, the matrix of $L$, is tridiagonal with zero diagona
 \begin{equation}\label{mod:ladder}
   A_{m,m+1}=A_{m+1,m}=\sqrt{\frac{m+1}{2}}\quad\text{except}\quad A_{10}=\frac{1-1/\Lambda}{\sqrt2}.
 \end{equation}
-The weight matrix $\Pw=\mathrm{diag}(p_m)$, with $p_0=1-1/\Lambda$ and $p_m=1$ for $m\ge1$, symmetrises it, $\Pw A=(\Pw A)^{\mathsf T}$, and $\sum_mp_mg_m^2$ is the free-energy product $\fe{G}{G}$ of section~\ref{sec:slices}. A truncation at $m=M$ needs a closure; by default we use the zero closure $g_{M+1}=0$, which keeps the first $M+1$ rows and columns of $A$. GANDALF \citep{Kanekar2025} integrates (\ref{eq:rmhd}) in Elsasser form together with (\ref{mod:hierarchy}) for one branch, with optional dissipation, hypercollisions and forcing, truncated with the zero closure or with the copy closure $g_{M+1}=g_{M-1}$ (section~\ref{hm:trunc}). We checked to round-off that its right-hand side without dissipation and hypercollisions is (\ref{mod:hierarchy})--(\ref{mod:ladder}), for both signs of $\Lambda$ and both closures.
+The weight matrix $\Pw=\mathrm{diag}(p_m)$, with $p_0=1-1/\Lambda$ and $p_m=1$ for $m\ge1$, symmetrises it, $\Pw A=(\Pw A)^{\mathsf T}$, and
+\begin{equation}\label{eq:fe}
+  \fe{G}{G}\equiv\int\frac{G^2}{F_M}\,\dd u-\frac{M_0[G]^2}{\Lambda}=\sum_mp_mg_m^2
+\end{equation}
+is the free energy of the branch in units of $n_iT_i/2$, which is positive definite for $\Lambda\notin[0,1]$, where $p_0>0$. A truncation at $m=M$ needs a closure; by default we use the zero closure $g_{M+1}=0$, which keeps the first $M+1$ rows and columns of $A$. GANDALF \citep{Kanekar2025} integrates (\ref{eq:rmhd}) in Elsasser form together with (\ref{mod:hierarchy}) for one branch, with optional dissipation, hypercollisions and forcing, truncated with the zero closure or with the copy closure $g_{M+1}=g_{M-1}$. We checked to round-off that its right-hand side without dissipation and hypercollisions is (\ref{mod:hierarchy})--(\ref{mod:ladder}), for both signs of $\Lambda$ and both closures.
 
-The rest of the paper concerns one equation (\ref{eq:branch}) with $\Lambda\notin[0,1]$, which we call a branch whether it describes $G^\pm$ or a Laguerre coefficient with $l\ge2$. Sections~\ref{sec:slices} to~\ref{sec:frozen} treat a collisionless and unforced branch except where stated; sections~\ref{sec:twochannel} and~\ref{sec:simulations} add forcing, dissipation and hypercollisions. The Hermite spectrum of the free energy is $W(m)=p_m\langle g_m^2\rangle$, where $\langle\cdot\rangle$ is the average over the periodic box, so that $\sum_mW(m)=\langle\fe{G}{G}\rangle$.
+The rest of the paper concerns one equation (\ref{eq:branch}) with $\Lambda\notin[0,1]$, which we call a branch whether it describes $G^\pm$ or a Laguerre coefficient with $l\ge2$. Section~\ref{sec:frozen} treats a collisionless and unforced branch except where stated; sections~\ref{sec:twochannel} and~\ref{sec:simulations} add forcing, dissipation and hypercollisions. The Hermite spectrum of the free energy is $W(m)=p_m\langle g_m^2\rangle$, where $\langle\cdot\rangle$ is the average over the periodic box, so that $\sum_mW(m)=\langle\fe{G}{G}\rangle$.
+
+\subsection{The Hermite flux}\label{mod:flux}
+
+Free energy moves between Hermite moments only through the streaming term. In (\ref{mod:hierarchy}) the bracket with $\Phi$ does not change $\langle g_m^2\rangle$, and since $\Pw A$ is symmetric and $\langle g_n\gradpar g_{n'}\rangle$ antisymmetric, only the coupling between $m$ and $m+1$ survives in $E_{\le m}=\sum_{n\le m}W(n)$:
+\begin{equation}\label{eq:fluxCD}
+  \frac{\dd E_{\le m}}{\dd t}=-\Pi_{m+1/2},\qquad
+  \Pi_{m+1/2}=s\,b_m\big\langle g_m\gradpar g_{m+1}-g_{m+1}\gradpar g_m\big\rangle,\qquad b_m=p_mA_{m,m+1},
+\end{equation}
+the free energy per unit time and volume that passes from moment $m$ to $m+1$. The flux must be computed with the full $\gradpar$: the Hermite flux of \citet{Meyrand2019} uses it, whereas a flux computed with $\partial_z$ alone, which we call the $k_z$-only flux, omits the part of the streaming that follows the tilt of the field lines and does not close the budget below.
+
+With forcing of $g_0$ at the rate $\eps$, dissipation that acts on every $g_m$ in the same way and hypercollisions, the free energy in each moment obeys
+\begin{equation}\label{eq:budget}
+  \frac{\dd W(m)}{\dd t}=\Pi_{m-1/2}-\Pi_{m+1/2}+\eps\,\delta_{m0}-D_\perp(m)-D_\nu(m),\qquad \Pi_{-1/2}=0,
+\end{equation}
+where $D_\perp(m)$ and $D_\nu(m)$ are the rates at which the spatial dissipation and the hypercollisions remove free energy from moment $m$. The brackets and the hyper-resistivity of GANDALF act on all moments alike, so (\ref{eq:budget}) holds for its equations up to the error of the dealiased brackets, with the flux (\ref{eq:fluxCD}) evaluated with the same brackets; in the simulations of section~\ref{sec:simulations} it closes to better than $10^{-3}\,\eps$.
+
+For one Fourier mode whose density moment is driven by white noise that injects free energy at the rate $\eps$, the steady state of linear phase mixing is known exactly \citep[eq.~4.10]{Kanekar2015}. At $\Lambda=\infty$ it is
+\begin{equation}\label{eq:linforced}
+  W(m)=\frac{\pi\eps}{s|k_z|}\,\frac{\Gamma(m+\frac12)}{\sqrt2\,\pi\,m!}\;\simeq\;\frac{\eps}{s|k_z|\sqrt{2m}}\quad(m\gg1),
+\end{equation}
+where $\Gamma(\cdot)$ is Euler's gamma function; at every $\Lambda$ the large-$m$ form is $\eps/(s|k_z|\sqrt{2m})$, and the flux (\ref{eq:fluxCD}) is $\eps$ through every $m$. This is the $m^{-1/2}$ spectrum of linear phase mixing. Free energy injected at $m=0$ thus moves up the ladder at the speed $\dd m/\dd t=\Pi/W=s|k_z|\sqrt{2m}$ and reaches $m\simeq(sk_zt)^2/2$ after a time $t$.
