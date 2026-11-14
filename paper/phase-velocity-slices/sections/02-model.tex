@@ -44,42 +44,51 @@ We now drop the branch label, set $u=v_\parallel/\vth$, and write $F_M(u)=\pi^{-
 \begin{equation}\label{eq:branch}
   \partial_tG+\{\Phi,G\}+s\,\gradpar(LG)=0,
 \end{equation}
-with the branch operator
+where
 \begin{equation}\label{eq:L}
-  LG=uG-\frac{uF_M}{\Lambda}\,M_0[G],
+  LG=uG-\frac{uF_M}{\Lambda}\,M_0[G]
 \end{equation}
-which acts on the velocity variable only; for $\Lambda=\infty$ it is multiplication by $u$. Because the field relations (\ref{mod:fields}) are algebraic, $L$ contains no wavenumber.
+combines the streaming of the particles with the Landau coupling. It acts on the velocity dependence of $G$ at each point, and for $\Lambda=\infty$ it is multiplication by $u$. It contains no wavenumber, because the field relations (\ref{mod:fields}) are algebraic.
 
 For given $\Phi$ and $\Psi$, equation (\ref{eq:branch}) is linear in $G$. Its nonlinear terms are the advection $\{\Phi,G\}$ and the part $s\{\Psi,LG\}$ of the streaming, which follows the perturbed field lines. The Alfv\'enic fields obey (\ref{eq:rmhd}) whatever $G$ does, so the compressive sector is passive. At finite $k_\perp\rho_i$ this fails; the induction equation, for example, contains $\gradpar(\delta n/n)$ (CMM, \S3.1).
 
 The density and field-strength fluctuations are linear combinations of $M_0[G^+]$ and $M_0[G^-]$ (\ref{appA:dndB}), the parallel ion flow involves $M_1[G^\pm]$, and the pressure perturbations involve $M_0[G^\pm]$ and $M_2[G^\pm]$ (appendix~\ref{app:branches}); the sector $\Lambda=\infty$ contributes to none of these moments.
 
-\subsection{Hermite representation}\label{mod:hermite}
+\subsection{Hermite moments}\label{mod:hermite}
 
-Following CMM (eqs~B27 and~B30), we expand $G=\sum_{m\ge0}g_mH_m(u)F_M(u)/\sqrt{2^mm!}$, so that $g_m=\int H_m\,G\,\dd u/\sqrt{2^mm!}$ and $G/F_M^{1/2}=\sum_mg_m\psi_m(u)$ with the orthonormal Hermite functions $\psi_m$. The $g_m$ are CMM's $\tilde G_m$, and $M_0[G]=g_0$, $M_1[G]=g_1/\sqrt2$. In this basis (\ref{eq:branch}) is the hierarchy
+Phase mixing is made explicit by expanding $G$ in Hermite polynomials \citep{Kanekar2015,Schekochihin2016}, as CMM do (their eqs~B27 and~B30):
+\begin{equation}\label{mod:hermiteexp}
+  G(u)=\sum_{m=0}^\infty\frac{H_m(u)F_M(u)}{\sqrt{2^mm!}}\,g_m,\qquad
+  g_m=\int\frac{H_m(u)}{\sqrt{2^mm!}}\,G(u)\,\dd u .
+\end{equation}
+The $g_m$ are CMM's $\tilde G_m$. The first two are the density moment $g_0=M_0[G]$ and the flow moment $g_1=\sqrt2\,M_1[G]$. Since $uH_m=H_{m+1}/2+mH_{m-1}$, the streaming term couples each moment to its two neighbours, and (\ref{eq:branch}) becomes
 \begin{equation}\label{mod:hierarchy}
-  \partial_tg+\{\Phi,g\}+s\,\gradpar(Ag)=0,\qquad g=(g_0,g_1,g_2,\dots)^{\mathsf T},
+\begin{aligned}
+  &\frac{\dd g_0}{\dd t}+s\gradpar\frac{g_1}{\sqrt2}=0,\qquad
+  \frac{\dd g_1}{\dd t}+s\gradpar\Big[g_2+\Big(1-\frac1\Lambda\Big)\frac{g_0}{\sqrt2}\Big]=0,\\
+  &\frac{\dd g_m}{\dd t}+s\gradpar\Big(\sqrt{\frac{m+1}{2}}\,g_{m+1}+\sqrt{\frac m2}\,g_{m-1}\Big)=0,\qquad m\ge2,
+\end{aligned}
 \end{equation}
-where the ladder matrix $A$, the matrix of $L$, is tridiagonal with zero diagonal,
-\begin{equation}\label{mod:ladder}
-  A_{m,m+1}=A_{m+1,m}=\sqrt{\frac{m+1}{2}}\quad\text{except}\quad A_{10}=\frac{1-1/\Lambda}{\sqrt2}.
-\end{equation}
-The weight matrix $\Pw=\mathrm{diag}(p_m)$, with $p_0=1-1/\Lambda$ and $p_m=1$ for $m\ge1$, symmetrises it, $\Pw A=(\Pw A)^{\mathsf T}$, and
-\begin{equation}\label{eq:fe}
-  \fe{G}{G}\equiv\int\frac{G^2}{F_M}\,\dd u-\frac{M_0[G]^2}{\Lambda}=\sum_mp_mg_m^2
-\end{equation}
-is the free energy of the branch in units of $n_iT_i/2$, which is positive definite for $\Lambda\notin[0,1]$, where $p_0>0$. A truncation at $m=M$ needs a closure; by default we use the zero closure $g_{M+1}=0$, which keeps the first $M+1$ rows and columns of $A$. GANDALF \citep{Kanekar2025} integrates (\ref{eq:rmhd}) in Elsasser form together with (\ref{mod:hierarchy}) for one branch, with optional dissipation, hypercollisions and forcing, truncated with the zero closure or with the copy closure $g_{M+1}=g_{M-1}$. We checked to round-off that its right-hand side without dissipation and hypercollisions is (\ref{mod:hierarchy})--(\ref{mod:ladder}), for both signs of $\Lambda$ and both closures.
+with $\dd/\dd t=\partial_t+\{\Phi,\cdot\}$ as in (\ref{mod:kinetic}). The Landau coupling enters only the equation for the flow moment $g_1$, where the parallel electric field and the mirror force change the coefficient of $g_0$ from $1/\sqrt2$ to $(1-1/\Lambda)/\sqrt2$. These are the equations of \citet[eqs~4.3--4.5]{Kanekar2015} with their $\alpha=-1/\Lambda$, except that the moments are advected by the $\boldsymbol E\times\boldsymbol B$ flow and stream along the perturbed field. For the vector $g=(g_0,g_1,\dots)$ we write them as $\dd g/\dd t+s\gradpar(Ag)=0$, where the ladder matrix $A$, the Hermite form of $L$, holds the coefficients of the streaming terms: $A_{m,m+1}=A_{m+1,m}=\sqrt{(m+1)/2}$, except $A_{10}=(1-1/\Lambda)/\sqrt2$.
 
-The rest of the paper concerns one equation (\ref{eq:branch}) with $\Lambda\notin[0,1]$, which we call a branch whether it describes $G^\pm$ or a Laguerre coefficient with $l\ge2$. Section~\ref{sec:frozen} treats a collisionless and unforced branch except where stated; sections~\ref{sec:twochannel} and~\ref{sec:simulations} add forcing, dissipation and hypercollisions. The Hermite spectrum of the free energy is $W(m)=p_m\langle g_m^2\rangle$, where $\langle\cdot\rangle$ is the average over the periodic box, so that $\sum_mW(m)=\langle\fe{G}{G}\rangle$.
+The free energy of the branch, in units of $n_iT_i/2$, is $\sum_mW(m)$, where
+\begin{equation}\label{eq:fe}
+  W(m)=p_m\langle g_m^2\rangle,\qquad p_0=1-\frac1\Lambda,\quad p_m=1\ \ (m\ge1),
+\end{equation}
+is the Hermite spectrum and $\langle\cdot\rangle$ is the average over the periodic box. In terms of $G$, $\sum_mW(m)=\langle\int G^2/F_M\,\dd u-M_0[G]^2/\Lambda\rangle$, which is S09's invariant $W^\pm_{\rm compr}$ (their eq.~198; CMM eq.~B13) up to the factor $n_iT_i/2$. It is positive because $\Lambda^+>1$, $\Lambda^-<0$ and $\Lambda=\infty$ for the other branches (S09, \S6.2.3). Since $p_mA_{m,m+1}=p_{m+1}A_{m+1,m}$, what the streaming term removes from one moment it adds to its neighbour, so that without forcing and dissipation the free energy is conserved; the same holds for the free energy at each field-aligned wavenumber.
+
+A truncation at $m=M$ needs a closure; by default we use the zero closure $g_{M+1}=0$, which keeps the first $M+1$ rows and columns of $A$. GANDALF \citep{Kanekar2025} integrates (\ref{eq:rmhd}) in Elsasser form together with (\ref{mod:hierarchy}) for one branch, with optional dissipation, hypercollisions and forcing, truncated with the zero closure or with the copy closure $g_{M+1}=g_{M-1}$. We checked to round-off that its right-hand side without dissipation and hypercollisions is (\ref{mod:hierarchy}), for both signs of $\Lambda$ and both closures.
+
+The rest of the paper concerns one equation (\ref{eq:branch}) with $\Lambda>1$, $\Lambda<0$ or $\Lambda=\infty$, which we call a branch whether it describes $G^\pm$ or a Laguerre coefficient with $l\ge2$. Section~\ref{sec:frozen} treats a collisionless and unforced branch except where stated; sections~\ref{sec:twochannel} and~\ref{sec:simulations} add forcing, dissipation and hypercollisions.
 
 \subsection{The Hermite flux}\label{mod:flux}
 
-Free energy moves between Hermite moments only through the streaming term. In (\ref{mod:hierarchy}) the bracket with $\Phi$ does not change $\langle g_m^2\rangle$, and since $\Pw A$ is symmetric and $\langle g_n\gradpar g_{n'}\rangle$ antisymmetric, only the coupling between $m$ and $m+1$ survives in $E_{\le m}=\sum_{n\le m}W(n)$:
+Free energy moves between Hermite moments only through the streaming term. We multiply the equation for $g_n$ in (\ref{mod:hierarchy}) by $2p_ng_n$ and average over the box. The advection drops out because the flow is incompressible, and the streaming couples $g_n$ to $g_{n-1}$ and $g_{n+1}$. When these equations are summed over $n\le m$, the couplings cancel in pairs, because $p_nA_{n,n+1}=p_{n+1}A_{n+1,n}$ and $\langle f\gradpar h\rangle=-\langle h\gradpar f\rangle$ for $\nabla\cdot\bhat=0$. Only the coupling between $m$ and $m+1$ survives, and the free energy $E_{\le m}=\sum_{n\le m}W(n)$ in the moments up to $m$ obeys
 \begin{equation}\label{eq:fluxCD}
   \frac{\dd E_{\le m}}{\dd t}=-\Pi_{m+1/2},\qquad
-  \Pi_{m+1/2}=s\,b_m\big\langle g_m\gradpar g_{m+1}-g_{m+1}\gradpar g_m\big\rangle,\qquad b_m=p_mA_{m,m+1},
+  \Pi_{m+1/2}=s\,b_m\big\langle g_m\gradpar g_{m+1}-g_{m+1}\gradpar g_m\big\rangle,
 \end{equation}
-the free energy per unit time and volume that passes from moment $m$ to $m+1$. The flux must be computed with the full $\gradpar$: the Hermite flux of \citet{Meyrand2019} uses it, whereas a flux computed with $\partial_z$ alone, which we call the $k_z$-only flux, omits the part of the streaming that follows the tilt of the field lines and does not close the budget below.
+with $b_0=(1-1/\Lambda)/\sqrt2$ and $b_m=\sqrt{(m+1)/2}$ for $m\ge1$. The flux $\Pi_{m+1/2}$ is the free energy per unit time and volume that passes from moment $m$ to $m+1$. The flux must be computed with the full $\gradpar$: the Hermite flux of \citet{Meyrand2019} uses it, whereas a flux computed with $\partial_z$ alone, which we call the $k_z$-only flux, omits the part of the streaming that follows the tilt of the field lines and does not close the budget below.
 
 With forcing of $g_0$ at the rate $\eps$, dissipation that acts on every $g_m$ in the same way and hypercollisions, the free energy in each moment obeys
 \begin{equation}\label{eq:budget}
