@@ -38,9 +38,9 @@ The form (\ref{eq:Wmodel}) is that of \citet[eq.~112]{ZoccoSchekochihin2011} for
 
 \subsection{Scales}\label{tc:scales}
 
-The exponential in (\ref{eq:Wmodel}) matters once the age (\ref{eq:age}) of the free energy reaches the cascade time $T$. The spectrum therefore follows $m^{-1/2}$ up to the break
+The exponential in (\ref{eq:Wmodel}) matters once the age (\ref{eq:age}) of the free energy reaches the cascade time $T$. In $\sqrt{2m}$, which grows in proportion to the age, it falls by a factor $e$ over the decay length $\ell_*=s\kappa T$, the distance in $\sqrt{2m}$ that the free energy covers in the time $T$. The spectrum therefore follows $m^{-1/2}$ up to the break
 \begin{equation}\label{eq:mstar}
-  m_*=\frac{(s\kappa T)^2}{2},
+  m_*=\frac{\ell_*^2}{2}=\frac{(s\kappa T)^2}{2},
 \end{equation}
 and beyond it decays exponentially in $\sqrt m$, not as a power law.
 
@@ -66,7 +66,7 @@ This is the phase-mixing threshold $k_\parallel\vth\sim\sqrt m\,k_\perp u_\perp$
 
 The model predicts the following, each measurable independently of the others.
 \begin{itemize}
-\item[(i)] \emph{Uniform sink.} $D_\perp(m)/W(m)$ is independent of $m$, and the budget (\ref{eq:budget}) closes with the flux (\ref{eq:fluxCD}) computed with the full $\gradpar$, but not with the $k_z$-only flux.
+\item[(i)] \emph{Uniform sink.} $D_\perp(m)/W(m)$ is independent of $m$.
 \item[(ii)] \emph{Shape.} With $T$ from (i) and $P(\kappa)$ measured along field lines for the injected pattern, $W(m)$ and the field-aligned flux follow the model. A return flux would make both fall below it at large $m$, and would make the flux fall below $s\sqrt{2(m+1)}\,\kappa_1(m)\,W(m)$, the flux that $W(m)$ carries at its measured field-aligned wavenumber. A sink that grows with the age of the free energy (section~\ref{tc:limits}) also lowers $W$ and the flux at large $m$, but not their ratio to this flux.
 \item[(iii)] \emph{Dependence on $\beta_i$.} At fixed $\chi$ the Alfv\'enic turbulence does not depend on $\beta_i$, so $P(\kappa)$ is unchanged and, if $T$ is too, $m_*\propto\beta_i$: the break moves into a fixed range of $m$ as $\beta_i$ decreases. With a sink that depends on the age of the free energy (section~\ref{tc:limits}), the effective $T$ falls somewhat as $\beta_i$ decreases, because the same moments then hold older free energy.
 \item[(iv)] \emph{Anomaly.} $T$ stays finite and does not depend on the dissipation coefficients as the resolution increases. Section~\ref{sim:resolution} tests this at four resolutions.

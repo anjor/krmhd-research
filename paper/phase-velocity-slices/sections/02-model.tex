@@ -88,13 +88,13 @@ Free energy moves between Hermite moments only through the streaming term. We mu
   \frac{\dd E_{\le m}}{\dd t}=-\Pi_{m+1/2},\qquad
   \Pi_{m+1/2}=s\,b_m\big\langle g_m\gradpar g_{m+1}-g_{m+1}\gradpar g_m\big\rangle,
 \end{equation}
-with $b_0=(1-1/\Lambda)/\sqrt2$ and $b_m=\sqrt{(m+1)/2}$ for $m\ge1$. The flux $\Pi_{m+1/2}$ is the free energy per unit time and volume that passes from moment $m$ to $m+1$. The flux must be computed with the full $\gradpar$: the Hermite flux of \citet{Meyrand2019} uses it, whereas a flux computed with $\partial_z$ alone, which we call the $k_z$-only flux, omits the part of the streaming that follows the tilt of the field lines and does not close the budget below.
+with $b_0=(1-1/\Lambda)/\sqrt2$ and $b_m=\sqrt{(m+1)/2}$ for $m\ge1$. The flux $\Pi_{m+1/2}$ is the free energy per unit time and volume that passes from moment $m$ to $m+1$. The flux must be computed with the full $\gradpar$: the Hermite flux of \citet{Meyrand2019} uses it, whereas a flux computed with $\partial_z$ alone, which we call the $k_z$-only flux, omits the part of the streaming that follows the tilt of the field lines.
 
 With forcing of $g_0$ at the rate $\eps$, dissipation that acts on every $g_m$ in the same way and hypercollisions, the free energy in each moment obeys
 \begin{equation}\label{eq:budget}
   \frac{\dd W(m)}{\dd t}=\Pi_{m-1/2}-\Pi_{m+1/2}+\eps\,\delta_{m0}-D_\perp(m)-D_\nu(m),\qquad \Pi_{-1/2}=0,
 \end{equation}
-where $D_\perp(m)$ and $D_\nu(m)$ are the rates at which the spatial dissipation and the hypercollisions remove free energy from moment $m$. The brackets and the hyper-resistivity of GANDALF act on all moments alike, so (\ref{eq:budget}) holds for its equations up to the error of the dealiased brackets, with the flux (\ref{eq:fluxCD}) evaluated with the same brackets; in the simulations of section~\ref{sec:simulations} it closes to better than $10^{-3}\,\eps$.
+where $D_\perp(m)$ and $D_\nu(m)$ are the rates at which the spatial dissipation and the hypercollisions remove free energy from moment $m$. The brackets and the hyper-resistivity of GANDALF act on all moments alike, so (\ref{eq:budget}) holds for its equations up to the error of the dealiased brackets, with the flux (\ref{eq:fluxCD}) evaluated with the same brackets. In the simulations of section~\ref{sec:simulations} each term of (\ref{eq:budget}) is measured separately (appendix~\ref{app:methods}), and we say that the budget closes when the measured terms, averaged over time, satisfy (\ref{eq:budget}). With the flux (\ref{eq:fluxCD}) they do so to better than $10^{-3}\,\eps$ in every moment. With the $k_z$-only flux in place of (\ref{eq:fluxCD}) they do not (section~\ref{sim:flux}).
 
 For one Fourier mode whose density moment is driven by white noise that injects free energy at the rate $\eps$, the steady state of linear phase mixing is known exactly \citep[eq.~4.10]{Kanekar2015}. At $\Lambda=\infty$ it is
 \begin{equation}\label{eq:linforced}
