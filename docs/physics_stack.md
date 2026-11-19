@@ -158,6 +158,8 @@ Autonomy is set by kind of action, not by agent. This follows Study 04's hard st
 
 **One threat model for the whole stack.** Guards catch honest mistakes and hopeful readings. They do not defend against a hostile agent. Permissions and the launcher cover spending and publishing. Any other gap is written down as a limit. This is your Q9 answer, applied to the whole stack.
 
+**Repairs.** When a run fails, an agent may change settings that should not change the answer, such as the time step. It logs each change with its reason. A change to a parameter that sets the regime, such as η or the forcing amplitude, reruns the regime gate and goes to you. Study 02 raised η to 100 to stop a late blow-up. Nothing then asked whether the turbulence was still strong.
+
 **Three budgets.** GPU hours go through the ledger. Agent sessions have a daily cap, with a share kept back for your own work. Your time is the third budget. The brief should hold a few decisions a day, each answerable in a line.
 
 **Schedules.** Work that waits on machines runs on a schedule. Thinking runs fresh, on demand.
@@ -182,7 +184,7 @@ Memory points at sources. Each fact names the file or paper that holds it. Grok 
 
 ### 4.6 Instruments
 
-gstack's key instrument is a browser that lets agents see the product. The physics equivalent is a **run viewer**. One command turns any run into the standard panel. It shows the energy history, E(k⊥), W(m), the fluxes, each sector's budget and regime numbers such as χ. You and every role then look at a run the same way. `h1_pilot.py` and `fig_overview.py` already do most of this.
+gstack's key instrument is a browser that lets agents see the product. The physics equivalent is a **run viewer**. One command turns any run into the standard panel. It shows the energy history, E(k⊥), W(m), the fluxes, each sector's budget and regime numbers such as χ. You and every role then look at a run the same way. `h1_pilot.py` and `fig_overview.py` already do most of this. The critic and the referee read the panel images as well as the numbers. Section 9 gives the evidence for that.
 
 The other instruments:
 
@@ -243,7 +245,7 @@ Three subagents back them: `critic`, `referee` and `code-reviewer`. Permissions 
 
 ## 7. Keep, change, drop
 
-**Keep**: the repo as notebook; append-only logs and decisions; the claims ledger with fixed text; `QUESTIONS.md` with `ANSWER:` and `VETO:`; the compute ledger behind one launcher; the blind critic; the GANDALF reviewer; the derivation scripts with second routes; the acceptance file; the status skill; hardware cross-checks.
+**Keep**: the repo as notebook; append-only logs and decisions; the claims ledger with fixed text; `QUESTIONS.md` with `ANSWER:` and `VETO:`; the compute ledger behind one launcher; hashes of the frozen sections, so that an agent edit to the judge stops the work; the blind critic; the GANDALF reviewer; the derivation scripts with second routes; the acceptance file; the status skill; hardware cross-checks.
 
 **Change**:
 
@@ -287,7 +289,29 @@ What to measure:
 - review rounds per gate;
 - the share of numbers in a paper that carry a run ID.
 
-## 9. Questions for you
+## 9. Other science agents
+
+A web survey on 19 November 2026 covered the main agentic research systems. Repos were read directly. Claims from papers come from abstracts and summaries, because arxiv.org could not be reached from this session.
+
+| System | How it works | What to borrow | Documented failures |
+|---|---|---|---|
+| Karpathy's autoresearch | One agent edits `train.py` under a human-written `program.md`. A commit is kept only if a fixed 5-minute evaluation improves | Git as the notebook; a fixed judge; an append-only results log | Kept seed changes as gains; single-run noise as large as the gains; the judge is protected only by prose |
+| CMBAgent and Denario | A planner and a plan reviewer, then engineer and researcher agents. Denario adds literature, paper and review modules | Capped review rounds; a figure reviewer; a claim auditor; a checkpoint after each step | Code that runs and gives plausible, wrong answers; a paper claiming results its code could not produce |
+| Sakana AI Scientist v2 | Ideas checked for novelty, a tree search over experiments, then a paper and an automated review | Novelty checks against the literature | Misattributed citations; the first version edited its own timeout |
+| Google AI co-scientist | A supervisor over agents that generate, debate and rank hypotheses | Ranking ideas by debate, seeded by scientists | Its rankings are its own judgment; the novelty of its results is disputed |
+| Edison Kosmos | A shared "world model" for a data agent and a literature agent. Every statement cites a notebook or a paper | Every claim links to its source | 79.4% of sampled statements judged correct, but about 58% for synthesis statements; rabbit holes in long runs |
+| AutoMOOSE | Architect, input writer, runner, reviewer and a skeptic for simulations | A skeptic that tests invariants and cannot repair; repairs limited to numerical settings, each logged with a reason | None reported |
+
+What the survey adds:
+
+- No agent runs a plasma-turbulence campaign on its own. The nearest one suggests gyrokinetic parameter ranges.
+- The documented failures match this repo's. They are plausible but wrong answers, success reported without the computation, invented citations, chasing noise, false novelty and drift in long runs.
+- LLM reviewers are weak judges. At Agents4Science 2025 the three LLM reviewers agreed only modestly with each other. So the referee is a filter, not a judge. Its verdicts go to you, and the backtests in section 8 calibrate it.
+- Results held up where humans chose the hypotheses and checked the outputs. That was true at Agents4Science, in CMBAgent's challenge win and in the co-scientist's lab tests.
+- A figure reviewer raised CMBAgent's first-try pass rate from about 0.25 to about 0.75 on ten tasks. So the checkers should look at plots, not only at numbers.
+- An NV-centre experiment agent kept false positives low by predicting each signal before measuring it. That supports principle 2.
+
+## 10. Questions for you
 
 1. Is this stack for your own research, or a public plugin for computational physicists? The answer sets how much goes in the domain pack.
 2. Is the goal more science per hour of your time, as in P1, or progress while you are away, as in Study 04? The evidence favours the first. The second needs the referee first.
@@ -299,4 +323,5 @@ What to measure:
 - gstack: https://github.com/garrytan/gstack, its README, ETHOS.md, ARCHITECTURE.md and skill files, read on 19 November 2026.
 - pstack: https://github.com/cursor/plugins/tree/main/pstack, and the Claude Code port at https://github.com/michael-denyer/pstack-claude.
 - Grok Bot: the docs at docs.x.ai could not be reached from this session. The summary above comes from search results and third-party guides, such as https://venturebeat.com/ai/spacexais-grok-bot-turns-agents-into-persistent-digital-coworkers-that-can-operate-your-apps-for-120-per-month/ and https://www.aibuilderclub.com/blog/grok-bot-guide. Check it against the docs before relying on details.
+- Science agents (section 9): https://github.com/karpathy/autoresearch (issues #131, #466, #599 and #651); CMBAgent, https://arxiv.org/abs/2507.07257, and its audit, https://arxiv.org/abs/2604.25345; Denario, https://arxiv.org/abs/2510.26887; AI Scientist v2, https://arxiv.org/abs/2504.08066; AI co-scientist, https://arxiv.org/abs/2502.18864; Kosmos, https://arxiv.org/abs/2511.02824; Agents4Science 2025, https://arxiv.org/abs/2511.15534; AutoMOOSE, https://github.com/sukritimanna/AutoMOOSE; the NV-centre agent, https://arxiv.org/abs/2607.25145. Paper claims were not checked against the full texts.
 - This repo: `docs/collaboration_report.md`, `studies/02-collisionality-scan/docs/status_summary.md`, `studies/04-phase-space-helicity/` (`STATUS.md`, `QUESTIONS.md`, `decisions.md`, `LOOP.md`, `loop/SETUP_PROMPT.md`, `docs/rediscovery.md`), `paper/phase-velocity-slices/` (`derivations/README.md`, `configs/h1_acceptance.yaml`), `docs/run_log.md` and the history of `CLAUDE.md`.
