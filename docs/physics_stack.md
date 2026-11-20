@@ -4,7 +4,7 @@ Draft of 19 November 2026. This is a design study for a set of AI coworkers for 
 
 ## The short answer
 
-gstack turns Claude into a software team. The physics version is a small research group. You are the PI. A chief of staff keeps the front page and brings you decisions. Five makers do the work: a librarian, a theorist, a numericist, an experimentalist and an editor. Three checkers work in fresh contexts: a critic for numbers, a referee for meaning and a code reviewer for the solver. The repo is the lab notebook and the only memory.
+gstack turns Claude into a software team. The physics version is a small research group. You are the PI. A postdoc keeps the front page and brings you decisions. Five makers do the work: a librarian, a theorist, a numericist, an experimentalist and an editor. Three checkers work in fresh contexts: a critic for numbers, a referee for meaning and a code reviewer for the solver. The repo is the lab notebook and the only memory.
 
 Software stacks test their work against something that runs. A page renders or a test passes. Physics has no such oracle. A run can pass every check and still answer the wrong question. So this stack rests on two things: agreement between independent routes to each number, and your judgment at a few well-posed points.
 
@@ -81,7 +81,7 @@ Twelve rules make up the stack's ethos.
 ```mermaid
 flowchart TB
   PI["You, the PI: questions, calls on meaning, vetoes"]
-  CS["Chief of staff: front page, routing, decisions, morning brief"]
+  CS["Postdoc: front page, routing, decisions, morning brief"]
   MK["Makers: librarian, theorist, numericist, experimentalist, editor"]
   CK["Checkers in fresh contexts: critic, referee, code reviewer"]
   NB[("Notebook: the repo")]
@@ -113,7 +113,7 @@ Makers write. Checkers read and judge. A checker never sees the maker's conclusi
 | Role | Job | Writes | Runs as | Borrowed from |
 |---|---|---|---|---|
 | You, the PI | Questions, stakes, calls on meaning, vetoes, taste | `ANSWER:` and `VETO:` lines; acceptance decisions | | |
-| Chief of staff | Keeps the front page, routes work, turns open points into options, writes the brief. Does no physics | `STATUS.md`, `QUESTIONS.md`, the brief | The router skill, and a morning schedule | Grok Bot's chief of staff; poteto-mode; your `status` skill |
+| Postdoc | Keeps the front page, routes work, turns open points into options, writes the brief. Leaves the work itself to the makers | `STATUS.md`, `QUESTIONS.md`, the brief | The router skill, and a morning schedule | Grok Bot's chief of staff; poteto-mode; your `status` skill |
 | Librarian | Prior art, equation maps between papers, citation checks, an arXiv watch | `prior.md`, `refs.bib`, notation tables | On demand, and weekly | gstack's "Search Before Building"; `fetch_cmm.py` |
 | Theorist | Derivations as self-checking scripts, null-model predictions, blind rederivations | `derivations/` | On demand | P1's `derivations/`; Study 04's blind test |
 | Numericist | Solver changes through issue, PR, tests and review; stability analysis | GANDALF PRs | On demand | LOOP.md §10; the Study 02 bug hunts |
@@ -224,10 +224,10 @@ About fourteen skills sit behind one router.
 
 | Skill | Role | What it does |
 |---|---|---|
-| `/lab` | Chief of staff | Routes a request to a playbook, as poteto-mode does |
-| `/brief` | Chief of staff | Gives the six-item status and the decisions waiting |
-| `/decide` | Chief of staff | Turns an open point into options and records your answer |
-| `/new-study` | Chief of staff | Scaffolds a study folder from the templates |
+| `/lab` | Postdoc | Routes a request to a playbook, as poteto-mode does |
+| `/brief` | Postdoc | Gives the six-item status and the decisions waiting |
+| `/decide` | Postdoc | Turns an open point into options and records your answer |
+| `/new-study` | Postdoc | Scaffolds a study folder from the templates |
 | `/prior-art` | Librarian | Lists known results and null predictions, and says what would be new |
 | `/derive` | Theorist | Writes a self-checking script and its second route |
 | `/blind-test` | Theorist | Rederives a result in a fresh context and compares only afterwards |
@@ -276,7 +276,7 @@ This repo's history is the test set. Each case has a known right answer.
 | The Study 02 draft of 25 June, with its configs and run summaries | Referee | names the linear result, the forcing argument or the weak turbulence |
 | The April Lawson-RK4 blow-ups | Critic | calls them numerical, because the growth starts at every m at once and its rate does not depend on ν |
 | A resume from a checkpoint with Λ = 1 | Preflight | refuses the run |
-| The Gate 1 reviews of 5 to 10 October | Chief of staff | proposes a simpler approach within two refutations |
+| The Gate 1 reviews of 5 to 10 October | Postdoc | proposes a simpler approach within two refutations |
 | The P1 sections you called "too mathy" | Editor | writes them in the house style the first time |
 | Figure 8, 8% off the model in the text | Consistency checker | flags it |
 
