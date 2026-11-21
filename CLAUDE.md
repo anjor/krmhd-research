@@ -78,6 +78,30 @@ Target: Journal of Plasma Physics
 - Always label axes with physics notation (e.g., $k_\perp \rho_i$, $W(m)$)
 - Save as both PDF (for paper) and PNG (for quick inspection)
 
+## Writing papers
+
+Papers go out under Anjor's name, so he has to be able to follow and defend every line. These rules apply to every paper in `paper/`.
+
+### Argument first
+- Before drafting or redrafting a paper or a major section, write `paper/<name>/ARGUMENT.md`. Keep it to one page: the claim in two sentences, the heuristic ("twiddle-algebra") argument for it, the key figure, and what is new against Chandran, Mallet & Meyrand (2026) and Schekochihin et al.
+- Anjor signs off `ARGUMENT.md` before any prose. Every section must serve that claim. Move anything that doesn't to a companion paper or to `sections/parked/`.
+
+### Review rounds
+- Record each of Anjor's review comments in `paper/<name>/REVIEW.md` as a numbered rule for the whole paper, with the date and his words.
+- Before handing a draft back, check every open rule across the whole paper, not only where he pointed. Close a rule only when no instance is left.
+- Run each review round in a fresh session that starts from `REVIEW.md`, `ARGUMENT.md` and the paper's checkpoint file. Long sessions compact, and comments can get lost in the summary.
+- Before Anjor reads a draft, run the `paper-referee` agent on the paper folder. Fix what it finds, or list what you left and why.
+
+### Style
+- Write the maths the way Kanekar, Schekochihin and Dorland write in JPP. Derive results in running prose ("We multiply ... by ... and integrate; we get ..."), then say what the result means physically.
+- State conditions in words where they are used. Put technical caveats in footnotes.
+- Use no theorem, proposition, corollary, lemma or proof environments.
+- Keep these terms out of the main text: Borel, diffeomorphism, self-adjoint, L², spectral projection, Itô, classical solution.
+- Write Hermite hierarchies out moment by moment, as in Kanekar et al. (2015, eqs 4.3 to 4.5), not in matrix language.
+- State resolution checks once, plainly. Don't show the work of trying to resolve. A statement about resolution is not a physics result.
+- Write plain, flat prose in complete sentences. No stacked fragments and no crafted closing lines.
+- Run `uv run python paper/check_style.py paper/<name>` before handing back a draft, and fix what it flags.
+
 ## Directory Conventions
 
 - `data/` — Simulation outputs (**.gitignored**, stored on Modal volumes or S3)
