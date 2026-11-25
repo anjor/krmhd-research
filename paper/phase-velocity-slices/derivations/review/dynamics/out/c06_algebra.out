@@ -22,6 +22,6 @@
     Lambda = 0.5, M = 64: max |Im u_j| = 0.4326 -> growth rate s |kappa| 0.4326, unbounded in kappa
   [PASS] A5 Lambda = 0.5, M = 64: the ladder has complex eigenvalues (ill-posed frozen problem in the continuum)
   [PASS] A5 krmhd.hermite.compute_streaming_eigensystem refuses Lambda = 0.5 (Lawson stepper cannot run it)
-    M = 9, Lambda = -sqrt5: u_j = -1.097888, beta = 0.829629; slice equation residual 1.6e-15; change when z+ is replaced: 1.5e-15
+    M = 9, Lambda = -sqrt5: u_j = -1.097888, beta = 0.829629; slice equation residual 1.8e-15; change when z+ is replaced: 1.5e-15
   [PASS] A6 s u = -1 slice: d_t a = -{z-, a} + d_z a and independent of z+ (M = 9, Lambda = -sqrt5)
 SUMMARY: 15/15 checks passed

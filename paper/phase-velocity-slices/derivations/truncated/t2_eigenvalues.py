@@ -36,7 +36,7 @@ from scipy.special import roots_hermite, wofz, ai_zeros
 from scipy.linalg import eigh_tridiagonal
 
 from tcore import (Checker, section, ladder, weight, slices, hermite_functions, orthonormal_polys, make_grid,
-                   random_field, make_state, bracket, qform, dqform, SQRT5)
+                   random_field, make_state, bracket, qform, dqform, implicit_operator, SQRT5)
 from krmhd.timestepping import krmhd_rhs
 
 C = Checker("t2_eigenvalues")
@@ -400,7 +400,6 @@ tau, Zc, bi = sp.symbols("tau Z beta_i", positive=True)
 Lpm = [-tau / Zc + 1 / bi + sgn * sp.sqrt((1 + tau / Zc) ** 2 + 1 / bi ** 2) for sgn in (1, -1)]
 vals = [sp.simplify(Lx.subs({tau: 1, Zc: 1, bi: 1})) for Lx in Lpm]
 C.check("G1 CMM (B7) Lambda+- at beta_i = 1, T_i = T_e (tau = Z = 1) = +-sqrt5", vals == [sp.sqrt(5), -sp.sqrt(5)], f"{vals}")
-from krmhd.hermite import build_implicit_operator
 
 
 def landau_root(Lam, z0):
@@ -414,7 +413,7 @@ kk = 2 * np.pi
 for Lam, z0 in ((SQRT5, -0.4j), (-SQRT5, 1.24 - 0.83j)):
     zl = landau_root(Lam, z0)
     for M in (128, 256):
-        Lo = np.array(build_implicit_operator(np.array([kk]), 1.0, 300.0, M, Lam, 6, "zero"))[0]
+        Lo = implicit_operator(kk, 1.0, 300.0, M, Lam, 6)
         ev = np.linalg.eigvals(Lo)
         zeta = ev[np.argmax(ev.real)] / (-1j * kk)
         d = min(abs(zeta - zl), abs(zeta + np.conj(zl)))          # mirror pair -conj(zeta)

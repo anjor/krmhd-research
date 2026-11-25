@@ -10,7 +10,7 @@ B1  Lemma B from L = U Pi
   [PASS] L = U Pi; D Pi L^{-1} = diag(w/(u F_M)) for every Lambda; D Pi, D Pi L symmetric 
   [PASS] W kernel D Pi depends on Lambda (rank-one part), so a k-dependent Lambda_k changes it max|D Pi - D| = 3.81e-06..1.56e-02
 C1  W conserved although its kernel is not a multiplication operator (KRMHD, GANDALF RHS)
-  [PASS] d/dt sum_k g^H P0 g = 0 with GANDALF's RHS (W kernel = identity minus rank one, not a multiplication) |dW/dt|/scale = 1.0e-18
+  [PASS] d/dt sum_k g^H P0 g = 0 with GANDALF's RHS (W kernel = identity minus rank one, not a multiplication) |dW/dt|/scale = 5.1e-18
 C2/C3  electrostatic gyrokinetic toy (2D, Boltzmann electrons)
     rho = 0.3: self-consistent dE2/dt = 3.18e-12, dE1/dt = -4.19e-13; passive chi: dE2/dt = -2.68e+05
   [PASS] C2 field energy (k-dependent, v-nonlocal kernel) conserved by the self-consistent nonlinearity 

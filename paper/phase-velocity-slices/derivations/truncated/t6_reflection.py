@@ -5,7 +5,7 @@ W_zero/W_open -> coth X at m << M, against Lyapunov solves. Supports Section 8 (
 the paper.
 
 Linear problem at one k_z (k_perp plays no role), GANDALF's operator L = -i s k_z A + nu D,
-D = -diag((m/M)^n) for m >= 2 (krmhd.hermite.build_implicit_operator), zero closure unless stated.
+D = -diag((m/M)^n) for m >= 2 (krmhd.hermite.apply_implicit_operator), zero closure unless stated.
 A  Ray (packet) picture: for G(t=0) = F_M and Lam = inf the free-streaming solution has |g_m|^2 Poisson with mean
    (k s t)^2/2, so the packet reaches m = M at t_w; integrating nu (m(t)/M)^n along the ray to M and back gives
    2 nu t_w/(2n+1) (SymPy).
@@ -24,14 +24,13 @@ import numpy as np
 import sympy as sp
 from scipy.linalg import expm, solve_continuous_lyapunov
 
-from tcore import Checker, section, ladder, weight, slices, SQRT5
-from krmhd.hermite import build_implicit_operator
+from tcore import Checker, section, ladder, weight, slices, implicit_operator, SQRT5
 
 C = Checker("t6_reflection")
 
 
 def Lop(M: int, Lam: float, kz: float, nu: float, n: int, s: float = 1.0, closure: str = "zero") -> np.ndarray:
-    return np.array(build_implicit_operator(np.array([kz]), s * s, nu, M, Lam, n, closure))[0]
+    return implicit_operator(kz, s * s, nu, M, Lam, n, closure)
 
 
 section("A. Ray picture")

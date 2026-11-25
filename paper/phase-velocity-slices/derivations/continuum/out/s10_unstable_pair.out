@@ -17,5 +17,5 @@ Lambda = 0.2: gamma = 1.1752164113
   [PASS] U6 Lambda=0.2 G1: [G,G] = int rho T^2 + 2 Re([F_+,G]^2/[F_+,F_+]) [G,G] = -3.802783, continuum +0.935808, pair -4.738590, rel 0.0e+00
   [PASS] U4 Lambda=0.2 G2: G = eR c + eI Hc[c] + 2 Re(alpha_+ F_+), alpha_+ = -pi res_G max rel 8.6e-16 (discrete part 1.17 of max|G|)
   [PASS] U5 Lambda=0.2 G2: alpha_+ = [F_+,G]/[F_+,F_+]; [F_+,F_+] = (Lambda - 1 + 2 gamma^2 Lambda)/Lambda^2 alpha 7.9e-16, [F+,F+] 1.3e-15, [F+,G] = (i gamma/Lambda) int G/(v - i gamma) 6.4e-16
-  [PASS] U6 Lambda=0.2 G2: [G,G] = int rho T^2 + 2 Re([F_+,G]^2/[F_+,F_+]) [G,G] = +0.543855, continuum +1.526223, pair -0.982368, rel 2.9e-16
+  [PASS] U6 Lambda=0.2 G2: [G,G] = int rho T^2 + 2 Re([F_+,G]^2/[F_+,F_+]) [G,G] = +0.543855, continuum +1.526223, pair -0.982368, rel 4.4e-16
 ALL s10 CHECKS PASSED

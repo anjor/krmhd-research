@@ -14,8 +14,8 @@ A  (SymPy) ARS(2,2,2) explicit tableau with GANDALF's gamma = 1 - 1/sqrt2, delta
 B  GANDALF measurement (float64, 8^3, M = 6, Lam = sqrt5): self-convergence of g(T) for gandalf_step IMEX against a
    Lawson-RK4 reference: order 2 for a single propagating z+ (z- = 0, the Elsasser update is then exact) and for
    general nonlinear z+-; Lawson-RK4 is order 4 in the first case.
-C  Mechanism: a re-implementation of one IMEX step from krmhd's own pieces (_krmhd_rhs_jit, build_implicit_operator,
-   factor_imex_operator, imex_solve) reproduces gandalf_step to round-off when the stage-2 z+- is taken at
+C  Mechanism: a re-implementation of one IMEX step from krmhd's own pieces (_krmhd_rhs_jit, imex_factor,
+   imex_solve, apply_implicit_operator) reproduces gandalf_step to round-off when the stage-2 z+- is taken at
    t + gamma dt; taking it at t + dt/2 instead (the krmhd 0.6.0 step) drops g(T) to first order.
 D  The first-order defect of the t + dt/2 variant is a pure phase error (it advects every slice with an incompressible
    field taken at the wrong time), so it does not change the invariants at leading order. For non-autonomous
@@ -35,7 +35,7 @@ from tcore import (Checker, section, ladder, weight, make_grid, random_field, ma
                    jnp, maxgrad, dz)
 from krmhd.timestepping import (gandalf_step, _krmhd_rhs_jit, _fields_from_state, KRMHDFields, _IMEX_GAMMA,
                                 _IMEX_DELTA)
-from krmhd.hermite import build_implicit_operator, factor_imex_operator, imex_solve
+from krmhd.hermite import apply_implicit_operator, imex_factor, imex_solve
 
 C = Checker("t7b_imex_order")
 
@@ -90,8 +90,7 @@ def imex_variant(state, dt: float, cz: float):
     kx, ky, kz = grid.kx, grid.ky, grid.kz
     kz3 = kz[:, None, None]
     kz0 = jnp.zeros_like(kz)
-    L = build_implicit_operator(kz, state.beta_i, 0.0, state.M, state.Lambda, 1, "zero")
-    lu, piv = factor_imex_operator(L, dt, _IMEX_GAMMA)
+    factor = imex_factor(kz, dt, _IMEX_GAMMA, state.beta_i, 0.0, state.Lambda, state.M, 1, "zero")
 
     def rhs(ff, kzz):
         return _krmhd_rhs_jit(ff, kx, ky, kzz, mask, 0.0, 1.0, state.beta_i, 0.0, state.Lambda, state.M,
@@ -103,7 +102,7 @@ def imex_variant(state, dt: float, cz: float):
     zph = jnp.exp(1j * kz3 * dt / 2) * (f.z_plus + dt / 2 * nlp0)
     zmh = jnp.exp(-1j * kz3 * dt / 2) * (f.z_minus + dt / 2 * nlm0)
     N1 = rhs(f, kz0).g
-    g1 = imex_solve(lu, piv, f.g + dt * _IMEX_GAMMA * N1)
+    g1 = imex_solve(factor, f.g + dt * _IMEX_GAMMA * N1)
     zpc = jnp.exp(1j * kz3 * cz * dt) * (f.z_plus + cz * dt * nlp0)
     zmc = jnp.exp(-1j * kz3 * cz * dt) * (f.z_minus + cz * dt * nlm0)
     N2 = rhs(KRMHDFields(z_plus=zpc, z_minus=zmc, g=g1, time=f.time + cz * dt), kz0).g
@@ -112,8 +111,8 @@ def imex_variant(state, dt: float, cz: float):
     nlmh = rh.z_minus + 1j * kz3 * zmh
     zpn = jnp.exp(1j * kz3 * dt) * f.z_plus + jnp.exp(1j * kz3 * dt / 2) * dt * nlph
     zmn = jnp.exp(-1j * kz3 * dt) * f.z_minus + jnp.exp(-1j * kz3 * dt / 2) * dt * nlmh
-    Lg1 = jnp.einsum("zij,zyxj->zyxi", L, g1)
-    gn = imex_solve(lu, piv, f.g + dt * (1 - _IMEX_GAMMA) * Lg1 + dt * _IMEX_DELTA * N1 + dt * (1 - _IMEX_DELTA) * N2)
+    Lg1 = apply_implicit_operator(g1, kz, state.beta_i, 0.0, state.Lambda, state.M, 1, "zero")
+    gn = imex_solve(factor, f.g + dt * (1 - _IMEX_GAMMA) * Lg1 + dt * _IMEX_DELTA * N1 + dt * (1 - _IMEX_DELTA) * N2)
     gn = gn * mask[..., None]
     return state.model_copy(update={"z_plus": zpn, "z_minus": zmn, "g": gn, "time": state.time + dt})
 

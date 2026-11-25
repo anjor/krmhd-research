@@ -23,7 +23,7 @@ import jax
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp  # noqa: E402
 
-from krmhd.hermite import compute_streaming_matrix  # noqa: E402
+from krmhd.hermite import apply_implicit_operator, compute_streaming_matrix  # noqa: E402
 
 SQRT5 = float(np.sqrt(5.0))
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -64,6 +64,15 @@ def section(title: str) -> None:
 def ladder(M: int, Lam: float, closure: str = "zero") -> np.ndarray:
     """GANDALF's streaming matrix A (krmhd.hermite.compute_streaming_matrix), as a float64 numpy array."""
     return np.array(compute_streaming_matrix(int(M), float(Lam), closure), dtype=float)
+
+
+def implicit_operator(kz: float, beta_i: float, nu: float, M: int, Lam: float, hyper_n: int,
+                      closure: str = "zero") -> np.ndarray:
+    """GANDALF's IMEX implicit operator L = -i sqrt(beta_i) k_z A + nu D at one k_z, as a complex128 (M+1, M+1) array.
+    Column j is krmhd.hermite.apply_implicit_operator applied to the unit vector e_j."""
+    e = jnp.eye(M + 1, dtype=jnp.complex128)[None, :, None, :]       # e_j in the state layout, j on the k_y axis
+    Le = apply_implicit_operator(e, jnp.asarray([float(kz)]), beta_i, nu, float(Lam), int(M), int(hyper_n), closure)
+    return np.array(Le[0, :, 0, :]).T
 
 
 def weight(M: int, Lam: float, closure: str = "zero") -> np.ndarray:

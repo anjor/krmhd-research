@@ -2,7 +2,7 @@
 
 Front page of the autonomous loop. `LOOP.md` is the protocol. The log is in `log/`.
 
-**GANDALF pin changed to v0.8.1 (solver as in 0.7.0) on 2026-10-18** (decisions.md, 2026-10-19). Before part (b), bring SPEC.md §2 and §6, PLAN.md §3, the D01 docstring and C17 in line with the field-aligned `hermite_flux` of GANDALF ≥ 0.7.0, and run `smoke` before the next GPU launch.
+**GANDALF pin changed to ad8554f (main after v0.8.1: solver optimisations, physics as in 0.7.0) on 2026-11-25** (decisions.md, 2026-11-25). Before part (b), bring SPEC.md §2 and §6, PLAN.md §3, the D01 docstring and C17 in line with the field-aligned `hermite_flux` of GANDALF ≥ 0.7.0, and run `smoke` before the next GPU launch.
 
 ## Next block
 
