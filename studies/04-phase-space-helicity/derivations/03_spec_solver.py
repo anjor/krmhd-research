@@ -14,8 +14,9 @@ Part A -- `gandalf_step` keyword defaults (SPEC.md §3)
     each value must equal the signature's default, with the same type.
 
 Part B -- the IMEX implicit operator (SPEC.md §1 and §3)
-    `krmhd.hermite.build_implicit_operator(kz, beta_i, nu, M, Lambda, hyper_n,
-    closure)` must equal, for every k_z,
+    `krmhd.hermite.apply_implicit_operator(g, kz, beta_i, nu, Lambda, M,
+    hyper_n, closure)`, applied to each unit vector e_j, must give column j of
+    the matrix, for every k_z,
 
         L(k_z) = -i s k_z A  -  diag(nu (m/M)^n for m >= 2, 0 for m = 0, 1),
 
@@ -155,7 +156,14 @@ def part_a() -> None:
 
 def part_b() -> None:
     print("Part B: IMEX implicit operator (SPEC.md §1 and §3)")
-    from krmhd.hermite import build_implicit_operator
+    import jax.numpy as jnp
+    from krmhd.hermite import apply_implicit_operator
+
+    def implicit_operator(kz, beta_i, nu, M, Lambda, n, closure):
+        """L(k_z) as (Nz, M+1, M+1): column j is apply_implicit_operator applied to e_j."""
+        e = jnp.broadcast_to(jnp.eye(M + 1, dtype=jnp.complex128)[None, :, None, :], (kz.size, M + 1, 1, M + 1))
+        Le = apply_implicit_operator(e, jnp.asarray(kz), beta_i, nu, Lambda, M, n, closure)
+        return np.asarray(Le)[:, :, 0, :].transpose(0, 2, 1)
 
     kz = 2.0 * np.pi * np.fft.fftfreq(N_GRID, d=1.0 / N_GRID)
     nu, n = 2.5, 6
@@ -165,7 +173,7 @@ def part_b() -> None:
         for Lambda in (np.sqrt(5.0), -np.sqrt(5.0)):
             for closure in ("zero", "symmetric"):
                 for beta_i in (1.0, 2.0):
-                    L = np.asarray(build_implicit_operator(kz, beta_i, nu, M, float(Lambda), n, closure))
+                    L = np.asarray(implicit_operator(kz, beta_i, nu, M, float(Lambda), n, closure))
                     A = ladder_A(M, float(Lambda), closure)
                     ref = (-1j * np.sqrt(beta_i) * kz[:, None, None] * A[None, :, :]
                            - np.diag(damp)[None, :, :])
@@ -174,7 +182,7 @@ def part_b() -> None:
                     check(f"B1 L = -i s kz A - diag(nu (m/M)^n, m>=2) ({tag})", err < TOL,
                           f"rel err {err:.1e}")
         # negative control: the other closure's A does not match
-        L = np.asarray(build_implicit_operator(kz, 1.0, nu, M, float(np.sqrt(5.0)), n, "zero"))
+        L = np.asarray(implicit_operator(kz, 1.0, nu, M, float(np.sqrt(5.0)), n, "zero"))
         wrong = (-1j * kz[:, None, None] * ladder_A(M, float(np.sqrt(5.0)), "symmetric")[None]
                  - np.diag(damp)[None])
         err = rel_err(L, wrong)

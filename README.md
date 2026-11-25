@@ -54,7 +54,7 @@ I wrote a brief, [loop/SETUP_PROMPT.md](studies/04-phase-space-helicity/loop/SET
 
 ## Setup and running
 
-You need [uv](https://docs.astral.sh/uv/). [pyproject.toml](pyproject.toml) pins GANDALF to tag `v0.8.1` of anjor/gandalf. [uv.lock](uv.lock) fixes that tag to commit `9e6599d` and pins every other package.
+You need [uv](https://docs.astral.sh/uv/). [pyproject.toml](pyproject.toml) pins GANDALF to commit `ad8554f` on anjor/gandalf's main, after tag `v0.8.1`; no release has it yet. [uv.lock](uv.lock) records that commit and pins every other package.
 
 ```bash
 git clone https://github.com/anjor/krmhd-research.git

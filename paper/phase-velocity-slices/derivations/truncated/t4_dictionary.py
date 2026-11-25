@@ -13,7 +13,7 @@ B  Kanekar et al. (2015) eq. (4.10) at alpha = 0 (Lam = inf): (1/(2^m m!)) int |
    e(u) = (pi eps/|k|) F_M(u).
 C  Finite Lam: Kanekar's Kramers-Kronig integral (4.15) is int F_M(z)/|eps(z)|^2 dz = 1/(1 - 1/Lam); the asymptote
    W(m) -> eps_W/(|k| s sqrt(2m)) (eps_W the injection of Q_1 = sum_m p_m |g_m|^2) does not depend on Lam.
-   Checked on GANDALF's truncated operator (krmhd.hermite.build_implicit_operator) with an outgoing closure at m = M,
+   Checked on GANDALF's truncated operator (krmhd.hermite.apply_implicit_operator) with an outgoing closure at m = M,
    forced steady state by a Lyapunov solve.
 D  Dictionary at large m: C(u,u') = sqrt(e(u)e(u')) c(u-u')  ->  W(m) ~ [int e du] chat(sqrt(2m)) / (pi sqrt(2m));
    chat(kappa) ~ kappa^-p  ->  W ~ m^(-(p+1)/2); second-order structure function S_2(dv) ~ dv^(p-1) for 1 < p < 3.
@@ -33,8 +33,7 @@ from scipy.special import wofz, roots_hermite
 from scipy.integrate import quad
 from scipy.linalg import solve_continuous_lyapunov
 
-from tcore import Checker, section, ladder, weight, slices, hermite_functions, SQRT5
-from krmhd.hermite import build_implicit_operator
+from tcore import Checker, section, ladder, weight, slices, hermite_functions, implicit_operator, SQRT5
 
 C = Checker("t4_dictionary")
 
@@ -105,9 +104,9 @@ C.check("C1 int F_M(z)/|eps(z + i0)|^2 dz = 1/(1 - 1/Lam) (Kanekar 4.15 in GANDA
 def forced_spectrum(M: int, Lam: float, kz: float, s: float = 1.0, outgoing: bool = True, nu: float = 0.0,
                     hyper_n: int = 6) -> np.ndarray:
     """Steady state of d_t g = L g + white noise on g_0 (unit intensity) with GANDALF's implicit operator
-    L = -i s kz A + nu D (krmhd.hermite.build_implicit_operator), optionally with the outgoing (radiation) closure
+    L = -i s kz A + nu D (krmhd.hermite.apply_implicit_operator), optionally with the outgoing (radiation) closure
     g_{M+1} = -i sgn(kz) g_M added in the last row. Returns W(m) = p_m <|g_m|^2>."""
-    Lop = np.array(build_implicit_operator(np.array([kz]), s * s, nu, M, Lam, hyper_n, "zero"))[0]
+    Lop = implicit_operator(kz, s * s, nu, M, Lam, hyper_n)
     if outgoing:
         Lop[M, M] += -abs(kz) * s * np.sqrt((M + 1) / 2.0)
     Q = np.zeros((M + 1, M + 1), complex)

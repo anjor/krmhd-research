@@ -6,7 +6,7 @@ and Appendix C of the paper.
 Independent routes:
 
 a. The revival through GANDALF's actual stepper (gandalf_step, IMEX-RK222) instead of the matrix exponential of
-   build_implicit_operator: one Fourier mode k = (0, 0, 2 pi), z+- = 0, M = 128, n = 6, nu = 3, Lam = sqrt5, s = 1.
+   GANDALF's implicit operator: one Fourier mode k = (0, 0, 2 pi), z+- = 0, M = 128, n = 6, nu = 3, Lam = sqrt5, s = 1.
    R = max|g_0| (nu = 3) / max|g_0| (nu = 0) near T_rec, against e^{-X}, X = 2 nu t_w/(2n+1), t_w = sqrt(2M)/(|k| s).
 b. Revival TIME (matrix exponential of the ladder operator built here): is the revival at ~2 t_w, or at
    2 pi/(k s Delta_0) with Delta_0 the (Lam-dependent) spacing of the slices at u = 0, as the mode picture suggests?
