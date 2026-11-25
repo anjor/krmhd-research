@@ -8,18 +8,18 @@ A. The space of conserved quadratic forms
   [PASS] A1 conserved quadratic forms = span{Pi A^k} = {W diag(phi) W^T}, dimension M+1 (M = 5..13, both closures)
 ====================================================================================================
 B. Conservation under krmhd_rhs (float64; brackets dominate streaming)
-   M= 9 Lam=+2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 1.1e-17; Pi A^-1: 3.2e-19
-   M= 9 Lam=+2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 1.9e-17; Pi A^-1: 9.6e-19; hermite_free_energy == g^T P_Lam g: 1.7e-16; its rel d/dt under the copy closure = 3.8e-04
-   M= 9 Lam=-2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 2.2e-17; Pi A^-1: 2.1e-18
-   M= 9 Lam=-2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 2.6e-17; Pi A^-1: 5.4e-18; hermite_free_energy == g^T P_Lam g: 5.0e-16; its rel d/dt under the copy closure = 2.7e-03
-   M=10 Lam=+2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 3.2e-17; Pi A^D (PV): 1.8e-18; control Galerkin(1/v) rel d/dt = 1.9e-04
-   M=10 Lam=+2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 1.8e-17; Pi A^D (PV): 5.1e-18; hermite_free_energy == g^T P_Lam g: 1.6e-16; its rel d/dt under the copy closure = 1.0e-03
-   M=10 Lam=-2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 2.0e-17; Pi A^D (PV): 1.1e-17; control Galerkin(1/v) rel d/dt = 2.1e-03
-   M=10 Lam=-2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 2.7e-17; Pi A^D (PV): 1.0e-17; hermite_free_energy == g^T P_Lam g: 3.0e-16; its rel d/dt under the copy closure = 8.2e-04
+   M= 9 Lam=+2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 1.1e-17; Pi A^-1: 2.4e-19
+   M= 9 Lam=+2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 2.3e-17; Pi A^-1: 2.3e-18; hermite_free_energy == g^T P_Lam g: 1.7e-16; its rel d/dt under the copy closure = 3.8e-04
+   M= 9 Lam=-2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 1.7e-17; Pi A^-1: 7.1e-19
+   M= 9 Lam=-2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 3.1e-17; Pi A^-1: 2.5e-18; hermite_free_energy == g^T P_Lam g: 5.0e-16; its rel d/dt under the copy closure = 2.7e-03
+   M=10 Lam=+2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 2.5e-17; Pi A^D (PV): 2.1e-20; control Galerkin(1/v) rel d/dt = 1.9e-04
+   M=10 Lam=+2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 1.6e-17; Pi A^D (PV): 1.0e-17; hermite_free_energy == g^T P_Lam g: 1.6e-16; its rel d/dt under the copy closure = 1.0e-03
+   M=10 Lam=-2.236 zero     : max_k rel d/dt(g^T Pi A^k g) = 1.5e-17; Pi A^D (PV): 1.1e-17; control Galerkin(1/v) rel d/dt = 2.1e-03
+   M=10 Lam=-2.236 symmetric: max_k rel d/dt(g^T Pi A^k g) = 2.3e-17; Pi A^D (PV): 7.9e-18; hermite_free_energy == g^T P_Lam g: 3.0e-16; its rel d/dt under the copy closure = 8.2e-04
   [PASS] B1 all g^T Pi A^k g (k = 0..M) and H (Pi A^-1 odd M, Pi A^D even M) are conserved by krmhd_rhs
   [PASS] B2 controls fail: Galerkin 1/v at even M; zero-closure weight (hermite_free_energy) under the copy closure
-   M=9 Lam=+2.236: max_j rel d/dt int a_j^2 = 5.5e-17; min_j rel d/dt int a_j^4 = 1.9e-03
-   M=10 Lam=-2.236: max_j rel d/dt int a_j^2 = 5.5e-17; min_j rel d/dt int a_j^4 = 3.5e-03
+   M=9 Lam=+2.236: max_j rel d/dt int a_j^2 = 4.0e-17; min_j rel d/dt int a_j^4 = 1.9e-03
+   M=10 Lam=-2.236: max_j rel d/dt int a_j^2 = 4.9e-17; min_j rel d/dt int a_j^4 = 3.5e-03
   [PASS] B3 per slice, int a_j^2 is conserved by krmhd_rhs but int a_j^4 is not (only quadratic Casimirs survive the Fourier-Galerkin truncation)
 ====================================================================================================
 C. SymPy: continuum forms for G in the Hermite span, and CMM's normalisation
@@ -89,4 +89,4 @@ E. Convergence to the continuum for G = F_M(v - a), a = 0.5 (all Hermite coeffic
   [PASS] E1 W, Q_u (all M) and H (odd M) converge spectrally; even-M PV H converges ~ M^-1/2 (local slopes within 0.1), with exactly the predicted node-zero error at Lam = inf (M >= 16)
    |even-M PV error|/H at M = 64, 128: Lam=+2.2361 M=64: 17.7%; Lam=+2.2361 M=128: 13.0%; Lam=-2.2361 M=64: 7.4%; Lam=-2.2361 M=128: 5.2%; Lam=+inf M=64: 10.6%; Lam=+inf M=128: 7.5%
   [PASS] E2 at M = 64 and 128 the even-M PV helicity error is between 5% and 18% of H (Lam = sqrt5, -sqrt5, inf) :: min 5.2%, max 17.7%
-== t3_invariants: 10/10 checks passed (3.7 s)
+== t3_invariants: 10/10 checks passed (3.0 s)
