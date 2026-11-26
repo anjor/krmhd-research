@@ -6,14 +6,15 @@ The ratio is 1 if all the free energy at m phase mixes at its measured field-ali
 return flux (c_m: the exact coefficient of linear phase mixing, h1lib.phase_mixing_coefficient).  The uniform-sink
 model with no return flux gives the same ratio a little below 1, because the sink removes free energy while it phase
 mixes; it is drawn as a thin line of the run's colour.  A return flux would make the measured ratio fall as m grows.
+The ratio drawn is "paired": Pi and W are taken at the snapshot times at which kappa_1(m) is measured, so that the
+three come from the same instants.  The ratio with Pi and W averaged over the whole window and kappa_1(m) from the
+snapshots mixes a long time average with a few snapshots; it is drawn faint for comparison, and it is low where W(m)
+is intermittent (the dip at m = 35 at beta_i = 0.05).
 Each curve runs from the moment above the forced one to m = M/2.  It is drawn solid up to m_c, the top of the
 collision-free range of the rule of h1_mrange.py (the largest m with 2 nu_m <= 0.13/T, T the median of D_perp/W over
 2 <= m <= m_c), and faded from m_c to M/2, where the hypercollisions act.
 (a) The runs of table 2 at 64^3; (b) the runs at beta_i = 0.3 and 1 against N (64^3 to 256^3); (c) the runs of the
 m_* scan (table 3).
-
-As a check it also gives the ratio with Pi and W taken at the snapshot times at which kappa_1(m) is measured
-("paired"), which removes the mismatch between a long time average of Pi and W and a few snapshots of kappa_1(m).
 
 Reads <run>/h1_analysis.json (no_echo.Pi_fa_over_noecho, no_echo.model_Pi_over_noecho, no_echo.coefficient_c_m,
 P_a.Dperp_over_W, outer.chi_out), <run>/<run>.json (config: velocity.M, velocity.beta_i, box.N, stepper.nu,
@@ -135,8 +136,9 @@ def main() -> int:
                 mk = dict(marker="o" if panel != "b" or d["beta"] < 1 else "s", ms=1.8, mfc=c if filled else "white",
                           mec=c, mew=0.5)
                 ls = "-" if filled or panel == "c" else "--"
-                a.plot(m[inside], d["ratio"][inside], ls, color=c, lw=0.9, **mk)
-                a.plot(m[beyond], d["ratio"][beyond], ls, color=c, lw=0.6, alpha=0.3)
+                a.plot(m[inside], d["paired"][inside], ls, color=c, lw=0.9, **mk)
+                a.plot(m[beyond], d["paired"][beyond], ls, color=c, lw=0.6, alpha=0.3)
+                a.plot(m[ok], d["ratio"][ok], ":", color=c, lw=0.6, alpha=0.45)
                 a.plot(m[ok], d["model"][ok], "-", color=c, lw=0.5, alpha=0.8)
                 handles.append(Line2D([], [], color=c, ls=ls, lw=0.9, **mk, label=legend_text(d, panel)))
             a.axhline(1.0, color=blk, lw=0.5, ls=":")

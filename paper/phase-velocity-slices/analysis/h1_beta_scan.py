@@ -8,8 +8,9 @@ figures/h1_beta.{pdf,png} and data/h1_beta_scan.json.
       T (dashed), for the runs given with --spectrum;
   (b) D_perp(m)/W(m) against the age a = sqrt(2m)/(s kappa_1) of the free energy at m, with kappa_1 the mean
       field-aligned wavenumber of the injected pattern, for every run given with --spectrum or --age, over
-      1 <= m <= M/2 (below the collisional range).  A joint fit q = c0 + c1 ln(a) is reported with its rms relative
-      residual, and the same against ln(m) for comparison.
+      1 <= m <= M/2 (below the collisional range).  A joint fit of the saturating form q = g1 - (g1 - g0) exp(-a/a_c),
+      the form of the age-dependent sink of h1_age_model.py, is drawn and reported with its rms relative residual, and
+      the same form against m for comparison.  The age a is in units of tau_A.
 
 Usage (from the repository root):
     uv run python paper/phase-velocity-slices/analysis/h1_beta_scan.py --spectrum <run> [...] [--age <run> ...]
@@ -23,6 +24,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+from scipy.optimize import curve_fit
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -32,6 +34,19 @@ import p1lib as P  # noqa: E402
 import h1lib as H  # noqa: E402
 
 MODEL = "traced P(kappa) of the injected pattern"
+
+
+def saturating(x: np.ndarray, g1: float, g0: float, xc: float) -> np.ndarray:
+    """Sink rate D_perp/W (per tau_A) rising from g0 at x = 0 to g1 over the scale xc: g1 - (g1 - g0) exp(-x/xc)."""
+    return g1 - (g1 - g0) * np.exp(-x / xc)
+
+
+def fit_saturating(x: np.ndarray, q: np.ndarray) -> dict:
+    """Least-squares fit of saturating(x) to q, with the rms relative residual (q - fit)/q."""
+    p0 = (float(q.max()), float(q.min()), float(np.median(x)))
+    (g1, g0, xc), _ = curve_fit(saturating, x, q, p0=p0, maxfev=20000)
+    rel = (q - saturating(x, g1, g0, xc)) / q
+    return dict(g1=float(g1), g0=float(g0), xc=float(xc), rms_rel_resid=float(np.sqrt(np.mean(rel ** 2))))
 
 
 def load(run_id: str, acc: dict) -> dict:
@@ -74,12 +89,10 @@ def main() -> int:
             rows.append((math.sqrt(2 * m) / (d["s"] * d["kappa1"]), d["q"][m], m))
     rows = np.array(rows)
     out = {}
-    for name, x in (("age", np.log(rows[:, 0])), ("m", np.log(rows[:, 2]))):
-        A = np.vstack([np.ones(len(rows)), x]).T
-        c, *_ = np.linalg.lstsq(A, rows[:, 1], rcond=None)
-        rel = (rows[:, 1] - A @ c) / rows[:, 1]
-        out[f"fit_ln_{name}"] = dict(c0=float(c[0]), c1=float(c[1]), rms_rel_resid=float(np.sqrt(np.mean(rel ** 2))))
-        print(f"D_perp/W = {c[0]:.3f} + {c[1]:.3f} ln({name}): rms relative residual {np.sqrt(np.mean(rel ** 2)):.3f}")
+    for name, x in (("age", rows[:, 0]), ("m", rows[:, 2])):
+        f = out[f"fit_sat_{name}"] = fit_saturating(x, rows[:, 1])
+        print(f"D_perp/W = {f['g1']:.3f} - ({f['g1']:.3f} - {f['g0']:.3f}) exp(-{name}/{f['xc']:.3f}): "
+              f"rms relative residual {f['rms_rel_resid']:.3f}")
     out["runs"] = [dict(run_id=d["run_id"], beta=d["beta"], M=d["M"], inv_T=d["inv_T"], kappa1_over_k1=d["kappa1"] / d["k1"],
                         W_over_model_max_dev_m1_to_half=float(np.abs(np.log(d["W"][1:d["M"] // 2 + 1] /
                                                                              d["model"][1:d["M"] // 2 + 1])).max()))
@@ -110,10 +123,10 @@ def main() -> int:
         a = np.sqrt(2 * m) / (d["s"] * d["kappa1"])
         ax[1].semilogx(a, d["q"][m], "-" if d["M"] > 32 else ":", color=col[d["beta"]], lw=1.0,
                        label=rf"$\beta_i = {d['beta']:g}$, $M = {d['M']}$")
-    f = out["fit_ln_age"]
+    f = out["fit_sat_age"]
     aa = np.geomspace(rows[:, 0].min(), rows[:, 0].max(), 50)
-    ax[1].semilogx(aa, f["c0"] + f["c1"] * np.log(aa), "k-", lw=0.6)
-    ax[1].set_xlabel(r"$\sqrt{2m}/(s\kappa_1)$")
+    ax[1].semilogx(aa, saturating(aa, f["g1"], f["g0"], f["xc"]), "k-", lw=0.6)
+    ax[1].set_xlabel(r"$\sqrt{2m}/(s\kappa_1)$ $(\tau_A)$")
     ax[1].set_ylabel(r"$D_\perp(m)/W(m)$")
     ax[1].set_ylim(0, 0.9)
     ax[1].legend(fontsize=6.5, frameon=False, loc="lower right")

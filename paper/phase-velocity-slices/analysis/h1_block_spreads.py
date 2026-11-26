@@ -40,6 +40,7 @@ sys.path.insert(0, str(HERE.parent / "scripts"))
 import p1lib as P  # noqa: E402
 import h1lib as H  # noqa: E402
 from h1_pilot import T_RANGE, formula, two_channel  # noqa: E402
+from h1_beta_scan import fit_saturating  # noqa: E402
 
 N_BLOCKS = 4
 RUNS = dict(  # label: run ID (tables 2 and 3)
@@ -178,7 +179,8 @@ def V(r: Run, b: int | None) -> View:
 
 
 def collapse(R: dict, b: int | None, against: str) -> float:
-    """rms relative residual of D_perp/W about a joint fit c0 + c1 ln(x), x = age or m (h1_beta_scan.py)."""
+    """rms relative residual of D_perp/W about the joint saturating fit g1 - (g1 - g0) exp(-x/x_c), x = age or m
+    (h1_beta_scan.py)."""
     rows = []
     for lab in ("b1_M64", "b03_M64", "b01_M64", "b1", "b03", "b01"):
         r = R[lab]
@@ -186,10 +188,7 @@ def collapse(R: dict, b: int | None, against: str) -> float:
         for m in range(1, r.M // 2 + 1):
             rows.append((math.sqrt(2 * m) / (r.s * r.kappa1), q[m], m))
     rows = np.array(rows)
-    x = np.log(rows[:, 0] if against == "age" else rows[:, 2])
-    A = np.vstack([np.ones(len(rows)), x]).T
-    c, *_ = np.linalg.lstsq(A, rows[:, 1], rcond=None)
-    return float(np.sqrt(np.mean(((rows[:, 1] - A @ c) / rows[:, 1]) ** 2)))
+    return fit_saturating(rows[:, 0] if against == "age" else rows[:, 2], rows[:, 1])["rms_rel_resid"]
 
 
 def ell_over_skT(r: Run, b: int | None, m_hi: int | None = None) -> float:
@@ -285,9 +284,9 @@ def build_claims(AGE: dict) -> list[tuple[str, str, str, bool, Callable]]:
                      ("b01_M64", "42%, beta 0.1, M 64")):
         add(f"W_above_{lab}", "07:155", f"W above the model by up to {txt} (max of W/model - 1, 1 <= m <= M/2)", True,
             lambda R, b, o, lab=lab: float(V(R[lab], b).ratio_W(o)[1:R[lab].M // 2 + 1].max() - 1.0))
-    add("collapse_age", "07:153", "rms scatter 4.5% of D_perp/W about the joint fit in ln(age)", False,
+    add("collapse_age", "07:177", "rms scatter 3.2% of D_perp/W about the joint saturating fit in the age", False,
         lambda R, b, o: collapse(R, b, "age"))
-    add("collapse_m", "07:153", "against 12.6% when plotted against m", False,
+    add("collapse_m", "07:177", "against 12.4% about the same form in m", False,
         lambda R, b, o: collapse(R, b, "m"))
     for lab in ("b1", "b03", "b01", "b1_M64", "b03_M64", "b01_M64"):
         add(f"ell_{lab}", "07:118", f"fitted ell_* over s kappa_1 T (2 <= m <= M/2), within 7% in every run ({lab})",
