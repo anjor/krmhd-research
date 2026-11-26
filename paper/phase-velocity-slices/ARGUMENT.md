@@ -1,6 +1,6 @@
 # P1 argument
 
-"Phase mixing against a passive-scalar cascade: the Hermite spectrum of kinetic reduced magnetohydrodynamic turbulence". This is a draft for Anjor's sign-off, 2026-11-26. It is written for the reframe he agreed that day.
+"Phase mixing against a passive-scalar cascade: the Hermite spectrum of kinetic reduced magnetohydrodynamic turbulence". Anjor signed it off on 2026-11-26 ("argument ok"). It is written for the reframe he agreed that day.
 
 ## Claim
 
