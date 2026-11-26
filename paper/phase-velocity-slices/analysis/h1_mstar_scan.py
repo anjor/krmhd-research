@@ -20,8 +20,7 @@ weighted single power law for reference.
 
 Writes figures/h1_mstar.{pdf,png} (JPP double column) and data/h1_mstar_scan.json.
   (a) m_* against beta_i, runs given with --beta (chi_out ~ 0.95);
-  (b) m_* against chi_out, runs given with --chi (one beta_i), with reference slopes chi^-2 and chi^-4 through the
-      run of largest chi.
+  (b) m_* against chi_out, runs given with --chi (one beta_i), with the reference slope chi^-2 through the run of largest chi.
 
 Usage (from the repository root):
     uv run python paper/phase-velocity-slices/analysis/h1_mstar_scan.py --beta <run> [...] --chi <run> [...]
@@ -160,7 +159,7 @@ def main() -> int:
     draw_panel(axb, pb, "chi_out", pal)
     top = max(pb, key=lambda p: p["chi_out"])
     xs = np.geomspace(min(p["chi_out"] for p in pb) / 1.15, top["chi_out"] * 1.15, 50)
-    for k, ls in ((2, ":"), (4, "--")):
+    for k, ls in ((2, ":"),):                       # chi^-2 only: ARGUMENT.md (2026-11-26) drops the chi^-4 law
         axb.plot(xs, top["m_star_win"] * (xs / top["chi_out"]) ** (-k), ls, color=fcfg["reference_color"], lw=0.8,
                  label=rf"$\propto\chi^{{-{k}}}$")
     axb.set_xlabel(r"$\chi$")
