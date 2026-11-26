@@ -1,6 +1,6 @@
 \section{The compressive sector of KRMHD}\label{sec:model}
 
-For a plasma with one ion species and isothermal electrons, KRMHD \citep{Schekochihin2009} consists of reduced magnetohydrodynamics (RMHD) for the Alfv\'enic fluctuations and a kinetic equation for the compressive ones. We use the form of CMM \citep{Chandran2026}, whose section~3.2 and appendix~B restate and extend S09; their equation numbers refer to arXiv:2607.27981v1. Appendix~\ref{app:notation} compares our notation with that of CMM, S09 and the GANDALF code \citep{Kanekar2025}.
+For a plasma with one ion species and isothermal electrons, KRMHD \citep{Schekochihin2009} consists of reduced magnetohydrodynamics (RMHD) for the Alfv\'enic fluctuations and a kinetic equation for the compressive ones. We use the form of CMM \citep{Chandran2026}, whose section~3.2 and appendix~B restate and extend S09; their equation numbers refer to arXiv:2607.27981v1. Appendix~\ref{app:notation} compares our notation with that of CMM and S09.
 
 \subsection{Alfv\'enic fields}\label{mod:alfven}
 
@@ -9,7 +9,7 @@ We set the Alfv\'en speed $v_A=1$ unless stated otherwise and take the mean fiel
   \partial_t\Psi+\{\Phi,\Psi\}=\partial_z\Phi,\qquad
   \partial_t\nabla_\perp^2\Phi+\{\Phi,\nabla_\perp^2\Phi\}=\gradpar\nabla_\perp^2\Psi .
 \end{equation}
-The first, the induction equation $\partial_t\Psi=\gradpar\Phi$, states that the electric field along the total magnetic field vanishes. Equations (\ref{eq:rmhd}) are CMM's eqs~(3.23)--(3.24) in their normalised potentials (3.2) and do not contain the compressive fluctuations. The Elsasser potentials $z^\pm=\Phi\pm\Psi$ (S09's $\zeta^\pm$) obey $\partial_tz^\pm=\pm\partial_zz^\pm$ linearly, so $z^+$ propagates toward $-z$ and $z^-$ toward $+z$.\footnote{S09's \S\S2.3 and~2.5 write the solutions with $\zeta^\mp=0$ as $\zeta^\pm=f^\pm(x,y,z\mp v_At)$, the opposite direction. Their eq.~(21) gives our direction, as do CMM's equations and GANDALF's right-hand side, so this is a sign error in their text, not a different convention.}
+The first, the induction equation $\partial_t\Psi=\gradpar\Phi$, states that the electric field along the total magnetic field vanishes. Equations (\ref{eq:rmhd}) are CMM's eqs~(3.23)--(3.24) in their normalised potentials (3.2) and do not contain the compressive fluctuations. The Elsasser potentials $z^\pm=\Phi\pm\Psi$ obey $\partial_tz^\pm=\pm\partial_zz^\pm$ linearly, so $z^+$ propagates toward $-z$ and $z^-$ toward $+z$.
 
 \subsection{Kinetic equation and the two branches}\label{mod:branches}
 
@@ -36,7 +36,7 @@ where $F_M(v_\parallel)=\pi^{-1/2}\vth^{-1}e^{-v_\parallel^2/\vth^2}$ and
   \Lambda^\pm=-\frac{\tau}{Z}+\frac{1}{\beta_i}\pm\Delta,\qquad
   \Delta=\Big[\Big(1+\frac{\tau}{Z}\Big)^2+\frac{1}{\beta_i^2}\Big]^{1/2}
 \end{equation}
-(CMM eq.~B7; S09 eqs~182 and~204).\footnote{CMM's eq.~(B16) prints the square root in (\ref{eq:Lambdapm}) as $[(1+\tau/Z)+\beta_i^{-2}]^{1/2}$, without the square on $1+\tau/Z$; with the square, as in S09's eq.~(204), their decompositions (B15) and (B17) hold, and without it they do not (appendix~\ref{app:branches}).} We call the right-hand side of (\ref{mod:Gpm}), of strength $1/\Lambda^\pm$, the Landau coupling; in linear theory it produces the collisionless damping of the compressive fluctuations (S09, \S6.2.2). The coefficients with $l\ge2$ obey (\ref{mod:Gpm}) with $1/\Lambda=0$, and we call them the sector $\Lambda=\infty$. The compressive sector therefore consists of independent kinetic equations for $G^+$, $G^-$ and each $G_l$ with $l\ge2$, all advected by the same Alfv\'enic fields. Since $\Delta>1+\tau/Z$ and $\Delta>1/\beta_i$, $\Lambda^+-1>\beta_i^{-1}$ and $\Lambda^-<-\tau/Z$, so $\Lambda^+>1$ and $\Lambda^-<0$ for all $\beta_i,\tau/Z>0$ (S09, below eq.~200); at $\beta_i=\tau=Z=1$, $\Lambda^\pm=\pm\sqrt5$.
+(CMM eq.~B7; S09 eqs~182 and~204). We call the right-hand side of (\ref{mod:Gpm}), of strength $1/\Lambda^\pm$, the Landau coupling; in linear theory it produces the collisionless damping of the compressive fluctuations (S09, \S6.2.2). The coefficients with $l\ge2$ obey (\ref{mod:Gpm}) with $1/\Lambda=0$, and we call them the sector $\Lambda=\infty$. The compressive sector therefore consists of independent kinetic equations for $G^+$, $G^-$ and each $G_l$ with $l\ge2$, all advected by the same Alfv\'enic fields. Since $\Delta>1+\tau/Z$ and $\Delta>1/\beta_i$, $\Lambda^+-1>\beta_i^{-1}$ and $\Lambda^-<-\tau/Z$, so $\Lambda^+>1$ and $\Lambda^-<0$ for all $\beta_i,\tau/Z>0$ (S09, below eq.~200); at $\beta_i=\tau=Z=1$, $\Lambda^\pm=\pm\sqrt5$.
 
 \subsection{One branch in the variable \texorpdfstring{$u$}{u}}\label{mod:onebranch}
 
@@ -51,8 +51,6 @@ where
 combines the streaming of the particles with the Landau coupling. It acts on the velocity dependence of $G$ at each point, and for $\Lambda=\infty$ it is multiplication by $u$. It contains no wavenumber, because the field relations (\ref{mod:fields}) are algebraic.
 
 For given $\Phi$ and $\Psi$, equation (\ref{eq:branch}) is linear in $G$. Its nonlinear terms are the advection $\{\Phi,G\}$ and the part $s\{\Psi,LG\}$ of the streaming, which follows the perturbed field lines. The Alfv\'enic fields obey (\ref{eq:rmhd}) whatever $G$ does, so the compressive sector is passive. At finite $k_\perp\rho_i$ this fails; the induction equation, for example, contains $\gradpar(\delta n/n)$ (CMM, \S3.1).
-
-The density and field-strength fluctuations are linear combinations of $M_0[G^+]$ and $M_0[G^-]$ (\ref{appA:dndB}), the parallel ion flow involves $M_1[G^\pm]$, and the pressure perturbations involve $M_0[G^\pm]$ and $M_2[G^\pm]$ (appendix~\ref{app:branches}); the sector $\Lambda=\infty$ contributes to none of these moments.
 
 \subsection{Hermite moments}\label{mod:hermite}
 
@@ -77,7 +75,7 @@ The free energy of the branch, in units of $n_iT_i/2$, is $\sum_mW(m)$, where
 \end{equation}
 is the Hermite spectrum and $\langle\cdot\rangle$ is the average over the periodic box. In terms of $G$, $\sum_mW(m)=\langle\int G^2/F_M\,\dd u-M_0[G]^2/\Lambda\rangle$, which is S09's invariant $W^\pm_{\rm compr}$ (their eq.~198; CMM eq.~B13) up to the factor $n_iT_i/2$. It is positive because $\Lambda^+>1$, $\Lambda^-<0$ and $\Lambda=\infty$ for the other branches (S09, \S6.2.3). Since $p_mA_{m,m+1}=p_{m+1}A_{m+1,m}$, what the streaming term removes from one moment it adds to its neighbour, so that without forcing and dissipation the free energy is conserved; the same holds for the free energy at each field-aligned wavenumber.
 
-A truncation at $m=M$ needs a closure; by default we use the zero closure $g_{M+1}=0$, which keeps the first $M+1$ rows and columns of $A$. GANDALF \citep{Kanekar2025} integrates (\ref{eq:rmhd}) in Elsasser form together with (\ref{mod:hierarchy}) for one branch, with optional dissipation, hypercollisions and forcing, truncated with the zero closure or with the copy closure $g_{M+1}=g_{M-1}$. We checked to round-off that its right-hand side without dissipation and hypercollisions is (\ref{mod:hierarchy}), for both signs of $\Lambda$ and both closures.
+We truncate the hierarchy at $m=M$ with the closure $g_{M+1}=0$, which keeps the first $M+1$ rows and columns of $A$. GANDALF \citep{Kanekar2025} integrates (\ref{eq:rmhd}) in Elsasser form together with (\ref{mod:hierarchy}) for one branch, with dissipation, hypercollisions and forcing. We checked to round-off that its right-hand side without dissipation and hypercollisions is (\ref{mod:hierarchy}) for both signs of $\Lambda$.
 
 The rest of the paper concerns one equation (\ref{eq:branch}) with $\Lambda>1$, $\Lambda<0$ or $\Lambda=\infty$, which we call a branch whether it describes $G^\pm$ or a Laguerre coefficient with $l\ge2$. Section~\ref{sec:frozen} treats a collisionless and unforced branch except where stated; sections~\ref{sec:twochannel} and~\ref{sec:simulations} add forcing, dissipation and hypercollisions.
 
@@ -94,14 +92,14 @@ With forcing of $g_0$ at the rate $\eps$, dissipation that acts on every $g_m$ i
 \begin{equation}\label{eq:budget}
   \frac{\dd W(m)}{\dd t}=\Pi_{m-1/2}-\Pi_{m+1/2}+\eps\,\delta_{m0}-D_\perp(m)-D_\nu(m),\qquad \Pi_{-1/2}=0,
 \end{equation}
-where $D_\perp(m)$ and $D_\nu(m)$ are the rates at which the spatial dissipation and the hypercollisions remove free energy from moment $m$. The brackets and the hyperdissipation of GANDALF act on all moments alike, so (\ref{eq:budget}) holds for its equations up to the error of the dealiased brackets, with the flux (\ref{eq:fluxCD}) evaluated with the same brackets. In the simulations of section~\ref{sec:simulations} each term of (\ref{eq:budget}) is measured separately (appendix~\ref{app:methods}), and we say that the budget closes when the measured terms, averaged over time, satisfy (\ref{eq:budget}). With the flux (\ref{eq:fluxCD}) they do so to better than $10^{-3}\,\eps$ in every moment. With the $k_z$-only flux in place of (\ref{eq:fluxCD}) they do not (section~\ref{sim:flux}).
+where $D_\perp(m)$ and $D_\nu(m)$ are the rates at which the spatial dissipation and the hypercollisions remove free energy from moment $m$. The brackets and the hyperdissipation of GANDALF act on all moments alike, so (\ref{eq:budget}) holds for its equations up to the error of the dealiased brackets, with the flux (\ref{eq:fluxCD}) evaluated with the same brackets. In the simulations of section~\ref{sec:simulations} each term of (\ref{eq:budget}) is measured separately (appendix~\ref{app:methods}). We say that the budget closes when the measured terms, averaged over time, satisfy (\ref{eq:budget}). With the flux (\ref{eq:fluxCD}) they do so to better than $10^{-3}\,\eps$ in every moment of every run. The $k_z$-only flux omits part of the streaming, so by construction it cannot close the budget. The residual it leaves, up to 8\% of $\eps$ in our runs, measures the part of the flux carried by the streaming along the tilt of the field lines.
 
 For one Fourier mode whose density moment is driven by white noise that injects free energy at the rate $\eps$, the steady state of linear phase mixing is known exactly \citep[eq.~4.10]{Kanekar2015}. At $\Lambda=\infty$ it is
 \begin{equation}\label{eq:linforced}
-  W(m)=\frac{\pi\eps}{s|k_z|}\,\frac{\Gamma(m+\frac12)}{\sqrt2\,\pi\,m!}\;\simeq\;\frac{\eps}{s|k_z|\sqrt{2m}}\quad(m\gg1),
+  W(m)=\frac{\eps}{s|k_z|}\,\frac{\Gamma(m+\frac12)}{\sqrt2\,m!}\;\simeq\;\frac{\eps}{s|k_z|\sqrt{2m}}\quad(m\gg1),
 \end{equation}
 where $\Gamma(\cdot)$ is Euler's gamma function; at every $\Lambda$ the large-$m$ form is $\eps/(s|k_z|\sqrt{2m})$. This is the $m^{-1/2}$ spectrum of linear phase mixing. The flux (\ref{eq:fluxCD}) is $\eps$ through every $m$, so the flux and the spectrum are related by
 \begin{equation}\label{eq:cm}
   \Pi_{m+1/2}=c_m\,s|k_z|\,W(m),
 \end{equation}
-with $c_m=\sqrt2\,m!/\Gamma(m+\frac12)\simeq\sqrt{2m+\frac12}$ at $\Lambda=\infty$. At finite $\Lambda$ the coefficient $c_m$ follows in the same way from the linear response; it is slightly larger at small $m$ (1.68 against 1.60 at $m=1$ for $\Lambda=\sqrt5$) and has the same large-$m$ limit. We compute it for the $\Lambda$ and the forced moment of each run. Free energy injected at $m=0$ thus moves up the ladder at the speed $\dd m/\dd t=\Pi/W=c_ms|k_z|\simeq s|k_z|\sqrt{2m}$ and reaches $m\simeq(sk_zt)^2/2$ after a time $t$.
+with $c_m=\sqrt2\,m!/\Gamma(m+\frac12)\simeq\sqrt{2m+\frac12}$ at $\Lambda=\infty$. At finite $\Lambda$ we compute $c_m$ from the same forced linear problem. Its spectrum is $W(m)=p_m\mathsf C_{mm}$, with $\mathsf C$ the stationary covariance of the hierarchy at one wavenumber, which solves the Lyapunov equation of appendix~\ref{app:model} with $1/T=0$ and no hypercollisions on an untruncated ladder; its flux is $\eps$ through every $m$. The resulting $c_m$ is slightly larger at small $m$ (1.68 against 1.60 at $m=1$ for $\Lambda=\sqrt5$) and has the same large-$m$ limit. We compute it for the $\Lambda$ and the forced moment of each run. Free energy injected at $m=0$ thus moves up the ladder at the speed $\dd m/\dd t=\Pi/W=c_ms|k_z|\simeq s|k_z|\sqrt{2m}$ and reaches $m\simeq(sk_zt)^2/2$ after a time $t$.
