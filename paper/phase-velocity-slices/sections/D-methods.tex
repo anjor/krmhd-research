@@ -1,5 +1,7 @@
 \section{Numerical methods}\label{app:methods}
 
+The simulation, analysis and figure scripts behind this paper were written and run with Claude (Anthropic), as described in the acknowledgements.
+
 \subsection{Runs and checks}\label{app:runs}
 
 The time step is GANDALF's Lawson--Runge--Kutta scheme \citep[Lawson-RK4;][]{Lawson1967}, which integrates the streaming exactly through an integrating factor and treats the nonlinear terms with explicit RK4. Because $A$ does not depend on position, the nonlinear terms $\{\Phi,g\}+s\{\Psi,Ag\}$ of (\ref{mod:hierarchy}) act on the projection of $g$ on each left eigenvector of $A$, with eigenvalue $u_j$, as advection with the stream function $\Phi+su_j\Psi$. An explicit step for them must therefore resolve the speed $\max|\nabla_\perp\Phi|+su_{\max}\max|\nabla_\perp\Psi|$, with $u_{\max}$ the largest eigenvalue of the truncated $A$ (7.25 at $M=32$), not $\max|\nabla_\perp\Phi|+s\max|\nabla_\perp\Psi|$. We take $\Delta t=0.8\times2\sqrt2/\rho$, where $\rho$ is the spectral radius of the advection operator with the stream functions $\Phi\pm su_{\max}\Psi$, computed by a Lanczos iteration every 25 steps, or the Alfv\'enic limit $0.8\,\Delta x/\max|\nabla_\perp z^\pm|$ if that is smaller. The runs at $\beta_i=0.1$ and at $M\ge64$ use a safety factor of 0.4 on the Alfv\'enic limit, with both limits updated every step. The runs at $M=32$ used GANDALF version 0.7.0 on a CPU, and the runs at $M\ge64$ versions 0.8.0 and 0.8.1, whose solver is the same, on a GPU.
