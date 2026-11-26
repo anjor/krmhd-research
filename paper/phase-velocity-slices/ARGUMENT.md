@@ -1,6 +1,6 @@
 # P1 argument
 
-"Phase mixing against a passive-scalar cascade: the Hermite spectrum of kinetic reduced magnetohydrodynamic turbulence". This is a draft for Anjor's sign-off, 2026-11-26. It is written for the reframe he agreed that day. Numbers marked † are being rechecked and will be updated before the prose is.
+"Phase mixing against a passive-scalar cascade: the Hermite spectrum of kinetic reduced magnetohydrodynamic turbulence". This is a draft for Anjor's sign-off, 2026-11-26. It is written for the reframe he agreed that day.
 
 ## Claim
 
@@ -14,13 +14,13 @@ While the lines are frozen, the cascade only moves free energy across the field.
 
   W(m) ∝ m^{-1/2} exp[−√(2m)/(sκT)],  with a break where t_m ~ T, m_* = (sκT)²/2.
 
-Write T = c_T τ_nl, with τ_nl ~ 1/(χ κ v_A) for κ of the order of the outer-scale k∥. Then m_* ≈ (c_T²/2) β_i/χ². The prefactor matters. In our runs c_T is about 11 to 16†, so at χ ≈ 1 the break m_* is 60 to 130† times β_i, not of order β_i.
+Write T = c_T τ_nl, with τ_nl ~ 1/(χ κ v_A) for κ of the order of the outer-scale k∥. Then m_* ≈ (c_T²/2) β_i/χ². The prefactor matters. In the 64³ runs at χ ≈ 1, c_T is 11 to 16, so the break m_* is 60 to 130 times β_i, not of order β_i. A likely reason is that at 64³ T is close to the energy-containing time of the Alfvénic turbulence, E_A/ε_A (0.7 to 1.1 times it), which is many τ_nl.
 
 ## What the runs show
 
 These hold at every resolution tested, 64³ to 256³:
 1. The field-aligned Hermite flux equals the phase-mixing flux of W(m) at the measured field-aligned wavenumber. The comparison uses the exact linear coefficient. No deficit grows with m, so there is no return flux.
-2. The field-aligned spectrum of the free energy stays at the injected wavenumbers, apart from a tail holding less than 0.5%† of it.
+2. The field-aligned spectrum of the free energy stays at the injected wavenumbers, apart from a tail holding less than 0.5% of it.
 3. With the T measured at each resolution, the model describes W(m).
 
 These are measured at 64³ only, and the paper says so:
