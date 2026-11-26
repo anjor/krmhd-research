@@ -10,6 +10,8 @@ The Alfv\'enic turbulence is first spun up with the same forcing and dissipation
 
 In the runs of table~\ref{tab:mstar} at lower $\chi$, the hyperdissipation of $E_A$ would move to larger scales unless $\eta$ decreased with $\chi$. For the target values $\chi=0.7$ and 0.5 we set $\eta=300\,\chi/0.96$, which gives 219 and 156. At the target $\chi=0.35$ this rule gave a spectrum of $E_A$ that failed our check on its slope, and we used instead the rule $\eta\propto\chi^2$ of weak turbulence, calibrated with short runs at $M=2$ and $\eta=28$, 40 and 56, which gives $\eta=33$. The median shell of the hyperdissipation of $E_A$ is then $k_\perp/k_1=9$--11 in every run.
 
+Two ranges of $m$ are found by iteration. For the window fit of table~\ref{tab:mstar} we fit $\ell_*$ over $2\le m\le M/2$, set the top of the range to the largest $m$ with $\sqrt{2m}\le2+1.5\,\ell_*$, refit, and repeat until the range repeats, keeping the larger of two ranges between which the iteration alternates. The top $m_{\rm c}$ of the collision-free range (section~\ref{sim:setup}) is found in the same way, starting from the $T$ over $2\le m\le16$.
+
 \begin{table}[t]
   \centering
   \caption{Fluctuations and convergence of the runs of table~\ref{tab:runs} (upper part, in the same order) and of table~\ref{tab:mstar} (lower part). std/mean is that of $E_A$ and $W$ over the window; the block spread is the largest relative spread of the four block means of $W(m)$, $\Pi$, $D_\perp(m)$ and $D_\nu(m)$; $W_{>}$ is the fraction of the free energy at $m>3M/4$.}
