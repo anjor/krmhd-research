@@ -607,6 +607,33 @@ def fit_decay_window(W: np.ndarray, M: int, efolds: float = 1.5, m_lo: int = 2, 
     return dict(ell=ell, m_max=m_max, n_e=n_e, ell_full=ell_full, status=status, iterations=it)
 
 
+def phase_mixing_coefficient(m_max: int, Lam: float, mf: int = 0) -> np.ndarray:
+    """c_m = Pi_{m+1/2}/(s |kappa| W(m)) for m = 0..m_max in the steady state of linear phase mixing of one
+    field-aligned wavenumber kappa with g_mf forced by white noise (paper eqs. hierarchy, fluxCD, linforced): the
+    coefficient of the no-echo flux s c_m kappa_1(m) W(m).  With noise intensity q the flux is the injection rate
+    p_mf q through every m >= mf (zero below), and W(m) = q p_m int_0^inf |R_m(t)|^2 dt with R(t) = exp(-i A t) e_mf
+    the impulse response at s |kappa| = 1, so c_m = p_mf/(p_m int |R_m|^2 dt) for m >= mf and 0 for m < mf.  R is
+    summed over the slices of GANDALF's ladder truncated at K, high enough that no free energy comes back from K
+    before t_max, by which the response at m_max has passed and the Landau-damped part has decayed; the time integral
+    is done exactly, pair by pair of slices.  At Lambda = inf
+    c_m = sqrt2 m!/Gamma(m + 1/2) for mf = 0 (Kanekar et al. 2015 eq. 4.10), about sqrt(2m + 1/2); at finite Lambda it
+    is larger at small m and has the same large-m limit."""
+    x_max = math.sqrt(2.0 * m_max)
+    t_max = x_max + 40.0
+    sl = P.make_slices(int((x_max + 30.0) ** 2 / 2.0) + 1, Lam)
+    keep = np.abs(sl.u) < 10.0                       # g_mf = 1 puts weight ~exp(-u^2) on slice u: none on faster ones
+    u = sl.u[keep]
+    B = sl.R[:m_max + 1, keep] * sl.Wl[mf, keep]     # R_m(t) = sum_j B_mj exp(-i u_j t)
+    d = u[:, None] - u[None, :]
+    off = d != 0.0
+    S = np.full(d.shape, t_max, dtype=complex)       # int_0^t_max exp(-i d t) dt
+    S[off] = (1.0 - np.exp(-1j * d[off] * t_max)) / (1j * d[off])
+    I = np.real(np.einsum("mj,jl,ml->m", B, S, B))
+    c = sl.p[mf] / (sl.p[:m_max + 1] * I)
+    c[:mf] = 0.0
+    return c
+
+
 def rel_spread(X: np.ndarray) -> np.ndarray:
     """(max - min)/|mean| over the leading (block) axis."""
     X = np.asarray(X, dtype=float)

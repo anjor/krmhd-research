@@ -10,7 +10,7 @@ compute the parallel spectrum E_par(kappa), the autocorrelation C_par(l) and the
 |kappa|), kappa_half (pi/(3 l_half)) for
   * g_0, Phi and Psi band-passed in k_perp L/2pi shells (config analysis.kperp_bands): kappa(k_perp) of g against
     the Alfvenic kappa(k_perp) ~ k_perp^(2/3) of critical balance;
-  * every moment g_m (unfiltered): kappa_1(m), used for the no-echo flux s sqrt(2(m+1)) kappa_1(m) W(m);
+  * every moment g_m (unfiltered): kappa_1(m), used for the no-echo flux s c_m kappa_1(m) W(m) (h1_pilot.py);
   * selected slices a_j (u_j nearest analysis.slices_u);
   * the injected pattern: fresh draws of the run's density forcing (GANDALF's generator) on the same lines, whose
     field-aligned spectrum is the kappa distribution of the two-channel model.

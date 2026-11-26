@@ -141,7 +141,7 @@ def numbers(run_id: str, acc: dict) -> dict:
         W_over_model_range=[float(rW[mm[:len(rW)]].min()), float(rW[mm[:len(rW)]].max())],
         Pi_over_model_range=[float(rP[: M // 2].min()), float(rP[: M // 2].max())],
         W_over_model_at_M2=float(rW[min(M // 2, len(rW) - 1)]), Pi_over_model_at_M2=float(rP[min(M // 2, len(rP) - 1)]),
-        noecho_range_m8=noecho_range(an, M),
+        noecho_range_m8=noecho_range(an, M), noecho_range_m8_model=noecho_range(an, M, "model_Pi_over_noecho"),
         bands=fl["bands"], kappa1_g0_bands=fl["kappa1_par_over_k1"]["g0"], kappa1_phi_bands=fl["kappa1_par_over_k1"]["phi"],
         kappa1_z_g0_bands=fl["kappa1_z_over_k1"]["g0"],
         kfa_rms_gm_range=[float(np.min(kap["kfa_rms_m_over_k1"][1:M // 2 + 1])), float(np.max(kap["kfa_rms_m_over_k1"][1:M // 2 + 1]))],
@@ -158,11 +158,12 @@ def numbers(run_id: str, acc: dict) -> dict:
     )
 
 
-def noecho_range(an: dict, M: int) -> list[float] | None:
-    """Range over 8 <= m <= M/2 of the field-aligned flux divided by the no-echo flux s sqrt(2(m+1)) kappa_1(m) W(m),
-    the flux W(m) carries if all of it phase mixes forward at its measured field-aligned wavenumber (h1_pilot.py); a
-    return flux would make the ratio fall below one increasingly at large m."""
-    r = (an.get("no_echo") or {}).get("Pi_fa_over_noecho")
+def noecho_range(an: dict, M: int, key: str = "Pi_fa_over_noecho") -> list[float] | None:
+    """Range over 8 <= m <= M/2 of the field-aligned flux divided by the no-echo flux s c_m kappa_1(m) W(m), the flux
+    W(m) carries if all of it phase mixes forward at its measured field-aligned wavenumber (h1_pilot.py; c_m of linear
+    phase mixing, h1lib.phase_mixing_coefficient); a return flux would make the ratio fall below one increasingly at
+    large m.  key = "model_Pi_over_noecho": the same ratio for the two-channel model, which has no return flux."""
+    r = (an.get("no_echo") or {}).get(key)
     if not r:
         return None
     v = np.array(r[8:M // 2 + 1], dtype=float)
@@ -191,8 +192,9 @@ def main() -> int:
         print(f"    W/model {d['W_over_model_range'][0]:.3f}-{d['W_over_model_range'][1]:.3f}; "
               f"Pi/model {d['Pi_over_model_range'][0]:.3f}-{d['Pi_over_model_range'][1]:.3f}; "
               f"at m = M/2: W/model {d['W_over_model_at_M2']:.3f}, Pi/model {d['Pi_over_model_at_M2']:.3f}; "
-              + (f"Pi/no-echo over 8 <= m <= M/2 {d['noecho_range_m8'][0]:.3f}-{d['noecho_range_m8'][1]:.3f}; "
-                 if d['noecho_range_m8'] else "") +
+              + (f"Pi/no-echo over 8 <= m <= M/2 {d['noecho_range_m8'][0]:.3f}-{d['noecho_range_m8'][1]:.3f} "
+                 f"(model {d['noecho_range_m8_model'][0]:.3f}-{d['noecho_range_m8_model'][1]:.3f}); "
+                 if d['noecho_range_m8'] and d['noecho_range_m8_model'] else "") +
               f"g0 kappa_1 per band {', '.join(f'{v:.2f}' for v in d['kappa1_g0_bands'])}; "
               f"phi {', '.join(f'{v:.2f}' for v in d['kappa1_phi_bands'])}; g0 k_z {', '.join(f'{v:.2f}' for v in d['kappa1_z_g0_bands'])}")
         print(f"    k_fa rms g_m {d['kfa_rms_gm_range'][0]:.2f}-{d['kfa_rms_gm_range'][1]:.2f}; "

@@ -19,8 +19,11 @@ W(m) = p_m C_mm, the field-aligned flux Pi_{m+1/2} = -2 s p_m A_{m,m+1} kappa Im
 and the slice covariance is Wl^T C Wl.  Summing over a kappa distribution P(kappa) normalised to the measured
 injection rate eps gives W(m), Pi(m) and C(u, u') with no free parameter once T (from D_perp(m)/W(m)) and P(kappa)
 (measured) are fixed.  Its large-m form is the formula of the spec, W(m) = eps/(s kappa sqrt(2m))
-exp(-sqrt(2m)/(s kappa T)).  The no-echo flux s sqrt(2(m+1)) kappa_1(m) W(m), with kappa_1(m) the first moment of
-|kappa| of g_m measured along traced field lines, is the flux if all free energy at m were phase mixing (no return).
+exp(-sqrt(2m)/(s kappa T)).  The no-echo flux s c_m kappa_1(m) W(m), with kappa_1(m) the first moment of |kappa| of
+g_m measured along traced field lines and c_m = Pi_{m+1/2}/(s |kappa| W(m)) of linear phase mixing at one kappa with the
+run's Lambda and forced moment (h1lib.phase_mixing_coefficient; sqrt2 m!/Gamma(m+1/2) at Lambda = inf), is the flux if
+all free energy at m were phase mixing (no return).  The same ratio evaluated on the two-channel model, with kappa_1(m)
+of the model, is what the measured ratio would be with the uniform sink and no return flux.
 
 Usage (from the repository root):
     uv run python paper/phase-velocity-slices/analysis/h1_pilot.py paper/phase-velocity-slices/data/<run ID>
@@ -70,10 +73,11 @@ def lyapunov_mode(sl: P.Slices, s: float, kappa: float, T: float, nu: float, hyp
 def two_channel(sl: P.Slices, s: float, kappas: np.ndarray, weights: np.ndarray, T: float, nu: float, hyper_n: int,
                 eps: float, mf: int = 0) -> dict:
     """Sum of lyapunov_mode over a kappa distribution (weights normalised to 1), scaled to injection eps into
-    moment mf."""
+    moment mf; kappa_1 is the first moment of |kappa| of the model's free energy at each m."""
     w = np.asarray(weights, dtype=float)
     w = w / w.sum()
     W = np.zeros(sl.M + 1)
+    KW = np.zeros(sl.M + 1)
     Pi = np.zeros(sl.M)
     S = np.zeros((sl.M + 1, sl.M + 1))
     for k, wk in zip(kappas, w):
@@ -84,9 +88,10 @@ def two_channel(sl: P.Slices, s: float, kappas: np.ndarray, weights: np.ndarray,
             continue
         r = lyapunov_mode(sl, s, float(k), T, nu, hyper_n, mf)
         W += eps * wk * r["W"]
+        KW += eps * wk * abs(float(k)) * r["W"]
         Pi += eps * wk * r["Pi"]
         S += eps * wk * r["S"]
-    return dict(W=W, Pi=Pi, S=S)
+    return dict(W=W, Pi=Pi, S=S, kappa_1=KW / W)
 
 
 def formula(m: np.ndarray, eps: float, s: float, kappa: float, T: float) -> np.ndarray:
@@ -231,7 +236,9 @@ def main() -> int:
     kF_rms = float(math.sqrt(tav("kF_fa2")))
     kF_z = float(math.sqrt(tav("kF_z2")))
     sig_tilt = float(math.sqrt(tav("tiltF2")))
-    kap_eff = Pfa / (s * np.sqrt(2.0 * (m[:-1] + 1)) * W[:-1])
+    c_pm = H.phase_mixing_coefficient(M - 1, Lam, mf)   # Pi_{m+1/2}/(s|kappa| W(m)) of linear phase mixing, m < M
+    with np.errstate(divide="ignore", invalid="ignore"):
+        kap_eff = Pfa / (s * c_pm * W[:-1])               # inf below the forced moment, where c_m = 0
     out["kappa"] = dict(kF_z_over_k1=kF_z / k1, kF_fa_rms_over_k1=kF_rms / k1, tilt_rms_over_k1=sig_tilt / k1,
                         kappa_eff_m_over_k1=(kap_eff / k1).tolist(),
                         kfa_rms_m_over_k1=(np.sqrt(tav("kfa2")) / k1).tolist(),
@@ -273,7 +280,7 @@ def main() -> int:
     if fl is not None:
         models["traced P(kappa) of the injected pattern"] = two_channel(sl, s, fl["kap"], fl["PF"], T, nu, hn, eps, mf)
         models["traced P(kappa) of g_0"] = two_channel(sl, s, fl["kap"], fl["Pg0"], T, nu, hn, eps, mf)
-        noecho = s * np.sqrt(2.0 * (m[:-1] + 1)) * fl["k1m"][:-1] * W[:-1]
+        noecho = s * c_pm * fl["k1m"][:-1] * W[:-1]
     else:
         noecho = None
     rng_b = (m >= 2) & (m <= M // 2)
@@ -292,7 +299,11 @@ def main() -> int:
                                 tilt_part=float((Pfa[mm] - Pkz[mm]) / eps)) for mm in pick}
     out["P_e"]["tilt_over_kz_forcing_squared"] = (sig_tilt / kF_z) ** 2
     if noecho is not None:
-        out["no_echo"] = dict(Pi_fa_over_noecho=(Pfa / noecho).tolist())
+        md = models["traced P(kappa) of the injected pattern"]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            out["no_echo"] = dict(Pi_fa_over_noecho=(Pfa / noecho).tolist(), coefficient_c_m=c_pm.tolist(),
+                                  model_Pi_over_noecho=(md["Pi"] / (s * c_pm * md["kappa_1"][:-1] * md["W"][:-1])).tolist(),
+                                  model_kappa1_m_over_k1=(md["kappa_1"] / k1).tolist())
     # ---- P-f
     C = tav("C_slice")
     Cn = corr_norm(C)
@@ -373,9 +384,9 @@ def main() -> int:
         a.semilogx(mh, Pp / eps, "--", color=pal[1], label=r"$k_z$ split: $+$")
         a.semilogx(mh, -Pm / eps, ":", color=pal[1], label=r"$k_z$ split: $-$ (sign flipped)")
         a.semilogx(mh, models[mod_key]["Pi"] / eps, "-", color=pal[2], label="two-channel model")
-        if noecho is not None:                       # asymptotic (phase-mixing) relation: shown for m >= 2
-            a.semilogx(mh[2:], noecho[2:] / eps, "-.", color=pal[3],
-                       label=r"no-echo $s\sqrt{2(m+1)}\,\kappa_1(m)W(m)$")
+        if noecho is not None:                       # exact for linear phase mixing at every m >= mf
+            a.semilogx(mh[mf:], noecho[mf:] / eps, "-.", color=pal[3],
+                       label=r"no-echo $s\,c_m\kappa_1(m)W(m)$")
         a.set_xlabel(r"$m + 1/2$")
         a.set_ylabel(r"flux$/\varepsilon$")
         a.legend(fontsize=6, loc="upper right")

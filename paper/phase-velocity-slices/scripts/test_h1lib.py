@@ -19,6 +19,9 @@ G  Per-step time-step limits: make_fast_limits reproduces dt_limits' maxima on t
 H  Decay length of the Hermite spectrum (fit_decay_window): on W = exp(-x/ell)/x, x = sqrt(2m), the windowed fit
    recovers ell, the window spans 1.5 e-folds from x = 2, and the status is measured / marginal / unresolved by the
    e-fold count (sqrt(M) - 2)/ell.
+I  Phase-mixing coefficient c_m = Pi_{m+1/2}/(s|kappa| W(m)) of the white-noise-forced linear hierarchy
+   (phase_mixing_coefficient): sqrt2 m!/Gamma(m+1/2) at Lambda = inf; at Lambda = sqrt5 and 6.2206 the flux over W(m)
+   of the Lyapunov steady state with an outgoing closure, and c_0 from the plasma dispersion function.
 """
 from __future__ import annotations
 
@@ -233,6 +236,56 @@ def main() -> int:
     check("H3 unresolved: n_e < 1", h3["status"] == "unresolved" and abs(h3["n_e"] - 0.375) < 1e-9, f"{h3}")
     h4 = H.fit_decay(spec(3.0, 128), 2, 21)
     check("H4 fit_decay on a fixed window", abs(h4 / 3.0 - 1) < 1e-10, f"{h4}")
+
+    # I: the phase-mixing coefficient c_m = Pi_{m+1/2}/(s|kappa| W(m)) of the white-noise-forced linear hierarchy
+    from scipy.integrate import quad
+    from scipy.linalg import solve_continuous_lyapunov
+    from scipy.special import gammaln, wofz
+    m_i = np.arange(512)
+    c_inf = H.phase_mixing_coefficient(511, math.inf)
+    exact = math.sqrt(2.0) * np.exp(gammaln(m_i + 1.0) - gammaln(m_i + 0.5))
+    e1 = float(np.abs(c_inf / exact - 1.0).max())
+    check("I1 Lambda = inf: c_m = sqrt2 m!/Gamma(m+1/2), m <= 511 (max relative error)", e1 < 1e-9, f"{e1:.1e}")
+
+    def forced_steady(Lam: float, Mc: int, mf: int = 0) -> np.ndarray:
+        """Pi_{m+1/2}/W(m) of the steady state with g_mf forced, on the ladder with an outgoing closure at Mc
+        (Lyapunov)."""
+        A = P.ladder(Mc, Lam)
+        p = P.pweights(Mc, Lam)
+        L = -1j * A.astype(complex)
+        L[Mc, Mc] -= math.sqrt((Mc + 1) / 2.0)
+        Q = np.zeros((Mc + 1, Mc + 1), complex)
+        Q[mf, mf] = 1.0
+        C = solve_continuous_lyapunov(L, -Q)
+        Pi = -2.0 * p[:Mc] * np.diag(A, 1) * np.imag(np.diag(C, -1))
+        return Pi / (p[:Mc] * np.real(np.diag(C))[:Mc])
+
+    def c0_dispersion(Lam: float) -> float:
+        """c_0 = 2 pi / int |Lambda Z/(Lambda - 1 - zeta Z)|^2 d zeta, Z(zeta + i0) = i sqrt(pi) w(zeta)."""
+        def f(z: float) -> float:
+            Z = 1j * math.sqrt(math.pi) * wofz(z)
+            return abs(Lam * Z / (Lam - 1.0 - z * Z)) ** 2
+        cut = 200.0                                  # |.|^2 -> 1/zeta^2 beyond: tails 1/cut each side
+        I = sum(quad(f, a, b, limit=400, epsabs=0.0, epsrel=1e-12)[0] for a, b in ((-cut, -8), (-8, 0), (0, 8), (8, cut)))
+        return 2.0 * math.pi / (I + 2.0 / cut)
+
+    for Lam in (math.sqrt(5.0), 6.2206):
+        c = H.phase_mixing_coefficient(64, Lam)
+        ly = forced_steady(Lam, 600)[:65]
+        c0 = c0_dispersion(Lam)
+        e2 = float(np.abs(c / ly - 1.0).max())
+        check(f"I2 Lambda = {Lam:.4f}: c_m = Pi/W of the forced steady state (Lyapunov, outgoing closure), m <= 64",
+              e2 < 5e-4, f"max relative difference {e2:.1e}")
+        check(f"I3 Lambda = {Lam:.4f}: c_0 from the plasma dispersion function", abs(c[0] / c0 - 1) < 1e-6,
+              f"{c[0]:.6f} vs {c0:.6f}")
+        check(f"I4 Lambda = {Lam:.4f}: above the Lambda = inf value for 1 <= m <= 64, by less than 0.2% at m = 64",
+              bool(np.all(c[1:] > exact[1:65])) and c[64] / exact[64] - 1 < 2e-3, f"{c[64] / exact[64] - 1:.1e}")
+    c1 = H.phase_mixing_coefficient(64, math.sqrt(5.0), mf=1)
+    ly1 = forced_steady(math.sqrt(5.0), 600, mf=1)[:65]
+    e5 = float(np.abs(c1[1:] / ly1[1:] - 1.0).max())
+    check("I5 g_1 forced (Lambda = sqrt5): c_m = Pi/W of the forced steady state for 1 <= m <= 64, c_0 = 0 = Pi_1/2 "
+          "(the outgoing closure's error falls as 1/Mc: 7.6e-4 at Mc = 600, 3.8e-4 at 1200)",
+          e5 < 1e-3 and c1[0] == 0.0 and abs(ly1[0]) < 1e-9, f"max relative difference {e5:.1e}; Pi_1/2/W(0) {ly1[0]:.1e}")
 
     print(f"{'ALL PASS' if not FAILED else 'FAILED: ' + ', '.join(FAILED)} ({time.time() - T0:.0f} s)")
     return 1 if FAILED else 0
