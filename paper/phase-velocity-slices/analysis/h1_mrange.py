@@ -14,13 +14,15 @@ For every run of tables 2 and 3 the script gives
   * c_T and the decay length ell_* fitted over 2 <= m <= m_c, against the old ones (T over 2..16, ell_* over 2..M/2);
   * the key numbers of section 5, old range against new: D_perp/W (range and max/min), W/model and Pi/model (the
     two-channel model with the traced P(kappa); with T for the old range and with T_c for the new), the flux-implied
-    kappa Pi/(s c_m W), and Pi/(s c_m kappa_1(m) W) with the same ratio of the uniform-sink model.
+    kappa Pi/(s c_m W), and Pi/(s c_m kappa_1(m) W) with the same ratio of the uniform-sink model;
+  * on the new range with the paper's T (median over 2..16, "new_T_old"), also W over the models with a single kappa
+    and with the field-aligned distribution of g_0, and the unmixing over the phase-mixing part of the k_z-only flux.
 Every number is evaluated on the whole window and on the four blocks (data of the block against the model of the
 whole window, as h1_block_spreads.py does).
 
 Reads, through h1_block_spreads.Run: <run>/<run>.npz (ts__t, ts__acc_sum_dt, ts__pWm, ts__Pi_fa, ts__E, ts__kperp_out,
-ts__u_out, ts__chi_out, ts__acc_inj_g, ts__acc_inj_A, ts__acc_loss_eta, ts__acc_loss_nu, ts__kF_z2, ts__tiltF2),
-<run>.json (config), <run>/fieldlines_snap_*.npz (kappa_par, F__E_par, g0__E_par, kappa1_m_par) and
+ts__u_out, ts__chi_out, ts__acc_inj_g, ts__acc_inj_A, ts__acc_loss_eta, ts__acc_loss_nu, ts__kF_z2, ts__tiltF2,
+ts__Pi_plus, ts__Pi_minus), <run>.json (config), <run>/fieldlines_snap_*.npz (kappa_par, F__E_par, g0__E_par, kappa1_m_par) and
 <run>/h1_analysis.json (no_echo.coefficient_c_m).  Writes data/h1_mrange.json.
 
 Usage (from the repository root):
@@ -97,6 +99,8 @@ def stats(r: Run, v: View, lo: int, hi: int, T: float, q_lo: int | None = None, 
     sl = slice(lo, hi + 1)
     slp = slice(lo, min(hi, r.M - 1) + 1)                 # fluxes Pi_{m+1/2} exist for m < M
     q = v.q[q_lo:q_hi + 1]
+    W_single = r.model(T, "single")["W"]                 # a single kappa = k_z of the forcing
+    W_g0 = r.model(T, "g0")["W"]                         # the field-aligned distribution of g_0 itself
     with np.errstate(divide="ignore", invalid="ignore"):
         noecho = v.Pi / (r.s * r.c_m * r.k1m[:-1] * v.W[:-1])
         model_noecho = md["Pi"] / (r.s * r.c_m * md["kappa_1"][:-1] * md["W"][:-1])
@@ -105,7 +109,18 @@ def stats(r: Run, v: View, lo: int, hi: int, T: float, q_lo: int | None = None, 
                 W_over_model_maxdev=maxdev(W[sl] / md["W"][sl]), W_over_model=rng(W[sl] / md["W"][sl]),
                 Pi_over_model=rng(Pi[slp] / md["Pi"][slp]), kappa_eff=rng(kap[slp]),
                 noecho=rng(noecho[slp]), model_noecho=rng(model_noecho[slp]),
-                kappa1_m=rng(r.k1m[sl] / r.k1))
+                kappa1_m=rng(r.k1m[sl] / r.k1),
+                W_over_single=rng(W[sl] / W_single[sl]), W_over_g0=rng(W[sl] / W_g0[sl]))
+
+
+def split_ratio(r: Run, lo: int, hi: int) -> list[float]:
+    """Range over lo <= m <= hi of the unmixing over the phase-mixing part of the k_z-only flux split by the sign of
+    k_z (Pi_minus/Pi_plus, negative), averaged over the whole window as h1_pilot.py averages it."""
+    with np.load(P.DATA / r.run_id / f"{r.run_id}.npz") as z:
+        t, dtk, Pp, Pm = z["ts__t"], z["ts__acc_sum_dt"], z["ts__Pi_plus"], z["ts__Pi_minus"]
+    first = int(np.argmin(np.abs(t - r.window[0])))
+    ratio = H.time_average(Pm, dtk, first) / H.time_average(Pp, dtk, first)
+    return rng(ratio[lo:min(hi, r.M - 1) + 1])
 
 
 def blocks_of(f, r: Run) -> list:
@@ -153,10 +168,15 @@ def run_rows(r: Run) -> dict:
     out["old"] = {k: v for k, v in old.items()}
     out["new"] = stats(r, full, M_LO, m_c, T_c)
     out["new_T_old"] = stats(r, full, M_LO, m_c, T_old)       # the new range with the old T, to separate the effects
+    out["new_T_old"]["split"] = split_ratio(r, M_LO, m_c)
     keys = ("q_range", "q_max_over_min", "W_over_model_maxdev", "Pi_over_model", "kappa_eff", "noecho", "model_noecho")
-    nb = [stats(r, v, M_LO, m_c, T_c) for v in r.blocks]
-    out["new_blocks"] = {k: (rng(np.array([b[k] for b in nb])) if not isinstance(nb[0][k], list)
-                             else [float(min(b[k][0] for b in nb)), float(max(b[k][1] for b in nb))]) for k in keys}
+
+    def block_ranges(T: float) -> dict:
+        nb = [stats(r, v, M_LO, m_c, T) for v in r.blocks]
+        return {k: (rng(np.array([b[k] for b in nb])) if not isinstance(nb[0][k], list)
+                    else [float(min(b[k][0] for b in nb)), float(max(b[k][1] for b in nb))]) for k in keys}
+    out["new_blocks"] = block_ranges(T_c)
+    out["new_T_old_blocks"] = block_ranges(T_old)              # the paper's T (median over 2..16) on the new range
     return out
 
 
