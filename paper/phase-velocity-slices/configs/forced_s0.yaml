@@ -1,0 +1,87 @@
+# s = 0 control for the age-dependent sink (referee 2026-11-26, items 2.8 and 3.14 of the first report): the run of
+# configs/forced_beta1.yaml with the streaming switched off, so that g_0 is a passive scalar in the same Alfvenic flow.
+# GANDALF's streaming term is sqrt(beta_i) (grad_par T g), so beta_i = 1e-8 gives s = 1e-4: free energy would take about
+# 1/(s kappa_1) ~ 1300 tau_A to reach m = 1, against a removal time T ~ 2 tau_A, and the (1 - 1/Lambda) coupling, which
+# sits inside the streaming term, is off too.  M = 2 keeps the hierarchy minimal (g_1, g_2 stay ~0).  Everything else,
+# including the Alfvenic hand-off, both forcings and their seeds, and the hyper-resistivity, is that of forced_beta1.yaml.
+# What it measures: T_ps = W_0/eps_g, the residence time of a passive scalar in this flow (the dissipation balances the
+# injection in steady state), to compare with the T of the streaming runs and with the age model of section 5.5.
+#
+label: forced-s0
+
+box:
+  L: 1.0
+  N: 64
+
+velocity:
+  M: 2
+  Lambda: sqrt5
+  beta_i: 1.0e-8
+  closure: zero
+
+stepper:
+  scheme: lawson_rk4
+  eta: 300.0
+  hyper_r: 2
+  nu: 30.0
+  hyper_n: 6
+  eta_z: 0.0
+  hyper_rz: 1
+  closure: zero
+
+forcing:
+  alfven:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261015
+  density:
+    eps: 0.3
+    generator: perp_lowkz
+    n_min: 1
+    n_max: 2
+    max_nz: 1
+    include_nz0: false
+    seed: 20261016
+
+init:
+  type: file
+  path: paper/phase-velocity-slices/data/P1_forced-spinup64_20261015_110112/restart.npz
+  keep_g: false
+  keep_time: false
+  keep_keys: false
+
+time:
+  t_end: 53.0                  # tau_A: about 3 tau_A for g to become stationary (W still rising 1.5 tau_A after the
+                               # hand-off in forced_check64), then the 50 tau_A gate window
+  dt_max: 5.0e-3
+  dt_rule: exact
+  safety: 0.8
+  recompute_every: 25
+  sample_every: 20
+  print_every: 500
+  snapshot_every: 5.0
+  restart_every: 2.0
+
+diagnostics:
+  n_outer: 2
+
+analysis:
+  fieldlines:
+    n_lines: 4096
+    z_len: 4.0
+    dz: 0.0078125              # 1/128
+    kperp_bands: [[0, 2], [2, 4], [4, 8], [8, 16]]
+    slices_u: [0.0, 1.0, -1.0, 2.0, -2.0, 3.0]
+    n_forcing_draws: 4
+
+gates:
+  steady_window: 50.0
+  steady_tol: 0.10
+  balance_tol: 0.05
+  conservation_tol: 0.01
+  resolution_tol: 1.0e-3
+  m_tol: 0.01
